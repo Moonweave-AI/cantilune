@@ -6,7 +6,7 @@
   <p><sub>由 <a href="https://moonweave-ai.github.io/">MOONWEAVE AI</a> 出品的编排项目</sub></p>
 
   <p>
-    <img src="../assets/logo.svg" alt="Cantilune 标志" width="140">
+    <img src="../assets/logo.png" alt="Cantilune 标志" width="140">
   </p>
 
   <h1>Cantilune</h1>

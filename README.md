@@ -6,7 +6,7 @@
   <p><sub>AN ORCHESTRATION PROJECT BY <a href="https://moonweave-ai.github.io/">MOONWEAVE AI</a></sub></p>
 
   <p>
-    <img src="./assets/logo.svg" alt="Cantilune logo" width="140">
+    <img src="./assets/logo.png" alt="Cantilune logo" width="140">
   </p>
 
   <h1>Cantilune</h1>
