@@ -1,26 +1,13 @@
-<!--
-CANTILUNE PROJECT MARK SLOT
-
-Recommended assets:
-  docs/assets/cantilune-mark-light.svg
-  docs/assets/cantilune-mark-dark.svg
-  docs/assets/cantilune-social-preview.png   # 1280 × 640 recommended
-
-After adding the marks, uncomment the block below. Keep the artwork original or
-license-cleared; do not add copyrighted character art, film frames, logos, or
-identifiable silhouettes.
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/cantilune-mark-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./docs/assets/cantilune-mark-light.svg">
-    <img src="./docs/assets/cantilune-mark-light.svg" alt="Cantilune project mark" width="168">
-  </picture>
-</p>
--->
+<div align="center">
+  <img src="./assets/banner.png" alt="Cantilune banner" width="720">
+</div>
 
 <div align="center">
   <p><sub>AN ORCHESTRATION PROJECT BY <a href="https://moonweave-ai.github.io/">MOONWEAVE AI</a></sub></p>
+
+  <p>
+    <img src="./assets/logo.svg" alt="Cantilune logo" width="140">
+  </p>
 
   <h1>Cantilune</h1>
 
