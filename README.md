@@ -5,10 +5,6 @@
 <div align="center">
   <p><sub>AN ORCHESTRATION PROJECT BY <a href="https://moonweave-ai.github.io/">MOONWEAVE AI</a></sub></p>
 
-  <p>
-    <img src="./assets/logo.png" alt="Cantilune logo" width="140">
-  </p>
-
   <h1>Cantilune</h1>
 
   <p>
@@ -445,6 +441,9 @@ Cantilune is intended for an open-source release. The applicable license will be
 <div align="center">
   <p>
     <strong>Moonweave defines how meanings are woven.<br>Cantilune decides how actions move together.</strong>
+  </p>
+  <p>
+    <img src="./assets/logo.png" alt="Cantilune logo" width="140">
   </p>
   <p><sub>Moonweave AI · Kaguya Moonweave Project</sub></p>
 </div>
