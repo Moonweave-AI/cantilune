@@ -26,10 +26,10 @@ Current agent orchestration systems exhibit four named failure modes, each tied 
 
 | System | Failure mode | Structural root cause (hypothesis) |
 |---|---|---|
-| Cursor | Fixed plan→subagent→loop ⇒ limited expressiveness | Fixed workflow shape; no decoupled data-dependency graph |
-| Codex | A2A + leader/presenter ⇒ uncontrollable flow, unpredictable duration | No formal concurrency/termination semantics; leader is a model-driven bottleneck |
-| Claude Code | Thick control plane constrains agents ⇒ underwhelming results | No clean boundary between structural scheduling and model decision |
-| OpenClaw-family | Bloated/redundant code ⇒ engineering stall | No parsimonious formal core; ad-hoc accumulation |
+| Cursor | Fixed plan→subagent→loop $\Rightarrow$ limited expressiveness | Fixed workflow shape; no decoupled data-dependency graph |
+| Codex | A2A + leader/presenter $\Rightarrow$ uncontrollable flow, unpredictable duration | No formal concurrency/termination semantics; leader is a model-driven bottleneck |
+| Claude Code | Thick control plane constrains agents $\Rightarrow$ underwhelming results | No clean boundary between structural scheduling and model decision |
+| OpenClaw-family | Bloated/redundant code $\Rightarrow$ engineering stall | No parsimonious formal core; ad-hoc accumulation |
 
 ### 2.2 Who benefits / why now / cost of inaction
 
@@ -39,7 +39,7 @@ Current agent orchestration systems exhibit four named failure modes, each tied 
 
 ### 2.3 Consequence
 
-Without a formally-grounded core, `cantilune` would reproduce the very failures it critiques (especially OpenClaw's bloat). The structure *is* the product.
+Without a formally-grounded core, `cantilune` would reproduce the very failures it critiques (especially OpenClaw's bloat). The structure *is* the product. What that structure actually *is* — and why it is not an arbitrary choice of graph formalism but the mathematical essence of orchestration itself — is the subject of §6.1.
 
 ## 3. Goals
 
@@ -72,6 +72,10 @@ The four formalisms each own a facet; `cantilune` is the higher-order structure 
 
 Each is a **lens**; the unified structure is what the lenses are lenses *of*. The framework must define this higher structure concretely (not just assert it) — this is ADR-0001's central task.
 
+Two things are easy to misread about this thesis, and worth stating up front so §6.1 lands correctly. First, "each formalism owns a facet" does **not** mean "we bolt four modules together." The recurring failure mode this project exists to avoid is treating DAG, Petri, π, and morphisms as four separate code modules glued by adapters — that reproduces OpenClaw's bloat and, worse, leaves the question "do the four views agree?" with no formal answer. The thesis is the opposite: there is *one* object, and the four formalisms are four *readings* of it. §6.1 makes this precise — orchestration *is* a symmetric monoidal category, the four projections are structure-preserving functors out of it, and "they agree" becomes a theorem (the subject of RFC-0002), not a hope.
+
+Second, the table above is a *map of the territory*, not the territory. It says which formalism illuminates which facet, so a reader knows where each piece of the formal story will come from; the actual definitions, the proof that the four readings agree, and the precise objects are in `docs/spec/formal-semantics.md`. Readers who prefer intuition before formalism may start with the **primer** (`docs/primer/for-the-curious.md`), which explains the same ideas without the notation and links back here.
+
 ### 5.2 Related work (positioning — to be expanded during review)
 
 **Unverified** — positions are facts about each system's *stated* shape, not endorsements; must be validated during review.
@@ -88,56 +92,65 @@ Each is a **lens**; the unified structure is what the lenses are lenses *of*. Th
 
 ## 6. Proposal
 
-### 6.1 The unified structure (high-level; concretized in ADR-0001)
+### 6.1 Why orchestration is a mathematical object (the unified structure)
 
-The `cantilune` core is a single formal object — working name **`CantiluneGraph`** — that admits four well-defined projections:
+The diagnosis in §2 lists four failure modes, but they share a root deeper than any single defect: **existing orchestrators have no unified formal semantic layer**. The *structure* of an orchestration — what depends on what, what runs in parallel, who talks to whom — and its *execution* — how it steps, whether it can stall, whether it can be replayed — are described in two unrelated languages: structure as a graph or config file, execution as ad-hoc scheduler code someone wrote that week. The consequence is that every new capability must re-invent its own execution semantics, and every guarantee ("no deadlock", "replayable", "auditable") must be argued from scratch, with the argument and the code routinely drifting apart. This is exactly why these systems end up either rigid (Cursor), uncontrolled (Codex), wedged open by a thick control plane (Claude Code), or crushed under their own semantic debt (OpenClaw). The missing thing is not a better graph model; it is a single object that *is* both the structure and the execution at once.
+
+What could unify structure and execution? The answer is not "pick a stronger graph formalism" but a more elementary observation: **orchestration is already a symmetric monoidal category (SMC)**. The two most basic things one does when orchestrating — "do two things in parallel" and "do two things in sequence" — are precisely the tensor product $\otimes$ and the composition $\circ$; and the laws they already obey (parallel work can be reordered, sequence is associative, doing-nothing is a unit) are exactly the SMC axioms. This is not "we chose SMC as a tool for orchestration"; it is "**orchestration *is* an SMC**" — SMC is the mathematical essence of orchestration, the way relational algebra is the mathematical essence of a database. This identification is the fulcrum of the whole project: once orchestration is an SMC, its execution should be a *dynamics on that SMC*, not a second body of scheduler code talking about the first.
+
+An SMC alone gives only the static structure — *which* compositions are legal. To say *how* it runs, we add a dynamics. We choose **string-diagram rewriting**: one execution step is "replace one small sub-diagram with another, by a rule". Why rewriting, rather than a plainer state machine? Because only rewriting turns "the four projections all see the *same* execution step" from a hand-aligned compromise between four state machines into a single theorem — and that hand-alignment is precisely the "four disconnected models" failure mode ADR-0001 warns against. So the unified object is fixed as $\text{CantiluneGraph} = (C, R)$: the SMC $C$ is the structure, the rewriting $R$ is the execution. One object, both roles; no second language.
+
+Now what are DAG, Petri, π, and morphisms, then? Not four modules — **four viewpoints on the same $(C, R)$**, the way one database can be looked at through relational algebra, through transactions, through storage, and through concurrency. The DAG view reads off data dependencies (what produces what); the Petri view reads off concurrency and resources (what may run together, what is holding a resource); the π view reads off communication (who is talking to whom); the morphism view reads off composition and refactor (how small pieces form large ones, how to swap one piece for another). The same $(C, R)$, four readings:
 
 ```
-                    CantiluneGraph  (unified)
+                    CantiluneGraph  =  ( C, R )
                    /        |        |        \
              DAG proj   Petri proj  π-calc proj  Morphism proj
             (data flow) (concurrency)  (comms)     (composition)
 ```
 
-- **DAG projection** = the data-dependency graph: typed edges carry data *contracts* (schema + pre/post-conditions), giving expressiveness + observability.
-- **Petri projection** = the control/concurrency layer: places model **resources** (context window, tool rate limits, human-attention slots); transitions fire on token readiness, giving **bounded concurrency, resource-bounding, termination/liveness guarantees**.
-- **π-calculus projection** = the communications layer: inter-agent channels as named processes with formal semantics for dynamic topology and mobility.
-- **Morphism projection** = the composition layer: agents/operations as morphisms in a category; orchestration = composition; gives minimal, precise semantics for substitution, reuse, and refactor.
+This is the precise meaning of "the four theories are four observation dimensions, not four modules" (§5.1) — it is not a slogan but a direct consequence of $(C, R)$: each projection is an SMC-functor $P_i : (C, R) \to \text{Target}_i$, a structure-preserving reading of the one object into one target formalism.
 
-The framework defines:
-- A **type system** for nodes, edges, places, transitions, channels, and morphisms.
-- **Functorial mappings** between projections (e.g., a DAG edge corresponds to a Petri token flow corresponds to a π-calculus channel message) so the four projections are consistent views of one object, not four disconnected models.
-- A **scheduler/executor** that operates on the unified object, not on any single projection.
+What does this identification buy the cantilune *runtime*? It turns "how does the scheduler decide?" from "the model improvises" into "the structure decides": scheduling two nodes in parallel is applying $\otimes$; enforcing a data dependency is applying $\circ$; a resource being held is a Petri place whose tokens are exhausted, so the transition does not fire; one agent messaging another is one interaction on a π channel; one execution step is one rewrite. Most importantly, **observability becomes a by-product of structure**: since an execution is a rewrite sequence, a trace *is* that sequence, replay *is* re-running it, and "the four views see the same run" is exactly what the rewriting-functor consistency guarantees — the subject of §6.3 and RFC-0002. The control-plane boundary (§6.2) is where this structure-driven scheduling meets the model's node-internal work.
 
-### 6.2 Decoupled control plane
+This must be stated honestly. The identification "orchestration $=$ $(C, R)$" holds **by construction** on three of the four lines — DAG, Petri, morphism — where the projections are standard SMC-functors (Petri via Meseguer–Montanari, with the pre-net resolution of §10.8/§8.6 of the spec). The π line is different: because we chose *post-handshake free conversation* (half-π (II)), its projection needs a bridge theorem to presheaf semantics, and is **待证 (to be proven)**, not by construction. So the fulcrum is firm on three lines and must be *earned* on the fourth — this is the origin of the ADR-0001 "生死线" and of RFC-0002. The formal definitions and the proof obligations live in `docs/spec/formal-semantics.md`; the remainder of this RFC speaks in terms of the *capabilities* this structure provides and how they meet the falsifiable claims of §8.
 
-The **structural vs. model-decided boundary** (addresses Claude Code failure mode):
+### 6.2 Where the model ends and the structure begins (decoupled control plane)
 
-| Layer | Decided by | Mechanism |
+The Claude Code failure mode is not "the control plane is too thick" in some measurable sense; it is that **nobody can say where the model's judgment ends and the structure's authority begins**. When every routing decision, every retry, every "should I fork a sub-agent" is decided by a prompt that nobody but the model reads, the system has no inspectable boundary — and "thinner" does not fix that; *drawing the line* does. cantilune's commitment is a single, crisp line, stated in one sentence:
+
+> **The model proposes within a node; the structure disposes between nodes.**
+
+What this means concretely: the LLM is confined to *what a node does internally* — reading its inputs, producing its output, deciding which MCP tool to call to get the job done. Everything *between* nodes — which nodes run in parallel ($\otimes$), which must wait on which ($\circ$), whether a resource is available (a Petri place with tokens), how an agent reaches another (a π channel) — is decided by $(C, R)$ plus a declarative policy, not by the model. When the model wants more autonomy than a single node — to spawn a sub-graph, to open a new channel — it does so by *proposing* a structural change that the policy/structure then accepts or rejects; it never silently rewrites the topology. The boundary is therefore not a heuristic but a property of the object:
+
+| Decision | Decided by | Mechanism |
 |---|---|---|
-| Topology, data dependencies, concurrency bound, resources | **Structure** (declarative graph + policy) | CantiluneGraph + policy DSL |
-| Routing/ordering where structure is underspecified | **Policy** (deterministic, inspectable) | Policy rules, not model |
-| What a node does internally (the actual work) | **Model** | LLM/agent inside a node |
-| When to fork/admit new sub-graphs | **Structure + policy**, with model *proposing* | Model proposes, policy/structure disposes |
+| Topology, data dependencies, concurrency bound, resources | **Structure** | $(C, R)$ (typed edges, places, channels) |
+| Routing/ordering where the structure underspecifies | **Policy** (deterministic, inspectable) | policy rules over $(C, R)$ |
+| What a node does internally (the actual work) | **Model** | LLM/agent inside one node |
+| Forking / admitting new sub-graphs | **Structure + policy**, model *proposes* | model proposes a rewrite; policy/structure disposes |
 
-Rule of thumb: **the model proposes within a node; the structure disposes between nodes.** This is the crisp boundary the RFC commits to and ADR-0002 will formalize.
+This is what "control-plane slimness" (the C3 claim in §8) actually measures: not lines of code, but *how many between-node decisions are model-driven*. cantilune's answer is "as few as the structure allows, and the structure says which." ADR-0002 will formalize the line; this RFC only commits to where it is drawn.
 
-### 6.3 Observability as structure
+### 6.3 Why observability is not a feature but a consequence
 
-Because every execution is a **deterministic projection of the CantiluneGraph** under a fixed policy + recorded model outputs, every run is:
-- **Traceable:** each node/edge/transition has a stable identity; traces are first-class.
-- **Replayable:** given the graph, policy, and recorded model I/O at each node, a run can be replayed.
-- **Auditable:** structural invariants (termination, resource bounds, data-contract conformance) are checkable on the graph *before* execution (static) and *during* (runtime).
+Most systems treat observability as something you add after the fact: instrument the code, emit spans, hope you logged enough. cantilune does not add observability — it *has* it, because of what $(C, R)$ already is. Once an execution is a rewriting sequence on a string diagram, three things that other systems build as separate products fall out for free:
 
-This is not a telemetry bolt-on; it falls out of the formal model.
+- **Traceability** is automatic because every node, edge, place, and channel has a stable identity in the diagram, and a trace *is* the sequence of rewrites — nothing extra needs to be emitted.
+- **Replayability** is automatic because given $(C, R)$, the policy, and the recorded model I/O at each node, re-running the rewrite sequence reproduces the run deterministically. There is no separate "replay engine" to drift away from the real one.
+- **Auditability** is automatic because the structural invariants — termination, resource bounds, data-contract conformance — are *properties of the diagram itself*, checkable statically before execution and at runtime, not claims to be argued post-hoc.
 
-### 6.4 Interfaces (to be specified in ADRs)
+The reason this matters is not that it saves engineering work (though it does); it is that in other systems, telemetry and truth *diverge* — the trace says one thing, the code did another, and nobody can tell which was right. Here the trace *is* the execution, because both are the same rewrite sequence. This is the direct payoff of the §6.1 identification: observability-as-structure is not a design choice, it is what "execution $=$ rewriting" buys you. It is also the foundation of the C1/C2/C3 evidence — the falsifiable claims in §8 are measured *off of* these traces, which is why they become testable rather than rhetorical.
 
-- **Graph definition API:** declarative construction of `CantiluneGraph` (nodes, typed data edges, places/transitions, channels, morphisms).
-- **Policy DSL:** declarative concurrency/resource/routing policy layered over the graph.
-- **Node contract:** the interface a node (model-backed or deterministic) must satisfy; MCP tools are invokable from within a node.
-- **Executor API:** runs the graph under a policy; emits traces.
-- **Comms transport:** A2A-compatible; π-calculus semantics layered above.
+### 6.4 What the runtime exposes (interfaces)
+
+The four interfaces below are how the formal object meets the outside world. They are listed here as *capabilities*; their precise contracts are deferred to later ADRs, but each maps to a facet of $(C, R)$:
+
+- **Graph definition API** — declare a `CantiluneGraph`: nodes, typed contract edges, places/transitions, channels, morphisms. This is how a user writes the static structure $C$.
+- **Policy DSL** — declare concurrency / resource / routing policy layered over the graph. This is how the underspecified space *between* nodes (§6.2) is filled deterministically rather than by the model.
+- **Node contract** — the interface a node (model-backed or deterministic) must satisfy; MCP tools are invoked *from within* a node, never as orchestration primitives. This is the formalization of "the model proposes within a node."
+- **Executor API** — run $(C, R)$ under a policy and emit traces. This is rewriting-driven execution; the traces it emits are the ones §6.3 says come for free.
+- **Comms transport** — A2A-compatible wire protocol, with π-calculus (half-π (II)) as the formal semantics layered above. This is the π projection becoming real network messages.
 
 ## 7. Alternatives
 
@@ -155,7 +168,7 @@ Governance forbids "more capable" claims without eval. Each claim maps to a base
 | # | Claim | Baseline | Metric / success criterion (to be made precise in Eval ADR) |
 |---|---|---|---|
 | C1 | Expressiveness | Cursor | Existence of workflows representable in CantiluneGraph that Cursor's fixed shape cannot express without contortion; count + classification |
-| C2 | Controllability/predictability | Codex | Bounded step/time (Petri termination) on a benchmark suite; deterministic progress under fixed policy |
+| C2 | Controllability/predictability | Codex | Bounded step/time (Petri termination) on a benchmark suite; deterministic progress under fixed policy (per `docs/spec/formal-semantics.md` §4.3, only **step-bounded** is provided; time bounds are out of scope for v0.1) |
 | C3 | Control-plane slimness | Claude Code | Ratio of structural-decision code to model-decision code; human-rated "constraint overhead" |
 | C4 | Engineering parsimony | OpenClaw | Feature-surface / core-code-complexity ratio; cyclomatic complexity of the core vs comparable feature set |
 
