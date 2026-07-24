@@ -1,0 +1,51 @@
+name: Formal theory
+
+on:
+  push:
+    paths:
+      - ".github/workflows/formal.yml"
+      - "formal/**"
+  pull_request:
+    paths:
+      - ".github/workflows/formal.yml"
+      - "formal/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lean:
+    name: Pinned Lean build and evidence gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Require committed toolchain and dependency locks
+        shell: pwsh
+        run: |
+          if (!(Test-Path -LiteralPath "formal/lean-toolchain" -PathType Leaf)) {
+            throw "formal/lean-toolchain is required."
+          }
+          if (!(Test-Path -LiteralPath "formal/lake-manifest.json" -PathType Leaf)) {
+            throw "formal/lake-manifest.json is required; generate and review it before enabling the gate."
+          }
+
+      - name: Install pinned Lean and restore mathlib cache
+        uses: leanprover/lean-action@38fbc41a8c28c4cbaec22d7f7de508ec2e7c0dd9 # v1.5.0
+        with:
+          lake-package-directory: formal
+          use-mathlib-cache: true
+          use-github-cache: false
+          build: false
+
+      - name: Run formal evidence gate
+        shell: pwsh
+        run: ./formal/scripts/ci.ps1
+
+      - name: Confirm lock files did not drift
+        shell: pwsh
+        run: git diff --exit-code -- formal/lean-toolchain formal/lake-manifest.json

@@ -66,7 +66,7 @@ The four formalisms each own a facet; `cantilune` is the higher-order structure 
 | Formalism | Facet | What it gives |
 |---|---|---|
 | DAG | Presentation / data-flow clarity | Readable topology, explicit data deps, "what depends on what" |
-| Petri net | Distributed-system / concurrency essence | Concurrency, resource-bounding, termination/liveness |
+| Petri net | Distributed-system / concurrency essence | Concurrency/resource invariants and termination/liveness proof obligations |
 | π-calculus | Communication essence | Formal A2A messaging, dynamic topology, channel mobility |
 | Morphisms (category theory) | Composition / mapping essence | Minimal precise definition of how agents/operations compose |
 
@@ -113,7 +113,18 @@ This is the precise meaning of "the four theories are four observation dimension
 
 What does this identification buy the cantilune *runtime*? It turns "how does the scheduler decide?" from "the model improvises" into "the structure decides": scheduling two nodes in parallel is applying $\otimes$; enforcing a data dependency is applying $\circ$; a resource being held is a Petri place whose tokens are exhausted, so the transition does not fire; one agent messaging another is one interaction on a π channel; one execution step is one rewrite. Most importantly, **observability becomes a by-product of structure**: since an execution is a rewrite sequence, a trace *is* that sequence, replay *is* re-running it, and "the four views see the same run" is exactly what the rewriting-functor consistency guarantees — the subject of §6.3 and RFC-0002. The control-plane boundary (§6.2) is where this structure-driven scheduling meets the model's node-internal work.
 
-This must be stated honestly. The identification "orchestration $=$ $(C, R)$" holds **by construction** on three of the four lines — DAG, Petri, morphism — where the projections are standard SMC-functors (Petri via Meseguer–Montanari, with the pre-net resolution of §10.8/§8.6 of the spec). The π line is different: because we chose *post-handshake free conversation* (half-π (II)), its projection needs a bridge theorem to presheaf semantics, and is **待证 (to be proven)**, not by construction. So the fulcrum is firm on three lines and must be *earned* on the fourth — this is the origin of the ADR-0001 "生死线" and of RFC-0002. The formal definitions and the proof obligations live in `docs/spec/formal-semantics.md`; the remainder of this RFC speaks in terms of the *capabilities* this structure provides and how they meet the falsifiable claims of §8.
+This must be stated honestly. Only the static free presentation and the
+morphism identity view are definitional. DAG and Petri still need explicit
+native step, reflection, terminal, resource, and signature-extension proofs;
+the cited categorical Petri results do not automatically prove those
+Cantilune-specific clauses. The π line additionally needs the typed-open/FMS
+commuting bridge selected for half-π (II). Therefore all four runtime readings
+must be earned through complete projection certificates, even though their
+remaining obligations have very different difficulty. The finite reference
+certificates in `formal/` are nonempty witnesses, not the full P1a–P1c result.
+The formal definitions and proof obligations live in
+`docs/spec/formal-semantics.md`; their exact mechanical status lives in
+`formal/proof-obligations.json`.
 
 ### 6.2 Where the model ends and the structure begins (decoupled control plane)
 
@@ -134,11 +145,20 @@ This is what "control-plane slimness" (the C3 claim in §8) actually measures: n
 
 ### 6.3 Why observability is not a feature but a consequence
 
-Most systems treat observability as something you add after the fact: instrument the code, emit spans, hope you logged enough. cantilune does not add observability — it *has* it, because of what $(C, R)$ already is. Once an execution is a rewriting sequence on a string diagram, three things that other systems build as separate products fall out for free:
+Most systems treat observability as something you add after the fact:
+instrument the code, emit spans, hope you logged enough. Cantilune instead
+makes observability a proof obligation of the execution package. Once every
+step carries a complete event record, stable identities/tombstones, policy and
+external evidence, three capabilities can be derived rather than assumed:
 
-- **Traceability** is automatic because every node, edge, place, and channel has a stable identity in the diagram, and a trace *is* the sequence of rewrites — nothing extra needs to be emitted.
-- **Replayability** is automatic because given $(C, R)$, the policy, and the recorded model I/O at each node, re-running the rewrite sequence reproduces the run deterministically. There is no separate "replay engine" to drift away from the real one.
-- **Auditability** is automatic because the structural invariants — termination, resource bounds, data-contract conformance — are *properties of the diagram itself*, checkable statically before execution and at runtime, not claims to be argued post-hoc.
+- **Traceability** follows when the emitted trace is the complete sequence of
+  certified events; a rule name or partial log is insufficient.
+- **Replayability** follows only after event-result uniqueness,
+  canonicalization, and all model/external inputs are recorded. It is not a
+  consequence of $(C,R)$ alone.
+- **Auditability** follows for each invariant that has an actual certificate.
+  Resource bounds, finite-epoch termination, and contract conformance are
+  separate theorems; boundedness by itself does not imply termination.
 
 The reason this matters is not that it saves engineering work (though it does); it is that in other systems, telemetry and truth *diverge* — the trace says one thing, the code did another, and nobody can tell which was right. Here the trace *is* the execution, because both are the same rewrite sequence. This is the direct payoff of the §6.1 identification: observability-as-structure is not a design choice, it is what "execution $=$ rewriting" buys you. It is also the foundation of the C1/C2/C3 evidence — the falsifiable claims in §8 are measured *off of* these traces, which is why they become testable rather than rhetorical.
 
@@ -168,7 +188,7 @@ Governance forbids "more capable" claims without eval. Each claim maps to a base
 | # | Claim | Baseline | Metric / success criterion (to be made precise in Eval ADR) |
 |---|---|---|---|
 | C1 | Expressiveness | Cursor | Existence of workflows representable in CantiluneGraph that Cursor's fixed shape cannot express without contortion; count + classification |
-| C2 | Controllability/predictability | Codex | Bounded step/time (Petri termination) on a benchmark suite; deterministic progress under fixed policy (per `docs/spec/formal-semantics.md` §4.3, only **step-bounded** is provided; time bounds are out of scope for v0.1) |
+| C2 | Controllability/predictability | Codex | Certified finite-epoch step rank and explicit resource caps on a benchmark suite; deterministic progress under fixed policy (time bounds are out of scope for v0.1) |
 | C3 | Control-plane slimness | Claude Code | Ratio of structural-decision code to model-decision code; human-rated "constraint overhead" |
 | C4 | Engineering parsimony | OpenClaw | Feature-surface / core-code-complexity ratio; cyclomatic complexity of the core vs comparable feature set |
 
