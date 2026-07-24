@@ -1,0 +1,12 @@
+.lake/
+formal/.lake/
+formal/.cache/
+formal/build/
+*.olean
+*.ilean
+*.c
+*.o
+*.obj
+*.exe
+
+formal/
