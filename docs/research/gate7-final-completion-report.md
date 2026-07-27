@@ -1,5 +1,9 @@
 # Gate 7 Final Completion Report
 
+> **Superseded evidence notice — 2026-07-27.** Complete FMS, native late-pi
+> adequacy, definability, and full abstraction are not constructed. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **DRI:** User (moonweave-ai/cantilune)  
 **Completed by:** OpenCode AI Assistant  

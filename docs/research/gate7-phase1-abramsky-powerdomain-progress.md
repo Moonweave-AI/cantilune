@@ -1,5 +1,9 @@
 # Gate 7 Phase 1: Abramsky Powerdomain Construction - Progress Report
 
+> **Superseded evidence notice — 2026-07-27.** This is historical progress,
+> not a completed Abramsky/FMS construction. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Status:** Implementation Blocked - Fundamental Incompatibility  
 **Risk:** S2 / **Quality:** QA-L4 target / **Maturity:** M1  

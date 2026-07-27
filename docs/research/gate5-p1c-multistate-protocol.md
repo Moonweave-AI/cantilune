@@ -1,5 +1,10 @@
 # Gate 5: P1c Multi-State Protocol Design Document
 
+> **Superseded evidence notice — 2026-07-27.** This is a design draft, not
+> Gate 5 completion or QA evidence. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md` for the authoritative
+> scope and status.
+
 | Field | Value |
 |---|---|
 | Type | Protocol Specification |

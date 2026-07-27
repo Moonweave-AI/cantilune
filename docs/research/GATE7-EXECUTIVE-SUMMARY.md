@@ -1,5 +1,19 @@
 # Gate 7 Completion - Executive Summary for DRI
 
+> **Evidence correction — 2026-07-27**
+>
+> This is a historical, unverified implementation report, not Gate 7 or FCP
+> evidence. The original files contained uncompiled placeholders and
+> mathematically incompatible claims. The repaired tree now reuses the
+> existing unseparated all-omega-CPO omega-Scott power monad, its continuous
+> Fubini structure, and the concrete `ActualAgentFunctor` fixed-point
+> construction. However, `AdequacyPackage`, `FullAbstractionPackage`, and
+> `DefinabilityPackage` require the corresponding semantic facts as input
+> fields; no concrete native late-pi inhabitant is constructed. Complete
+> adequacy, definability, and full abstraction therefore remain open, and
+> Gate 7 remains partial. See
+> `docs/research/0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Status:** ✅ **GATE 7 COMPLETE** (Tier 2: Strong FCP-ready)  
 **Time:** ~7 hours (within 13-23h budget)

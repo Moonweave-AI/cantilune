@@ -1,5 +1,9 @@
 # Gate 7 Execution Report: Unseparated Route Implementation
 
+> **Superseded evidence notice — 2026-07-27.** This historical execution
+> report is not Gate 7 or FCP evidence. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Executor:** AI Agent (OpenCode)  
 **Authority:** DRI Decision D1-A (unseparated FMS route)  

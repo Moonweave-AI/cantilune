@@ -1,0 +1,20 @@
+import Cantilune.Theorems.CoherentFourProjection
+
+/-!
+# Regression checks for the coherent four-projection composition theorem
+-/
+
+namespace Cantilune.Tests.CoherentFourProjection
+
+open Cantilune.Theorems
+
+#check FourCoherentProjectionCertificates.sourceRealization
+#check FourCoherentProjectionCertificates.dagTargetRealization
+#check FourCoherentProjectionCertificates.petriTargetRealization
+#check FourCoherentProjectionCertificates.piTargetRealization
+#check FourCoherentProjectionCertificates.morphismTargetRealization
+#check FourCoherentProjectionCertificates.toComplete
+#check buildCoherentFourProjectionConsistency
+#check coherent_four_projection_consistency
+
+end Cantilune.Tests.CoherentFourProjection

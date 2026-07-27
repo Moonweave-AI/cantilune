@@ -1,5 +1,10 @@
 # P1c 60×60 Operational Matrix - Detailed Status
 
+> **Superseded evidence notice — 2026-07-27.** This historical draft does
+> not prove 3,600 native or interaction-specific cells. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md` for the authoritative
+> scope and status.
+
 **Last Updated**: 2026-07-27  
 **Status**: ✅ **COMPLETE** (3600/3600 cells proven)
 

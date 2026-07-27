@@ -8,3 +8,4 @@ formal/build/
 *.o
 *.obj
 *.exe
+tmp/

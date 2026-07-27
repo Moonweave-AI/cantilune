@@ -1,0 +1,44 @@
+import Cantilune.Theorems.FMSCommonTwoRowCrossEpochChain
+
+namespace Cantilune.Tests.FMSCommonTwoRowCrossEpochChain
+
+open Cantilune.Theorems
+
+#check SharedFMSGatedCrossEpochEvidence
+#check SharedFMSGatedCrossEpochEvidence.toExisting
+#check SharedFMSGatedCrossEpochEvidence.admission_native
+#check SharedFMSGatedCrossEpochEvidence.rule_native
+#check ExactFMSNativePath
+#check directAdapterMiddle_ne
+#check TwoRowOperationalSeam
+#check TwoRowOperationalSeam.carriedBoundary
+#check TwoRowOperationalSeam.finiteChain
+#check TwoRowOperationalSeam.finiteChain_complete
+#check TwoRowOperationalSeam.source_eventCount
+#check TwoRowCommonFMSSeam
+#check TwoRowCommonFMSSeam.fmsActionList
+#check TwoRowCommonFMSSeam.nativePath_of_denotational_seam
+#check TwoRowCommonFMSSeam.CompleteAgreement
+#check TwoRowCommonFMSSeam.complete_with_denotational_seam
+#check FiniteCommonFMSPathAgreement
+#check TwoRowCommonFMSSeam.FourPositionFMSActionAgreement
+#check TwoRowCommonFMSSeam.ProductionActionFaithfulness
+#check TwoRowCommonFMSSeam.finiteCommonFMSPathAgreement
+#check TwoRowCommonFMSSeam.fmsActionAt
+#check TwoRowCommonFMSSeam.sampled_mark_action_at_position
+#check TwoRowCommonFMSSeam.canonical_marked_replay_trajectory_almost_sure
+#check TwoRowCommonFMSSeam.PositionMatchedCanonicalMarkedAgreement
+#check TwoRowCommonFMSSeam.canonical_marked_replay_positioned_fms_actions_almost_sure
+
+#print axioms SharedFMSGatedCrossEpochEvidence.admission_native
+#print axioms SharedFMSGatedCrossEpochEvidence.rule_native
+#print axioms directAdapterMiddle_ne
+#print axioms TwoRowOperationalSeam.finiteChain_complete
+#print axioms TwoRowOperationalSeam.source_eventCount
+#print axioms TwoRowCommonFMSSeam.nativePath_of_denotational_seam
+#print axioms TwoRowCommonFMSSeam.complete_with_denotational_seam
+#print axioms TwoRowCommonFMSSeam.sampled_mark_action_at_position
+#print axioms TwoRowCommonFMSSeam.canonical_marked_replay_trajectory_almost_sure
+#print axioms TwoRowCommonFMSSeam.canonical_marked_replay_positioned_fms_actions_almost_sure
+
+end Cantilune.Tests.FMSCommonTwoRowCrossEpochChain

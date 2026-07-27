@@ -380,7 +380,7 @@ Each product package (Cantilune, Cantilune Notation, Libretto, Cast, Baton, Cue,
 
 ## 9. FCP summary (not yet entered)
 
-**Pre-FCP/M1.** 
+**Pre-FCP/M1.**
 
 **Core Theory FCP Entry Requirements (theory obligations only):**
 
@@ -1565,3 +1565,70 @@ by this RFC:
 
 No central status is promoted. RFC-0002 remains Pre-FCP and ADR-0001
 remains Proposed.
+
+## 25. Human DRI ratification and execution boundary (2026-07-27)
+
+**Decision Owner:** Joker-of-Gotham
+**Decision status:** ratified for implementation; RFC remains Draft / Pre-FCP
+**Evidence boundary:** this section supersedes contradictory or agent-generated
+decision claims elsewhere in this draft. It does not constitute independent
+review, FCP passage, or ADR acceptance.
+
+The DRI ratifies the following coherent implementation boundary.
+
+1. Core Theory consists of the parameterised four-projection metatheory and
+   nonempty reference execution packages. The eight production packages are
+   separate Product Conformance work. No package certificate may be inferred
+   from a package name or from the generic theorem.
+2. The FMS effect layer uses the unseparated bottom
+   `divergence = deadlock = bottom`, preserving symmetric commutative Fubini.
+   Native late-pi, observable-LTS, terminal-classification, and later product
+   layers must nevertheless distinguish divergence from deadlock.
+3. Complete FMS is a mandatory P1b/Core-Theory gate. The required result is an
+   actual kernel construction of the all-target-omega-CPO powerdomain used by
+   the model, monad/Fubini coherence, a continuous-natural recursive domain
+   solution, hiding/coherence, adequacy, definability, and process-pair full
+   abstraction. A proof-carrying interface or a citation alone is not an
+   inhabitant.
+4. Full abstraction is proved first for finite processes and then for the
+   source-paper scope of arbitrary processes with guarded
+   recursion/replication. Definability of all omega-CPO elements is a
+   best-effort strengthening beyond the source theorem, not a premise that may
+   be smuggled into source-level full abstraction.
+5. The total Open-pi SMC uses typed, polarised abstract boundary positions.
+   Concrete names are fresh nominal realisations in the operational layer.
+   This choice supersedes the concrete-name reading of D6 in section 23.
+6. Process states are quotiented by alpha conversion and the lawful structural
+   congruence (including parallel ACU and scope laws). Bound actions and their
+   derivatives use a joint derivative-alpha quotient; bisimulation is not the
+   category's equality.
+7. Fifteen native event families form the normative P1c calculus. The sixty
+   operations form a total reference/API registry with an explicit
+   `refinesTo` map. Version, rule, session, correlation, and occurrence
+   identities remain in an enriched target metadata layer.
+8. Every normative source event maps to one genuine strong late-pi step.
+   Multi-phase business transactions are split into explicit phase events.
+   Weak `tau*` views may only be derived after the strong theorem and cannot
+   discharge soundness, reflection, replay, or epoch alignment.
+9. The total DAG view is obtained by SCC condensation and is accompanied by
+   the strict rankable subview. Petri semantics uses individual-token
+   provenance.
+10. The proof trust boundary is Lean's kernel plus the documented foundational
+    principles allowed by the axiom audit. Primary literature may guide and
+    scope the construction but cannot replace a required inhabitant.
+11. The priority order for resolving conflicts is:
+    mathematical soundness, source-paper fidelity, native strong-step
+    precision, generality, and only then implementation convenience. A
+    discovered incompatibility must be recorded as a kernel no-go before work
+    continues on the maximally complete compatible branch; goals must not be
+    weakened silently.
+
+The DRI authorises in-scope edits, local Lean/build/audit execution, read-only
+primary-source research, and history-preserving local commits on
+`codex/theory-foundation`. Pushes and pull requests are not authorised by this
+decision.
+
+The target quality level is QA-L4. The implementation agent is to prepare the
+complete review package, but the terminal governance state before a real human
+signature is `proved / review-pending`. It must not be reported as `reviewed`,
+FCP Passed, QA-L4 complete, or ADR Accepted.

@@ -1,5 +1,9 @@
 # Gate 7 Phase 7.1 Status Report
 
+> **Superseded evidence notice — 2026-07-27.** This historical status report
+> is not proof of native late-pi adequacy or full abstraction. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Phase:** 7.1.1 Base Powerdomain Structure  
 **Status:** ⚠️ SUBSTANTIAL PROGRESS (1 technical sorry)  

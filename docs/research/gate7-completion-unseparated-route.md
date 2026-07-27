@@ -1,5 +1,9 @@
 # Gate 7 Completion: Unseparated Route Implementation
 
+> **Superseded evidence notice — 2026-07-27.** This historical draft is not
+> evidence of complete FMS, native late-pi adequacy, definability, or full
+> abstraction. Use `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Status:** In Progress  
 **Risk:** S2 / **Quality:** QA-L4 target / **Maturity:** M1  

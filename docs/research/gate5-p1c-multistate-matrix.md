@@ -1,5 +1,10 @@
 # Gate 5: P1c Multi-State Protocol - 60×60 Operational Matrix
 
+> **Superseded evidence notice — 2026-07-27.** This historical draft does
+> not prove 3,600 native or interaction-specific cells. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md` for the authoritative
+> scope and status.
+
 | Field | Value |
 |---|---|
 | Status | **Complete** |

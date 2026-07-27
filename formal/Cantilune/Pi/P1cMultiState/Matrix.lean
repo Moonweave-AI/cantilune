@@ -4,16 +4,17 @@ import Cantilune.Pi.P1cMultiState.Operations
 /-!
 # P1c 60×60 Operational Matrix
 
-This file defines the 60×60 matrix of operation compositions and proves
-independence/composition properties for P1c operations.
+This file defines a total 60×60 table of reference operation pairs, proves
+generic protocol completion for every table entry, and proves selected
+channel-aware independence lemmas.
 
 ## Matrix Structure
 
-The matrix M[i,j] represents the composition/parallel execution of operations
-op_i and op_j. Each cell proves:
-1. **Soundness**: Composition preserves protocol invariants
-2. **Independence**: Operations can execute in parallel (when applicable)
-3. **Determinism**: Result is independent of execution order (when independent)
+The table `M[i,j]` records operations `op_i` and `op_j` together with the
+decidable value of the stated independence predicate.  The proof that both
+operations can complete the reference protocol is the separate theorem
+`matrix_cell_protocol_completion`; a Boolean field is never treated as a
+proof.
 
 ## Proof Strategy
 
@@ -22,8 +23,9 @@ We use template-driven proofs:
 2. **Special operations**: Explicit proofs for reconnect/delete/mismatch
 3. **Standard operations**: Template instantiation
 
-Goal: At least 50/60 cells fully proven (zero sorry), remainder admitted with
-technical justification.
+The matrix records a decision for every pair.  The kernel theorem below
+certifies the protocol-completion property uniformly for all 3,600 pairs;
+it does not claim that every pair is independent.
 -/
 
 namespace Cantilune.Pi.P1cMultiState
@@ -36,33 +38,12 @@ structure MatrixCell where
   op2 : P1cOperation
   /-- Can these operations execute in parallel? -/
   independent : Bool
-  /-- Does composition preserve protocol invariants? -/
-  sound : Bool
   deriving DecidableEq, Repr
-
-/--
-Matrix cell status for tracking proof progress.
--/
-inductive CellStatus where
-  | proven : CellStatus           -- ✅ Fully proven (kernel-verified)
-  | admitted : String → CellStatus -- ⚠️ Admitted with technical reason
-  | notStarted : CellStatus       -- ❌ Not started
-  deriving Repr
 
 /--
 The complete 60×60 operational matrix.
 -/
 def OperationalMatrix := Fin 60 → Fin 60 → MatrixCell
-
-/--
-Matrix cell constructor.
--/
-def mkCell (i j : Fin 60) (op1 op2 : P1cOperation) : MatrixCell :=
-  { op1 := op1
-  , op2 := op2
-  , independent := decide (op1.family ≠ op2.family)
-  , sound := true  -- Proven per-cell
-  }
 
 /-! ## Independence Relations -/
 
@@ -82,7 +63,28 @@ def operationsIndependent (op1 op2 : P1cOperation) : Prop :=
   | .delete ch1, .delete ch2 => ch1 ≠ ch2
   | .delete ch, .send ch2 _ => ch ≠ ch2
   | .delete ch, .receive ch2 _ => ch ≠ ch2
+  | .send ch2 _, .delete ch => ch ≠ ch2
+  | .receive ch2 _, .delete ch => ch ≠ ch2
+  | .quiescentDelete ch, .send ch2 _ => ch ≠ ch2
+  | .quiescentDelete ch, .receive ch2 _ => ch ≠ ch2
+  | .send ch2 _, .quiescentDelete ch => ch ≠ ch2
+  | .receive ch2 _, .quiescentDelete ch => ch ≠ ch2
+  | .mismatch a1 b1, .mismatch a2 b2 => a1 ≠ a2 ∨ b1 ≠ b2
   | _, _ => op1.family ≠ op2.family
+
+/--
+Matrix cell constructor. `independent` is a decidable reflection of the
+actual channel-aware independence predicate. Protocol completion is carried
+by a theorem, not by a status bit.
+-/
+noncomputable def mkCell
+    (_i _j : Fin 60) (op1 op2 : P1cOperation) : MatrixCell :=
+  { op1 := op1
+  , op2 := op2
+  , independent := by
+      classical
+      exact decide (operationsIndependent op1 op2)
+  }
 
 /--
 Parallel independence: operations can execute in any order.
@@ -156,15 +158,13 @@ Template for parallel operations with different families.
 -/
 theorem different_family_independent :
   ∀ op1 op2 : P1cOperation,
+  operationsIndependent op1 op2 →
   op1.family ≠ op2.family →
   op1.family ≠ .structural →
   op2.family ≠ .structural →
   parallelIndependent op1 op2 := by
-  intro op1 op2 hfam hst1 hst2
-  constructor
-  · simp [operationsIndependent]
-    cases op1 <;> cases op2 <;> simp [P1cOperation.family] at hfam ⊢ <;> try trivial
-  · constructor <;> assumption
+  intro op1 op2 hind _hfam hst1 hst2
+  exact ⟨hind, hst1, hst2⟩
 
 /-! ## Special Operations Proofs -/
 
@@ -197,10 +197,7 @@ theorem mismatch_independence :
   (a1 ≠ a2 ∨ b1 ≠ b2) →
   operationsIndependent (.mismatch a1 b1) (.mismatch a2 b2) := by
   intro a1 b1 a2 b2 hdiff
-  simp [operationsIndependent]
-  cases P1cOperation.family (.mismatch a1 b1)
-  cases P1cOperation.family (.mismatch a2 b2)
-  trivial
+  simpa [operationsIndependent] using hdiff
 
 /--
 Quiescent delete requires channel to be idle before deletion.
@@ -210,85 +207,70 @@ theorem quiescent_delete_safety :
   operationsIndependent (.quiescentDelete ch) (.send ch 0) = False := by
   intro ch
   simp [operationsIndependent]
-  cases P1cOperation.family (.quiescentDelete ch)
-  cases P1cOperation.family (.send ch 0)
-  decide
 
 /-! ## Matrix Construction -/
+
+/-- Total lookup justified by the checked 60-element enumeration. -/
+def operationAt (index : Fin 60) : P1cOperation :=
+  allP1cOperations.get
+    ⟨index.val, by
+      rw [allP1cOperations_count]
+      exact index.isLt⟩
 
 /--
 Build the complete 60×60 matrix.
 -/
-def buildMatrix : OperationalMatrix := fun i j =>
-  let ops := allP1cOperations
-  let op1 := ops.get! i.val
-  let op2 := ops.get! j.val
-  mkCell i j op1 op2
+noncomputable def buildMatrix : OperationalMatrix := fun i j =>
+  mkCell i j (operationAt i) (operationAt j)
 
 /--
-Count of proven cells (goal: ≥50).
+Number of positions in the finite table.
 -/
-def provenCellCount : Nat := 60  -- Diagonal + templates
+def matrixIndexCount : Nat := 60 * 60
 
 /--
-Matrix cell status tracker.
--/
-def matrixStatus : Fin 60 → Fin 60 → CellStatus := fun i j =>
-  -- Diagonal cells are proven
-  if i = j then .proven
-  -- Different families are proven (template)
-  else if (allP1cOperations.get! i.val).family ≠ (allP1cOperations.get! j.val).family
-    then .proven
-  -- Standard communication operations proven (template)
-  else match allP1cOperations.get! i.val, allP1cOperations.get! j.val with
-    | .send _ _, .receive _ _ => .proven
-    | .receive _ _, .send _ _ => .proven
-    | .send _ _, .send _ _ => .proven
-    | .receive _ _, .receive _ _ => .proven
-    | .comm _, .comm _ => .proven
-    -- Special operations proven explicitly
-    | .reconnect _ _, .reconnect _ _ => .proven
-    | .delete _, .send _ _ => .proven
-    | .delete _, .receive _ _ => .proven
-    | .mismatch _ _, .mismatch _ _ => .proven
-    | .quiescentDelete _, _ => .proven
-    -- Structural operations with anything
-    | .parLeft, _ => .proven
-    | .parRight, _ => .proven
-    | _, .parLeft => .proven
-    | _, .parRight => .proven
-    | .tauPrefix, _ => .proven
-    | _, .tauPrefix => .proven
-    -- Default: proven via template or trivial
-    | _, _ => .proven
-
-/--
-Verify we have achieved ≥50 proven cells.
+The table has exactly 3,600 positions. The proof attached uniformly to those
+positions is `matrix_cell_protocol_completion` below.
 -/
 theorem matrix_completion_threshold :
-  (List.filter (fun (i, j) => matrixStatus i j = .proven)
-    (List.product (List.finRange 60) (List.finRange 60))).length ≥ 50 := by
-  decide
-
-/-! ## Full Reflection Theorem (Statement) -/
+  (List.product (List.finRange 60) (List.finRange 60)).length =
+    matrixIndexCount := by
+  native_decide
 
 /--
-Full reflection theorem: Every P1c operation has a corresponding π-reduction.
-This is the main theorem connecting morphism rewrites to π operational semantics.
+Every matrix entry has the generic two-sided protocol-completion certificate.
+This is the exact property shared by all 3,600 entries; interaction-specific
+independence remains the Boolean decision stored in the cell.
 -/
-theorem p1c_full_reflection :
+theorem matrix_cell_protocol_completion (i j : Fin 60) :
+    (∃ final,
+      ProtocolTransitionStar
+          (operationAt i).initStateMachine final ∧
+        final.state = .complete) ∧
+    (∃ final,
+      ProtocolTransitionStar
+          (operationAt j).initStateMachine final ∧
+        final.state = .complete) := by
+  constructor
+  · simpa [P1cOperation.initStateMachine, OperationStateMachine.init] using
+      request_can_complete (operationAt i).toObservableLabel
+  · simpa [P1cOperation.initStateMachine, OperationStateMachine.init] using
+      request_can_complete (operationAt j).toObservableLabel
+
+/-! ## Protocol completion -/
+
+/--
+Every reference operation reaches the complete protocol state.
+This theorem is not a native late-pi reflection theorem.
+-/
+theorem p1c_protocol_completion :
   ∀ (op : P1cOperation),
   ∃ (sm_final : OperationStateMachine),
     ProtocolTransitionStar (op.initStateMachine) sm_final ∧
     sm_final.state = .complete := by
   intro op
-  -- Use the general result that all operations can complete
-  obtain ⟨sm_complete, htrans, hcomplete⟩ := 
-    request_can_complete (op.toObservableLabel)
-  exists sm_complete
-  constructor
-  · exact htrans
-  · exact hcomplete
+  simpa [P1cOperation.initStateMachine, OperationStateMachine.init] using
+    request_can_complete op.toObservableLabel
 
 /--
 Soundness: Protocol transitions preserve well-typedness.
@@ -309,11 +291,8 @@ theorem protocol_completeness :
     ProtocolTransitionStar (op.initStateMachine) sm_final ∧
     sm_final.isTerminal := by
   intro op
-  obtain ⟨sm_complete, htrans, hcomplete⟩ := p1c_full_reflection op
-  exists sm_complete
-  constructor
-  · exact htrans
-  · simp [OperationStateMachine.isTerminal, hcomplete]
-    decide
+  obtain ⟨sm_complete, htrans, hcomplete⟩ := p1c_protocol_completion op
+  refine ⟨sm_complete, htrans, ?_⟩
+  simp [OperationStateMachine.isTerminal, hcomplete]
 
 end Cantilune.Pi.P1cMultiState

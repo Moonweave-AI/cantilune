@@ -1,0 +1,32 @@
+import Cantilune.Theorems.FiniteCrossEpochProductChain
+
+/-!
+Kernel-facing checks for the conditional finite cross-epoch composition layer.
+No production product-package inhabitant is asserted here.
+-/
+
+open Cantilune.Theorems
+
+#check FourProjectionReplayEpoch
+#check FourProjectionReplayEpoch.eventAgreement
+#check FourAdmissionEventMapping
+#check FourAdmissionEventMapping.agreement
+#check FiveViewBoundary
+#check FiveViewBoundary.versionsStrict
+#check FiniteCrossEpochProductChain
+#check FiniteCrossEpochProductChain.consOfEndpointEq
+#check FiniteCrossEpochProductChain.sourceChain
+#check FiniteCrossEpochProductChain.dagChain
+#check FiniteCrossEpochProductChain.petriChain
+#check FiniteCrossEpochProductChain.piChain
+#check FiniteCrossEpochProductChain.morphismChain
+#check FiniteCrossEpochProductChain.completeReplayAgreement
+#check FiniteCrossEpochProductChain.allBoundariesStrict
+#check FiniteCrossEpochProductChain.allEventMarksPreserved
+#check FiniteCrossEpochProductChain.allAdmissionMarksPreserved
+#check FiniteCrossEpochProductChain.composeComplete
+#check CrossEpochProductFamily.beforeReplayEpoch
+#check CrossEpochProductFamily.afterReplayEpoch
+#check CrossEpochProductFamily.toFiveViewBoundary
+#check CrossEpochProductFamily.toFiniteChain
+#check CrossEpochProductFamily.finiteChain_complete

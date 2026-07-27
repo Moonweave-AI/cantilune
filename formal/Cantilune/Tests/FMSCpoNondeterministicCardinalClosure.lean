@@ -1,0 +1,17 @@
+import Cantilune.Pi.FMSCpoNondeterministicCardinalClosure
+
+namespace Cantilune.Tests.FMSCpoNondeterministicCardinalClosure
+
+open Cardinal
+open Cantilune.Pi.FMSCpoNondeterministicCardinalClosure
+
+#check generatorBound
+#check countableClosureBound
+#check source_le_countableClosureBound
+#check countableClosureBound_power_aleph0
+#check countableClosureBound_lift_lt_univ
+
+#print axioms countableClosureBound_power_aleph0
+#print axioms countableClosureBound_lift_lt_univ
+
+end Cantilune.Tests.FMSCpoNondeterministicCardinalClosure

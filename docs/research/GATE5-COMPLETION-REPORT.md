@@ -1,5 +1,18 @@
 # Gate 5 - P1c Multi-State Protocol: Completion Report
 
+> **Evidence correction — 2026-07-27**
+>
+> This is a historical, unverified implementation report, not Gate 5
+> completion evidence. Current `P1cMultiState` proves a 60-entry reference
+> enumeration, a total 60 x 60 data table, uniform protocol completion, and
+> round-trip only on an explicit syntax-translation image. It does **not**
+> prove 3,600 native late-pi reductions, per-cell independence/determinism, or
+> general DPO/morphism-to-pi reflection. The repaired files compile and their
+> audited theorems have no unexpected axioms, but
+> `pi_mobility_certificate` remains `implemented_unverified`; no QA-L4 review
+> or commit-bound promotion has occurred. See
+> `docs/research/0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Project**: Cantilune - Unified Formal Structure  
 **Gate**: Gate 5 - P1c Multi-State Protocol (D7-A Decision)  
 **Date**: 2026-07-27  

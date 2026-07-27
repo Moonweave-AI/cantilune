@@ -1,0 +1,148 @@
+import Cantilune.Pi.P1bRequestingFingerprint
+import Cantilune.Pi.P1bTwoThreadExtraction
+import Cantilune.Pi.P1bRequestingNominalOrbit
+import Cantilune.Pi.P1bLinkedEndpointNormalization
+import Cantilune.Pi.P1bTwoThreadNativeInversion
+import Cantilune.Pi.P1bResidualTargetBoundary
+import Cantilune.Pi.P1bRestrictionEnvelope
+import Cantilune.Pi.P1bLabelledThreadInversion
+import Cantilune.Pi.P1bRequestingPolarityOrbit
+import Cantilune.Pi.P1bRequestingThreadPolarityClassifier
+import Cantilune.Pi.P1bNativeSplitContext
+import Cantilune.Pi.P1bRequestingReflectionClosure
+import Cantilune.Pi.P1bNominalIncidenceBoundary
+import Cantilune.Pi.P1bNominalIncidenceProof
+import Cantilune.Pi.P1bNominalIncidenceClosure
+
+/-!
+# P1b requesting-residual boundary regression
+
+These checks keep the kernel-visible chain explicit: quantitative residual,
+two-thread syntax extraction, and normalization of each concrete linked
+native communication form.
+-/
+
+namespace Cantilune.Tests.P1bRequestingResidual
+
+#check
+  Cantilune.Pi.P1bRequestingFingerprint.AugmentedRequestingFingerprint.native_tau_target_prefixCount_eq
+#check
+  Cantilune.Pi.P1bRequestingFingerprint.AugmentedRequestingFingerprint.native_tau_target_sendPrefixCount_eq
+#check
+  Cantilune.Pi.P1bRequestingFingerprint.AugmentedRequestingFingerprint.native_tau_target_recvPrefixCount_eq
+#check
+  Cantilune.Pi.P1bTwoThreadExtraction.AugmentedRequestingFingerprint.twoThreadContext
+#check
+  Cantilune.Pi.P1bTwoThreadExtraction.TwoThreadContext.structural_normal_form
+#check
+  Cantilune.Pi.P1bRequestingNominalOrbit.orbit_normal_form
+#check
+  Cantilune.Pi.P1bRequestingNominalOrbit.native_step_orbit_constraints
+#check
+  Cantilune.Pi.P1bLinkedEndpointNormalization.LinkedEndpointForm.struct_canonical
+#check Cantilune.Pi.P1bLinkedEndpointNormalization.syncLeft_native_and_normalizes
+#check Cantilune.Pi.P1bLinkedEndpointNormalization.syncRight_native_and_normalizes
+#check Cantilune.Pi.P1bLinkedEndpointNormalization.closeLeft_native_and_normalizes
+#check Cantilune.Pi.P1bLinkedEndpointNormalization.closeRight_native_and_normalizes
+#check
+  Cantilune.Pi.P1bTwoThreadNativeInversion.inputContinuation_substitution_struct
+#check
+  Cantilune.Pi.P1bTwoThreadNativeInversion.TwoCommThread.no_native_tau
+#check
+  Cantilune.Pi.P1bTwoThreadNativeInversion.TwoThreadContext.native_tau_target
+#check
+  Cantilune.Pi.P1bTwoThreadNativeInversion.AugmentedRequestingFingerprint.native_tau_two_residual_threads
+#check
+  Cantilune.Pi.P1bTwoThreadNativeInversion.requesting_representative_native_residual_shape
+#check
+  Cantilune.Pi.P1bResidualTargetBoundary.exact_target_classification_is_too_strong
+#check
+  Cantilune.Pi.P1bRestrictionEnvelope.pairEnvelopeDecomposition
+#check
+  Cantilune.Pi.P1bRestrictionEnvelope.singleEnvelopeDecomposition
+#check
+  Cantilune.Pi.P1bRestrictionEnvelope.outer_two_binder_claim_is_false
+#check
+  Cantilune.Pi.P1bLabelledThreadInversion.split_native_tau_inversion
+#check
+  Cantilune.Pi.P1bLabelledThreadInversion.direct_native_tau_labelled_inversion
+#check
+  Cantilune.Pi.P1bLabelledThreadInversion.closeDirect_native_tau_labelled_inversion
+#check
+  Cantilune.Pi.P1bRequestingPolarityOrbit.guardedPairCounts_of_struct_canonicalRequesting
+#check
+  Cantilune.Pi.P1bRequestingPolarityOrbit.struct_canonical_source_ne_crossedPolarityRequesting
+#check
+  Cantilune.Pi.P1bRequestingThreadPolarityClassifier.requesting_two_thread_polarity_normal_form
+#check
+  Cantilune.Pi.P1bNativeSplitContext.requesting_native_polarized_split_normal_form
+#check
+  Cantilune.Pi.P1bRequestingReflectionClosure.standardLateReflection_iff_requestingUpToLinkedEndpoint
+#check
+  Cantilune.Pi.P1bRequestingReflectionClosure.certificateOfUpToLinkedEndpoint
+#check
+  Cantilune.Pi.P1bRequestingReflectionClosure.requesting_native_shared_polarized_split_context
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.RequestingPolarizedNominalIncidence
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.restrictedPair_struct_established
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.requestingUpToLinkedEndpoint_of_polarizedNominalIncidence
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.requestingNativeResidual_of_polarizedNominalIncidence
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.aggregateResidualShape_is_insufficient
+#check
+  Cantilune.Pi.P1bNominalIncidenceBoundary.outerTwoBinder_incidence_is_too_strong
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.OneCommThread.outputLinkCount_eq_zero
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.OneCommThread.inputLinkCount_eq_zero
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.outputLinkCount_step
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.inputLinkCount_step
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.boundOutputLinkCount_step
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.OneCommThread.send_struct_of_support
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.OneCommThread.recv_struct_of_subject
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.outputLinkCount_wrapNews
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.inputLinkCount_wrapNews
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.mem_freeSubjects_wrapNews_iff
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.OneCommThread.mem_freeSubjects_substituteCaptureAvoiding
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.target_recvPrefixCount_eq_one_of_input
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.target_sendPrefixCount_eq_one_of_output
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.target_sendPrefixCount_eq_one_of_boundOutput
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.freeOutputValues_output_step
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.freeOutputValues_boundOutput_step
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.TwoCommThread.output_value_subject_back
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.SplitSupportTransfer
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.RequestingSplitSupportTransfer
+#check
+  Cantilune.Pi.P1bNominalIncidenceProof.requestingPolarizedNominalIncidence_of_splitSupportTransfer
+#check
+  Cantilune.Pi.P1bNominalIncidenceClosure.requestingSplitSupportTransfer
+#check
+  Cantilune.Pi.P1bNominalIncidenceClosure.requestingPolarizedNominalIncidence
+#check
+  Cantilune.Pi.P1bNominalIncidenceClosure.requestingNativeResidual
+#check
+  Cantilune.Pi.P1bNominalIncidenceClosure.standardLateReflection
+#check
+  Cantilune.Pi.P1bNominalIncidenceClosure.pi_ra_certificate
+
+end Cantilune.Tests.P1bRequestingResidual

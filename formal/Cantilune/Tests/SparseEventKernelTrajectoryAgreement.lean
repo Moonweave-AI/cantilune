@@ -1,0 +1,28 @@
+import Cantilune.Feedback.SparseEventKernelTrajectoryAgreement
+
+/-!
+Kernel-level checks for sparse event-payload trajectory agreement.
+
+No product package or total event labelling is constructed here.
+-/
+
+namespace Cantilune.Tests.SparseEventKernelTrajectoryAgreement
+
+open Cantilune.Feedback.SparseEventKernelTrajectoryAgreement
+
+#check SparseNativeEventKernel.toMarkovExecutionKernel
+#check SparseNativeEventKernel.trajectoryMeasure
+#check SparseNativeEventKernel.stateTrajectoryMarginal
+#check SparseNativeEventKernel.nativePayloadStep_of_positive
+#check SparseNativeEventKernel.trajectory_agreement_almost_sure
+#check SparseEventTrajectoryCoupling.independent
+#check SparseEventTrajectoryCoupling.left_state_marginal
+#check SparseEventTrajectoryCoupling.right_state_marginal
+#check CompleteSparseEventTrajectoryAgreement
+#check complete_sparse_event_trajectory_agreement_almost_sure
+
+#print axioms SparseNativeEventKernel.trajectory_agreement_almost_sure
+#print axioms SparseEventTrajectoryCoupling.independent
+#print axioms complete_sparse_event_trajectory_agreement_almost_sure
+
+end Cantilune.Tests.SparseEventKernelTrajectoryAgreement

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **Accepted** (2026-07-27, subject to completion of FCP gates) |
+| Status | **Proposed** (implementation decisions ratified 2026-07-27; human review and final DRI signature pending) |
 | Date | 2026-07-23 |
 | Last reconciled | 2026-07-27 (DRI decisions D1-D10; theory/product boundary; FMS scope; acceptance criteria updated) |
 | Decision Owner | Joker-of-Gotham (DRI) |
@@ -748,8 +748,8 @@ scope decision (RFC-0002 §16), independent review, and FCP acceptance.
 
 ## 2026-07-27 DRI Decision Record and ADR Acceptance
 
-**Decision Owner: Joker-of-Gotham**  
-**Decision Date: 2026-07-27**  
+**Decision Owner: Joker-of-Gotham**
+**Decision Date: 2026-07-27**
 **Status: Accepted (subject to completion of FCP gates identified below)**
 
 This ADR is now **Accepted** following DRI resolution of all critical architectural decisions (D1-D10 in `docs/DECISIONS-REQUIRED-zh.md`). The unified four-projection structure is the normative architectural choice for Cantilune P1.
@@ -832,6 +832,34 @@ All questions from original ADR-0001 now resolved:
 5. **Define terminal predicate generic interface** (D10 implementation)
 6. **Bind P1b to immutable commit** (governance requirement)
 7. **Enter FCP** once all theory gates met
+
+## 2026-07-27 human DRI ratification and status correction
+
+**Decision Owner:** Joker-of-Gotham
+**Architecture status:** Proposed
+**Implementation authority:** granted
+**Final review state:** pending
+
+The DRI has ratified the implementation choices recorded in RFC-0002
+section 25. In particular, Core Theory and Product Conformance are separate;
+the FMS effect is unseparated and commutative while the operational layer
+distinguishes divergence and deadlock; complete kernel-built FMS remains a P1
+gate; the Open-pi SMC uses typed polarised abstract boundary positions; P1c
+uses fifteen native event families with a sixty-operation registry and
+enriched occurrence metadata; normative projection uses one strong late-pi
+step; DAG uses SCC condensation plus a rankable subview; and Petri uses
+individual-token provenance.
+
+This human decision authorises implementation. It does **not** ratify the
+premature “Accepted (subject to gates)” language in the preceding historical
+appendix. Conditional acceptance is not an ADR status in this project. The
+top-level status is therefore corrected to **Proposed** until the complete
+kernel evidence is bound to an immutable commit, the QA-L4 review package is
+delivered, and the DRI performs the final human review and signature.
+
+Until that final act, the strongest permitted status is
+`proved / review-pending`; neither an agent nor a successful build may declare
+this ADR Accepted, the RFC through FCP, or the work independently reviewed.
 
 ## References
 

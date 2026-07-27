@@ -1,0 +1,12 @@
+import Cantilune.Pi.FMSCpoNondeterministicGlobalConsequences
+
+open Cantilune.Pi.FMSCpoNondeterministicGlobalConsequences
+
+#check enrichedAdjunction
+#check sequentialFubini
+#check sequentialFubini_not_commutative
+#check no_commutative_first_strict_pairing
+
+#print axioms enrichedAdjunction
+#print axioms sequentialFubini_not_commutative
+#print axioms no_commutative_first_strict_pairing

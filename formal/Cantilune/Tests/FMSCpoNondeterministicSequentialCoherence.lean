@@ -1,0 +1,34 @@
+import Cantilune.Pi.FMSCpoNondeterministicSequentialCoherence
+
+/-!
+Regression surface for the strongest coherence laws of the canonical
+left-to-right Fubini map.  Symmetry is intentionally represented only by its
+kernel-checked negation.
+-/
+
+namespace Cantilune.Tests.FMSCpoNondeterministicSequentialCoherence
+
+open Cantilune.Pi.FMSCpoNondeterministicSequentialCoherence
+
+#check explicitProductMap
+#check explicitAssociator
+#check explicitLeftUnitor
+#check explicitRightUnitor
+#check ordinaryKleisliExtension_assoc
+#check ordinaryKleisliExtension_multiplication
+#check sequentialFubini_natural
+#check sequentialFubini_left_unitor
+#check sequentialFubini_right_unitor
+#check sequentialFubini_associative
+#check sequentialFubini_left_multiplication
+#check sequentialFubini_pure_left_right_multiplication
+#check sequential_two_sided_exchange_requires_new_data
+
+#print axioms ordinaryKleisliExtension_assoc
+#print axioms ordinaryKleisliExtension_multiplication
+#print axioms sequentialFubini_natural
+#print axioms sequentialFubini_associative
+#print axioms sequentialFubini_left_multiplication
+#print axioms sequential_two_sided_exchange_requires_new_data
+
+end Cantilune.Tests.FMSCpoNondeterministicSequentialCoherence

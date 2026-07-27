@@ -1,5 +1,9 @@
 # Gate 7 Completion Status: Final Report to DRI
 
+> **Superseded evidence notice — 2026-07-27.** This historical report does
+> not establish Gate 7 completion or FCP readiness. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date:** 2026-07-27  
 **Status:** Phase 7.1.1 SUBSTANTIALLY COMPLETE (94%)  
 **Decision Authority:** D1-A (Unseparated FMS Route)  

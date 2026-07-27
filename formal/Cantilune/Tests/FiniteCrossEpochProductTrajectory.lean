@@ -1,0 +1,23 @@
+import Cantilune.Feedback.FiniteCrossEpochProductTrajectory
+
+/-!
+Kernel-facing checks for the conditional event-level probability bridge.
+No production package, fairness, epsilon, or stable-window witness is
+constructed by this test.
+-/
+
+open Cantilune.Feedback.FiniteCrossEpochProductTrajectory
+
+#check fourCertificate
+#check FiniteCrossEpochProductChain.projectionAssignment
+#check FiniteCrossEpochProductChain.fiveTraceAgreement
+#check FiniteCrossEpochProductChain.eventCountsAligned
+#check FiniteCrossEpochProductChain.allExecutionEpochsAligned
+#check FiniteCrossEpochProductChain.canonicalPhaseTrajectory
+#check FiniteCrossEpochProductChain.FivePhaseCommonTrajectory
+#check FiniteCrossEpochProductChain.fivePhaseCommonTrajectory
+#check FiniteCrossEpochProductChain.suppliedKernel_common_trajectory_almost_sure
+#check FiniteCrossEpochProductChain.FiveMarkedCommonTrajectory
+#check FiniteCrossEpochProductChain.marked_common_trajectory_almost_sure
+#check CrossEpochProductFamily.marked_common_trajectory_almost_sure
+#check CrossEpochProductFamily.suppliedKernel_common_trajectory_almost_sure

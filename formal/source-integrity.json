@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "SHA-256",
+  "entryFormat": "sorted <formal-relative-path><space><lowercase-file-sha256>, joined with LF and no trailing LF",
+  "leanSourceFileCount": 485,
+  "leanSourceAggregateSha256": "c21eb3dccf06d3c431d49592d6a0ef433cc5fc474b571d0863f6db176445a1f4",
+  "pinnedInputs": {
+    "formal/lean-toolchain": "2773c517aa90b66ea8a2c52bddddf84393157797f8341be0df45294fff7fd32e",
+    "formal/lakefile.toml": "1afbcddf72b5661d385bee013ec6a04a2367b6879f34bc2542ffaa9a9239217e",
+    "formal/lake-manifest.json": "8b56c79e5da2637f74afb898ed08c8efda78892d5065ff07f822f0dba62b8170",
+    "formal/axiom-audit-targets.txt": "d03e7b2dfe07f815a59faee72103482b9d023d4161bd725f53848689896f4e2e"
+  }
+}

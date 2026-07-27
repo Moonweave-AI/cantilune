@@ -1,5 +1,21 @@
 # Cantilune Theory FCP Readiness — Final Report (2026-07-27)
 
+> **Authoritative evidence correction — 2026-07-27**
+>
+> This file is a historical, unverified implementation report. It is not FCP,
+> QA-L4, build, or independent-review evidence. The claims below that all
+> gates are complete, that Gate 4 is immutably bound, that 3,600 P1c cells or
+> 44/72 theorems were kernel-verified, and that Cantilune is M2/FCP-ready are
+> retracted. Commit `09f9476` did not contain a reproducible complete formal
+> tree, and its new Gate 5/7 files had not been compiled when this report was
+> written. The repaired mutable tree now passes the ordinary pinned CI and
+> axiom audit, but the strict completion gate still reports 11
+> `implemented_unverified`, 7 `partial_scaffold`, 0 `proved`, and 0
+> `reviewed`. RFC-0002 therefore remains Draft/Pre-FCP and ADR-0001 remains
+> Proposed. See
+> `docs/research/0019-post-09f9476-kernel-recovery-2026-07-27.md` and
+> `formal/proof-obligations.json` for the controlling status.
+
 **Report Date**: 2026-07-27  
 **Execution Model**: Autonomous multi-agent implementation  
 **Total Execution Time**: ~12 hours (from decision confirmation to completion)  

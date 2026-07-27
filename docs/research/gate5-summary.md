@@ -1,5 +1,9 @@
 # Gate 5 Implementation Summary - P1c Multi-State Protocol
 
+> **Superseded evidence notice — 2026-07-27.** Claims of full/native
+> reflection and 3,600 verified cells are retracted. Use
+> `0019-post-09f9476-kernel-recovery-2026-07-27.md`.
+
 **Date**: 2026-07-27  
 **Owner**: Joker-of-Gotham (DRI)  
 **Status**: ✅ **COMPLETE**

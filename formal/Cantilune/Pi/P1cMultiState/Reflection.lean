@@ -3,43 +3,31 @@ import Cantilune.Pi.P1cMultiState.Operations
 import Cantilune.Pi.P1cMultiState.Matrix
 
 /-!
-# P1c Full Reflection: Morphism to π-Calculus Bridge
+# P1c multi-state translation seam
 
-This file establishes the full reflection theorem connecting Cantilune graph
-morphism rewrites to π-calculus operational semantics.
+This module gives a total, executable translation from the 60-operation
+reference protocol into late-pi syntax and proves exact round trips on the
+image of that translation.
 
-## Main Theorem
-
-For every admitted P1c operation and Cantilune graph, there exists a
-π-process and reduction sequence that faithfully reflects the graph rewrite.
-
-## Structure
-
-1. **Graph to Process Translation**: Maps CantiluneGraph to PiProcess
-2. **Observable Label Correspondence**: Maps graph operations to π labels
-3. **Reflection Theorem**: Proves morphism_rewrite ≃ pi_reduction
-4. **Terminal Preservation**: Success states correspond across projections
-
-## References
-- RFC-0002 §4.3 (P1c full reflection requirement)
-- `docs/spec/observable-lts-policies.md` §5.4-5.5
+It intentionally does **not** call the generated syntax pair a native
+late-pi transition.  Native operational correspondence is supplied by the
+existing P1c late-transition certificates elsewhere in `Cantilune.Pi`; a
+constructor-only translation cannot manufacture such a derivation.
 -/
 
 namespace Cantilune.Pi.P1cMultiState
 
-/-! ## Placeholder Graph Structure -/
+/-! ## Reference graph syntax -/
 
-/--
-Simplified Cantilune graph representation for P1c.
-In the full system, this would reference the actual hypergraph structure.
--/
+/-- Finite graph data used by this reference translation. -/
 structure CantiluneGraph where
   nodes : List Name
   edges : List (Name × Name)
   deriving DecidableEq, Repr
 
 /--
-Morphism rewrite operation on graphs.
+A proposed graph rewrite.  This record contains endpoints and an operation;
+it is not itself a DPO or policy-validity proof.
 -/
 structure MorphismRewrite where
   graph : CantiluneGraph
@@ -47,300 +35,185 @@ structure MorphismRewrite where
   target : CantiluneGraph
   deriving Repr
 
-/-! ## Translation Functions -/
-
 /--
-Translate a Cantilune graph to a π-process.
-This is a simplified version; full translation would preserve all structure.
+Translate graph edges into output prefixes.  Reflexive edges are silent in
+this small reference encoding.
 -/
-def graphToProcess (g : CantiluneGraph) : Proc :=
-  -- Simplified: parallel composition of all edges as channels
-  g.edges.foldl
-    (fun acc (src, tgt) =>
-      if src = tgt then acc
-      else Proc.par acc (Proc.send ⟨src, .data⟩ tgt Proc.zero))
+def graphToProcess (graph : CantiluneGraph) : Proc :=
+  graph.edges.foldl
+    (fun process edge =>
+      if edge.1 = edge.2 then process
+      else
+        Proc.par process
+          (Proc.send ⟨edge.1, .data⟩ edge.2 Proc.zero))
     Proc.zero
 
-/--
-Translate P1c observable label to π-process step.
--/
-def labelToProcessStep (label : P1cObservableLabel) : Proc → Proc
-  | .comm ch => fun _ => Proc.tau Proc.zero
-  | .input ch val => fun p => Proc.recv ⟨ch, .data⟩ val p
-  | .output ch val => fun p => Proc.send ⟨ch, .data⟩ val p
-  | .reconnect old new => fun p =>
-      -- Reconnect as channel delegation
-      Proc.send ⟨old, .channel⟩ new p
-  | .delete ch => fun _ =>
-      -- Delete as scope restriction followed by zero
-      Proc.new ch Proc.zero
-  | .mismatch a b => fun p =>
-      -- Mismatch as guarded inequality
-      Proc.matchNe a b p
-  | .quiescentDelete ch => fun _ =>
-      -- Quiescent delete as guarded shutdown
-      Proc.new ch Proc.zero
+/-- Translate an observable label into the corresponding process constructor. -/
+def labelToProcessStep : P1cObservableLabel → Proc → Proc
+  | .comm _, _ => Proc.tau Proc.zero
+  | .input channel value, continuation =>
+      Proc.recv ⟨channel, .data⟩ value continuation
+  | .output channel value, continuation =>
+      Proc.send ⟨channel, .data⟩ value continuation
+  | .reconnect old new, continuation =>
+      Proc.send ⟨old, .channel⟩ new continuation
+  | .delete channel, _ => Proc.new channel Proc.zero
+  | .mismatch left right, continuation =>
+      Proc.matchNe left right continuation
+  | .quiescentDelete channel, _ => Proc.new channel Proc.zero
 
-/-! ## Observable LTS for Morphism Projection -/
+/-! ## Observable transition records -/
 
-/--
-Observable state for morphism projection.
-States are equivalence classes of graphs under SMC coherence.
--/
-def MorphismObservableState := CantiluneGraph
-  -- In full system: quotient by SMC isomorphism
+abbrev MorphismObservableState := CantiluneGraph
 
-/--
-Observable transition for morphism projection.
--/
 structure MorphismTransition where
   source : MorphismObservableState
   label : P1cObservableLabel
   target : MorphismObservableState
   deriving Repr
 
-/-! ## π-Calculus Observable LTS -/
+abbrev PiObservableState := Proc
 
-/--
-Observable state for π projection.
-States are equivalence classes under structural congruence.
--/
-def PiObservableState := Proc
-  -- In full system: quotient by structural congruence
-
-/--
-Observable transition for π projection.
--/
 structure PiTransition where
   source : PiObservableState
   label : P1cObservableLabel
   target : PiObservableState
   deriving Repr
 
-/-! ## Lift Relations -/
+def liftMorphism (rewrite : MorphismRewrite) : MorphismTransition where
+  source := rewrite.graph
+  label := rewrite.operation.toObservableLabel
+  target := rewrite.target
 
 /--
-Lift relation from morphism rewrite to observable transition.
+The total syntax-level translation of a graph rewrite.  The target is the
+label constructor applied to the translation of the graph target.
 -/
-def liftMorphism (rw : MorphismRewrite) : MorphismTransition :=
-  { source := rw.graph
-  , label := rw.operation.toObservableLabel
-  , target := rw.target
-  }
+def translateRewrite (rewrite : MorphismRewrite) : PiTransition where
+  source := graphToProcess rewrite.graph
+  label := rewrite.operation.toObservableLabel
+  target :=
+    labelToProcessStep rewrite.operation.toObservableLabel
+      (graphToProcess rewrite.target)
 
-/--
-Lift relation from π-reduction to observable transition.
--/
-def liftPi (source target : Proc) (label : P1cObservableLabel) : PiTransition :=
-  { source := source
-  , label := label
-  , target := target
-  }
+/-- A translated transition is precisely one produced by `translateRewrite`. -/
+def InTranslationImage (transition : PiTransition) : Prop :=
+  ∃ rewrite, translateRewrite rewrite = transition
 
-/-! ## Correspondence Theorems -/
+/-! ## Exact translation laws -/
 
-/--
-Static correspondence: graph structure translates to process structure.
--/
-theorem static_correspondence :
-  ∀ (g : CantiluneGraph),
-  ∃ (p : Proc), p = graphToProcess g := by
-  intro g
-  exists graphToProcess g
+theorem static_correspondence (graph : CantiluneGraph) :
+    ∃ process, process = graphToProcess graph :=
+  ⟨graphToProcess graph, rfl⟩
 
-/--
-Label correspondence: morphism operations map to π labels.
--/
-theorem label_correspondence :
-  ∀ (op : P1cOperation),
-  op.toObservableLabel = op.toObservableLabel := by
-  intro op
+theorem label_correspondence (operation : P1cOperation) :
+    (liftMorphism
+        { graph := ⟨[], []⟩
+          operation := operation
+          target := ⟨[], []⟩ }).label =
+      operation.toObservableLabel :=
   rfl
 
-/--
-Operational correspondence: morphism rewrite implies π-reduction.
--/
-theorem operational_correspondence :
-  ∀ (rw : MorphismRewrite),
-  let source_proc := graphToProcess rw.graph
-  let target_proc := graphToProcess rw.target
-  let label := rw.operation.toObservableLabel
-  ∃ (p_target : Proc),
-    -- There exists a π-process that reflects the target graph
-    p_target = labelToProcessStep label target_proc := by
-  intro rw
-  exists labelToProcessStep rw.operation.toObservableLabel (graphToProcess rw.target)
+theorem operational_correspondence (rewrite : MorphismRewrite) :
+    (translateRewrite rewrite).source = graphToProcess rewrite.graph ∧
+    (translateRewrite rewrite).label =
+      rewrite.operation.toObservableLabel ∧
+    (translateRewrite rewrite).target =
+      labelToProcessStep rewrite.operation.toObservableLabel
+        (graphToProcess rewrite.target) :=
+  ⟨rfl, rfl, rfl⟩
 
 /--
-Reflection: π-reduction implies morphism rewrite (reverse direction).
+Reflection is exact on the declared translation image; unlike the earlier
+scaffold, this theorem makes no false surjectivity claim for arbitrary
+late-pi processes.
 -/
-theorem reflection_correspondence :
-  ∀ (source target : Proc) (label : P1cObservableLabel),
-  ∃ (g_source g_target : CantiluneGraph) (op : P1cOperation),
-    graphToProcess g_source = source ∧
-    graphToProcess g_target = target ∧
-    op.toObservableLabel = label := by
-  intro source target label
-  -- Simplified: construct witness graphs
-  let g_source : CantiluneGraph := ⟨[], []⟩
-  let g_target : CantiluneGraph := ⟨[], []⟩
-  let op : P1cOperation := .comm 0
-  exists g_source, g_target, op
-  simp [graphToProcess]
-  constructor
-  · rfl
-  constructor
-  · rfl
-  · cases label <;> rfl
+theorem reflection_correspondence
+    (transition : PiTransition)
+    (inImage : InTranslationImage transition) :
+    ∃ rewrite : MorphismRewrite,
+      graphToProcess rewrite.graph = transition.source ∧
+      rewrite.operation.toObservableLabel = transition.label ∧
+      labelToProcessStep rewrite.operation.toObservableLabel
+          (graphToProcess rewrite.target) =
+        transition.target := by
+  obtain ⟨rewrite, rfl⟩ := inImage
+  exact ⟨rewrite, rfl, rfl, rfl⟩
 
-/-! ## Main Reflection Theorem -/
+/-- Every operation and pair of graph endpoints has a translated transition. -/
+theorem p1c_translation_total
+    (operation : P1cOperation)
+    (source target : CantiluneGraph) :
+    ∃ transition,
+      transition =
+        translateRewrite
+          { graph := source
+            operation := operation
+            target := target } :=
+  ⟨_, rfl⟩
+
+/-! ## Terminal predicate chosen at this translation seam -/
+
+def processTerminal (process : Proc) : Prop :=
+  process = Proc.zero
 
 /--
-Full P1c reflection theorem (statement).
-
-For every P1c operation and Cantilune graph, the morphism rewrite is
-observationally equivalent to a π-reduction with the same observable label.
-
-This is the core theorem establishing projection consistency for the π view.
+Reference-graph terminality is deliberately defined through the translation.
+This avoids the false assertion that `edges = []` is necessary when the
+encoding intentionally ignores reflexive edges.
 -/
-theorem p1c_full_reflection_main :
-  ∀ (op : P1cOperation) (g : CantiluneGraph),
-  ∃ (π_source π_target : Proc) (label : P1cObservableLabel),
-    π_source = graphToProcess g ∧
-    label = op.toObservableLabel ∧
-    π_target = labelToProcessStep label π_source := by
-  intro op g
-  let π_source := graphToProcess g
-  let label := op.toObservableLabel
-  let π_target := labelToProcessStep label π_source
-  exists π_source, π_target, label
-  constructor
-  · rfl
-  constructor
-  · rfl
-  · rfl
+def graphTerminal (graph : CantiluneGraph) : Prop :=
+  processTerminal (graphToProcess graph)
 
-/-! ## Terminal State Preservation -/
+theorem terminal_preservation (graph : CantiluneGraph) :
+    graphTerminal graph ↔ processTerminal (graphToProcess graph) :=
+  Iff.rfl
+
+/-! ## Soundness and image completeness -/
+
+theorem reflection_soundness (rewrite : MorphismRewrite) :
+    InTranslationImage (translateRewrite rewrite) :=
+  ⟨rewrite, rfl⟩
+
+theorem reflection_completeness
+    (transition : PiTransition)
+    (inImage : InTranslationImage transition) :
+    ∃ rewrite : MorphismRewrite, translateRewrite rewrite = transition :=
+  inImage
 
 /--
-Terminal states: success predicate for graphs.
+Each matrix entry supplies two total translation witnesses.  This certifies
+coverage of the operation enumeration, not a native reduction or independence
+claim.
 -/
-def graphTerminal (g : CantiluneGraph) : Prop :=
-  g.edges = []  -- Simplified: no outstanding edges
+theorem matrix_cell_translation (i j : Fin 60) :
+    ∀ graph : CantiluneGraph,
+      InTranslationImage
+        (translateRewrite
+          { graph := graph
+            operation := (buildMatrix i j).op1
+            target := graph }) ∧
+      InTranslationImage
+        (translateRewrite
+          { graph := graph
+            operation := (buildMatrix i j).op2
+            target := graph }) := by
+  intro graph
+  exact
+    ⟨reflection_soundness _,
+      reflection_soundness _⟩
 
 /--
-Terminal states: success predicate for processes.
+The protocol-level completion theorem for every enumerated operation.
+This is the strongest result established by this reference module without
+importing a native late-pi transition certificate.
 -/
-def processTerminal (p : Proc) : Prop :=
-  p = Proc.zero  -- Simplified: process is zero
-
-/--
-Terminal preservation theorem.
-Graph is terminal iff its translation is terminal.
--/
-theorem terminal_preservation :
-  ∀ (g : CantiluneGraph),
-  graphTerminal g ↔ processTerminal (graphToProcess g) := by
-  intro g
-  constructor
-  · intro hterm
-    simp [graphTerminal] at hterm
-    simp [graphToProcess, hterm, processTerminal]
-    rfl
-  · intro hterm
-    simp [processTerminal, graphToProcess] at hterm
-    simp [graphTerminal]
-    cases g.edges
-    · rfl
-    · simp at hterm
-
-/-! ## Soundness and Completeness -/
-
-/--
-Soundness: If morphism rewrites, then π reduces.
--/
-theorem reflection_soundness :
-  ∀ (rw : MorphismRewrite),
-  ∃ (π_trans : PiTransition),
-    π_trans.source = graphToProcess rw.graph ∧
-    π_trans.target = labelToProcessStep rw.operation.toObservableLabel 
-                       (graphToProcess rw.target) ∧
-    π_trans.label = rw.operation.toObservableLabel := by
-  intro rw
-  let π_trans : PiTransition := {
-    source := graphToProcess rw.graph,
-    label := rw.operation.toObservableLabel,
-    target := labelToProcessStep rw.operation.toObservableLabel (graphToProcess rw.target)
-  }
-  exists π_trans
-  constructor
-  · rfl
-  constructor
-  · rfl
-  · rfl
-
-/--
-Completeness: If π reduces, then morphism can rewrite.
-(Stated; full proof requires complete graph construction)
--/
-theorem reflection_completeness :
-  ∀ (π_trans : PiTransition),
-  ∃ (rw : MorphismRewrite),
-    graphToProcess rw.graph = π_trans.source ∧
-    rw.operation.toObservableLabel = π_trans.label := by
-  intro π_trans
-  -- Witness construction (simplified)
-  let rw : MorphismRewrite := {
-    graph := ⟨[], []⟩,
-    operation := .comm 0,
-    target := ⟨[], []⟩
-  }
-  exists rw
-  constructor
-  · simp [graphToProcess]
-  · cases π_trans.label <;> rfl
-
-/-! ## Matrix Integration -/
-
-/--
-Every matrix cell corresponds to a valid reflection instance.
--/
-theorem matrix_cell_reflection :
-  ∀ (i j : Fin 60),
-  let cell := buildMatrix i j
-  ∃ (g : CantiluneGraph) (π1 π2 : Proc),
-    graphToProcess g = π1 ∧
-    (∃ π1', π1' = labelToProcessStep cell.op1.toObservableLabel π1) ∧
-    (∃ π2', π2' = labelToProcessStep cell.op2.toObservableLabel π2) := by
-  intro i j
-  let cell := buildMatrix i j
-  let g : CantiluneGraph := ⟨[], []⟩
-  let π1 := graphToProcess g
-  let π2 := graphToProcess g
-  exists g, π1, π2
-  constructor
-  · rfl
-  constructor
-  · exists labelToProcessStep cell.op1.toObservableLabel π1
-  · exists labelToProcessStep cell.op2.toObservableLabel π2
-
-/-! ## Export Main Results -/
-
-/--
-Summary theorem: P1c provides full reflection for all 60 operations.
--/
-theorem p1c_complete_reflection :
-  ∀ (op : P1cOperation),
-  ∃ (proof : OperationStateMachine),
-    proof = op.initStateMachine ∧
-    ∃ (final : OperationStateMachine),
-      ProtocolTransitionStar proof final ∧
+theorem p1c_complete_protocol (operation : P1cOperation) :
+    ∃ initial final : OperationStateMachine,
+      initial = operation.initStateMachine ∧
+      ProtocolTransitionStar initial final ∧
       final.state = .complete := by
-  intro op
-  exists op.initStateMachine
-  constructor
-  · rfl
-  · obtain ⟨final, htrans, hcomplete⟩ := p1c_full_reflection op
-    exists final
+  obtain ⟨final, path, complete⟩ := p1c_protocol_completion operation
+  exact ⟨operation.initStateMachine, final, rfl, path, complete⟩
 
 end Cantilune.Pi.P1cMultiState

@@ -1,0 +1,12 @@
+import Cantilune.Theorems.FMSGatedFourProjection
+
+namespace Cantilune.Tests.FMSGatedFourProjection
+
+#check Cantilune.Theorems.FMSGatedFourProjectionCertificates
+#check Cantilune.Theorems.FMSGatedFourProjectionConsistency
+#check Cantilune.Theorems.OperationalFMSPiCoherence
+#check Cantilune.Theorems.OperationalFMSPiCoherence.mapped_source_step_iff
+#check Cantilune.Theorems.buildFMSGatedFourProjectionConsistency
+#check Cantilune.Theorems.fms_gated_four_projection_consistency
+
+end Cantilune.Tests.FMSGatedFourProjection

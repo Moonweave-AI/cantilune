@@ -1,0 +1,70 @@
+import Cantilune.Core.Signature
+import Cantilune.Core.Admission
+import Cantilune.Core.FreeSMC
+import Cantilune.Core.FreeSMCQuotient
+import Cantilune.Core.FreeSMCUniversal
+import Cantilune.Core.FreeSMCStrongUniversal
+import Cantilune.Core.FreeSMCArbitraryUniversal
+import Cantilune.Core.SignatureCoherence
+import Cantilune.Core.SignatureFreeSMCCoherence
+import Cantilune.Core.TerminalPartition
+import Cantilune.Core.DPO
+import Cantilune.Core.OpenHypergraph
+import Cantilune.Core.OpenHypergraphNormalization
+import Cantilune.Core.OpenHypergraphNormalizationFunctor
+import Cantilune.Core.OpenHypergraphNormalizationMatchImage
+import Cantilune.Core.OpenHypergraphNormalizationConcurrency
+import Cantilune.Core.DPOI
+import Cantilune.Core.AdhesiveDPOI
+import Cantilune.Core.FinitePresheafDPOI
+import Cantilune.Core.PositionalDPOI
+import Cantilune.Core.PresheafComplementDPO
+import Cantilune.Core.DPOConcurrency
+import Cantilune.Core.OpenCospanDPOI
+import Cantilune.Core.PositionalDPOIBridge
+import Cantilune.Core.PositionalFiniteSliceObstruction
+import Cantilune.Core.PositionalComplementClosure
+import Cantilune.Core.PositionalPushoutClosure
+import Cantilune.Core.PositionalConcurrencyClosure
+import Cantilune.Core.GeneralFiniteOpenDPOI
+import Cantilune.Core.PositionalImageCharacterization
+import Cantilune.Core.ExactPositionalDPOI
+import Cantilune.Core.PositionalBoundaryDuplicateObstruction
+import Cantilune.Core.Execution
+import Cantilune.Core.ExecutionEpochTrace
+import Cantilune.Core.Projection
+import Cantilune.Core.CompleteProjection
+import Cantilune.Core.ProjectionFamily
+import Cantilune.Core.CoherentProjection
+import Cantilune.Core.Package
+import Cantilune.Core.Reconfiguration
+import Cantilune.Projection.All
+import Cantilune.Pi
+import Cantilune.Feedback
+import Cantilune.Feedback.AuthorizedFeedbackClosure
+import Cantilune.Theorems.FourProjection
+import Cantilune.Theorems.CompleteFourProjection
+import Cantilune.Theorems.CoherentFourProjection
+import Cantilune.Theorems.FourProjectionFamily
+import Cantilune.Theorems.FMSGatedFourProjection
+import Cantilune.Theorems.ProductRuleAdmission
+import Cantilune.Theorems.HeterogeneousProductRuleAdmission
+import Cantilune.Theorems.HeterogeneousProductRuleAdmissionReference
+import Cantilune.Theorems.ProductRuleProofBundle
+import Cantilune.Theorems.P1cProductRuleProofBundle
+import Cantilune.Theorems.CrossEpochProductFamily
+import Cantilune.Theorems.FMSGatedCrossEpochProductFamily
+import Cantilune.Theorems.FiniteCrossEpochProductChain
+import Cantilune.Theorems.FMSGatedFiniteCrossEpochProductChain
+import Cantilune.Theorems.FMSCommonTwoRowCrossEpochChain
+import Cantilune.Theorems.FMSCommonFiniteCrossEpochChain
+import Cantilune.Theorems.FMSCommonSegmentedCrossEpochChain
+import Cantilune.Theorems.FMSCommonEpochSegmentedCrossEpochChain
+import Cantilune.Pi.P1cAdmittedFourOccurrence
+import Cantilune.Tests.All
+
+/-!
+# Cantilune formal semantics
+
+This module is the root import for the mechanically checked theory.
+-/

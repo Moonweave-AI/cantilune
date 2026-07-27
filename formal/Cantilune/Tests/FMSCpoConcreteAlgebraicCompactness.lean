@@ -1,0 +1,29 @@
+import Cantilune.Pi.FMSCpoConcreteAlgebraicCompactness
+
+noncomputable section
+
+namespace Cantilune.Tests.FMSCpoConcreteAlgebraicCompactness
+
+open CategoryTheory
+open CategoryTheory.Endofunctor
+open CategoryTheory.Limits
+open Cantilune.Pi.FMSCpoActualDomainEquationBoundary
+open Cantilune.Pi.FMSCpoEmbeddingProjectionBilimit
+
+#check concreteActualAlgebraicCompactnessWitness
+#check concreteActual_initial_fold_isIso
+#check concreteActual_terminal_unfold_isIso
+
+example :
+    IsInitial concreteActualAlgebraicCompactnessWitness.fixed.algebra :=
+  concreteActualAlgebraicCompactnessWitness.initialAlgebra
+
+example :
+    IsTerminal concreteActualAlgebraicCompactnessWitness.fixed.coalgebra :=
+  concreteActualAlgebraicCompactnessWitness.terminalCoalgebra
+
+#print axioms concreteActualAlgebraicCompactnessWitness
+#print axioms concreteActual_initial_fold_isIso
+#print axioms concreteActual_terminal_unfold_isIso
+
+end Cantilune.Tests.FMSCpoConcreteAlgebraicCompactness
