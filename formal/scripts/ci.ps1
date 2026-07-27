@@ -1026,6 +1026,16 @@ try {
     Write-Host "Clean project build gate: prior project artifacts removed."
   }
 
+  # Materialize every pinned mathlib module and its Lean sidecars before any
+  # Cantilune module may import the umbrella. On Windows, scheduling the
+  # dependency umbrella and root graph together can expose transient
+  # .olean.private/.ir visibility failures under parallel load.
+  & lake build "@mathlib/Mathlib"
+  if ($LASTEXITCODE -ne 0) {
+    throw "Pinned mathlib umbrella build failed with exit code $LASTEXITCODE."
+  }
+  Write-Host "Pinned mathlib umbrella build gate: complete."
+
   & lake build
   if ($LASTEXITCODE -ne 0) {
     throw "lake build failed with exit code $LASTEXITCODE."
