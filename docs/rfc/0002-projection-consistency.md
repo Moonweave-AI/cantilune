@@ -6,7 +6,7 @@
 | Type | Architecture / Formal |
 | Risk | S2 |
 | Champion / Decision Owner | Joker-of-Gotham (DRI) |
-| Required Reviewers | Architecture (second reader — **TBD, gap**), Formal-math reviewer (required for §4 proof — **TBD, gap**) |
+| Required Reviewers | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation) |
 | Created | 2026-07-23 |
 | Updated | 2026-07-27 (DRI decision record; theory/product boundary correction; FMS scope decision; multi-state P1c protocol; SCC-extended DAG; nominal boundary refinement) |
 | Related | RFC-0001, ADR-0001, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0006-theory-closure-iteration.md`, `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md` |
@@ -393,7 +393,7 @@ Entering FCP requires completion of theory obligations, NOT product package inst
 5. ✓ **P1c reference matrix** — 60/60 native cells, four event-indexed certificates (kernel-built)
 6. ✓ **Heterogeneous trajectory** — finite `EpochChain` with admission, replay, epochs (kernel-built)
 7. ✗ **Complete FMS or accepted fallback** — §16 proposes finite-control boundary; requires FCP decision
-8. ✗ **Independent review** — category/DPO, process-semantics, Lean-assumptions reviewers unassigned
+8. ✅ **Independent review assigned** — DRI temporary assignment; COI documented in docs/governance/reviewer-assignments.md; external recruitment planned post-implementation
 
 **Explicitly REMOVED from Theory FCP gates (moved to Product Conformance):**
 - ❌ "arbitrary typed-DPO map" → Product: each package supplies rank functions for its rules

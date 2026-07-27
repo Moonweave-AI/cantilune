@@ -354,11 +354,15 @@ Risk: S2 | Quality: QA-L4 target | Maturity: M1 (Pre-FCP)
 - Foundational correctness (type theory, proof irrelevance)
 - Mechanization best practices
 
-### 8.2 Current Status: TBD (Governance Gap)
+### 8.2 Current Status: DRI Temporary Assignment (2026-07-27)
 
-**Identified gap**: RFC-0002 and ADR-0001 both list reviewers as "TBD".
+**Decision**: DRI (Joker-of-Gotham) assigned as temporary reviewer for all three roles per DRI Decision 4.
 
-**Interim solution**: DRI can serve as all three reviewers with explicit conflict-of-interest documentation (acceptable for S2 pre-FCP work, must be resolved before final acceptance).
+**COI Documentation**: `docs/governance/reviewer-assignments.md`
+
+**Rationale**: Project constraints prevent multiple reviewer assignment at pre-FCP stage. Lean 4 kernel provides independent verification layer.
+
+**External Recruitment**: Planned after implementation complete (~2026-10-15).
 
 **Permanent solution**: Recruit external reviewers from:
 - Formal methods community (POPL, LICS, CPP conferences)

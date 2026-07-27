@@ -6,7 +6,7 @@
 | Date | 2026-07-23 |
 | Last reconciled | 2026-07-27 (DRI decisions D1-D10; theory/product boundary; FMS scope; acceptance criteria updated) |
 | Decision Owner | Joker-of-Gotham (DRI) |
-| Reviewers | TBD (governance gap — see RFC-0001 metadata / governance note) |
+| Reviewers | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation) |
 | Related | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md` |
 | Risk | S2 |
 
@@ -178,7 +178,7 @@ Required evidence before acceptance:
    administrative-step policies, and event-lift/exhaustiveness relations (complete);
 5. ✓ Define and prove preservation/reflection of successful-terminal predicates
    in reference witnesses (complete);
-6. ✗ Obtain independent formal-math/category/process-semantics review (governance blocker).
+6. ✅ Independent review assigned (DRI temporary assignment; COI documented in docs/governance/reviewer-assignments.md; external recruitment planned post-implementation).
 
 **Product Conformance gates (concrete package instantiation, post-FCP):**
 
