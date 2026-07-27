@@ -1,0 +1,10 @@
+import Cantilune.Pi.FMSAllDomainDefinabilityNoGo
+
+open Cantilune.Pi.FMSAllDomainDefinabilityNoGo
+
+#check no_surjective_powerset_denotation
+#check processPowersetOmegaCpo
+#check not_allOmegaCpoElementsDefinable
+
+#print axioms no_surjective_powerset_denotation
+#print axioms not_allOmegaCpoElementsDefinable

@@ -30,4 +30,6 @@ import Cantilune.Feedback.AuthorizedVoting
 import Cantilune.Feedback.AuthorizedFeedbackExecution
 import Cantilune.Feedback.AuthorizedFeedbackProbability
 import Cantilune.Feedback.AuthorizedFeedbackClosure
+import Cantilune.Feedback.CompleteFiniteHeightClosure
+import Cantilune.Feedback.ProductCommonFMSTrajectory
 import Cantilune.Pi.P1cAdmittedTrajectory

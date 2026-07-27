@@ -1,11 +1,23 @@
 ---
-title: Cantilune theory-closure QA-L4 readiness
-status: Draft
+title: Superseded Cantilune theory-closure QA-L4 readiness snapshot
+status: Superseded
 risk: S2
 quality_target: QA-L4
 maturity: Pre-FCP/M1
 owner: Joker-of-Gotham
 ---
+
+> **Superseded snapshot (2026-07-28):** This chronology predates the current
+> maximum-compatible D1-A closure and must not be used as the current QA
+> packet. Its job counts, obligation counts, missing-result inventory and
+> suggested FMS alternatives are historical. The replacement is
+> `0002-theory-closure-proved-review-pending-2026-07-27.md`. The replacement
+> keeps QA-L4, FCP and ADR acceptance pending; distinguishes the separated
+> enriched-adjunction branch from the non-separated D1-A monad/domain branch;
+> limits actual-Agent full abstraction to deterministic typed
+> tau/free-output prefix tries; treats guarded results as
+> native-trace/contextual-Hoare; and excludes all eight production-package
+> instantiations.
 
 # Conclusion
 

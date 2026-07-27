@@ -6,14 +6,28 @@
 | 类型 | 架构 / 形式 |
 | 风险 | S2 |
 | 提案人 / 决策负责人 | Joker-of-Gotham（DRI） |
-| 必需评审人 | 架构（第二读者 —— **TBD，缺口**）、形式数学评审人（§4 证明所需 —— **TBD，缺口**） |
+| 必需评审人 | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立 QA-L4 证据 |
 | 创建日期 | 2026-07-23 |
-| 更新日期 | 2026-07-27（理论/产品边界修正） |
-| 相关 | RFC-0001、ADR-0001、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0006-theory-closure-iteration.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md` |
+| 更新日期 | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、分阶段 admission、精确 common-trajectory 接缝） |
+| 相关 | RFC-0001、ADR-0001、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 
-> **治理说明：** 本 RFC 是 ADR-0001 所指的**生死线（project life-line）**。它*主要不是*一份证明文档 —— 证明在 `docs/spec/formal-semantics.md`。它在主线中的职责是陈述**若四投影一致，cantilune 运行时获得什么能力**、为何该能力才是统一结构的全部意义，以及为挣得它而须证的定理与分期证明。依 DRI 决策，π 投影一致性**非按构造**，按**分期计划**（§4）证明；所有 π 侧主张在证明存在之前均为**待证 / unverified**。
+> **治理说明：** 本 RFC 是 ADR-0001 所指的**生死线（project life-line）**。它*主要不是*一份证明文档 —— 证明在 `docs/spec/formal-semantics.md`。π 投影一致性**非按构造**；其当前实现范围由下文 §25–§28 与 proof manifest 共同限定。此前各历史检查点中的“待证”或局部 job 数均不覆盖该最终边界，也不构成不可变证明证据。
 
 > **2026-07-27 边界修正：** 本 RFC 原先混淆了**核心理论 FCP**（证明通用证书接口可满足）与**产品符合性**（具体包实例化）。已在 §3.1、§4、§7.1、§9、§11 中修正：理论通过参考见证（60/60 P1c 矩阵）证明接口可行。产品在 FCP 后为其特定规则实例化。**八个产品包（Cantilune、Libretto、Cast、Baton、Cue、Chorus、Reprise、Cantilune Notation）不阻断核心理论 FCP**——它们尚不存在，其缺席符合预期。详见 `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md` 完整分析。
+
+> **现行 FMS 校正（2026-07-28）：**下文的历史要求与进展快照必须通过
+> §26–§28 和当前 proof manifest 解读。CENTRAL-12 是
+> `MaximumCompatibleD1AFMSClosure`，不是名为“完整 FMS”的命题。其
+> separated enriched-adjunction 分支与非分离 D1-A monad/domain/hiding
+> 分支构成最大相容的分支账本，而非一个统一的源论文模型。actual-Agent
+> 全抽象仅证明到确定性的 typed tau/free-output prefix trie；guarded 的
+> adequacy/full abstraction 是 native-trace/contextual-Hoare 定理。不声称
+> 所有 compact 元素可定义，也不声称反向语义像满射。该范围校正以及任何
+> 成功构建均不改变治理状态：本 RFC 仍为 **Draft / Pre-FCP**，等待独立
+> 人工评审与正式 FCP 处置。
+> 产品通用的 P1a 仍以产品提供完整 `ProjectionCertificate` 为前提。
+> Canonical SCC-DAG 与可重构 Petri 构造只证明一个所选 occurrence；另一个
+> 固定签名十四事件参考使用分别声明的目标载体，证明完整 P1a 接口非空。
 
 ---
 
@@ -78,7 +92,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 | DAG | FreeSMC 等式商存在；通用 rankable-graph 投影完整 | 给定 LTS 同构的通用操作 family；参考见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 rank 函数与 rank 保持证明 |
 | Petri | FreeSMC 商与声明顺序 pre-net 构造存在；通用 pre-net/SSMC 语义完整 | 通用操作 family；参考 firing 见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 enabling 谓词、token 语义与 firing 映射 |
 | 态射 | by construction（同一性视图） | by construction | by construction | 使用同一成功谓词时 by construction | **按构造一致** | （同一性；无额外产品工作） |
-| π（half-π II） | typed open-process presentation 与 mathlib SMC 实例存在；非恒定 `Set^I`/`Cpo^I` 支撑对象、离散-CPO 有限幂、分配、连续支撑 hiding/retraction 等式与有限 `P_f(H-)` approximant 存在；完整 FMS powerdomain/domain/full-abstraction 实例不存在 | 有限 P1c 参考矩阵有 60/60 原生格与四份仅在各自声明的受限目标关系内精确的按事件索引证书 | 全部 15 个 π 事件擦除为独立 alpha/结构 late-π 推导；mismatch、reconnect-as-delegation、quiescent shutdown 均为原生一步见证，但开放 reconnect/delete 编码还有额外 raw late-LTS 转移 | 仅对受限有限参考关系完整，不是整个 standard late LTS | **理论：受限参考 P1c 操作层闭合；完整 reflection/general/static/FMS 层开放** | **产品符合性：** 各包使用参考模板为其允许规则提供原生 π 推导 |
+| π（half-π II） | presented typed/polarised Open-π wiring SMC、proof-relevant nominal realization、非分离 D1-A all-object lower-ω-Scott monad 与实际递归 domain 解 | P1b structural-late certificate、15 个 normative strong late-π family、60-operation `refinesTo` registry | 在声明的 P1b/P1c 演算中精确 reflection；total supported finite-control coalgebra 与 15-family actual-Agent commutation | 对声明的参考演算及其 terminal predicate 完整；不声称 unrestricted actual-Agent strong-bisimulation full abstraction | **理论候选：** 最大相容范围见 §26–§27；不可变证据和 CENTRAL-18 common-chain 待完成 | **产品符合性：** 各包提供 native π、registry/metadata、admission、payload、trajectory 与 FMS alignment |
 
 **理论与产品边界说明：** 理论通过参考见证（60/60 P1c 矩阵，异构运行时）证明通用证书接口*可满足*。产品用具体操作事实（rank 函数、pre-net 语义、资源策略、授权谓词）实例化这些接口。理论 FCP 不阻断于产品包存在。
 
@@ -317,7 +331,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 - 参考见证展示接口可实现
 
 **当前状态：**
-- **理论：** 通用构造 kernel-built；参考见证完整；P1b 需不可变 commit + 评审；FMS 范围决策待定
+- **理论候选：** 通用构造与实质 reconnect 参考已实现至 §25–§27 的最大相容边界；不可变 source/build 证据、CENTRAL-18 common-chain 与独立评审待完成
 - **产品：** 八个计划包尚无源树、清单或规则清单；符合性工作始于 FCP 后
 
 ## 8. 开放问题
@@ -1024,7 +1038,7 @@ kernel、coupling、exact FMS package，或八个缺失 product 事实集。
 
 可变 Lean 树现含有限支撑 partial commutative separation
 algebra、support-preserving map，以及带显式 braiding、
-associator、unitor、penta­gon、triangle 与 hexagon 方程的分离
+associator、unitor、pentagon、triangle 与 hexagon 方程的分离
 tensor presentation。其 operational frame 定理仅在 frame 支撑互
 不相交时适用。相应地，原生 late-pi action 仅在其完整 name 支撑
 互不相交时可交换。两个顺序保留为精确带标签两步 trace，有相同
@@ -1036,7 +1050,7 @@ replay quotient 中相等。仅标签支撑不相交不是 quotient 规则。同
 支撑与 `support_omegaSup_bounded` witness；连续态射精确保支撑。
 disjoint-pair carrier 有 kernel-built omega-CPO、连续 tensor
 map、自然 braiding/associator/unitor，以及对应
-penta­gon/triangle/hexagon 方程，含非空有限支撑实例。这是
+pentagon/triangle/hexagon 方程，含非空有限支撑实例。这是
 omega-CPO tensor presentation，尚非 bundled monoidal category、
 powerdomain functor、monad、free adjunction 或递归 FMS agent。
 
@@ -1214,3 +1228,236 @@ freshness、alpha-freshened `DerivativeAlpha` residual square，
   事实。
 
 无中央状态晋级。RFC-0002 仍为 Pre-FCP，ADR-0001 仍为 Proposed。
+
+## 25. 人类 DRI 路线确认与执行边界（2026-07-27）
+
+**Decision Owner：** Joker-of-Gotham
+
+**决策状态：** 已授权实现；RFC 仍为 Draft / Pre-FCP
+
+**证据边界：** 本节覆盖本草案中与之冲突的旧 Agent/历史检查点，但不
+构成独立评审、FCP 通过或 ADR 接受。
+
+DRI 确认如下最大相容路线：
+
+1. Core Theory 只包含参数化四投影元理论和非空实质参考执行包。八个
+   production package 属于独立 Product Conformance，不能从包名或
+   通用定理推断其证书。
+2. FMS effect 层采用非分离底元：
+   `divergence = deadlock = bottom`，以保留对称交换 Fubini。原生
+   late-π、可观察 LTS、终态分类和产品语义层继续区分 divergence 与
+   deadlock。
+3. FMS 是 P1b/Core Theory 门槛，但应证明仓库实际选择的 D1-A 模型，
+   不得把 citation 或 proof-carrying interface 冒充 inhabitant。
+4. finite-process 结果先行，再给出 guarded recursion/replication
+   范围。所有 ωCPO 的所有元素可定义只是额外尝试，不是可暗中加入
+   full-abstraction 前提的要求。
+5. Open-π 对象使用有类型、有极性的抽象端口位置；具体名字只在
+   operational layer 中 fresh nominal realization。
+6. 进程状态按 alpha、并行 ACU 与合法 scope law 取商；bound action 与
+   derivative 联合按 `DerivativeAlpha` 处理，不用 bisimulation 作 Hom
+   equality。
+7. 十五个 native event family 是规范演算；六十个 operation 是带
+   `refinesTo` 的 API/reference registry，版本、规则、session、
+   correlation 和 occurrence 保留在 enriched metadata 中。
+8. 每个规范事件对应一个 genuine strong late-π step；多阶段事务拆成
+   显式 phase event。`tau*` 只能是强定理之后的派生观察。
+9. DAG 对任意有限图先作 SCC condensation，并提供严格可排名子视图；
+   Petri 使用 individual-token/provenance。
+10. 证明信任边界是 Lean kernel 和 axiom audit 记录的基础原则。文献只
+    指导范围，不能替代证明项。
+11. 冲突解决优先级为：数学可靠性、源论文忠实性、原生强一步、一般
+    性、实现便利。发现不相容时先记录 kernel no-go，再沿最大相容路线
+    继续，绝不静默弱化。
+
+本地修改、Lean/build/audit、只读文献研究和可追溯本地提交均获授权；
+push 与 PR 未获授权。真实人类签名之前，聚合状态最多为
+`proved / review-pending`，不得称为 reviewed、FCP Passed、QA-L4
+complete 或 ADR Accepted。
+
+## 26. Kernel-backed 最大相容边界（2026-07-27）
+
+### 26.1 Separated source branch 与 D1-A branch 必须分开
+
+FMS 来源中的 nondeterministic computation 对象区分 least element
+`⊥` 与 semilattice zero `0`。仓库的 separated branch 已构造
+all-source solution-set condition 与 CPO-enriched free/forgetful
+adjunction，但其 canonical sequential Fubini 不是交换的。DRI 选择的
+D1-A branch 则合并两个 effect 常量，获得 all-object lower-ω-Scott
+monad、对称 chosen Fubini/monad coherence、连续自然
+`A ≅ P(H A)`、initial algebra、terminal coalgebra 和 recursive
+hiding。不得把两个 branch 的不同优点拼成一个不存在的模型，也不得把
+D1-A 称为 separated Abramsky powerdomain。
+
+两个 kernel no-go 固定 full-abstraction 边界：
+
+- 若源语言暴露两个可观察且不等价的 nullary divergence/deadlock，
+  而 D1-A 把二者映到同一 bottom，则 full abstraction 不可能；
+- 即使没有显式 divergence 常量，D1-A 的 bottom/choice 语义也不能对
+  finite tau/choice 子语言上的 constructor-sensitive strong
+  bisimulation full abstract。
+
+正面定理因此必须写明观察关系。finite/guarded 结果是
+lower-ω-Scott finite-trace Hoare 和 contextual-Hoare 定理；它们不是
+不受限 actual-Agent strong-bisimulation full abstraction。actual
+recursive Agent 中的正面 equality/native-path full abstraction 仅覆盖
+deterministic typed tau/free-output prefix trie，并另有显式
+`CompactPrefixPoint` realization。
+
+Cantor no-go 还排除“一个 π 语法定义所有 ωCPO 的所有元素”。实际正面
+范围是 finite-generated Hoare definability 与上述显式 compact-prefix
+realization。`contextualSourceInterpretation` 是从源进程到语义值的解释，
+不是反向 semantic-image definability 定理。
+
+### 26.2 Open-π 是两层结构
+
+固定 positive-prefix finite raw relay 在 alpha/ACU/scope 结构同余下
+不是 direct plug/hide 的左右单位；一个固定 finite-control forwarder
+也不能支持任意长 native reuse。最大相容构造因此分为：
+
+- presented algebraic wiring SMC：提供 typed/polarised boundary、wire
+  identity、tensor、composition、plug、hide、restriction 和完整协调；
+- native operational layer：用 fresh nominal representative 提供
+  genuine strong late-π event step。
+
+二者由 proof-relevant operational adequacy/commutation bridge 联系。
+该桥不把 raw protocol trace 写成结构等式，也不声称存在保持 algebraic
+wire identity 的 raw-process SMC functor。
+
+### 26.3 产品与治理边界
+
+通用定理只对真正携带 admission、rank、pre-net、resource/session、
+authorization、fairness、stable-window、positive-epsilon、replay 和
+四投影证书的包成立。八个计划产品包仍无这些 package-owned 输入。Lean
+构建最多使具体 obligation 达到 `proved`；独立审阅、FCP 与 ADR 接受均
+是外部人类行为。
+
+## 27. 最终技术闭包候选（2026-07-27）
+
+当前候选包含：
+
+1. `FMSCpoSupportedTotalOperationalCoalgebra`：为 zero、tau、input/
+   output、choice、match/mismatch、parallel、restriction、free
+   synchronization、bound-output/input close 和 extrusion 给出总的
+   finite-control supported coalgebra，以及到 recursive `Agent` 的唯一
+   terminal mediator。
+2. `FMSActualAgentNormativeOperationalBridge`：把十五个规范 family
+   编译为 typed supported process；每个 source 有 genuine strong
+   late-π first step、完整 outgoing classification、joint
+   action/derivative-alpha cell，以及 exact actual-Agent
+   source/target/terminal 方程。
+3. `ProductPiFMSAlignment` 候选：当前已连接 product π occurrence、
+   normative family、raw realization 和 actual-Agent commutation。
+
+第 3 项尚不能报告为 CENTRAL-18 完成。最终 common-chain 证书必须由
+**同一个** inhabitant：
+
+- 选择 `OperationId` 并证明其 registry `refinesTo`/`familyAt` 就是同一
+  normative family；
+- 保持 payload 与 `StableMetadata` 的 version、rule、session、
+  correlation、occurrence；
+- 把 heterogeneous admission 的 post-state 等同于同一 fixed-epoch
+  candidate.before；
+- 携带 `TrajectoryAgreement`，且其 selected event mark 就是该 candidate
+  event；
+- 对实质 `.instanceReconnect` 参考把 admission、四 native/replay
+  view、概率 trajectory、SCC/terminal/feedback 和 actual-Agent endpoint
+  放进同一记录。
+
+这些字段不得由互不相关的 existential witness 代替。在该链 kernel-built
+并绑定不可变 source commit、完整 build/axiom/integrity evidence 之前，
+本节只记录 **candidate**。RFC-0002 保持 **Draft / Pre-FCP**；ADR-0001
+保持 **Proposed**；独立人类签名之前状态最多为
+`proved / review-pending`。
+
+## 28. 承重接缝实现更新（2026-07-27）
+
+**权限与状态。** 本节取代第 27 节关于 P1a 语义绑定、分阶段 admission
+接缝与 CENTRAL-18 common chain 仍未进入可变实现的陈述。它记录已实现的
+Lean 声明与一次实际执行的增量根构建，但不绑定不可变 source commit、不
+替代 proof manifest、不完成独立评审、不通过 FCP，也不接受 ADR-0001。
+
+### 28.1 P1a 已绑定语义，不再只是投影名称证据
+
+`P1aSemanticCertificate` 现为 `CoreConformancePackage` 的必需字段。
+DAG 证书不能携带调用方另选的无关图：before/after dependency graph 直接由
+同一选定 product candidate 所 replay 的 `DPOEvent` 两端配置计算。证书导出：
+
+- 两个有限 dependency graph 的 canonical SCC condensation；
+- condensation graph 的无环性；
+- 每条 condensation edge 的严格 rank 不等式；
+- 每条原始边要么位于同一 SCC 内，要么在 condensation 中有对应边。
+
+Petri 证书绑定同一 candidate 与 replay record。它使用由事件 signature
+version 与 rule id 唯一确定的有序单事件 declaration、每个有限配置组件的
+canonical individual-token/provenance marking，以及精确 endpoint difference
+作为选定 transition。Enabling、精确 firing 与全部 retained token 的 identity
+均为派生结论，而不是标签字段。`TechnicalClosure.generic_dag_projection`
+与 `generic_petri_projection` 为任意完整包公开这些语义证书；实质 reconnect
+参考包同时居留二者。
+
+### 28.2 动态 admission 是显式强两阶段协议
+
+旧捷径把 dynamic admission 结束在 effect bottom，因此不可能成为后续非空
+reconnect row 的 literal source。现行最大相容路线保留原十五个 normative
+event family，同时在源协议加入 `admissionEstablished` 状态与
+`admissionReconnect` phase event：
+
+1. `.dynamicPartnerAdmission` 以 visible late-π input 原生一步到达
+   canonical reconnect-ready process；
+2. `admissionReconnect` 再以一个 genuine native τ step 到达 reconnect
+   terminal process。
+
+这里没有 weak step，也没有隐藏的 `τ*`。Admission first target 的
+actual-Agent 指称与后续 `.instanceReconnect` 业务行的 source 指称字面相等。
+异构证书在此等式上保留 signature version 变化和全部非版本 stable metadata。
+
+### 28.3 精确 product/common-FMS 链现由同一证书承载
+
+`CompleteProductCommonTrajectoryCertificate` 要求调用方提供的一个 positive
+trajectory row 在 event、source、target 三者上均等于同一个
+`CoreConformancePackage.candidate`。该行 operation 是包的 π operational
+semantics 对同一 projected event 解码的 operation；metadata 是同一 verified
+`DPOEvent` 的 canonical metadata；两个 denotational endpoint 是同一 alignment
+所选 normative family 的 actual source/target Agent。派生审计定理保留
+projected native step、精确 replay、raw late-π transition、registry payload、
+joint derivative alpha 与 actual-FMS commutation。
+
+`TechnicalClosure.generic_technical_closure_with_common_trajectory` 将此证书与
+通用 product closure 组合。无参数 `reference_technical_closure` 对实质
+reconnect candidate 居留该结果，其 canonical 概率一 path 的 selected row
+就是该 candidate。独立的 admission-to-reconnect 证书给出字面相等的异构
+actual-Agent endpoint seam。因此实现中已具备第 27 节要求的单记录反空洞链；
+八个计划生产包仍在 Core Theory 之外，必须分别提供 path、kernel 与完整证书。
+
+### 28.4 具名 Open-π freshness 已显式化
+
+Singleton wire 的 operational realization 现在要求 source endpoint、target
+endpoint 与 binder 三者 pairwise distinct。Canonical tensor 会把右侧 boundary
+freshen 到完整左支撑之外，因此两个具名块全局不交。这强化 proof-relevant
+realization 层，但不会把固定有限 raw relay 变成结构 identity，也不取消
+Open-π 的两层边界。
+
+### 28.5 验证与治理处置
+
+### 28.6 可重构 Petri 注册表与参考反空洞
+
+最终 P1a 证书现在跨越 admission 边界，而不只描述 admission 后的固定
+epoch。它携带不同的 old/new 签名、append-only 有序 pre-net、沿同一
+admission extension 对每条 legacy incidence 的精确重索引、目标版本的
+fresh 声明，以及同一个目标 Petri admission occurrence 的原生步、replay、
+tombstone、相连 candidate 与选定 enabled firing。
+
+通用接口特意允许第一次 admission 的旧注册表为空。实质 reconnect
+参考不能利用该情形：`reference_technical_closure` 必须携带
+`LegacyPetriAntiVacuity`，展示一个非空旧 endpoint-delta incidence，并
+证明它在签名重索引后被精确保留。该结论仍是 occurrence-indexed，不声称
+整个目标 LTS 的全局 `step iff firing`。
+
+上述接缝集成后，可变树的一次增量根 `lake build` 已实际完成 9,208 jobs。
+这只是诊断证据。Commit-bound clean CI、source-integrity 重算、
+axiom/placeholder audit、十八项 `proved` manifest 以及后继提交上的 strict
+proved gate 仍待执行。在这些记录存在前，技术状态保持
+**implemented / immutable-evidence-pending**；其后且在人类独立签名前，状态
+最多为 **`proved / review-pending`**。RFC-0002 仍为
+**Draft / Pre-FCP**。

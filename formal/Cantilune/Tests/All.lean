@@ -4,8 +4,10 @@ import Cantilune.Tests.AuthorizedVoting
 import Cantilune.Tests.AuthorizedFeedbackExecution
 import Cantilune.Tests.AuthorizedFeedbackProbability
 import Cantilune.Tests.AuthorizedFeedbackClosure
+import Cantilune.Tests.CompleteFiniteHeightClosure
 import Cantilune.Tests.AdhesiveDPOI
 import Cantilune.Tests.ProjectionCertificates
+import Cantilune.Tests.P1aSemanticCertificate
 import Cantilune.Tests.CompleteProjection
 import Cantilune.Tests.ProjectionFamily
 import Cantilune.Tests.CoherentProjection
@@ -67,6 +69,9 @@ import Cantilune.Tests.FMSCpoOmegaScottSupportLaxMonoidal
 import Cantilune.Tests.FMSCpoFiniteSupportStrictConstantsNoGo
 import Cantilune.Tests.FMSCpoFinitePowerObstruction
 import Cantilune.Tests.FMSCpoSupportHidingCoherence
+import Cantilune.Tests.FMSCpoUnseparatedSourceCore
+import Cantilune.Tests.FMSUnseparatedExplicitBottomNoGo
+import Cantilune.Tests.FMSUnseparatedFiniteStrongNoGo
 import Cantilune.Tests.NominalFiniteSupport
 import Cantilune.Tests.NominalCpo
 import Cantilune.Tests.FMSNominalSeparationTransport
@@ -141,6 +146,7 @@ import Cantilune.Tests.OpenSMCActionAlpha
 import Cantilune.Tests.OpenSMCFiniteControlIdentityBoundary
 import Cantilune.Tests.OpenSMCLinearOneShotObstruction
 import Cantilune.Tests.OpenSMCCanonicalPositional
+import Cantilune.Tests.OpenSMCPolarisedOperational
 import Cantilune.Tests.P1cCompleteMatrix
 import Cantilune.Tests.PositionalDPOI
 import Cantilune.Tests.PresheafComplementDPO
@@ -154,6 +160,7 @@ import Cantilune.Tests.P1cProjectionCertificates
 import Cantilune.Tests.P1cAdmittedOperations
 import Cantilune.Tests.P1cBusinessReplayMatrix
 import Cantilune.Tests.P1aBusinessProjectionCertificates
+import Cantilune.Tests.P1aProjectionScopeClosure
 import Cantilune.Tests.P1cAdmittedP1aCertificates
 import Cantilune.Tests.P1cAdmittedFourOccurrence
 import Cantilune.Tests.P1cAdmittedKernelExpectation
@@ -165,6 +172,7 @@ import Cantilune.Tests.P1cClosedNativeCertificate
 import Cantilune.Tests.P1cMultistageNativeCandidate
 import Cantilune.Tests.P1cCriticalMultistageCertificate
 import Cantilune.Tests.P1cFullNativeRefinement
+import Cantilune.Tests.P1cEnrichedStructuralCertificate
 import Cantilune.Tests.P1cStructuralLateBridge
 import Cantilune.Tests.ExecutionEpochTrace
 import Cantilune.Tests.ExecutionEpochTrajectory
@@ -185,6 +193,7 @@ import Cantilune.Tests.GeneralFiniteOpenDPOI
 import Cantilune.Tests.ExactPositionalDPOI
 import Cantilune.Tests.Reconfiguration
 import Cantilune.Tests.RankableDAG
+import Cantilune.Tests.SCCCondensation
 import Cantilune.Tests.Safety
 import Cantilune.Tests.SignatureFreeSMCCoherence
 import Cantilune.Tests.StochasticExecution
@@ -204,7 +213,38 @@ import Cantilune.Tests.FMSCommonFiniteCrossEpochChain
 import Cantilune.Tests.FMSCommonSegmentedCrossEpochChain
 import Cantilune.Tests.FMSCommonEpochSegmentedCrossEpochChain
 import Cantilune.Tests.P1cMultiState
+import Cantilune.Tests.P1cOperationRegistry
 import Cantilune.Tests.PowerdomainUnseparated
+import Cantilune.Tests.OpenSMCPolarisedAdequacy
+import Cantilune.Tests.OpenSMCPolarisedHomBridge
+import Cantilune.Tests.FMSAllDomainDefinabilityNoGo
+import Cantilune.Tests.FMSCpoAgentRestriction
+import Cantilune.Tests.FMSCpoAgentOperationalBridge
+import Cantilune.Tests.FMSCpoSupportedActualAgent
+import Cantilune.Tests.FMSCpoSupportedParallelRestriction
+import Cantilune.Tests.FMSCpoSupportedTotalOperationalCoalgebra
+import Cantilune.Tests.FMSActualAgentNormativeCommutation
+import Cantilune.Tests.FMSActualAgentNormativeOperationalBridge
+import Cantilune.Tests.FMSActualAgentPrefixFullAbstraction
+import Cantilune.Tests.FMSNormativeSupportedCompileBoundary
+import Cantilune.Tests.FMSFiniteOperationalFullAbstraction
+import Cantilune.Tests.FMSGuardedHoareTrace
+import Cantilune.Tests.FMSGuardedContextualHoare
+import Cantilune.Tests.FMSGuardedContextualComposition
+import Cantilune.Tests.FMSConcreteD1AAcceptance
+import Cantilune.Tests.FMSMaximumCompatibleClosure
+import Cantilune.Tests.CoreConformance
+import Cantilune.Tests.SubstantiveReconnectConformance
+import Cantilune.Tests.AdmissionPhaseSeamNoGo
+import Cantilune.Tests.SubstantiveAdmissionReconnectFMSAlignment
+import Cantilune.Tests.TechnicalClosure
+import Cantilune.Tests.ProductCommonFMSTrajectory
+import Cantilune.Tests.ProductCommonTrajectoryCertificate
+import Cantilune.Tests.ProductProtocolTrajectoryBridge
+import Cantilune.Tests.SubstantiveReconnectCommonFMSTrajectory
+import Cantilune.Tests.SubstantiveCoreCommonFMSTrajectory
+import Cantilune.Tests.CentralManifestSymbols
+import Cantilune.Tests.Central08And10Strengthening
 
 /-!
 # Cantilune formal regression suite

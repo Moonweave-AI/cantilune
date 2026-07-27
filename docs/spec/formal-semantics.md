@@ -2,16 +2,27 @@
 
 | Field | Value |
 |---|---|
-| Status | **Draft** (awaiting RFC-0002 consistency proof + second reviewer) |
+| Status | **Draft** (load-bearing implementation present; immutable evidence and independent review pending) |
 | Type | Normative specification (formal semantics) |
 | Risk | S2 |
 | Owner | Joker-of-Gotham (DRI) |
-| Reviewers | TBD (governance gap — see RFC-0001 metadata / governance note) |
+| Reviewers | Independent category/DPO/Petri, π/domain, and Lean/provenance reviewers pending; DRI/Agent review is not independent QA-L4 evidence |
 | Created | 2026-07-23 |
-| Updated | 2026-07-25 (extension-family and trajectory reconciliation) |
-| Related | RFC-0001, ADR-0001, RFC-0002, `docs/research/0001-p1b-pi-bridge-audit.md` |
+| Updated | 2026-07-28 (authoritative maximum-compatible D1-A/Open-π/P1a/admission/common-trajectory boundary) |
+| Related | RFC-0001, ADR-0001, RFC-0002, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 
-> **Governance note:** This spec defines the formal object that RFC-0002 must prove consistent. Claims marked **待证 / unverified** are not yet proven; claims marked **按构造 (by construction)** follow directly from the definitions here. The π-projection is **待证** by design decision (half-π (II)) — see §6.4 and RFC-0002.
+> **Governance note:** This spec defines the formal object that RFC-0002 must
+> prove consistent. Historical **待证 / unverified** and local build
+> checkpoints remain chronology, not current evidence. The authoritative
+> implementation boundary is §21, RFC-0002 §§25–28, and the proof manifest.
+> CENTRAL-12 is the maximum-compatible proposition
+> `MaximumCompatibleD1AFMSClosure`: its separated enriched-adjunction and
+> non-separated D1-A monad/domain branches are not one model. Actual-Agent
+> full abstraction is limited to deterministic typed tau/free-output prefix
+> tries, while guarded results use native-trace/contextual-Hoare observations.
+> The eight production packages are not instantiated. No obligation is
+> `proved` until immutable source/build evidence is bound, and no build makes
+> the work reviewed, FCP Passed, or ADR Accepted.
 
 ---
 
@@ -533,7 +544,7 @@ event in all views,” can be claimed.
 
 ## 13. P1b — π projection bridge: independent audit (2026-07-23)
 
-This section is the authoritative result of the independent review requested for Steps C–E. Governance classification: formal-research task, **S2**, **QA-L4**, **Pre-FCP/M1**; owner Joker-of-Gotham (DRI), formal-math/category/process-semantics reviewer still TBD. The disposition is **Iterate, not Promote**. Detailed evidence is in `docs/research/0001-p1b-pi-bridge-audit.md`.
+This section records the historical audit requested for Steps C–E. Governance classification: formal-research task, **S2**, **QA-L4 target**, **Pre-FCP/M1**; owner Joker-of-Gotham (DRI), independent formal-math/category/process-semantics review remains pending. The current authoritative boundary is §21. Detailed historical evidence is in `docs/research/0001-p1b-pi-bridge-audit.md`.
 
 ### 13.1 Verified baseline: Steps A–B
 
@@ -1480,3 +1491,252 @@ Product-level four-projection and probability theorems remain universally
 quantified over real rule bundles, native kernels, couplings, and operational
 facts. Since those inhabitants do not exist for the eight planned packages,
 the general theorems do not instantiate a production consistency theorem.
+
+## 21. Authoritative final-boundary appendix (2026-07-27)
+
+This appendix supersedes sections that describe the mutable tree as lacking
+the later DRI decision, the D1-A recursive solution, the actual-Agent prefix
+theorem, or the total supported finite-control coalgebra. Historical job
+counts and `implemented_unverified`/`partial_scaffold` counts remain useful
+chronology only. Current proof status is controlled by the immutable source
+commit, `formal/proof-obligations.json`, and its hashed build-evidence record.
+
+### 21.1 The two FMS branches are deliberately distinct
+
+The separated source-oriented branch supplies an all-source
+`SolutionSetCondition` and a CPO-enriched free/forgetful adjunction. Its
+canonical sequential Fubini operation is not commutative. The ratified D1-A
+branch instead identifies effect-level divergence and deadlock with one
+bottom and supplies the all-object lower-omega-Scott monad, chosen symmetric
+Fubini/monad coherence, an actual continuous-natural
+`A ≅ P(H A)` solution, initial algebra, terminal coalgebra, and recursive
+hiding for that exact unseparated endofunctor.
+
+These facts must not be combined into a fictitious model. In particular:
+
+- D1-A is not the separated Abramsky source powerdomain;
+- equality in the D1-A effect does not separate divergence and deadlock;
+- native late-pi, terminal-classification, and product layers retain that
+  operational distinction independently; and
+- no theorem may import the separated branch's universal property into the
+  D1-A branch without an explicit comparison construction.
+
+### 21.2 Exact adequacy, full-abstraction, and definability scopes
+
+The positive finite theorem is Hoare finite-trace adequacy and full
+abstraction, together with definability for the explicitly finitely generated
+points. The guarded theorem quantifies over the repository's `RecursiveProc`
+and uses lower-omega-Scott finite-action traces; its contextual completion is
+full abstraction for the constructed contextual-Hoare observation and is a
+congruence for the declared contexts.
+
+`contextualSourceInterpretation` maps each source process to its constructed
+semantic value. It is not a reverse definability or surjectivity theorem.
+The positive theorem that lives directly in the recursive FMS `Agent` is
+narrower: deterministic typed tau/free-output prefix tries have exact
+native-path adequacy/full abstraction, and the explicitly defined
+`CompactPrefixPoint`s have constructive realizations. The wider guarded
+Hoare theorem must not be restated as unrestricted actual-Agent
+strong-bisimulation full abstraction.
+
+Two kernel no-go results make this split mandatory. First, a source extension
+that exposes observably distinct nullary divergence/deadlock programs cannot
+be fully abstract when D1-A maps both to bottom. Second, even without that
+explicit source constant pair, bottom/choice semantics is not fully abstract
+for constructor-sensitive strong bisimulation on the finite tau/choice
+counterexample. A separate Cantor diagonal result rules out one process syntax
+being surjective onto every element of every omega-CPO.
+
+### 21.3 Open-pi and the total actual-Agent operational bridge
+
+The Open-pi category is a presented algebraic wiring SMC on typed, polarised
+abstract port positions. It supplies structural wire identities, tensor,
+composition, plug, hide, restriction, and the SMC coherence equations. Fresh
+nominal processes form a proof-relevant operational realization layer.
+Neither a positive-prefix finite relay nor any fixed finite-control raw
+forwarder is asserted to be a reusable identity in the raw
+alpha/ACU/scope quotient.
+
+`FMSCpoSupportedTotalOperationalCoalgebra` supplies a total finite-control
+coalgebra for zero, tau, input/output, choice, match/mismatch, parallel,
+restriction, free synchronization, bound-output/input close, and extrusion,
+with its unique terminal mediator into the recursive `Agent`.
+`FMSActualAgentNormativeOperationalBridge` compiles all fifteen normative
+families and supplies a genuine strong late-pi first step, exact outgoing-step
+classification, joint action/derivative alpha, and exact actual-Agent
+source/target/terminal equations.
+
+### 21.4 CENTRAL-18 common-chain completion condition
+
+The current `ProductPiFMSAlignment` fields connect one product pi occurrence
+to a normative family, raw realization, genuine native step, and actual-Agent
+commutation. That is necessary but not sufficient for the final common-chain
+theorem. CENTRAL-18 may be called complete only after one certificate also:
+
+1. selects an `OperationId` and proves its registry
+   `refinesTo`/`familyAt` value is the same normative family;
+2. preserves the operation payload and enriched `StableMetadata` fields
+   (version, rule, session, correlation, and occurrence);
+3. identifies the heterogeneous admission endpoint with the same
+   fixed-epoch candidate's source;
+4. carries a `TrajectoryAgreement` whose selected native event mark is that
+   same candidate event; and
+5. instantiates those equalities for the substantive `.instanceReconnect`
+   reference so admission, all four native/replay views, probability
+   trajectory, SCC/terminal/feedback evidence, and actual-Agent semantics are
+   fields of one record rather than unrelated existentials.
+
+Until that inhabitant exists and is bound to immutable evidence,
+`TechnicalClosure.generic_technical_closure` is a CENTRAL-18 candidate.
+The eight planned production packages remain outside Core Theory and must
+supply their own complete Product Conformance witnesses. The maximum
+governance state before independent human signatures is
+`proved / review-pending`; RFC-0002 remains Draft and ADR-0001 remains
+Proposed.
+
+### 21.5 Implemented final load-bearing seams
+
+This subsection supersedes 21.4's statement that the complete common-chain
+inhabitant is absent from the mutable implementation. Proof status is still
+controlled only by the immutable source commit, proof manifest, and hashed
+strict build evidence.
+
+#### P1a semantic binding
+
+For a selected source `candidate`, a complete package contains:
+
+```text
+DAGSemanticCertificate source dag projection candidate
+PetriSemanticCertificate source petri projection candidate
+```
+
+Both certificates select that same candidate and its replayed `DPOEvent`.
+The DAG graph is not a free certificate field. It is
+`configDependencyGraph` of the event's source/target configuration. The total
+DAG observation is its canonical SCC condensation. For each endpoint, every
+original edge is either internal to one SCC or represented by a condensation
+edge; each condensation edge strictly increases the canonical rank; and the
+condensation is acyclic.
+
+The selected Petri declaration is `declarationOfEvent` for the same event,
+inside its singleton ordered pre-net. The before and after markings are
+canonical `provenanceMarking`s of all finite runtime components: nodes,
+edges, data tokens, resource tokens, names, observations, policies, live
+sessions, and tombstones. The selected transition is their exact
+`endpointDelta`. It is enabled at the before marking, fires exactly to the
+after marking, and preserves the identity and provenance of every retained
+token.
+
+These fields are embedded in `CoreConformancePackage`; hence the generic
+total theorem no longer accepts a DAG/Petri proof consisting only of an
+arbitrarily named projected step.
+
+The fixed-epoch, product-wide statement is
+`CompleteProductP1aProjectionScope`.  It exposes the exact DAG, Petri, and
+morphism `ProjectionCertificate`s supplied by a conforming product, together
+with their full path lift/reflection and success/wait/deadlock preservation.
+The canonical SCC DAG and the reconfigurable individual-token Petri records
+remain selected-occurrence semantic sidecars; they are not presented as
+whole-LTS projection certificates.  Non-vacuity is proved separately by the
+fourteen-event fixed-signature business reference, whose DAG, Petri, and
+morphism targets have independently declared state and transition types.
+That reference is not identified with the reconnect candidate or with an
+arbitrary product package.
+
+#### Explicit dynamic-admission phases
+
+The P1c source protocol retains its fifteen `SourceEvent` families but has
+the following additional state and event:
+
+```text
+State.admissionEstablished
+Event.admissionReconnect
+```
+
+The exact strong sequence is:
+
+```text
+ready dynamicPartnerAdmission
+  -- input(delegationBus, delegatedBinder) -->
+admissionEstablished
+  -- tau -->
+completed dynamicPartnerAdmission
+```
+
+The first derivative is `closedReconnectSource.erase`, the canonical source
+of the genuine `.instanceReconnect` tau step; the terminal derivative is
+`closedReconnectTarget.erase`. The FMS compilation has the same two phases.
+Its denotation of the admission first target equals the normative source
+Agent of `.instanceReconnect` literally, not merely observationally. The
+heterogeneous alignment also retains the version pair and the stable
+rule/session/correlation/occurrence identifiers. This is the normative
+replacement for the kernel-refuted terminal-admission shortcut; no `tau*`
+appears in the source certificate.
+
+#### Complete selected-row trajectory binding
+
+`CompleteProductCommonTrajectoryCertificate` takes a
+`CoreConformancePackage`, positive labelling, FMS labelling, positive state
+path, `TrajectoryAgreement`, and selected index. It requires:
+
+- selected event/source/target equal the package's exact `candidate`;
+- the selected mark is normative;
+- selected operation equals the operation decoded by the package's
+  `ProductPiOperationalSemantics`;
+- selected metadata equals the package's canonical `StableMetadata`; and
+- selected FMS endpoints equal the normative actual-Agent source/target of
+  the package's selected family.
+
+From these fields the implementation derives the same projected native step,
+exact `DPOEvent` replay, canonical metadata-from-replay equation, genuine raw
+late-pi step, registry realization, raw structural source, joint
+action/derivative alpha, and actual-FMS commutation. Therefore these facts
+cannot be satisfied by unrelated witnesses.
+
+`generic_technical_closure_with_common_trajectory` is the parameterised final
+composition for every product that supplies all required inhabitants. The
+no-argument `reference_technical_closure` instantiates it with the substantive
+reconnect core and its canonical probability-one selected row. The separate
+heterogeneous admission/reconnect alignment supplies the literal
+cross-signature actual-Agent seam. This is a Core Theory/reference theorem,
+not an instantiation of the eight production packages.
+
+#### Named-wire freshness
+
+The operational realization of a singleton presented identity requires
+`WireNamesFresh sourceName targetName binder`: the three names are pairwise
+distinct. Canonical named tensor freshens every name in the right block away
+from the complete support of the left block. Thus the operational examples
+cannot rely on endpoint aliasing or binder capture. This does not identify
+the presented identity with a raw structural identity.
+
+#### Current verification boundary
+
+The integrated mutable tree completed an incremental root build; its job count
+is diagnostic and non-normative. Commit-bound clean CI, source-integrity and axiom/placeholder audits,
+the final proved manifest, and the strict descendant gate remain required
+before any central row is recorded as `proved`. Independent review and
+governance acceptance remain external.
+
+### 21.6 Cross-epoch Petri registry closure
+
+The Petri component now distinguishes pure signature transport from the
+heterogeneous admission transition. `PreNetExtension` proves that the old
+declaration list is a literal prefix of the new list, every old incidence is
+transported by the same `SignatureExtension`, and the selected new
+declaration is a fresh append at the admission target version.
+`ReconfigurablePetriCertificate` binds that registry extension to the exact
+Petri admission occurrence, its native derivation and replay, the admission
+tombstone/version, the connected post-admission candidate, and that
+candidate's occurrence-level enabled firing.
+
+The generic certificate permits the first admission to begin with an empty
+registry. The no-argument substantive reference is stronger:
+`LegacyPetriAntiVacuity` proves that its old registry contains a concrete
+nonempty endpoint-delta incidence and that this exact incidence is retained
+after reindexing. This is an anti-vacuity property of the reference witness,
+not an invalid global assumption that every initial registry is nonempty.
+
+No theorem in this section claims a global equivalence between every target
+LTS step and Petri firing; the result is indexed by the selected replayable
+occurrence.

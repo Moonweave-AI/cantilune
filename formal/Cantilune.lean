@@ -60,6 +60,16 @@ import Cantilune.Theorems.FMSCommonTwoRowCrossEpochChain
 import Cantilune.Theorems.FMSCommonFiniteCrossEpochChain
 import Cantilune.Theorems.FMSCommonSegmentedCrossEpochChain
 import Cantilune.Theorems.FMSCommonEpochSegmentedCrossEpochChain
+import Cantilune.Theorems.CoreConformance
+import Cantilune.Theorems.P1aProjectionScopeClosure
+import Cantilune.Theorems.ProductCommonTrajectoryCertificate
+import Cantilune.Theorems.ProductProtocolTrajectoryBridge
+import Cantilune.Theorems.SubstantiveReconnectConformance
+import Cantilune.Theorems.SubstantiveAdmissionReconnectFMSAlignment
+import Cantilune.Theorems.SubstantiveReconnectCommonFMSTrajectory
+import Cantilune.Theorems.SubstantiveCoreCommonFMSTrajectory
+import Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge
+import Cantilune.Theorems.TechnicalClosure
 import Cantilune.Pi.P1cAdmittedFourOccurrence
 import Cantilune.Tests.All
 

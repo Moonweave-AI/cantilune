@@ -3,13 +3,46 @@ name: Formal theory
 on:
   push:
     paths:
+      - ".gitattributes"
       - ".github/workflows/formal.yml"
       - "formal/**"
+      - "docs/adr/0001-unified-formal-structure.md"
+      - "docs/adr/zh-CN/0001-unified-formal-structure.zh-CN.md"
+      - "docs/rfc/0002-projection-consistency.md"
+      - "docs/rfc/zh-CN/0002-projection-consistency.zh-CN.md"
+      - "docs/spec/formal-semantics.md"
+      - "docs/spec/zh-CN/formal-semantics.zh-CN.md"
+      - "docs/spec/observable-lts-policies.md"
+      - "docs/spec/success-predicates-interface.md"
+      - "docs/qa/**"
+      - "docs/handoffs/**"
+      - "docs/THEORY-CLOSURE-DELIVERY-2026-07-27.md"
   pull_request:
     paths:
+      - ".gitattributes"
       - ".github/workflows/formal.yml"
       - "formal/**"
+      - "docs/adr/0001-unified-formal-structure.md"
+      - "docs/adr/zh-CN/0001-unified-formal-structure.zh-CN.md"
+      - "docs/rfc/0002-projection-consistency.md"
+      - "docs/rfc/zh-CN/0002-projection-consistency.zh-CN.md"
+      - "docs/spec/formal-semantics.md"
+      - "docs/spec/zh-CN/formal-semantics.zh-CN.md"
+      - "docs/spec/observable-lts-policies.md"
+      - "docs/spec/success-predicates-interface.md"
+      - "docs/qa/**"
+      - "docs/handoffs/**"
+      - "docs/THEORY-CLOSURE-DELIVERY-2026-07-27.md"
   workflow_dispatch:
+    inputs:
+      gate:
+        description: Formal evidence gate to run
+        required: true
+        default: development
+        type: choice
+        options:
+          - development
+          - proved
 
 permissions:
   contents: read
@@ -23,6 +56,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
 
       - name: Require committed toolchain and dependency locks
         shell: pwsh
@@ -44,8 +79,40 @@ jobs:
 
       - name: Run formal evidence gate
         shell: pwsh
-        run: ./formal/scripts/ci.ps1
+        run: |
+          $gate = '${{ inputs.gate }}'
+          switch ($gate) {
+            'proved' {
+              ./formal/scripts/ci.ps1 -RequireProved -CleanBuild
+            }
+            default {
+              ./formal/scripts/ci.ps1
+            }
+          }
 
-      - name: Confirm lock files did not drift
+      - name: Confirm immutable tree and lock files did not drift
         shell: pwsh
-        run: git diff --exit-code -- formal/lean-toolchain formal/lake-manifest.json
+        run: |
+          ./formal/scripts/ci.ps1 -VerifyTreeOnly
+          git diff --exit-code -- `
+            .gitattributes `
+            .github/workflows/formal.yml `
+            docs/adr/0001-unified-formal-structure.md `
+            docs/adr/zh-CN/0001-unified-formal-structure.zh-CN.md `
+            docs/rfc/0002-projection-consistency.md `
+            docs/rfc/zh-CN/0002-projection-consistency.zh-CN.md `
+            docs/spec/formal-semantics.md `
+            docs/spec/zh-CN/formal-semantics.zh-CN.md `
+            docs/spec/observable-lts-policies.md `
+            docs/spec/success-predicates-interface.md `
+            formal/Cantilune `
+            formal/Cantilune.lean `
+            formal/lean-toolchain `
+            formal/lakefile.toml `
+            formal/lake-manifest.json `
+            formal/axiom-audit-targets.txt `
+            formal/p1c-rule-matrix.json `
+            formal/source-integrity.json `
+            formal/proof-obligations.json `
+            formal/scripts/ci.ps1 `
+            formal/scripts/recompute-integrity.ps1

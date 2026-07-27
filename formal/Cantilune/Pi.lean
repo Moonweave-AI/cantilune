@@ -30,6 +30,10 @@ import Cantilune.Pi.OpenSMCBoundaryRenamingCalculus
 import Cantilune.Pi.OpenSMCFiniteControlIdentityBoundary
 import Cantilune.Pi.OpenSMCLinearOneShotObstruction
 import Cantilune.Pi.OpenSMCCanonicalPositional
+import Cantilune.Pi.OpenSMCPolarisedOperational
+import Cantilune.Pi.OpenSMCPolarisedAdequacy
+import Cantilune.Pi.OpenSMCPolarisedHomBridge
+import Cantilune.Pi.OpenSMCPolarisedProofCarrying
 import Cantilune.Pi.ExternalFMS
 import Cantilune.Pi.FMSModel
 import Cantilune.Pi.FMSFinitePower
@@ -76,6 +80,25 @@ import Cantilune.Pi.FMSCpoOmegaScottSupportLaxMonad
 import Cantilune.Pi.FMSCpoOmegaScottSupportLaxMonoidal
 import Cantilune.Pi.FMSCpoFiniteSupportStrictConstantsNoGo
 import Cantilune.Pi.FMSCpoSupportHidingCoherence
+import Cantilune.Pi.FMSCpoUnseparatedSourceCore
+import Cantilune.Pi.FMSCpoAgentRestriction
+import Cantilune.Pi.FMSCpoAgentOperationalBridge
+import Cantilune.Pi.FMSCpoSupportedActualAgent
+import Cantilune.Pi.FMSCpoSupportedParallelRestriction
+import Cantilune.Pi.FMSCpoSupportedTotalOperationalCoalgebra
+import Cantilune.Pi.FMSActualAgentNormativeCommutation
+import Cantilune.Pi.FMSActualAgentNormativeOperationalBridge
+import Cantilune.Pi.FMSActualAgentPrefixFullAbstraction
+import Cantilune.Pi.FMSNormativeSupportedCompileBoundary
+import Cantilune.Pi.FMSFiniteOperationalFullAbstraction
+import Cantilune.Pi.FMSGuardedHoareTrace
+import Cantilune.Pi.FMSGuardedContextualHoare
+import Cantilune.Pi.FMSGuardedContextualComposition
+import Cantilune.Pi.FMSConcreteD1AAcceptance
+import Cantilune.Pi.FMSMaximumCompatibleClosure
+import Cantilune.Pi.FMSUnseparatedExplicitBottomNoGo
+import Cantilune.Pi.FMSUnseparatedFiniteStrongNoGo
+import Cantilune.Pi.FMSAllDomainDefinabilityNoGo
 import Cantilune.Pi.NominalFiniteSupport
 import Cantilune.Pi.NominalCpo
 import Cantilune.Pi.FMSNominalSeparationTransport
@@ -122,6 +145,7 @@ import Cantilune.Pi.P1cClosedNativeCertificate
 import Cantilune.Pi.P1cMultistageNativeCandidate
 import Cantilune.Pi.P1cCriticalMultistageCertificate
 import Cantilune.Pi.P1cFullNativeRefinement
+import Cantilune.Pi.P1cEnrichedStructuralCertificate
 import Cantilune.Pi.LateAlphaSupport
 import Cantilune.Pi.P1bStructuralLateBridge
 import Cantilune.Pi.P1bRequestingFingerprint
@@ -153,6 +177,7 @@ import Cantilune.Pi.P1cAdmittedKernelExpectation
 import Cantilune.Pi.P1cSupportedFeedbackBridge
 import Cantilune.Pi.P1cMultiState
 import Cantilune.Pi.PowerdomainUnseparated
+import Cantilune.Pi.P1cOperationRegistry
 
 /-!
 # Cantilune π-calculus kernel

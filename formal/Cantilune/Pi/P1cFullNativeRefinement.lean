@@ -16,7 +16,10 @@ source relation and it has no weak or transitive closure.
 
 The two protocols whose first step establishes a live session (`openClose`
 and `restriction`) receive an explicit intermediate state and payload event.
-All other designated endpoints are proved native-terminal.  The resulting
+Dynamic partner admission also has an explicit admitted/reconnect phase: its
+visible input derivative is the canonical reconnect-ready process and a
+subsequent genuine tau step completes that phase.  All other designated
+endpoints are proved native-terminal.  The resulting
 certificate therefore proves soundness, reflection/exhaustiveness, success,
 waiting, and signature-version preservation for all fifteen initial event
 families.
@@ -43,23 +46,25 @@ inductive State where
   | ready (event : SourceEvent)
   | openCloseEstablished
   | restrictionEstablished
+  | admissionEstablished
   | completed (event : SourceEvent)
   deriving DecidableEq, Repr, Fintype
 
 /--
-`execute event` is the original event identity.  The two new labels expose
-the native follow-up which made the old two-state source impossible to
-reflect.
+`execute event` is the original event identity.  The three phase labels
+expose native follow-ups which a two-state source cannot reflect.
 -/
 inductive Event where
   | execute (event : SourceEvent)
   | openClosePayload
   | restrictionPayload
+  | admissionReconnect
   deriving DecidableEq, Repr, Fintype
 
 def afterFirst : SourceEvent → State
   | .openClose => .openCloseEstablished
   | .restriction => .restrictionEstablished
+  | .dynamicPartnerAdmission => .admissionEstablished
   | event => .completed event
 
 inductive Step : State → Event → State → Prop where
@@ -70,14 +75,19 @@ inductive Step : State → Event → State → Prop where
   | restrictionPayload :
       Step .restrictionEstablished .restrictionPayload
         (.completed .restriction)
+  | admissionReconnect :
+      Step .admissionEstablished .admissionReconnect
+        (.completed .dynamicPartnerAdmission)
 
 def sourceSuccess : State → Prop
   | .completed _ => True
   | .ready _
   | .openCloseEstablished
-  | .restrictionEstablished => False
+  | .restrictionEstablished
+  | .admissionEstablished => False
 
 def sourceVersion : State → Nat
+  | .admissionEstablished
   | .completed .dynamicPartnerAdmission => 1
   | _ => 0
 
@@ -131,7 +141,7 @@ def readyProcess : SourceEvent → Raw.Proc
   | .matchSuccess => (.matchEq payload payload (.tau .zero) : Proc).erase
   | .mismatchGuard => mismatchDecision.erase
   | .dynamicPartnerAdmission =>
-      Cantilune.Pi.AdmissionCertificate.certifiedAdmissionWait.erase
+      .recv delegationBus delegatedBinder closedReconnectSource.erase
   | .instanceReconnect => closedReconnectSource.erase
   | .instanceDeleteQuiescent => closedQuiescentDeleteSource.erase
 
@@ -165,8 +175,8 @@ def firstTarget : SourceEvent → Raw.Proc
   | .choiceLeft
   | .choiceRight
   | .matchSuccess
-  | .mismatchGuard
-  | .dynamicPartnerAdmission => .zero
+  | .mismatchGuard => .zero
+  | .dynamicPartnerAdmission => closedReconnectSource.erase
   | .instanceReconnect => closedReconnectTarget.erase
   | .instanceDeleteQuiescent => closedQuiescentDeleteTarget.erase
 
@@ -183,8 +193,8 @@ def terminalProcess : SourceEvent → Raw.Proc
   | .choiceLeft
   | .choiceRight
   | .matchSuccess
-  | .mismatchGuard
-  | .dynamicPartnerAdmission => .zero
+  | .mismatchGuard => .zero
+  | .dynamicPartnerAdmission => closedReconnectTarget.erase
   | .instanceReconnect => closedReconnectTarget.erase
   | .instanceDeleteQuiescent => closedQuiescentDeleteTarget.erase
 
@@ -192,12 +202,14 @@ def stateFamily : State → SourceEvent
   | .ready event => event
   | .openCloseEstablished => .openClose
   | .restrictionEstablished => .restriction
+  | .admissionEstablished => .dynamicPartnerAdmission
   | .completed event => event
 
 def stateProcess : State → Raw.Proc
   | .ready event => readyProcess event
   | .openCloseEstablished => closedOpenCloseTarget.erase
   | .restrictionEstablished => closedHandshakeResult.erase
+  | .admissionEstablished => closedReconnectSource.erase
   | .completed event => terminalProcess event
 
 /--
@@ -221,14 +233,16 @@ def mapState (state : State) : TargetState :=
 def mapEvent : Event → Raw.Action
   | .execute event => firstAction event
   | .openClosePayload
-  | .restrictionPayload => .tau
+  | .restrictionPayload
+  | .admissionReconnect => .tau
 
 def targetSuccess (state : TargetState) : Prop :=
   state.process = terminalProcess state.family
 
 def targetVersion (state : TargetState) : Nat :=
   if state.family = .dynamicPartnerAdmission ∧
-      state.process = terminalProcess .dynamicPartnerAdmission then
+      (state.process = firstTarget .dynamicPartnerAdmission ∨
+        state.process = terminalProcess .dynamicPartnerAdmission) then
     1
   else
     0
@@ -514,8 +528,6 @@ theorem ready_native_exact
         mismatch_native_exact' (by decide) step
   | dynamicPartnerAdmission =>
       simpa [readyProcess, firstAction, firstTarget,
-        Cantilune.Pi.AdmissionCertificate.certifiedAdmissionWait,
-        Cantilune.Pi.AdmissionCertificate.admissionAction,
         delegationChannel, Proc.erase] using receive_native_exact step
   | instanceReconnect =>
       simpa [readyProcess, firstAction, firstTarget] using
@@ -534,6 +546,19 @@ theorem established_native_exact
     (step : Late.NativeStep closedOpenCloseTarget.erase action target) :
     action = .tau ∧ target = closedCompletedProcess.erase :=
   P1cMultistageNativeCandidate.established_native_exact step
+
+/-- The admitted phase is literally the canonical reconnect-ready process. -/
+theorem admission_established_native :
+    Late.NativeStep closedReconnectSource.erase .tau
+      closedReconnectTarget.erase :=
+  closed_reconnect_native
+
+/-- Reconnect is the only native derivative of the admitted phase. -/
+theorem admission_established_native_exact
+    {action : Raw.Action} {target : Raw.Proc}
+    (step : Late.NativeStep closedReconnectSource.erase action target) :
+    action = .tau ∧ target = closedReconnectTarget.erase :=
+  closed_reconnect_native_exact step
 
 private theorem completed_no_native
     {action : Raw.Action} {next : Raw.Proc} :
@@ -554,7 +579,7 @@ theorem terminal_no_native
   | openClose | restriction =>
       simpa [terminalProcess] using
         (completed_no_native (action := action) (next := target))
-  | delegation | instanceReconnect =>
+  | delegation | dynamicPartnerAdmission | instanceReconnect =>
       simpa [terminalProcess] using
         closed_reconnect_target_no_native
           (action := action) (next := target)
@@ -563,8 +588,7 @@ theorem terminal_no_native
         closed_quiescent_delete_target_no_native
           (action := action) (next := target)
   | freeOutput | boundOutput | lateInput | scopeExtrusion | choiceLeft |
-      choiceRight | matchSuccess | mismatchGuard |
-      dynamicPartnerAdmission =>
+      choiceRight | matchSuccess | mismatchGuard =>
       simpa [terminalProcess] using
         (zero_no_native (action := action) (target := target))
 
@@ -587,7 +611,7 @@ private theorem step_preserves_family
     stateFamily source = stateFamily target := by
   cases step with
   | execute event => cases event <;> rfl
-  | openClosePayload | restrictionPayload => rfl
+  | openClosePayload | restrictionPayload | admissionReconnect => rfl
 
 private theorem map_afterFirst (event : SourceEvent) :
     mapState (afterFirst event) = ⟨event, firstTarget event⟩ := by
@@ -603,7 +627,7 @@ private theorem target_endpoint_of_source_step
   | execute family =>
       cases family <;> simp_all [mapState, stateFamily, stateProcess,
         afterFirst]
-  | openClosePayload | restrictionPayload =>
+  | openClosePayload | restrictionPayload | admissionReconnect =>
       simp_all [mapState, stateFamily, stateProcess]
 
 theorem native_sound
@@ -624,6 +648,8 @@ theorem native_sound
       simpa [stateProcess, terminalProcess, mapEvent, closedOpenCloseTarget,
         closedHandshakeResult] using
         established_native
+  | admissionReconnect =>
+      exact admission_established_native
 
 /--
 Every native transition from every mapped source state is exactly one source
@@ -661,6 +687,14 @@ theorem native_reflect
       exact
         ⟨.restrictionPayload, .completed .restriction,
           .restrictionPayload, rfl, rfl⟩
+  | admissionEstablished =>
+      rcases admission_established_native_exact step with
+        ⟨actionEq, targetEq⟩
+      subst action
+      subst target
+      exact
+        ⟨.admissionReconnect, .completed .dynamicPartnerAdmission,
+          .admissionReconnect, rfl, rfl⟩
   | completed family =>
       exact False.elim (terminal_no_native family step)
 
@@ -692,6 +726,14 @@ theorem source_success_iff_target (state : State) :
         process_with_native_not_terminal .restriction restrictionNative
       simp [targetLTS, targetSuccess, mapState, stateFamily, stateProcess,
         sourceLTS, sourceSuccess, notTerminal]
+  | admissionEstablished =>
+      have notTerminal :
+          closedReconnectSource.erase ≠
+            terminalProcess .dynamicPartnerAdmission :=
+        process_with_native_not_terminal .dynamicPartnerAdmission
+          admission_established_native
+      simp [targetLTS, targetSuccess, mapState, stateFamily, stateProcess,
+        sourceLTS, sourceSuccess, notTerminal]
   | completed event =>
       simp [sourceLTS, sourceSuccess, targetLTS, targetSuccess, mapState,
         stateFamily, stateProcess]
@@ -704,19 +746,32 @@ theorem source_version_preserved (state : State) :
       have notTerminal :
           readyProcess event ≠ terminalProcess event :=
         process_with_native_not_terminal event (first_native event)
+      have dynamicReadyNeFirst :
+          readyProcess .dynamicPartnerAdmission ≠
+            firstTarget .dynamicPartnerAdmission := by
+        intro collapsed
+        have inputStep := first_native .dynamicPartnerAdmission
+        rw [collapsed] at inputStep
+        have actionEq :=
+          (closed_reconnect_native_exact inputStep).1
+        cases actionEq
       cases event <;>
         simp_all [targetLTS, targetVersion, mapState, stateFamily, stateProcess,
           sourceLTS, sourceVersion]
   | openCloseEstablished | restrictionEstablished =>
       rfl
+  | admissionEstablished =>
+      simp [targetLTS, targetVersion, mapState, stateFamily, stateProcess,
+        sourceLTS, sourceVersion, firstTarget]
   | completed event =>
       cases event <;>
         simp [targetLTS, targetVersion, mapState, stateFamily, stateProcess,
           sourceLTS, sourceVersion, terminalProcess]
 
 /--
-All fifteen original event families, plus the two necessary payload
-follow-ups, form one projection into the complete raw native late LTS.
+All fifteen original event families, plus the two payload follow-ups and the
+explicit admission/reconnect follow-up, form one projection into the complete
+raw native late LTS.
 -/
 def certificate : ProjectionCertificate sourceLTS targetLTS where
   mapState := mapState
@@ -741,6 +796,10 @@ def certificate : ProjectionCertificate sourceLTS targetLTS where
         exact TargetStep.native .openClose established_native
     | restrictionPayload =>
         exact TargetStep.native .restriction (native_sound .restrictionPayload)
+    | admissionReconnect =>
+        exact
+          TargetStep.native .dynamicPartnerAdmission
+            admission_established_native
   reflect := by
     intro source action target observableStep
     rcases observableStep.1 with ⟨family, native⟩

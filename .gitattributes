@@ -1,0 +1,19 @@
+# Formal evidence is hashed after UTF-8/LF canonicalization, and these
+# attributes keep ordinary checkouts aligned with that canonical form.
+/.gitattributes text eol=lf
+/.github/workflows/formal.yml text eol=lf
+/formal/*.lean text eol=lf
+/formal/**/*.lean text eol=lf
+/formal/*.json text eol=lf
+/formal/*.toml text eol=lf
+/formal/*.txt text eol=lf
+/formal/scripts/*.ps1 text eol=lf
+/docs/adr/0001-unified-formal-structure.md text eol=lf
+/docs/adr/zh-CN/0001-unified-formal-structure.zh-CN.md text eol=lf
+/docs/rfc/0002-projection-consistency.md text eol=lf
+/docs/rfc/zh-CN/0002-projection-consistency.zh-CN.md text eol=lf
+/docs/spec/formal-semantics.md text eol=lf
+/docs/spec/zh-CN/formal-semantics.zh-CN.md text eol=lf
+/docs/spec/observable-lts-policies.md text eol=lf
+/docs/spec/success-predicates-interface.md text eol=lf
+/docs/qa/evidence/*.md text eol=lf

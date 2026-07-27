@@ -6,6 +6,7 @@ import Cantilune.Projection.PreNet
 import Cantilune.Projection.Morphism
 import Cantilune.Projection.GeneralP1a
 import Cantilune.Projection.GeneralP1aComplete
+import Cantilune.Projection.SCCCondensation
 
 /-!
 # P1a finite reference projections

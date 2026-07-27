@@ -1,6 +1,7 @@
 import Cantilune.Core.DPO
 import Cantilune.Core.Execution
 import Cantilune.Pi.Late
+import Cantilune.Pi.P1cClosedNativeCertificate
 import Mathlib.Data.Fintype.EquivFin
 
 /-!
@@ -417,12 +418,19 @@ end Morphism
 
 namespace PiView
 
+/-!
+The operational request keeps its runtime channel/value pair in the replay
+recipe and, downstream, in the enriched registry metadata.  The raw π view
+uses the fixed closed nominal representative of the normative reconnect
+family.  This is intentional: the hidden delegation bus and delegated name
+are α-local implementation names, while the product occurrence identity is
+carried by the replay/event metadata rather than by exposing either name.
+-/
+
 def source : Request → Raw.Proc
   | .mismatch left right => .matchNe left right (.tau .zero)
-  | .reconnect channel value =>
-      .par
-        (.send channel value .zero)
-        (.recv channel (value + 1) .zero)
+  | .reconnect _ _ =>
+      P1cClosedNativeCertificate.closedReconnectSource.erase
   | .quiescentDelete channel =>
       .par
         (.send channel channel .zero)
@@ -430,7 +438,8 @@ def source : Request → Raw.Proc
 
 def target : Request → Raw.Proc
   | .mismatch _ _ => .zero
-  | .reconnect _ _ => .par .zero .zero
+  | .reconnect _ _ =>
+      P1cClosedNativeCertificate.closedReconnectTarget.erase
   | .quiescentDelete _ => .par .zero .zero
 
 /--
@@ -449,9 +458,7 @@ theorem native (occurrence : Occurrence σ) :
           occurrence.request_enabled
       · exact Late.NativeStep.prefixTau
   | reconnect channel value =>
-      apply Late.NativeStep.syncLeft
-        Late.NativeStep.prefixOutput Late.NativeStep.prefixInput
-      simp [Raw.Proc.freeNames]
+      exact P1cClosedNativeCertificate.closed_reconnect_native
   | quiescentDelete channel =>
       apply Late.NativeStep.syncLeft
         Late.NativeStep.prefixOutput Late.NativeStep.prefixInput

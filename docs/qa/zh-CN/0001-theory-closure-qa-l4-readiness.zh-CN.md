@@ -1,11 +1,20 @@
 ---
-title: Cantilune 理论闭合 QA-L4 就绪包
-status: Draft
+title: 已被取代的 Cantilune 理论闭合 QA-L4 就绪快照
+status: Superseded
 risk: S2
 quality_target: QA-L4
 maturity: Pre-FCP/M1
 owner: Joker-of-Gotham
 ---
+
+> **已被取代的快照（2026-07-28）：**本文记录的是当前最大相容 D1-A
+> 闭合之前的历史状态，不能作为现行 QA 评审包。其中的 job 数、obligation
+> 数、缺口清单和 FMS 备选项只保留为时间线。现行替代文件是
+> `../0002-theory-closure-proved-review-pending-2026-07-27.md`。替代文件仍将
+> QA-L4、FCP 和 ADR 接受保持为待完成人工治理事项；严格区分 separated
+> enriched-adjunction 分支与非分离 D1-A monad/domain 分支；actual-Agent
+> 全抽象仅覆盖确定性的 typed tau/free-output prefix trie；更宽的 guarded
+> 结果是 native-trace/contextual-Hoare；八个生产包均未实例化。
 
 # 结论
 

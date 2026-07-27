@@ -1,4 +1,13 @@
-# Gate 4: P1b Immutable Commit Review Report
+# [RETRACTED] Gate 4: P1b Immutable Commit Review Report
+
+> **Evidence correction (2026-07-28):** This was an agent/DRI historical
+> review note, not an independent review and not immutable build evidence.
+> It relied on existing `.lake` artifacts while the Lean executable was not
+> run. Its “verified”, “accepted”, “immutable binding complete”, compilation,
+> theorem-count and gate-transition claims are retracted. P1b status is
+> controlled by the current proof manifest, exact commit-bound build/audit
+> evidence, and a later independent process-semantics/Lean review. This file
+> remains only as chronology.
 
 ## Review Metadata
 
@@ -9,7 +18,7 @@
 | COI Status | Documented: DRI is temporary reviewer due to external reviewer unavailability |
 | Review Type | Final code review for immutable commit binding |
 | Gate | Gate 4: P1b request/accept operational |
-| Status Transition | `implemented_unverified` → `kernel_verified` |
+| Status Transition | **Retracted; no status transition established by this report** |
 
 ## Code Location
 

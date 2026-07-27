@@ -1,13 +1,30 @@
-# Cantilune Theory FCP Entrance Package (2026-07-27)
+# [SUPERSEDED] Cantilune Theory FCP Entrance Package (2026-07-27)
 
 | Field | Value |
 |---|---|
 | Package Date | 2026-07-27 |
 | DRI | Joker-of-Gotham |
-| Status | **Pre-FCP / M1** → FCP Ready (pending implementation completion) |
+| Status | **Superseded historical planning artifact — not FCP evidence** |
 | Risk | S2 (high-impact theory work) |
 | Quality Target | QA-L4 (formal verification + independent review) |
 | Branch | `codex/theory-foundation` |
+
+> **Controlling correction (2026-07-28):** This package records the plan and
+> estimates that existed on 2026-07-27. It is superseded by
+> `docs/THEORY-CLOSURE-DELIVERY-2026-07-27.md`,
+> `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md`, the current
+> RFC-0002/ADR-0001, and the immutable proof manifest. Nothing below is
+> evidence that a gate passed, a theorem was kernel checked, an independent
+> review occurred, FCP passed, or ADR-0001 was Accepted.
+>
+> The controlling FMS result is
+> `MaximumCompatibleD1AFMSClosure`: it is a typed record of a separated
+> all-source/enriched-adjunction branch and a distinct non-separated D1-A
+> monad/domain branch, not one unified reconstruction of the source-paper FMS
+> model. Actual-Agent full abstraction is limited to the deterministic typed
+> tau/free-output prefix-trie sublanguage; the wider guarded result is
+> native-trace/contextual-Hoare. The eight production packages remain outside
+> Core Theory and have not been instantiated.
 
 ---
 
@@ -72,7 +89,7 @@ All 10 architectural decisions have been made by the DRI on 2026-07-27:
 | Document | Purpose | Status |
 |----------|---------|--------|
 | RFC-0002 | Projection Consistency theorem statement | ✅ UPDATED (D1-D10 integrated) |
-| ADR-0001 | Unified Formal Structure acceptance criteria | ✅ ACCEPTED (2026-07-27, subject to gates) |
+| ADR-0001 | Unified Formal Structure acceptance criteria | **Proposed; human acceptance pending** |
 | `docs/DECISIONS-REQUIRED-zh.md` | Decision dashboard | ✅ COMPLETE |
 | `docs/research/0018-...` | Theory/Product boundary clarification | ✅ COMPLETE |
 
@@ -232,7 +249,7 @@ The following decisions required **specification documents only** (no Lean imple
 | Document | Lines | Status | Bilingual |
 |----------|-------|--------|-----------|
 | RFC-0002 | 1,568 | Draft (pre-FCP, all decisions integrated) | ✅ EN + ZH |
-| ADR-0001 | ~1,200 | Accepted (2026-07-27, subject to gates) | ✅ EN + ZH |
+| ADR-0001 | ~1,200 | Proposed; human acceptance pending | ✅ EN + ZH |
 | `formal-semantics.md` | 1,483 | Draft (normative spec) | ✅ EN + ZH |
 | `success-predicates-interface.md` | ~400 | Draft (D10 spec) | ❌ EN only |
 | `observable-lts-policies.md` | ~650 | Draft (D9 spec) | ❌ EN only |
@@ -531,7 +548,7 @@ Promotion criteria: Gates 4, 5, 7, 10 satisfied.
 | Document | Purpose | Status |
 |----------|---------|--------|
 | RFC-0002 | Projection Consistency theorem | Draft (D1-D10 integrated) |
-| ADR-0001 | Unified Formal Structure | Accepted (subject to gates) |
+| ADR-0001 | Unified Formal Structure | Proposed; human acceptance pending |
 | `formal-semantics.md` | $(C,R)$ normative spec | Draft |
 | `success-predicates-interface.md` | D10 specification | Complete (2026-07-27) |
 | `observable-lts-policies.md` | D9 specification | Complete (2026-07-27) |

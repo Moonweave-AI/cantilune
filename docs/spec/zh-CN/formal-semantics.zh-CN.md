@@ -2,16 +2,24 @@
 
 | 字段 | 值 |
 |---|---|
-| 状态 | **草案**（等待 RFC-0002 一致性证明 + 第二评审人） |
+| 状态 | **草案**（承重实现已具备；不可变证据与独立评审待完成） |
 | 类型 | 规范性规格（形式语义） |
 | 风险 | S2 |
 | 负责人 | Joker-of-Gotham（DRI） |
-| 评审人 | 待定（治理缺口 —— 见 RFC-0001 元数据 / 治理说明） |
+| 评审人 | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审待签署；DRI/Agent 自审不构成独立 QA-L4 证据 |
 | 创建日期 | 2026-07-23 |
-| 更新日期 | 2026-07-25（签名族与共同轨迹对账） |
-| 相关 | RFC-0001、ADR-0001、RFC-0002、`docs/research/zh-CN/0001-p1b-pi-bridge-audit.zh-CN.md` |
+| 更新日期 | 2026-07-28（最大相容 D1-A/Open-π/P1a/admission/common-trajectory 最终边界） |
+| 相关 | RFC-0001、ADR-0001、RFC-0002、`docs/research/zh-CN/0001-p1b-pi-bridge-audit.zh-CN.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 
-> **治理说明：** 本规范定义 RFC-0002 必须证明其一致性的那个形式对象。标记为**待证 / 未经验证**的主张尚未证明；标记为**按构造**的主张直接得自本规范的定义。π 投影因设计决策（half-π (II)）而**待证** —— 见 §6.4 与 RFC-0002。
+> **治理说明：** 本规范定义 RFC-0002 必须证明其一致性的形式对象。历史
+> **待证 / 未经验证**与局部构建记录只保留为时间线；当前实现边界由 §21、
+> RFC-0002 §25–§28 与 proof manifest 控制。CENTRAL-12 是最大相容命题
+> `MaximumCompatibleD1AFMSClosure`：其 separated enriched-adjunction
+> 分支与非分离 D1-A monad/domain 分支不是一个模型。actual-Agent 全抽象
+> 仅覆盖确定性的 typed tau/free-output prefix trie；guarded 结果使用
+> native-trace/contextual-Hoare 观察。八个生产包尚未实例化。任何
+> obligation 只有绑定不可变 source/build evidence 后才能标为 `proved`；
+> 任何构建均不能自行产生 reviewed、FCP Passed 或 ADR Accepted 状态。
 
 ---
 
@@ -1205,3 +1213,129 @@ definability 或 full abstraction。
 产品级四投影与概率定理仍对真实 rule bundle、原生 kernel、coupling 和运行
 事实全称量化。八个计划产品包不存在这些 inhabitant，所以通用定理不会自动
 实例化出生产一致性总定理。
+
+## 21. 最终承重接缝的实现语义（2026-07-27）
+
+本节取代先前关于完整 common-chain inhabitant 尚未进入可变实现的陈述。
+Proof status 仍只由不可变 source commit、proof manifest 与带哈希的 strict
+build evidence 决定。
+
+### 21.1 P1a 语义绑定
+
+对同一选定 source `candidate`，完整包同时携带：
+
+```text
+DAGSemanticCertificate source dag projection candidate
+PetriSemanticCertificate source petri projection candidate
+```
+
+二者选择同一个 candidate 及其 replayed `DPOEvent`。DAG graph 不是调用方
+自由填写的证书字段，而是事件 source/target configuration 的
+`configDependencyGraph`。总 DAG observation 是其 canonical SCC
+condensation。对两个 endpoint，每条原始边要么在同一 SCC 内，要么在
+condensation 中有对应边；每条 condensation edge 严格增加 canonical rank；
+condensation 本身无环。
+
+Petri 的 selected declaration 是同一事件的 `declarationOfEvent`，位于其有序
+singleton pre-net。Before/after marking 是所有有限 runtime component 的
+canonical `provenanceMarking`，包括 node、edge、data/resource token、name、
+observation、policy、live session 与 tombstone。Selected transition 是两者的
+精确 `endpointDelta`；它在 before marking 上 enabled，精确 firing 到 after
+marking，并保持全部 retained token 的 identity 与 provenance。
+
+这些字段已嵌入 `CoreConformancePackage`，所以通用总定理不再接受仅有任意
+命名 projected step 的 DAG/Petri 证明。
+
+固定 epoch 的产品级结论是 `CompleteProductP1aProjectionScope`。它显式
+暴露合规产品所提供的完整 DAG、Petri 与 morphism
+`ProjectionCertificate`，以及全路径提升/反射和
+success/wait/deadlock 保持。Canonical SCC DAG 与可重构 individual-token
+Petri 记录仍只是所选 occurrence 的语义 sidecar，不能冒充整个目标 LTS 的
+投影证书。框架的非空性由另一个固定签名十四事件 business reference 独立
+证明；其 DAG、Petri、morphism 目标使用分别声明的状态与转移类型。该参考
+不会与 reconnect candidate 或任意产品包强行等同。
+
+### 21.2 显式 dynamic-admission phase
+
+P1c 源协议保留十五个 `SourceEvent` family，同时新增：
+
+```text
+State.admissionEstablished
+Event.admissionReconnect
+```
+
+精确强序列为：
+
+```text
+ready dynamicPartnerAdmission
+  -- input(delegationBus, delegatedBinder) -->
+admissionEstablished
+  -- tau -->
+completed dynamicPartnerAdmission
+```
+
+第一个 derivative 是 `closedReconnectSource.erase`，即 genuine
+`.instanceReconnect` τ step 的 canonical source；terminal derivative 是
+`closedReconnectTarget.erase`。FMS compilation 使用同样两阶段。Admission
+first target 的指称与 `.instanceReconnect` 的 normative source Agent 字面相等，
+而非只在 observation 下等价。异构 alignment 也保留 version pair 与稳定的
+rule/session/correlation/occurrence identifier。该路线是 kernel-refuted
+terminal-admission shortcut 的规范替代；源证书中没有 `τ*`。
+
+### 21.3 完整 selected-row trajectory 绑定
+
+`CompleteProductCommonTrajectoryCertificate` 接收
+`CoreConformancePackage`、positive labelling、FMS labelling、positive state
+path、`TrajectoryAgreement` 与 selected index，并要求：
+
+- selected event/source/target 等于包的精确 `candidate`；
+- selected mark 是 normative；
+- selected operation 等于包的 `ProductPiOperationalSemantics` 对同一事件
+  解码的 operation；
+- selected metadata 等于包的 canonical `StableMetadata`；
+- selected FMS endpoint 等于包所选 family 的 normative actual-Agent
+  source/target。
+
+由此派生同一 projected native step、精确 `DPOEvent` replay、
+metadata-from-replay 方程、genuine raw late-π step、registry realization、
+raw structural source、joint action/derivative alpha 与 actual-FMS
+commutation，不能用互不相关的 witness 填充。
+
+`generic_technical_closure_with_common_trajectory` 是任意携带完整 inhabitant
+产品的参数化最终组合。无参数 `reference_technical_closure` 用实质 reconnect
+core 与 canonical 概率一 selected row 居留它。独立的异构
+admission/reconnect alignment 给出跨签名 literal actual-Agent seam。该结论
+属于 Core Theory/reference，不实例化八个生产包。
+
+### 21.4 具名 wire freshness
+
+Singleton presented identity 的 operational realization 要求
+`WireNamesFresh sourceName targetName binder`，即三个名字 pairwise distinct。
+Canonical named tensor 把右块的每个名字 freshen 到完整左支撑之外。因此
+operational example 不能依赖 endpoint alias 或 binder capture；这仍不把
+presented identity 等同于 raw structural identity。
+
+### 21.5 当前验证边界
+
+### 21.6 跨 epoch Petri 注册表闭环
+
+Petri 部分现在严格区分纯签名搬运与异构 admission 转换。
+`PreNetExtension` 证明旧声明列表是新列表的字面前缀，每条旧 incidence
+都沿同一个 `SignatureExtension` 重索引，且选定新声明以 admission
+目标版本 fresh append。`ReconfigurablePetriCertificate` 再把该注册表扩展
+绑定到同一个 Petri admission occurrence、其原生推导与 replay、
+admission tombstone/version、相连的 admission 后 candidate，以及该
+candidate 在所选 occurrence 上的 enabled firing。
+
+通用证书允许第一次 admission 从空注册表开始。无参数实质参考包更强：
+`LegacyPetriAntiVacuity` 证明旧注册表含有一个具体非空 endpoint-delta
+incidence，并证明该精确 incidence 在重索引后仍被保留。这是参考见证的
+反空洞性质，而不是“每个初始注册表非空”的错误全局假设。
+
+本节不声称整个目标 LTS 上的全局 `step iff firing`；结论始终以选定、
+可 replay 的 occurrence 为索引。
+
+集成后的可变树完成了一次增量根构建；其 job 数只是诊断信息，不具规范性。任何 central row 标为
+`proved` 前，仍必须执行 commit-bound clean CI、source-integrity 与
+axiom/placeholder audit、最终 proved manifest 及后继提交 strict gate。独立
+评审与治理接受仍是外部行为。

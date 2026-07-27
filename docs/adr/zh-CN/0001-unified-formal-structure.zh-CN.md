@@ -2,13 +2,30 @@
 
 | 字段 | 值 |
 |---|---|
-| Status | **Proposed**（等待 RFC-0001 规定的第二位评审人） |
+| Status | **Proposed**（实现路线已由 DRI 确认；独立评审和最终人类签署待完成） |
 | Date | 2026-07-23 |
-| Last reconciled | 2026-07-27（理论/产品边界修正） |
+| Last reconciled | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、admission/common-trajectory 最终接缝） |
 | Decision Owner | Joker-of-Gotham (DRI) |
-| Reviewers | TBD（治理缺口——见 RFC-0001 元数据 / 治理备注） |
-| Related | RFC-0001、RFC-0002、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md` |
+| Reviewers | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立证据 |
+| Related | RFC-0001、RFC-0002、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 | Risk | S2 |
+
+> **现行范围与状态校正（2026-07-28）：**后续内核结果取代了历史附录中
+> 更宽泛的“完整 FMS”措辞。中央命题是
+> `MaximumCompatibleD1AFMSClosure`，由
+> `maximum_compatible_d1a_fms_closure` 构造。它有意记录两个不同分支：
+> separated 的全源/enriched-adjunction 账本，以及非分离 D1-A Monad、
+> 递归域和 hiding 账本；它不是一个统一的源论文 FMS 模型，也不得在没有
+> 比较定理时把一个分支的泛性质移植到另一个分支。直接位于 actual-Agent
+> 中的全抽象仅覆盖确定性的 typed tau/free-output prefix trie；更宽的
+> guarded 结果是 native-trace/contextual-Hoare，而不是 unrestricted
+> actual-Agent strong-bisimulation 全抽象或反向 compact definability。
+> 八个生产包仍属于独立且尚未实例化的 Product Conformance 阶段。
+> 产品通用 P1a 必须接收完整投影证书；所选 SCC-DAG/Petri 语义记录与
+> 独立的固定签名十四事件参考不会被静默等同。
+>
+> 本 ADR 继续保持 **Proposed**。内核构建和 Agent 审查不能将其变为
+> Accepted；仍需独立人工评审、RFC 处置以及 Owner/DRI 最终签字。
 
 ## 背景
 
@@ -38,7 +55,7 @@ RFC-0001 将 `cantilune` 确立为一个 agent-orchestration 框架，其核心�
 
 框架 **必须** 定义各投影之间的函子映射，使得在一个投影中的某个事实在其他投影中有良定义的解释——例如，一条 DAG 边对应一条 Petri token-流路径，对应一条 π-calculus 通道消息，对应一次态射组合。**否则，四个投影就是四个互不相连的模型，"unified structure"之声称便不成立。** 此一致性证明是 P1 交付物，也是 ADR-0001 接受的门槛。
 
-**Status qualification：** 本段是规范性目标，而非既定定理。下文的 2026-07-23 审计附录记录了仅态射单位情形已完成；其余规则映射仍开放。
+**Status qualification：** 本段是规范性目标。下文早期审计附录是历史快照；当前实现候选与精确排除项由末尾的 2026-07-27 DRI/最大相容边界更新、RFC-0002 §25–§27 和 proof manifest 控制。
 
 ## 考虑过的备选方案
 
@@ -73,9 +90,9 @@ RFC-0001 将 `cantilune` 确立为一个 agent-orchestration 框架，其核心�
 ## 2026-07-23 后续决策（作为结构性 ADR 的正式记录记于此）
 
 - **统一对象已具体化：** $\text{CantiluneGraph} = (C, R)$——SMC $C$（静态）$+$ string-diagram rewriting $R$（动态）。取代早期的 6 元组草稿 $(N, E, S, T, C, M)$，后者只是一个容器，而非一个统一体。
-- **π-projection 范围（half-π (II)）：** request/accept 动态通道创建 + finite-epoch 握手后对话与 mobility，不含内部递归或复制。已验证的 FMS 参考使用协变函子范畴，而非此前在此使用的逆变 presheaf 记法。拟议实现现选择一个类型化 open-process SMC 加上一条 pointwise-cartesian FMS 指称路由，并配以必需的交换定理；一致性仍是 **待证，非 by construction**。
-- **Dynamics：** string-diagram rewriting（而非裸 LTS）。一旦具体事件记录、独立规约的可观察商 LTS、event lifts、终止谓词与所有投影映射被定义并证明，一次执行事件意在拥有四种形式读数而无终止状态漂移；此点尚未确立。
-- **证明策略：** 明示分期（phased, explicit）——P1a 针对三个非 π 投影 + P1b π 子语言 + P1c 推迟的 π 完整版，并绑定回退。各投影的状态由 RFC-0002 §3.1 治理，而非原始的"三条 by construction"期望。
+- **π-projection 范围（half-π (II)）：** request/accept、十五个 normative event family、typed/polarised presented Open-π、fresh nominal operational realization 与 D1-A actual-Agent commutation；它仍是证明义务而非 by construction，精确候选边界见末尾更新。
+- **Dynamics：** string-diagram rewriting（而非裸 LTS）。通用证书和实质 reference 已构造；生产产品仍须为各自具体事件、投影、终态与 trajectory 提供 Product Conformance。
+- **证明策略：** 明示分期（phased, explicit）——P1a、P1b、P1c、D1-A 与最终 common-chain 分开证明。当前状态由 RFC-0002 §25–§27、proof manifest 和不可变证据治理，而非原始的“三条 by construction”期望。
 
 ## 2026-07-23 独立审计附录
 
@@ -324,10 +341,143 @@ Nominal finite-world 与 omega-CPO 模型现给出至多固定旧世界的置换
 
 仍无源兼容的 Abramsky 包、递归 agent restriction、adequacy/definability/full-abstraction 包，或总的非空 named-boundary 操作 SMC。八个计划中的 product 包仍无受领的规则清单或运行时证据。选择公开 boundary 表示并修订不一致的强化 FMS 接受目标是 FCP 决策。故本 ADR 仍为 **Proposed**。
 
+## 2026-07-27 人类 DRI 路线确认与状态校正
+
+**Decision Owner：** Joker-of-Gotham
+
+**架构状态：** Proposed
+
+**实现授权：** 已授予
+
+**最终独立评审：** Pending
+
+DRI 已确认 RFC-0002 §25 的实现路线：Core Theory 与 Product
+Conformance 分离；D1-A effect 使用非分离、对称交换 Fubini，而原生
+late-π、终态与产品层继续区分 divergence/deadlock；Open-π 使用
+typed/polarised 抽象端口和 fresh nominal operational realization；
+十五个 native event family 为规范核心，六十 operation 经
+`refinesTo` registry 接入；每个规范事件使用 genuine strong late-π
+一步；DAG 采用 SCC condensation 加严格 rankable subview；Petri
+采用 individual-token provenance。
+
+这项人类决定授权实现，但不接受历史附录中的“Accepted subject to
+gates”措辞。条件式接受不是本项目的 ADR 状态。本 ADR 在不可变 kernel
+证据、独立 QA-L4 审阅与最终人类签署前保持 **Proposed**。即使全部
+技术义务达到 `proved`，外部签署前聚合状态也最多是
+`proved / review-pending`。
+
+## 2026-07-27 Kernel-backed 最大相容校正
+
+1. **Separated 与 D1-A 不得混同。** FMS 来源区分 least element `⊥`
+   与 semilattice zero `0`。仓库 separated branch 的 all-source
+   solution-set/enriched adjunction 与 D1-A branch 的对称 chosen
+   Fubini、lower-ω-Scott monad、递归 `A ≅ P(H A)` 属于不同模型。
+   Separated branch 的 canonical sequential Fubini 非交换；D1-A
+   合并两个 effect 常量，不能被称为 separated Abramsky powerdomain。
+2. **Full-abstraction 范围必须写进类型。** Kernel no-go 排除：
+   暴露两个不等价 nullary divergence/deadlock 却把二者指称为同一
+   bottom；以及 D1-A 对 finite tau/choice constructor-sensitive
+   strong bisimulation 的 full abstraction。finite/guarded 正面结果
+   是 lower-ω-Scott finite-trace Hoare/contextual-Hoare 定理。
+   unrestricted actual-Agent strong-bisimulation full abstraction 不成立。
+3. **Actual-Agent 正面边界。** 实际 recursive `Agent` 上的
+   equality/native-path full abstraction 只覆盖 deterministic typed
+   tau/free-output prefix trie 及其显式 `CompactPrefixPoint`
+   realization。总 supported finite-control coalgebra与十五 family
+   commutation 是独立正定理，不扩大上述 full-abstraction 范围。
+4. **All-domain definability no-go。** Cantor 对角论证排除由一个 π
+   语法定义每个 ωCPO 的全部元素。`contextualSourceInterpretation`
+   只是源到语义的解释，不是 reverse semantic-image definability。
+5. **Open-π 两层结构。** Presented algebraic wiring SMC 负责
+   identity/tensor/composition/plug/hide/restriction 与协调；fresh
+   nominal raw process 负责 genuine native step。固定 finite raw relay
+   不是结构单位，也不能无限复用；不宣称 raw-process SMC functor 保持
+   algebraic identity。
+6. **产品边界。** 八个 production package 仍须分别提供规则、
+   admission、rank、pre-net、resource/session、authorization、
+   fairness、stable-window、positive-epsilon、kernel/trajectory 和
+   四投影证书。
+
+## 2026-07-27 最终技术闭包候选
+
+候选架构已有 total supported finite-control coalgebra、到 actual
+recursive `Agent` 的唯一 terminal mediator，以及十五个 normative
+family 的 typed compiler、genuine strong late-π first step、joint
+DerivativeAlpha 和 exact actual-Agent source/target/terminal 方程。
+
+`ProductPiFMSAlignment` 目前连接 product π occurrence、normative
+family、raw realization 与 actual-Agent commutation，但 CENTRAL-18
+完成还要求同一证书：
+
+- 选择 `OperationId` 并证明 registry `refinesTo`/`familyAt` 等于该
+  normative family；
+- 保持 payload 与 `StableMetadata` 的 version、rule、session、
+  correlation、occurrence；
+- 将 heterogeneous admission endpoint 连接到同一 candidate；
+- 携带 selected mark 等于该 candidate event 的
+  `TrajectoryAgreement`；
+- 在 `.instanceReconnect` 参考中把 admission、四 native/replay
+  view、trajectory、SCC/terminal/feedback 和 actual-Agent endpoint
+  放进同一记录。
+
+在该 common-chain kernel-built 并绑定不可变证据前，本节只记录
+candidate，不能把 CENTRAL-18 标为 `proved`。构建本身也不能完成独立
+评审、通过 FCP 或接受本 ADR。
+
+## 2026-07-27 承重接缝实现校正
+
+本节只校正实现事实，不改变架构决策及其状态。ADR-0001 仍为
+**Proposed**。
+
+通用 conformance record 现强制携带 proof-bearing P1a semantic
+certificate。DAG view 是从同一选定并 replay 的 `DPOEvent` 两端计算出的
+dependency graph，再取 canonical SCC condensation；edge coverage、
+condensation acyclicity 与严格 edge rank 均为派生定理。Petri view 使用由该
+事件 signature version/rule id 确定的有序单事件 declaration、canonical
+individual provenance-token marking 及精确 endpoint delta；enabling、firing
+与 retained-token identity 亦为派生定理。因此产品不能再用任意 identity view
+仅以 “DAG/Petri” 名称通过 P1a。
+
+Dynamic partner admission 现为显式强两阶段协议：visible input 到达
+`admissionEstablished` 的 reconnect-ready process；随后
+`admissionReconnect` 以 genuine τ transition 到达 terminal reconnect
+process。第一个 actual-Agent target 与后续 `.instanceReconnect` 行的 source
+字面相等。该路线在不引入 weak step、也不改变十五个 normative event family
+的前提下解决了旧 terminal-admission seam no-go。
+
+可变源码层原有 CENTRAL-18 candidate 缺口现由
+`CompleteProductCommonTrajectoryCertificate` 闭合。同一记录把同一个 core
+candidate、registry operation/`refinesTo` family、canonical event metadata、
+native/replay/raw derivation、joint derivative alpha 和 actual-Agent endpoint
+绑定到同一个 selected positive trajectory row。`reference_technical_closure`
+对实质 reconnect 执行居留该通用组合；admission/reconnect alignment 同时给出
+跨签名的 literal endpoint seam。该结论不实例化八个生产包。
+
+具名 Open-π realization 边界亦已收紧：singleton wire 要求 source、target、
+binder 三个名字 pairwise fresh，canonical tensor freshening 使两块具名
+boundary 全局不交。该前提保留两层架构决策，并不宣称 raw-process structural
+wire identity。
+
+可变树的一次增量根构建已实际完成 9,208 jobs。该运行只是诊断，不是不可变
+proof evidence。精确 source commit、commit-bound clean CI、
+integrity/axiom/placeholder audit、proved manifest 以及后继 strict gate
+仍待完成。上述技术门通过后、独立人类签名前的最大状态为
+`proved / review-pending`，不是 `reviewed`、FCP Passed 或 ADR Accepted。
+
+## 参考文献
+
+Petri 决策现已在真实签名边界上实现。旧声明构成字面前缀，其 incidence
+沿精确 admission extension 重索引，选定目标版本声明随后 append；同一个
+dependent certificate 同时携带目标 admission 的原生/replay 证据与相连
+candidate 的 enabled firing。通用接口仍允许合法的空初始注册表；实质
+参考则另外证明非空 legacy endpoint delta 及其精确保留。这样既保持一般性，
+又防止最终反空洞定理由空旧网真空满足。
+
 ## 参考文献
 
 - RFC-0001（`docs/rfc/0001-cantilune-architecture.md`）
 - RFC-0002（`docs/rfc/0002-projection-consistency.md`）
 - 形式语义（`docs/spec/formal-semantics.md`）
 - P1b 独立审计（`docs/research/0001-p1b-pi-bridge-audit.md`）
+- 最终承重接缝（`docs/research/0027-final-load-bearing-seams-2026-07-27.md`）
 - 分诊记录（2026-07-23，本对话——将写入 Issue 作为权威来源）

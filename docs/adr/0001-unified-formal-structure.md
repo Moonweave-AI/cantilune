@@ -4,11 +4,33 @@
 |---|---|
 | Status | **Proposed** (implementation decisions ratified 2026-07-27; human review and final DRI signature pending) |
 | Date | 2026-07-23 |
-| Last reconciled | 2026-07-27 (DRI decisions D1-D10; theory/product boundary; FMS scope; acceptance criteria updated) |
+| Last reconciled | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; final admission/common-trajectory seams) |
 | Decision Owner | Joker-of-Gotham (DRI) |
 | Reviewers | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation) |
-| Related | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md` |
+| Related | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 | Risk | S2 |
+
+> **Controlling scope and status correction (2026-07-28).** Later kernel
+> results supersede broader “complete FMS” wording in the historical
+> appendices. The central proposition is
+> `MaximumCompatibleD1AFMSClosure`, inhabited by
+> `maximum_compatible_d1a_fms_closure`. It records two deliberately distinct
+> branches: a separated all-source/enriched-adjunction ledger and a
+> non-separated D1-A monad, recursive domain and hiding ledger. It is not one
+> source-paper FMS model, and no universal property is transferred between
+> those branches without a comparison theorem. Direct actual-Agent
+> full abstraction covers only deterministic typed tau/free-output prefix
+> tries; the wider guarded result is native-trace/contextual-Hoare, not
+> unrestricted actual-Agent strong-bisimulation full abstraction or reverse
+> compact definability. The eight production packages remain a separate,
+> uninstantiated Product Conformance phase.
+> Product-generic P1a consumes full projection certificates. Its selected
+> SCC-DAG/Petri semantic records and the separate fourteen-event
+> fixed-signature reference are not silently identified with one another.
+>
+> This ADR remains **Proposed**. Kernel builds and agent reviews cannot make
+> it Accepted; independent human review, RFC disposition and the final
+> Owner/DRI signature remain required.
 
 ## Context
 
@@ -78,9 +100,9 @@ The framework **must** define functorial mappings between projections such that 
 ## 2026-07-23 follow-up decisions (recorded here as the structural ADR of record)
 
 - **Unified object concretized:** $\text{CantiluneGraph} = (C, R)$ — SMC $C$ (static) $+$ string-diagram rewriting $R$ (dynamics). Replaces the earlier 6-tuple sketch $(N, E, S, T, C, M)$, which was a container, not a unity.
-- **π-projection scope (half-π (II)):** request/accept dynamic channel creation + finite-epoch post-handshake conversation and mobility, without internal recursion or replication. The verified FMS reference uses covariant functor categories, not the contravariant presheaf notation previously used here. The proposed implementation now selects a typed open-process SMC plus a pointwise-cartesian FMS denotational route, with a mandatory commuting theorem; consistency remains **待证, not by construction**.
-- **Dynamics:** string-diagram rewriting (not bare LTS). Once concrete event records, independently specified observable quotient LTSs, event lifts, terminal predicates, and all projection maps are defined and proven, one execution event is intended to have four formal readings without terminal-state drift; this is not yet established.
-- **Proof strategy:** 明示分期 (phased, explicit) — P1a for the three non-π projections + P1b π sublanguage + P1c deferred π full, with binding fallback. The per-projection statuses are governed by RFC-0002 §3.1, not the original “three by construction” expectation.
+- **π-projection scope (half-π (II)):** request/accept, fifteen normative native event families, a typed/polarised presented Open-pi boundary, fresh nominal operational realization, and the D1-A actual-Agent commutation candidate. It remains a proved obligation rather than a by-construction projection; the exact current scope is RFC-0002 §§25–27.
+- **Dynamics:** string-diagram rewriting (not bare LTS). Generic certificates and a substantive reference are constructed; every production product must still provide its own concrete events, four projections, terminal predicates, registry/metadata, admission and trajectory evidence.
+- **Proof strategy:** 明示分期 (phased, explicit) — P1a, P1b, P1c, the D1-A observation theorem, and the final common-chain theorem remain separately named proof layers. Current status is governed by RFC-0002 §§25–27, the proof manifest, and immutable evidence, not the original “three by construction” expectation.
 - **2026-07-27 DRI Decisions:** All architectural decisions D1-D10 resolved (see §”2026-07-27 DRI Decision Record and ADR Acceptance” below). Key decisions: (D1) source-compatible FMS route; (D2) full FMS required for P1; (D3) theory-first, products post-FCP; (D4) separate π metadata layer; (D5) extended DAG via SCC; (D6) refined nominal boundaries; (D7) multi-state P1c protocol; (D8) individual token semantics; (D9) per-projection observable LTS required; (D10) package-level success predicates.
 
 ## 2026-07-23 independent-audit addendum
@@ -178,7 +200,9 @@ Required evidence before acceptance:
    administrative-step policies, and event-lift/exhaustiveness relations (complete);
 5. ✓ Define and prove preservation/reflection of successful-terminal predicates
    in reference witnesses (complete);
-6. ✅ Independent review assigned (DRI temporary assignment; COI documented in docs/governance/reviewer-assignments.md; external recruitment planned post-implementation).
+6. ✗ Independent review remains pending. DRI temporary assignment, self-review,
+   and Agent review do not satisfy the required non-author category/DPO/Petri,
+   π/domain, and Lean/provenance perspectives.
 
 **Product Conformance gates (concrete package instantiation, post-FCP):**
 
@@ -771,7 +795,10 @@ All decisions documented in RFC-0002 §23:
 
 ### Updated Acceptance Criteria
 
-**ADR-0001 is Accepted as the architectural decision**, subject to completion of the following implementation gates:
+**Historical draft language, superseded:** an earlier revision said that
+ADR-0001 was “Accepted subject to gates.” Conditional acceptance is not a
+valid ADR state here. The authoritative status correction below keeps this
+ADR **Proposed** until real review and final human acceptance.
 
 #### Core Theory FCP Gates (blocks P1 release)
 
@@ -799,7 +826,7 @@ Each of the eight product packages independently supplies:
 
 ### Consequences Update
 
-**Positive (ADR Accepted)**:
+**Historical projected benefits (not an acceptance record):**
 - Architectural choice is final; implementation can proceed with confidence
 - Four-projection consistency is the normative claim for P1
 - Each projection buys specific capabilities (§2 capability table)
@@ -861,6 +888,207 @@ Until that final act, the strongest permitted status is
 `proved / review-pending`; neither an agent nor a successful build may declare
 this ADR Accepted, the RFC through FCP, or the work independently reviewed.
 
+## 2026-07-27 kernel-backed compatibility correction
+
+This addendum records the consequences of three narrow kernel results and the
+DRI's maximally compatible implementation choice. It is authoritative over
+broader claims in the historical appendices above, but it does not change the
+top-level status from **Proposed**.
+
+### Decision
+
+1. **FMS effect boundary.** The source FMS/Abramsky construction has a least
+   element `⊥` distinct from semilattice zero `0`. Cantilune D1-A deliberately
+   uses an unseparated effect with effect-level
+   `divergence = deadlock = bottom` to retain symmetric commutative Fubini.
+   This is a source-motivated deviation, not a synonym for the separated source
+   powerdomain. Native late-pi, terminal classification, and product semantics
+   retain the operational divergence/deadlock distinction.
+2. **Open-pi wiring boundary.** Process-state equality remains alpha conversion
+   plus lawful structural congruence (parallel ACU and scope laws), with a
+   joint derivative-alpha quotient for bound actions and derivatives.
+   Bisimulation is not Hom equality. On that raw quotient a fixed
+   positive-prefix finite relay cannot be a left or right structural unit for
+   direct plug/hide, and no fixed finite-control process can be reused for
+   arbitrarily long native forwarding.
+3. **Two-layer maximal-compatible route.** The categorical structure is a
+   presented algebraic wiring SMC on typed, polarised abstract boundary
+   positions. Fresh nominal raw processes provide operational representatives
+   and genuine strong late-pi event steps. A separately proved
+   adequacy/commutation bridge relates the two. The architecture does not
+   assert a raw-process SMC functor preserving algebraic wire identities.
+4. **Theory/product split.** Core Theory proves the parameterised theorem and
+   supplies nonempty reference execution packages. The eight production
+   packages remain independent Product Conformance work and are not inferred
+   inhabitants of the theorem.
+5. **Governance state.** Kernel proofs, builds, and audits can establish
+   `proved`; only independent human review and final DRI signature can establish
+   `reviewed`, FCP Passed, QA-L4 complete, or ADR Accepted. Until then the
+   aggregate status is `proved / review-pending`.
+
+### Kernel evidence and exact scope
+
+- `Cantilune.Pi.FMSUnseparatedExplicitBottomNoGo.not_fullAbstract` rules out
+  full abstraction only for an extension which exposes the collapsed
+  deadlock/divergence pair as two observably distinct nullary programs.
+- `Cantilune.Pi.FMSUnseparatedFiniteStrongNoGo.not_strongFullAbstract`
+  gives the stronger finite obstruction: with inactive equal to bottom,
+  semilattice choice, and monotone tau prefix,
+  `tau.0 + tau.tau.0` and `tau.tau.0` have equal denotation but are not
+  strongly bisimilar in the explicit native fragment. D1-A full abstraction
+  must therefore target its bottom/Hoare observation, while native strong
+  late-pi reflection remains a separate layer.
+- `Cantilune.Pi.OpenSMCLinearOneShotObstruction.no_left_structural_unit_of_positive_prefix`
+  and `no_right_structural_unit_of_positive_prefix` rule out the finite
+  positive-prefix raw-relay shortcut under structural equality. They do not
+  rule out the presented wiring SMC or genuine one-shot communication.
+- `Cantilune.Pi.OpenSMCFiniteControlIdentityBoundary.no_unbounded_native_forwarder`
+  rules out unbounded reuse of one fixed finite-control raw process. It does
+  not rule out replication, recursion, a state-indexed implementation, or a
+  separate structural wiring semantics.
+
+### Consequences
+
+**Positive:** the architecture preserves raw operational honesty—normative
+source events still map to genuine strong late-pi steps—while assigning
+category identities to the layer where their laws can actually hold. The
+effect model also retains symmetric Fubini without erasing the operational
+terminal distinction in the LTS/product layers.
+
+**Negative:** the Open-pi proof now necessarily includes an
+algebraic-to-operational adequacy/commutation theorem; a native relay trace
+alone cannot discharge an SMC unit law. The D1-A full-abstraction statement
+must pin the source language and the bottom/Hoare observation relation, cannot
+be advertised as reconstruction of the separated Abramsky effect, and cannot
+be substituted for the separately required strong-late operational theorem.
+
+**Rejected shortcuts:** treating parallel as the tensor of the ambient FMS
+functor category; using a bisimulation quotient as category equality; declaring
+a finite one-shot relay to be a raw structural identity; exposing two
+operationally distinct nullary constants while mapping both to D1-A bottom; or
+claiming product certificates from generic interfaces alone.
+
+### Remaining gates
+
+No further architectural permission is implied. The remaining gates are:
+kernel completion of the declared D1-A FMS adequacy/definability/full-
+abstraction chain; the presented-wiring/native-operation bridge; immutable
+evidence binding and audit; and independent QA-L4 review followed by the DRI's
+final signature. Product-owned rule inventories and runtime witnesses remain
+post-Core-Theory Product Conformance inputs.
+
+The optional all-domain definability strengthening is also closed as
+mathematically impossible:
+`Cantilune.Pi.FMSAllDomainDefinabilityNoGo.not_allOmegaCpoElementsDefinable`
+applies Cantor diagonalisation to the omega-CPO `Set Raw.Proc`. The
+maximal-compatible target is finite/compact definability plus the
+guarded-approximation theorem for the stated D1-A observation, never
+surjectivity onto every element of every omega-CPO.
+
+## 2026-07-27 final technical-closure addendum
+
+This addendum supersedes the preceding “remaining implementation gates”
+language. It records the candidate architecture, not a human acceptance
+decision. The ADR status remains **Proposed**.
+
+The final composition has four load-bearing additions:
+
+1. a natural total finite-control supported-process coalgebra and its unique
+   terminal mediator into the actual recursive FMS `Agent`;
+2. a fifteen-family typed nominal compiler with genuine strong late-pi
+   transitions, action/derivative alpha cells, and exact actual-Agent
+   source/target/terminal equations;
+3. a mandatory `ProductPiFMSAlignment` candidate connecting each admitted
+   product pi occurrence to its normative family, raw realization, and
+   actual-Agent commutation cell; and
+4. an explicit `.instanceReconnect` candidate for the single substantive
+   reference occurrence.
+
+CENTRAL-18 is complete only when one certificate additionally selects an
+`OperationId`, proves that its registry `refinesTo`/`familyAt` result is the
+same normative family, preserves the operation payload and enriched
+`StableMetadata` (version, rule, session, correlation, occurrence), connects
+the heterogeneous admission endpoint to the same fixed-epoch candidate, and
+carries a `TrajectoryAgreement` whose selected mark is that candidate event.
+Until those fields and the corresponding `.instanceReconnect` inhabitant are
+kernel-built together, the generic result remains a technical-closure
+candidate rather than a completed CENTRAL-18 theorem. No production package
+is instantiated by this ADR.
+
+The semantic scope remains deliberately split:
+
+- D1-A is the unseparated symmetric-Fubini effect selected by the DRI, not the
+  separated Abramsky source effect;
+- finite/guarded Hoare and contextual-Hoare full abstraction are stated at
+  their constructed observation types;
+- actual recursive-Agent native-path full abstraction is established for the
+  deterministic typed tau/free-output prefix-trie sublanguage;
+- the wider guarded result is not restated as unrestricted actual-Agent
+  strong-bisimulation full abstraction;
+- the finite strong-observation and all-domain definability no-go theorems are
+  part of the accepted maximum-compatible boundary.
+
+Immutable commit binding and the strict build/placeholder/axiom/provenance
+gate may promote this candidate to `proved`. They cannot mark it `reviewed`,
+complete QA-L4, pass FCP, or accept this ADR. Those remain explicit human
+actions on the exact proved commit.
+
+## 2026-07-27 load-bearing seam implementation correction
+
+This correction updates the implementation facts without changing the
+architecture decision or its status. ADR-0001 remains **Proposed**.
+
+The generic conformance record now requires proof-bearing P1a semantic
+certificates. The DAG view is the dependency graph computed from the selected
+replayed `DPOEvent` endpoints, followed by canonical SCC condensation. Edge
+coverage, condensation acyclicity, and strict edge rank are derived. The
+Petri view uses the ordered singleton declaration determined by that event's
+signature version/rule id, canonical individual provenance-token markings,
+and their exact endpoint delta; enabling, firing, and retained-token identity
+are derived. Consequently a package cannot satisfy P1a merely by naming
+arbitrary identity views “DAG” and “Petri”.
+
+Dynamic partner admission is now an explicit strong two-phase protocol:
+visible input reaches `admissionEstablished` with the reconnect-ready
+process, and `admissionReconnect` performs a genuine tau transition to the
+terminal reconnect process. The first actual-Agent target is literally the
+source of the following `.instanceReconnect` row. This resolves the earlier
+terminal-admission seam no-go without introducing a weak step or changing the
+fifteen normative event families.
+
+The former CENTRAL-18 candidate gap is closed at the mutable source level by
+`CompleteProductCommonTrajectoryCertificate`. One record binds the same core
+candidate, registry operation and `refinesTo` family, canonical event
+metadata, native/replay/raw derivations, joint derivative alpha, and
+actual-Agent endpoints to one selected positive trajectory row.
+`reference_technical_closure` inhabits the generic composition for the
+substantive reconnect execution, while the admission/reconnect alignment
+provides the cross-signature literal endpoint seam. This does not instantiate
+any of the eight production packages.
+
+The named Open-pi realization boundary is also stricter: a singleton wire
+requires three pairwise-fresh names (source, target, binder), and canonical
+tensor freshening makes the two named blocks globally disjoint. These
+premises preserve the two-layer decision; they do not assert a raw-process
+structural wire identity.
+
+An incremental root build of the mutable tree actually completed 9,208 jobs.
+That run is diagnostic, not immutable proof evidence. The exact source
+commit, clean commit-bound CI, integrity/axiom/placeholder audit, proved
+manifest, and descendant strict gate remain pending. The maximum status after
+those technical gates and before independent human signatures is
+`proved / review-pending`; it is not `reviewed`, FCP Passed, or ADR Accepted.
+
+The Petri decision is now implemented across a real signature boundary.
+Legacy declarations form a literal prefix, their incidences are reindexed by
+the exact admission extension, and the selected target-version declaration is
+appended. The same dependent certificate contains the target admission's
+native/replay evidence and the connected candidate's enabled firing. The
+generic interface still permits a legitimately empty initial registry; the
+substantive reference separately proves a nonempty legacy endpoint delta and
+its exact retention. This preserves generality without allowing the final
+anti-vacuity theorem to be discharged by an empty old net.
+
 ## References
 
 - RFC-0001 (`docs/rfc/0001-cantilune-architecture.md`)
@@ -868,4 +1096,11 @@ this ADR Accepted, the RFC through FCP, or the work independently reviewed.
 - Formal semantics (`docs/spec/formal-semantics.md`)
 - P1b independent audit (`docs/research/0001-p1b-pi-bridge-audit.md`)
 - Theory/product boundary clarification (`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`)
+- FMS primary-source boundary (`docs/research/0021-fms-primary-source-boundary-2026-07-27.md`)
+- Open-pi wiring/FMS compatibility boundary (`docs/research/0022-open-pi-wiring-and-fms-compatibility-boundary-2026-07-27.md`)
+- Finite strong-observation no-go (`docs/research/0023-fms-unseparated-finite-strong-no-go-2026-07-27.md`)
+- All-domain definability no-go (`docs/research/0024-fms-all-domain-definability-cardinal-no-go-2026-07-27.md`)
+- Concrete D1-A acceptance scope (`docs/research/0025-concrete-d1a-fms-acceptance-2026-07-27.md`)
+- Final common-chain candidate (`docs/research/0026-final-common-chain-candidate-2026-07-27.md`)
+- Final load-bearing seams (`docs/research/0027-final-load-bearing-seams-2026-07-27.md`)
 - Triage record (2026-07-23, this conversation — to be written to an Issue as canonical source)
