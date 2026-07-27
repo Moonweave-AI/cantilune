@@ -8,7 +8,7 @@
 | Owner | Joker-of-Gotham (DRI) |
 | Reviewers | TBD (governance gap — see RFC-0001 metadata / governance note) |
 | Created | 2026-07-23 |
-| Updated | 2026-07-23 (mechanized-boundary reconciliation) |
+| Updated | 2026-07-25 (extension-family and trajectory reconciliation) |
 | Related | RFC-0001, ADR-0001, RFC-0002, `docs/research/0001-p1b-pi-bridge-audit.md` |
 
 > **Governance note:** This spec defines the formal object that RFC-0002 must prove consistent. Claims marked **待证 / unverified** are not yet proven; claims marked **按构造 (by construction)** follow directly from the definitions here. The π-projection is **待证** by design decision (half-π (II)) — see §6.4 and RFC-0002.
@@ -305,7 +305,7 @@ Per the half-π (II) decision: channels are created dynamically via **request/ac
 | Phase | Prove | Status |
 |---|---|---|
 | P1a | DAG/Petri/morphism consistency | **Reusable operational certificate family and finite fixtures kernel-build; intended static/DPO/resource/admission instances remain incomplete** |
-| P1b | π-projection consistency **for the request/accept channel-creation sublanguage** | **Finite closed certificate and late-π infrastructure kernel-build; general certificate and FMS bridge remain incomplete** |
+| P1b | π-projection consistency **for the request/accept channel-creation sublanguage** | **The unfiltered structural strong-late operational certificate is kernel-built, including exact requesting reflection, and passes the complete local CI/audit; it remains `implemented_unverified` pending immutable provenance and independent review. The separate complete FMS bridge remains incomplete** |
 | P1c (deferred) | π-projection consistency for **free conversation / unrestricted mobility** | **The finite 60-cell reference matrix is 60/60 native and has four event-indexed operational certificates inside their declared restricted target relations. This does not yet give full standard-late-LTS reflection: the current open reconnect/delete encodings have extra environmental transitions, and the general admitted-rule/static/resource layers remain incomplete** |
 
 ### 6.4 Fallback (per ADR-0001)
@@ -757,7 +757,7 @@ trace label alone cannot distinguish them.
 | Correct ambient SMC | **Pointwise cartesian structure identified** |
 | Step D | **The FreeSMC arbitrary-target universal comparison and actual mathlib symmetric-monoidal structures, the genuine finite-powerset monad on `Type` and pointwise on `Type^I`, a locally nameless supported-process functor, nonconstant `Set^I`/`Cpo^I` support models, CPO world shift/allocation, continuous support hiding and support-level retraction equations, the discrete-CPO finite-power monad, and finite `P_f(H-)` approximants exist. `CompleteExternalFMSTheoremPackage` now states the exact world/action, strong-commutative powerdomain, coherent restriction, domain-equation, and full-abstraction acceptance interface, but `CompleteFMSAvailable` has no inhabitant. The support equations do not inhabit that package; the actual Abramsky/enriched model therefore remains unproven** |
 | Step E | **The finite P1c reference surface is 60/60 native and has four event-indexed operational certificates that are exact only inside their separately declared restricted target relations; every π witness erases to an independent standard late derivation. This is not reflection of the whole raw standard-late LTS: the current open reconnect/delete encodings have additional environmental transitions. General DPO/Petri-derived admitted-rule and five-layer certificates remain open** |
-| Overall P1b | **dual architecture selected; proof incomplete; Pre-FCP/M1; Iterate, not Promote** |
+| Overall P1b | **operational residual implemented_unverified; complete FMS route or accepted scope decision still incomplete; Pre-FCP/M1; Iterate, not Promote** |
 
 No C′, D, or E proof is claimed. The negative result is useful: it removes the wrong tensor/quotient branch and identifies the exact definitions needed before proof work can resume.
 
@@ -908,6 +908,575 @@ general obligation, plus derivation of
 stable-window/fairness/positive-$\varepsilon$ premises from each shared
 product `ExecutionPackage`, remain open.
 
-Exact scope is governed by `formal/proof-obligations.json`; the total
-P1b/P1c/four-projection theorem remains incomplete and the project remains
-Pre-FCP/M1.
+Exact scope is governed by `formal/proof-obligations.json`; the P1b
+request/accept operational certificate is now implemented, while P1c,
+product-wide four-projection integration, and the complete FMS line remain
+incomplete. The project remains Pre-FCP/M1.
+
+## 14. 2026-07-24 superseding closure boundary
+
+This section supersedes older “still missing” statements above when they
+conflict.
+
+The finite typed-open-hypergraph result is now intrinsic and categorical.
+`ExactPositionalObject` independently characterizes the full replete
+essential image by finite carriers, unique typed incidence descriptors,
+prescribed ordered boundary typing, and absence of boundary duplicates.
+Reconstruction proves
+`essImage X ↔ ExactPositionalObject X`. Arbitrary encoded-monic legal
+boundary-preserving matches, both residuals of a parallel-independent pair,
+and their concurrency result transport through finite-image/preimage
+isomorphisms. The two DPO squares are Van Kampen in the ambient adhesive
+slice. A finite boundary-duplicate counterexample proves why the
+unrestricted finite slice is not equivalent to positional graphs.
+
+`P1cFullNativeRefinement` now gives the required multi-state, family-tagged
+complete native certificate for all 15 event families and both payload
+follow-ups. `P1cStructuralLateBridge` additionally maps each of those source
+steps to an actual unfiltered α/structural strong-late step. It also proves
+that a complete certificate into pure `Raw.Proc` with the canonical map is
+incompatible with the current metadata contract: dynamic admission changes
+the runtime signature version, whereas `structuralLateLTS` assigns version
+zero to every process. Delegation and reconnect also share the same pure raw
+transition triple, so that triple cannot recover source-event provenance.
+The RFC must therefore separate admission/version provenance from pure π or
+select an explicit enriched target; no weak-step workaround is licensed.
+
+The finite heterogeneous probability result now has two stronger forms.
+`FiniteHeterogeneousMarkedKernel` places the actual dependent
+`ChainStepMark`, native step, replay, and execution-epoch evidence on the
+positive sampled edge; terminal stutter is a distinct administrative
+constructor. `FiniteBranchingReplayKernel` assigns probability to explicit
+business choices, stores the sampled choice in the successor, and therefore
+keeps same-endpoint events distinct. Almost every Ionescu--Tulcea path has
+ordered choices whose replay witness is definitionally derived from its
+sampled edge. A concrete product scheduler must still instantiate these
+choices across runtime admissions and derive opportunity alignment,
+fairness, a stable signature window, and a positive epsilon bound.
+
+The static/operational gate is quotient-aware. A
+`CategoricalLTSRealization` must identify the selected state setoid exactly
+with categorical isomorphism of represented arrows, supply coherent
+reflexive/symmetric/transitive isomorphisms, and prove rewrite cells
+independent of representatives. The strongest FMS-gated composition theorem
+requires a concrete `ExactFMSAcceptancePackage`, four coherent projection
+certificates, and `OperationalFMSPiCoherence`: mapped source states are
+represented by closed π processes; target states/events receive FMS
+denotations/actions; and target native steps from mapped sources are exactly
+the supplied FMS transitions. No such FMS package or product bridge is
+constructed here.
+
+Accordingly, the remaining blocks are not hidden Lean holes. They are:
+
+1. an RFC choice of rankable/acyclic source domain for the strict DAG view;
+2. an RFC choice of π provenance/version layering;
+3. a genuine all-ωCPO powerdomain, continuous agent-domain solution,
+   source-pinned restriction/action construction, all-world operational
+   bridge, and strong-late full-abstraction proof;
+4. production DAG/Petri/static/resource/admission maps and all non-fixture
+   product occurrences over one shared execution package;
+5. a concrete branching heterogeneous scheduler with feedback authorization,
+   quorum, fairness, stable-window, and epsilon proofs; and
+6. commit-bound independent QA-L4 review, FCP, and ADR acceptance.
+
+## 15. Extension-indexed and sampled semantics boundary (2026-07-25)
+
+For every finite signature `σ`, a `ReindexableExecutionFamily` supplies an
+actual `ExecutionPackage σ`. For every monotone extension `ι : σ ↪ τ`, its
+state/event maps preserve native steps, configurations reindex definitionally,
+and the target verified event record equals the reindexed source record.
+Identity and composition are equations on these maps. A `ProjectionFamily`
+is a projection certificate natural with respect to this reindexing.
+
+`FourProjectionFamilies` shares one such source family between the DAG,
+Petri, π, and morphism targets. Therefore, at every signature, the four path,
+reflection, terminal, and version theorems refer to the same source semantics.
+For two composable admissions the four state squares commute; for a source
+native step, all four reindexed target records execute their exact mapped
+configurations. This is an interface theorem over supplied families, not a
+production inhabitant.
+
+Inside one fixed-signature epoch, a complete sampled trajectory contains only
+the dependent trajectory produced by the branching kernel. Its event label,
+native source step, verified `DPOEvent`, source/target configurations,
+opportunity and runtime epoch, replay epoch, and four target steps are all
+derived from the same sampled edge. A signature admission is not a
+`DPOEvent`; heterogeneous execution continues to use `AdmissionReplays`.
+
+For a finite heterogeneous `EpochChain`,
+`FiniteHeterogeneousFourProjection` derives common evidence at every
+nonterminal sampled phase from the marked kernel itself. A fixed-signature
+business phase retains its exact `DPOOccurrence` and all four native target
+derivations; a boundary phase retains `AdmissionOccurrence` and
+`AdmissionReplays` as a distinct constructor. The dependent sampled mark,
+replay discriminator, and execution epoch are unique for the sampled source.
+Selecting certificates from one `FourProjectionFamilies` value additionally
+requires `SourceFamilyAlignment`, because the existential packages stored in
+an arbitrary chain are not definitionally that family's source packages.
+Pure `Reindexing.mapState` cannot be the target admission transition. The
+kernel-checked no-go theorem uses the fact that `Config.reindex` preserves
+`signatureVersion`, whereas `AdmissionReplays` strictly advances it. Four
+target admission replays therefore require separate heterogeneous
+target-admission transitions and evidence, not an added state equality.
+
+The intrinsic finite typed-open-hypergraph category is explicitly equivalent
+to the full `ExactPositionalObject` subcategory of the adhesive typed
+presheaf slice. The functor includes all typed natural transformations
+between exact objects, is full, faithful, and essentially surjective, and
+preserves and reflects monomorphisms. This is the general categorical bridge
+inside the exact positional scope; it neither fixes a host nor assumes
+`InterfaceLocal`. The unrestricted slice remains outside the equivalence
+because its non-finite, incidence-incomplete, or non-injective-boundary
+objects are real counterexamples.
+
+The strict DAG projection is normative only on a graph equipped with an
+explicit rank satisfying
+
+```text
+source ∈ inputs(e) ∧ target ∈ outputs(e)
+  ⇒ rank(source) < rank(target).
+```
+
+At that scope the projection contains exactly all active binary incidences,
+retains both interfaces, is preserved by typed open-hypergraph morphisms, and
+is acyclic. DPO preservation additionally requires every target graph to
+carry a compatible rank certificate.
+
+The request/accept process map has unfiltered one-step standard structural
+late soundness. `P1bNominalIncidenceClosure` now performs transition
+inversion over every structurally congruent requesting representative and
+proves exact reflection; this operational result remains
+`implemented_unverified` pending immutable provenance and independent review.
+Choice idempotence is not part of the present structural congruence; any use
+of S4 must cite the separate equational/bisimulation theory.
+
+Feedback storage accepts only authorized ballots, deduplicates by observer
+identity, and exposes simultaneous approval/rejection quorum as `conflict`.
+Aggregation is a monotone evidence event and cannot decide acceptance for the
+observed party. For admitted P1c execution, only the positive support has a
+monotone feedback bridge. The administrative zero-mass reset is proven
+incompatible with the pending/completed evidence order and is excluded from
+pathwise semantics.
+
+Finally, the equality-ordered finite-set endofunctor and its pointwise
+`World ⥤ ωCPO` lift cannot have the required continuous singleton unit on
+general ωCPOs. They are finite support tests, not an FMS powerdomain. The
+Abramsky powerdomain, continuous-natural initial agent-domain solution,
+complete hiding/action coherence, and process-pair strong-late
+full-abstraction instance for the selected source-calculus scope remain
+mandatory external or future formalization obligations. The construction
+must provide the initial solution and its roll/unroll coherence; this
+specification does not select general algebraic compactness as the only
+permitted construction method.
+
+The external source boundary is precise: FMS Proposition 2.2 lifts a supplied
+Abramsky powerdomain on the base Cpo category pointwise to `Cpo^I`; the agent
+equation is
+`A = μX. P(H X)` with
+`H X = N × (N ⇒ X) + N × N × X + N × δX + X`; and Theorems 3.2 and 3.3
+state process-pair finite and arbitrary-process strong-late
+full-abstraction results
+([author-hosted PDF](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf)).
+These are cited external mathematical results, not Lean-kernel proofs. They
+do not by citation alone construct an axiom-free inhabitant of
+`CompleteFMSAvailable` or the local operational-coherence interface.
+The source calculus includes guarded replication `!α.P`, whereas the current
+Lean finite-control syntax includes neither replication nor recursion.
+Accordingly, its current theorem can only be a fragment theorem, not the
+arbitrary-process result. The cited full-abstraction theorem also does not
+assert that every recursive-domain element is syntactically definable.
+
+## 16. Native P1c and generated runtime boundary (2026-07-25)
+
+This section supersedes earlier statements that only state-level trajectories
+or fixture-only mismatch/reconnect/delete derivations exist.
+
+The legal typed standard-late relation is
+`Step.StandardNativeStep`: membership contains the typed derivation and all
+standard freshness/capture premises. Every member erases to exactly one
+`Late.NativeStep`. All fifteen P1c reference families inhabit this relation;
+mismatch decision, reconnect, and quiescent delete are therefore native
+one-step derivations rather than invented administrative labels.
+
+For the fourteen fixed-signature families,
+`P1cBusinessReplayMatrix` constructs a deterministic `Config` occurrence, a
+verified endpoint-free `DPOEvent`, four independently native target
+derivations, and a standard-late derivation in one record. The audit-cursor
+configuration is a reference execution carrier, not product graph semantics.
+For mismatch, reconnect, and quiescent delete,
+`P1cAdmittedOperations` gives the stronger graph/resource/name update and
+rechecks enabling plus the concrete match fingerprint during replay.
+Dynamic partner admission remains an `AdmissionReplays` transition between
+different signatures.
+
+For each of those three admitted-operation packages,
+`concreteTrajectoryAgreement` is constructed from the actual total native
+labelling. It proves the exact state projection, selected event mark, replay
+of the verified event between adjacent configurations, and opportunity/runtime
+epoch alignment. `FiniteExecutableHeterogeneousRuntime` additionally
+constructs a finite scheduler and Markov kernel whose path crosses an actual
+admission. Almost every generated path retains both business DPO occurrences,
+the admission occurrence, a unique dependent phase mark, and four native
+target derivations on every edge; every target admission strictly advances
+its epoch. This is a nonempty reference scheduler. Product authorization,
+quorum/conflict policy, stable-window fairness, and positive-epsilon progress
+remain rule-package obligations.
+
+The finite typed-open-hypergraph DPOI bridge is complete at its mathematically
+correct scope: intrinsic finite positional open hypergraphs are explicitly
+equivalent to the full `ExactPositionalObject` subcategory; every legal monic
+match has the canonical two pushouts and Van Kampen squares; every
+parallel-independent pair has intrinsic residuals and the canonical
+concurrency isomorphism. A kernel-checked malformed/boundary-duplicate
+counterexample rules out equivalence with the unrestricted presheaf slice.
+
+The CPO development now contains the real non-discrete finite strict fragment
+`P_s α = (Set α)⊥`, with distinct divergence/deadlock, continuous strict
+choice and direct image, and a three-stage strict chain over `PUnit`. It is a
+real `NondeterministicComputation`, but it is not an all-omega-CPO
+`CpoPowerdomainPackage`. The missing FMS layer is precisely an
+Abramsky/omega-ideal completion with its free universal property, strong and
+Kleisli coherence, a continuous natural initial recursive-domain solution,
+coherent hiding/action maps, and the source-pinned process-pair
+full-abstraction proof for the selected calculus scope. Cantilune additionally
+requires exact per-label native one-step correspondence, strong
+powerdomain-observation inverse-image laws (including a divergence-observation
+policy), and designated divergence/deadlock disequality. Those three are
+local acceptance conditions, not direct statements of the FMS
+full-abstraction theorem. The paper citation remains external evidence, not a
+Lean inhabitant.
+
+P1b structural reflection is now kernel-built for the finite request/accept
+calculus. Prefix-count invariance proves that complete cannot step.
+Free-subject and communication/unary-prefix invariants classify established;
+the nominal-incidence closure classifies every requesting representative
+through alpha/ACU/scope extrusion, capture-avoiding substitution, and all four
+`res(com)` / `open+close` split presentations. It derives exact native
+residual reflection and the unconditional `pi_ra_certificate` without a weak
+step or observation filter. The integrated dirty working tree passes a fresh
+complete CI/axiom audit; the result remains implementation evidence until it
+is bound to an immutable commit and independently reviewed.
+
+### 16.1 Shared P1a business views and terminal/productive states
+
+The fourteen fixed-signature P1c business events now form one actual source
+execution package for the three P1a views. A DAG, Petri, or morphism target
+step retains the source family tag and contains the corresponding independent
+native matrix derivation. Soundness, exact reflection, path coverage,
+terminal preservation, and exact source `DPOEvent` replay therefore refer to
+the same occurrence. The reference carrier has empty graph/resource fibres;
+arbitrary product rank preservation, pre-net reconstruction, resource
+semantics, static SMC realization, and heterogeneous admission remain
+separate certificate inputs.
+
+For every concrete admitted mismatch, reconnect, or quiescent-delete
+occurrence, one replayable business transition reaches a control state
+classified as exactly one of success, external wait, genuine deadlock, or an
+explicit productive infinite trace of observable external holds. These
+classes are pairwise disjoint, and every classified control endpoint denotes
+the same computed target `Config`, verified replay record, four-view
+derivation, and admitted resource/session evidence. The disposition is an
+external policy decision after the graph rewrite, not a second rewrite or an
+implicit product policy.
+
+### 16.2 Closure corrections and current verification boundary
+
+The first `ProductRuleAdmission.Certificate` is not an admissible completion
+witness. Its `FourCoherentProjectionCertificates` field embeds signature
+admission as a step of one fixed-signature source `ExecutionPackage`; native
+replay therefore preserves the version. The same certificate identifies those
+endpoints with an admission whose `advancesEpoch` field requires a strict
+version increase. Hence the record is uninhabited for all parameters. The
+source declaration `certificate_uninhabited_fixed_signature_admission`
+now kernel-checks this contradiction. The corrected, root-built
+`HeterogeneousProductRuleAdmission` interface uses separate fixed-signature
+business certificates and heterogeneous source/four-target admission
+bundles. `P1cAdmittedFourOccurrence.fixedOccurrence` gives every concrete
+admitted reference occurrence a substantive fixed-epoch
+DAG/Petri/native-late-pi/morphism record plus exact source and four-target
+replay. `FiniteExecutableEpochProjectionReference.fourTypedViews` now gives
+a nonempty cross-epoch reference bundle with separate old/new target
+packages, fixed-epoch projection certificates, four independently typed
+native admission relations, strict version advance, and exact replay. Its pi
+constructor retains the genuine visible registration input; its other views
+remain finite executable references rather than production models. No
+product inhabitant yet connects cross-epoch admissions to all
+static, Petri, resource, authorization, fairness, probability, and scheduler
+layers.
+
+The seven numeric requesting-fingerprint values are necessary but not
+sufficient: `badRequesting` has all seven and a native `tau` derivative whose
+free-name set prevents structural congruence with the established target.
+The augmented bundle additionally fixes free names and free subjects and
+excludes that known counterexample. Its root-built arithmetic and syntax
+lemmas derive two enabled length-two threads, exact native `4 -> 2`
+consumption, residual send/receive polarity, and an outer
+restriction/parallel normal form. The root-built nominal-orbit layer further
+proves that the unique free payload is not captured and occupies an active
+output-value position in one of those two threads, with this interface
+preserved through every alpha/structural constructor. Native-constructor
+inversion additionally proves that a single sequential two-prefix thread
+cannot make a silent step, handles the capture-avoiding slow-freshening
+branch, and extracts two residual one-prefix communication threads up to
+structural congruence. The linked endpoint normalization covers the four
+direct/crossed sync/close presentations. A
+kernel-checked parallel-zero counterexample proves that the native target
+cannot be required to have exact linked-endpoint syntax; the final theorem
+must existentially classify a linked endpoint and relate the actual target
+to it structurally. The nominal-incidence closure described below now
+constructs that classification for every genuine split.
+
+The pinned Lean 4.32.0 ordinary evidence gate passes on the current dirty
+working tree: 283 Lean files, root build success in 8938 jobs, and 667
+dependency reports restricted to `propext`, `Classical.choice`, and
+`Quot.sound`. No full FMS inhabitant, production rule inhabitant, immutable
+commit-bound build, independent QA-L4 review, FCP result, or ADR acceptance
+exists. All manifest statuses therefore remain `partial_scaffold` or
+`implemented_unverified`, never `proved` or `reviewed`.
+
+### 16.3 Labelled P1b split and nonempty corrected product certificate
+
+The requesting proof has now crossed two additional semantic boundaries.
+`P1bLabelledThreadInversion` inverts the actual `syncLeft`, `syncRight`,
+`closeLeft`, and `closeRight` constructors, including the slow
+capture-avoiding freshening branch. `P1bRequestingPolarityOrbit`,
+`P1bRequestingThreadPolarityClassifier`, and `P1bNativeSplitContext` then
+prove, through the complete alpha/structural orbit, that every genuine
+requesting native step has one shared restriction context, one send/send
+thread, one receive/receive thread, and one of those four exact native split
+derivations. This removes native-rule selection, context alignment, and
+polarity from the remaining obligation.
+
+`P1bRestrictionEnvelope` separately proves pair and single essential-binder
+decompositions, garbage-restriction elimination, and normalization up to
+`Late.Struct`. Its checked scope-extrusion example refutes the stronger claim
+that every representative must expose both public and session names in the
+outer restriction list. `P1bRequestingReflectionClosure` proves that the full
+`StandardLateReflection` theorem is equivalent to the remaining
+target-up-to-structure linked-endpoint classifier and constructs the final
+projection certificate from that classifier. It also checks that exact target
+syntax and aggregate residual shape are both insufficient.
+
+`P1bNominalIncidenceBoundary` now records that step as one non-circular
+proposition indexed by the actual `SplitCommunication`. It asks only that the
+wrapped exact residual normalize to an output/input pair on an existential
+restricted channel carrying the fixed free payload. It does not mention the
+canonical established endpoint. From that proposition the kernel proves the
+unknown-channel/binder normalization, full requesting reflection, and the
+projection certificate. `P1bNominalIncidenceProof` reduces the source-side
+work to `RequestingSplitSupportTransfer`, and
+`P1bNominalIncidenceClosure` constructs that transfer separately for
+`syncLeft`, `syncRight`, `closeLeft`, and `closeRight`. Consequently
+`requestingPolarizedNominalIncidence`, `requestingNativeResidual`,
+`standardLateReflection`, and the unconditional `pi_ra_certificate` are all
+kernel-built. CENTRAL-13 is therefore `implemented_unverified`; complete
+local CI/axiom audit now passes, while immutable provenance and independent
+QA-L4 review are still required before any `proved` or `reviewed` status.
+
+`HeterogeneousProductRuleAdmissionReference` now inhabits the entire corrected
+generic product certificate, not only its four-target admission subrecord.
+The witness contains a strict heterogeneous `0 -> 1` admission, four
+extension-indexed projection families, faithful arrow realizations,
+static/operational commuting cells, a distinct internal business rewrite,
+rank and resource/session policy, qualification and authorization, a stable
+fair window, a positive probability bridge, and scheduling evidence. Native
+derivability and replay remain independent fields. This proves the interface
+is constructible and non-circular: the reference kernel assigns probability
+one to the actual business edge from an unstable ready state to a stable done
+state. Its four targets are identity reference
+semantics, however, so every real product rule must still supply substantive
+DAG, pre-net, pi, and morphism families and its own policy/probability
+evidence.
+
+The reference business relation is now signature-sensitive: it is
+kernel-proved unavailable at the old signature and available after the
+admission. Replay validates the recorded recipe and source configuration,
+and checked regressions reject a wrong rule and a wrong source. These remove
+two anti-vacuity defects in the finite witness; they do not turn its identity
+views into production models.
+
+`P1cProductRuleProofBundle` now adds a stronger fixed-epoch witness. Its
+reconnect occurrence really changes the source graph by adding `(0, 1)`.
+The four target wrappers have distinct state/event types and carry the
+independent DAG, individual-token Petri, native standard-late-pi, and
+morphism business derivations. The event map is bijective, all four source
+events have native target steps, and every target step reflects to a source
+step. The bundle also contains exact `DPOEvent` replay, rank, quiescence,
+authorization, an external scheduler, a stable/fair window, and probability
+one for business progress. This proves one substantive non-identity reference
+rule; it does not instantiate the production packages.
+
+The open-process presentation also has a new atomic support gate.
+`OpenSMCNominalAtomBoundary` replaces an uncheckable sort-only atom admission
+with distinct typed name ports and an exact erased-free-support equation. The
+existing non-closed output example is admitted at its actual named boundary
+and rejected at empty named boundaries. Composition-level named interfaces
+and native plug/hide/restriction preservation remain open.
+
+Finally, `FMSCpoFiniteHoareMonad` turns the finite nonempty Hoare construction
+into a genuine categorical Monad on finite omega-CPOs and continuous maps,
+with continuous Kleisli extension, both unit laws, associativity, and choice
+distributivity. It still lacks empty deadlock and separate divergence and
+therefore is neither the all-omega-CPO Abramsky powerdomain nor the required
+FMS domain solution.
+
+## 17. FMS theorem boundary and local acceptance conditions (2026-07-26)
+
+This section is a source-scope correction. It does not change the current
+Pre-FCP/M1 proof status, adopt RFC-0002 §16, or discharge any proof
+obligation.
+
+The source-backed FMS obligation consists of:
+
+1. the enriched free pointed-semilattice/Abramsky powerdomain on the base
+   `Cpo` category and its pointwise lift to `Cpo^I`;
+2. a continuous natural **initial** solution of `A = P(H A)` with coherent
+   roll/unroll maps;
+3. the allocation/restriction, action, parallel, and hiding coherence needed
+   by the denotation; and
+4. adequacy and full abstraction quantified over pairs of process terms for
+   the explicitly selected source-calculus scope.
+
+“Prove general algebraic compactness” is an optional stronger construction
+route, not a source theorem or a method fixed by this spec. Likewise, FMS full
+abstraction is not a theorem that every element of the recursive domain is
+definable. Any separate definability theorem must first specify its semantic
+carrier, approximation class, and quantifiers through RFC/ADR.
+
+The FMS source calculus contains guarded replication `!α.P`. The present Lean
+`Raw.Proc` is finite-control and contains neither replication nor recursion.
+Therefore no theorem over the current syntax may be advertised as the FMS
+arbitrary-process theorem. Adding that syntax remains subject to the existing
+stop condition.
+
+Finally, Cantilune's exact per-label native one-step soundness/completeness,
+the strong `PowerdomainObservation.map_iff`/`multiplication_iff` inverse-image
+laws, and the designated divergence/deadlock disequality are explicit
+additional acceptance conditions. They must be proven for any exact package,
+but must not be attributed to the cited FMS theorem. No complete or exact FMS
+package is inhabited by this clarification.
+
+## 18. Exact action, recursive boundary, and finite product chains
+
+The current Lean construction fixes the actual world-indexed action
+endofunctor
+
+`H X(n) = N(n) × B X(n) + (N(n) × N(n)) × X(n)
+          + N(n) × X(n+1) + X(n)`.
+
+Its action on arbitrary finite-world injections and model transformations is
+continuous and functorial, and `H` is locally continuous. The unseparated
+omega-Scott lower/Hoare power endofunctor `P` is also locally continuous, so
+the actual recursive endofunctor `P ∘ H` is locally continuous. Chosen-product
+Fubini and strength satisfy the naturality, unit, symmetry, associativity,
+and multiplication diagrams.
+
+For a complete-lattice target, the map
+
+`S ↦ sSup (g '' carrier(S))`
+
+is the unique arbitrary-supremum-preserving extension of `g` from principal
+computations. This theorem is not the Abramsky acceptance theorem: it uses
+`sSupHom` as a load-bearing target morphism, and the source object remains an
+unseparated lower/Hoare computation in which bottom equals empty deadlock.
+
+Beyond the original finite initial tower, Lean now constructs continuous
+embedding-projection pairs, a concrete singleton-seeded EP iteration tower,
+the coherent-thread inverse limit of every continuous projection chain, its
+world-natural model lift, jointly monic finite projections, and a canonical
+continuous fold `F L → L`. The missing load-bearing step is exactly a
+shifted-cone projection-limit preservation witness. Lean proves it
+equivalent both to a continuous inverse `L → F L` and to `IsIso` for that
+canonical fold, and constructs an `ActualFixedPointWitness` from it. The
+current hom-local-continuity record does not construct the witness. Without
+it the construction is not the required bilimit/domain solution. The
+remaining acceptance boundary also requires initial-algebra and
+terminal-coalgebra evidence before transport to `AgentDomainSolution`.
+
+At the operational boundary, general bound-output action/derivative alpha
+classes retain genuine standard late-pi steps. The recursive extension now
+also has a joint action-and-derivative alpha quotient, existentially
+saturated strong native transitions, and exact derivative-alpha/target-alpha
+bridges for embedded, synchronization, and close. Literal equivariance is
+proved whenever numeric freshening is not triggered. The total executable
+substitution is now proved permutation-equivariant up to `RecursiveAlpha`
+for every numeric freshening branch; full sync/close `NativeStep` closure
+still needs substitution congruence on alpha-related inputs. A contextual named
+boundary category and a proof-carrying disjoint partial tensor are
+constructed. Boundary metadata renamings additionally have exact
+identity/composition, unit/associativity, source-support congruence, and
+sequential freshening laws. None is the required total operational SMC:
+the current atom certificate rejects a nonempty same-name wire, bound-name
+alpha cannot repair nonempty plug identities, non-injective fusion changes
+mismatch behaviour, and unrestricted contextual tensor interchange is
+false.
+
+For any finite sequence of supplied cross-epoch product rows, Lean now
+constructs synchronized source, DAG, Petri, pi, and morphism chains with:
+
+- exact endpoint-free replay;
+- exact rule-event and typed admission-event marks;
+- strict signature-version boundaries;
+- exact execution-epoch alignment; and
+- a source-probability-space common trajectory retaining each dependent
+  event and all four native projected derivations.
+
+The direct one-row FMS adapter remains insufficient by itself. The separate
+common-package chain layer now fixes one `ExactFMSAcceptancePackage`, carries
+eventful endpoints across adjacent rows, and exposes a conditional arbitrary
+finite common-FMS path interface. A genuine-kernel theorem also couples two
+caller-supplied Ionescu--Tulcea laws and retains native event labels, exact
+DPO replay, epoch/signature alignment, and consecutive common-FMS
+denotational endpoints almost surely. These are parameterized theorems:
+neither an exact FMS package, the production kernels/coupling, nor any of the
+eight product-owned runtime fact sets is constructed.
+
+## 19. Consistency boundary for separated commutative nondeterminism
+
+The strict pointed continuous-semilattice carrier functor now has an
+all-source ordinary solution set, ordinary free adjunction, and a
+CPO-enriched hom equivalence. These are constructions, not acceptance
+premises.
+
+For that free extension, the canonical sequential Fubini map is jointly
+continuous, sends two pure values to the pure pair, and preserves
+divergence, deadlock, and choice in its first computation argument. The
+following three requirements are jointly inconsistent:
+
+1. divergence and deadlock are distinct;
+2. sequencing is strict for both constants in the first computation; and
+3. Fubini is invariant under swapping its two computations.
+
+At `(divergence, deadlock)`, (2) evaluates one ordering to deadlock and the
+swapped ordering to divergence; (3) equates them. Lean checks the
+representation-independent package-level argument as
+`no_distinguishedFubiniStrictness`.
+
+Therefore no later definition may claim to close the separated FMS package
+while retaining all three requirements. The normative semantics must be
+changed by RFC/ADR before a recursive `A ≅ P(H A)`, hiding, adequacy, or
+full-abstraction inhabitant can discharge the complete gate.
+
+## 20. Exact remaining semantic witnesses
+
+The kernel now constructs the first two load-bearing witnesses and keeps the
+third distinction explicit:
+
+1. `concreteBilimitExhaustivity`, whose monotone finite approximants and
+   pointwise omega-sup exhaustion construct the two-sided recursive fold and
+   the unseparated omega-Scott `concreteActualFixedPointWitness`;
+2. `RecursiveAlpha.substitutionCongruent`, which upgrades total
+   fresh-choice equivariance to all-constructor native-step equivariance; and
+3. the distinction between monadic `powerHiding` coherence and an actual
+   recursive-agent restriction/denotation theorem.
+
+The fixed point in (1) is not an initial algebra, a terminal coalgebra, an
+algebraic-compactness theorem, or an Abramsky powerdomain. No theorem may
+report (3) as adequacy, definability, or full abstraction without constructing
+the source-compatible recursive domain, syntax denotation, restriction
+transformation, and the stated operational equivalences.
+
+Product-level four-projection and probability theorems remain universally
+quantified over real rule bundles, native kernels, couplings, and operational
+facts. Since those inhabitants do not exist for the eight planned packages,
+the general theorems do not instantiate a production consistency theorem.

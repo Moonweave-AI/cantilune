@@ -8,7 +8,7 @@
 | 负责人 | Joker-of-Gotham（DRI） |
 | 评审人 | 待定（治理缺口 —— 见 RFC-0001 元数据 / 治理说明） |
 | 创建日期 | 2026-07-23 |
-| 更新日期 | 2026-07-23（机械化边界对账） |
+| 更新日期 | 2026-07-25（签名族与共同轨迹对账） |
 | 相关 | RFC-0001、ADR-0001、RFC-0002、`docs/research/zh-CN/0001-p1b-pi-bridge-audit.zh-CN.md` |
 
 > **治理说明：** 本规范定义 RFC-0002 必须证明其一致性的那个形式对象。标记为**待证 / 未经验证**的主张尚未证明；标记为**按构造**的主张直接得自本规范的定义。π 投影因设计决策（half-π (II)）而**待证** —— 见 §6.4 与 RFC-0002。
@@ -261,7 +261,7 @@ $P_{Mor}$ = $C$ 本身。
 | 阶段 | 证明 | 状态 |
 |---|---|---|
 | P1a | DAG/Petri/态射一致性 | **可复用操作证书 family 与有限 fixture 已通过 kernel；预期静态/DPO/resource/admission 实例仍不完整** |
-| P1b | π 投影对 **request/accept 通道创建子语言**的一致性 | **有限封闭证书与 late-π 基础已通过 kernel；一般证书及 FMS 桥仍不完整** |
+| P1b | π 投影对 **request/accept 通道创建子语言**的一致性 | **无过滤 structural strong-late 操作证书（含精确 requesting reflection）已通过 kernel 与本地完整 CI/审计；当前为 `implemented_unverified`，待不可变 provenance 与独立评审；独立的完整 FMS 桥仍不完整** |
 | P1c（延后） | π 投影对**自由对话 / 无限制移动性**的一致性 | **有限 60 格参考矩阵已是 60/60 native，并有四份只在各自声明的受限目标关系内成立的按事件索引操作证书；但这尚不等于完整标准 late-LTS reflection：当前开放 reconnect/delete 编码存在额外环境转移，一般 admitted-rule/static/resource 层也未完成** |
 
 ### 6.4 回退（依 ADR-0001）
@@ -658,7 +658,7 @@ d:\llbracket g\rrbracket_{\mathrm{op}}\xrightarrow{\tau}_\pi P
 | 正确环境 SMC | **已识别逐点笛卡尔结构** |
 | 步骤 D | **FreeSMC 任意目标泛比较与实际 mathlib 对称幺单结构、`Type` 上真正的有限幂集 monad 及其 `Type^I` 逐点 monad、局部无名 supported-process 函子、非恒定 `Set^I`/`Cpo^I` 支撑模型、CPO 世界 shift/allocation、连续支撑 hiding 与支撑层回缩等式、离散 CPO 有限幂 monad 与有限 `P_f(H-)` 逼近均已存在。`CompleteExternalFMSTheoremPackage` 已写出精确的 world/action、强交换 powerdomain、协调 restriction、域方程与全抽象验收接口，但 `CompleteFMSAvailable` 没有 inhabitant；这些支撑等式不居留该 package，真实 Abramsky/富集模型仍未证** |
 | 步骤 E | **有限 P1c 参考面现为 60/60 native，并有四份按事件索引的操作证书；这些证书只在各自声明的受限目标关系内是精确的。每个 π 见证均擦除为独立标准 late 推导，但这不是整个 raw 标准 late LTS 的 reflection：当前开放 reconnect/delete 编码还有额外环境转移。一般 DPO/Petri 派生 admission 规则与五层证书仍开放** |
-| P1b 总体 | **双路线架构已选；证明未完成；Pre-FCP/M1；迭代，不晋级** |
+| P1b 总体 | **操作 residual 已 implemented_unverified；完整 FMS 路线或经接受的范围裁决仍未完成；Pre-FCP/M1；迭代，不晋级** |
 
 不声称已证明 C′、D 或 E。该负面结果有实际价值：它排除了错误的张量/商路线，并精确列出重新开始证明前必须补齐的定义。
 
@@ -765,3 +765,443 @@ $\varepsilon$ 前提也尚不能从每个共享产品 `ExecutionPackage` 自动�
 
 精确范围以 `formal/proof-obligations.json` 为准；P1b/P1c/四投影总定理
 仍未完成，项目仍为 Pre-FCP/M1。
+
+## 14. 2026-07-24 覆盖性闭合边界
+
+本节在与上文较早的“仍缺失”描述冲突时取代后者。
+
+有限类型开放超图结果现已是内生的范畴结果。`ExactPositionalObject` 以
+有限 carrier、唯一 typed incidence descriptor、规定的有序边界 typing
+及无 boundary duplicate，独立刻画 full replete 本质像；重建定理证明
+`essImage X ↔ ExactPositionalObject X`。任意编码后为单态、合法且保留
+边界的匹配、并行独立对的两条 residual 及 concurrency 结果，都经
+finite-image/preimage 同构传回内生见证；两个 DPO 方形在 ambient adhesive
+slice 中为 Van Kampen。有限 boundary-duplicate 反例证明 unrestricted
+finite slice 不与 positional 图等价。
+
+`P1cFullNativeRefinement` 现对全部 15 个事件 family 及两个 payload 后继给出
+所需的多状态、family-tagged 完整 native 证书。`P1cStructuralLateBridge`
+还把每个源步映为未过滤 alpha/结构 strong-late LTS 的真实一步。同时 Lean
+证明，按当前元数据合同，规范映射到纯 `Raw.Proc` 的完整证书不可能存在：
+dynamic admission 改变 runtime signature version，而
+`structuralLateLTS` 对所有进程的版本均为零；delegation 与 reconnect 也有
+相同 pure raw transition triple，故该 triple 不能恢复源事件 provenance。
+RFC 必须把 admission/version provenance 与纯 π 分层，或选择显式 enriched
+target；不得以弱步规避。
+
+有限异构概率结果现有两种加强。`FiniteHeterogeneousMarkedKernel` 把真实
+依赖 `ChainStepMark`、native step、replay 与 execution-epoch 证据放在采样
+到的正概率边上；末端 stutter 是不同的行政 constructor。
+`FiniteBranchingReplayKernel` 直接对业务 choice 分配概率，并把 sampled
+choice 存入后继，所以同端点事件仍是不同随机状态。几乎每条
+Ionescu--Tulcea 路径都有有序 choice，且 replay 见证定义性来自其 sampled
+edge。具体产品 scheduler 仍须跨 runtime admission 实例化这些 choice，并
+导出 opportunity 对齐、公平性、稳定签名窗口与正 epsilon 下界。
+
+静态/操作门禁现对 quotient 敏感。`CategoricalLTSRealization` 必须使所选
+state setoid 恰对应 represented arrow 的范畴同构，提供满足反身/对称/传递
+协调的同构，并证明 rewrite cell 与代表元无关。最强 FMS-gated 组合定理
+要求具体 `ExactFMSAcceptancePackage`、四份 coherent 投影证书及
+`OperationalFMSPiCoherence`：映射源状态由闭 π 进程表示；目标 state/event
+具有 FMS denotation/action；从映射源出发的目标原生步恰等价于所提供的 FMS
+transition。本仓库没有构造这样的 FMS package 或产品 bridge。
+
+因此，剩余阻断不是隐藏的 Lean hole，而是：
+
+1. 为严格 DAG 视图选择 rankable/acyclic 源定义域的 RFC 决策；
+2. 为 π provenance/version 分层作 RFC 决策；
+3. 真实 all-ωCPO powerdomain、连续 agent 域方程解、来源锁定的
+   restriction/action 构造、全 world 操作桥及 strong-late 全抽象证明；
+4. 同一共享执行包上的生产 DAG/Petri/static/resource/admission 映射及全部
+   non-fixture 产品 occurrence；
+5. 带 feedback authorization、quorum、公平性、stable-window 与 epsilon
+   证明的具体异构分支 scheduler；以及
+6. 绑定 commit 的独立 QA-L4 评审、FCP 与 ADR 接受。
+
+## 15. 签名索引与采样语义边界（2026-07-25）
+
+对每个有限签名 `σ`，`ReindexableExecutionFamily` 都给出真实
+`ExecutionPackage σ`。对每个单调扩展 `ι : σ ↪ τ`，状态/事件映射保持原生
+步骤，配置按扩展重索引，目标已验证事件记录等于源记录的重索引；恒等与复合是
+这些实际映射上的等式。`ProjectionFamily` 是关于该重索引自然的投影证书。
+
+`FourProjectionFamilies` 强制 DAG、Petri、π 和 morphism 共享同一个源族。
+因此每个签名点上的路径、反射、终态和版本定理都针对同一源语义；两次可复合
+admission 的四个状态方块交换；每个源原生步骤在四个重索引目标中都有执行精确
+mapped configuration 的事件记录。这仍是接收已供应 family 的接口定理。
+
+固定签名 epoch 中，完整采样轨迹只保存 branching kernel 产生的依赖轨迹。
+事件标签、源原生步骤、`DPOEvent`、端点配置、观察/运行时 epoch、replay epoch
+及四个目标步骤均由同一条 sampled edge 导出。签名 admission 不是
+`DPOEvent`；异构执行继续使用 `AdmissionReplays`。
+
+对有限异构 `EpochChain`，`FiniteHeterogeneousFourProjection` 从 marked
+kernel 自身为每个非终端 sampled phase 导出共同证据。固定签名业务 phase
+保留精确 `DPOOccurrence` 与四个原生目标推导；边界 phase 则以独立构造保留
+`AdmissionOccurrence` 和 `AdmissionReplays`。采样源唯一决定依赖 mark、
+replay 分支和 execution epoch。若要从同一个 `FourProjectionFamilies`
+选择逐 epoch 证书，还必须显式提供 `SourceFamilyAlignment`，因为任意 chain
+中的存在打包执行包并不定义等于该 family 的源执行包。纯
+`Reindexing.mapState` 不可能成为目标 admission transition：kernel 检查的
+no-go 定理利用 `Config.reindex` 保持 `signatureVersion`、而
+`AdmissionReplays` 必须严格推进版本这一事实。因此四目标 admission replay
+须另行提供异构目标 transition 与证据，而不是补充一个状态等式。
+
+内在有限类型开放超图范畴现与 adhesive typed-presheaf slice 中满足
+`ExactPositionalObject` 的 full 子范畴显式等价。该函子覆盖 exact 对象间全部
+typed natural transformation，full、faithful 且 essentially surjective，
+并保持和反射单态。这是在 exact positional 范围内的一般范畴桥；它不固定
+宿主，也不假定 `InterfaceLocal`。unrestricted slice 仍不等价，因为其中确有
+无限、incidence 不完备或边界非单射的反例对象。
+
+严格 DAG 仅对携带下述证书的源图规范化：
+
+```text
+source ∈ inputs(e) ∧ target ∈ outputs(e)
+  ⇒ rank(source) < rank(target).
+```
+
+在该范围内，投影包含全部 active 二元 incidence、保留输入/输出接口、受类型
+开放超图同态保持并且无环。DPO 保持还要求重写目标携带相容 rank。
+
+request/accept 映射已有未过滤的标准结构 strong-late 单步正向证明。
+`P1bNominalIncidenceClosure` 现已反演全部结构同余 requesting 代表并证明
+精确反射；该操作结果仍为 `implemented_unverified`，待不可变 provenance 与
+独立评审。choice 幂等不属于当前结构同余；使用 S4 时必须明确引用另设的
+等式/双模拟理论。
+
+反馈存储只允许经授权 ballot，按 observer 身份去重，并把同时 approval/rejection
+quorum 暴露为 `conflict`。聚合只产生单调证据，不能替被观察方作接受决定。
+P1c 只有正支撑进入单调反馈桥；零质量行政 reset 已被证明与 pending/completed
+证据序不相容。
+
+最后，等式序有限集端函子及 `World ⥤ ωCPO` 逐点版本不能在一般 ωCPO 上拥有
+所需连续 singleton unit。它们是有限支撑测试，不是 FMS powerdomain。
+Abramsky powerdomain、连续自然初始 agent 域解、完整 hiding/action
+coherence，以及针对已选择源演算范围的进程对 strong-late 全抽象实例，仍是
+强制的外部或后续形式化义务。构造必须给出初始解及其 roll/unroll coherence；
+本规范并未把一般 algebraic compactness 选为唯一允许的方法。
+
+外部来源边界是精确的：FMS Proposition 2.2 把基础 Cpo 范畴上已供应的
+Abramsky powerdomain 逐点提升到 `Cpo^I`；agent 方程为
+`A = μX. P(H X)`，其中
+`H X = N × (N ⇒ X) + N × N × X + N × δX + X`；Theorem 3.2/3.3
+分别陈述按进程项对量化的有限进程与任意进程 strong-late 全抽象结果
+（[作者托管 PDF](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf)）。
+这些是被引用的外部数学结果，不是 Lean kernel 证明；仅凭引文不能构造
+`CompleteFMSAvailable` 或本地操作 coherence 接口的无公理 inhabitant。
+源演算包含 guarded replication `!α.P`，而当前 Lean 有限控制语法既无
+replication 也无 recursion。因此当前定理至多是片段定理，不能冒充任意进程
+结果。所引全抽象定理也没有断言递归域中的每个元素都能由语法定义。
+
+## 16. 原生 P1c 与生成式运行时边界（2026-07-25）
+
+本节取代前文中“只有状态轨迹”或
+“mismatch/reconnect/delete 仅有 fixture 推导”的旧表述。
+
+合法的类型化标准 late 关系现在是 `Step.StandardNativeStep`：其成员同时
+携带类型化推导以及标准演算要求的全部 freshness/capture 前提。每个成员
+精确擦除为一条独立定义的 `Late.NativeStep`。P1c 的十五个参考事件族全部
+居留该关系；mismatch decision、reconnect 与 quiescent delete 因而是原生
+一步推导，不是人为添加的行政标签。
+
+对十四个固定签名事件族，`P1cBusinessReplayMatrix` 从同一 occurrence
+构造确定性的 `Config` 端点、无端点依赖的 verified `DPOEvent`、四份独立
+原生目标推导以及一条标准 late 推导。其 audit-cursor 配置只是参考执行
+载体，不冒充最终产品图语义。对 mismatch、reconnect 与 quiescent delete，
+`P1cAdmittedOperations` 进一步给出真实的图/资源/名字更新，并在 replay
+时重新检查 enabling 和具体 match fingerprint。dynamic partner admission
+仍是跨不同签名的 `AdmissionReplays`，不会被伪造成同签名 `DPOEvent`。
+
+对上述三种 admitted-operation 执行包，`concreteTrajectoryAgreement`
+由实际 total native labelling 直接构造，并证明精确的状态投影、选中事件
+标记、verified event 在相邻配置间的 replay，以及 opportunity/runtime
+epoch 对齐。`FiniteExecutableHeterogeneousRuntime` 还构造了一个真正跨越
+admission 的有限调度器与 Markov kernel。其几乎每条生成路径都保留两侧
+business `DPOOccurrence`、admission occurrence、唯一的 dependent phase
+mark，以及每条边上的四份原生目标推导；四个目标中的 admission 都严格
+推进 epoch。这是非空参考调度器。产品级授权、quorum/conflict 策略、
+稳定窗口公平性与正 `ε` 进展仍须由规则包提供。
+
+有限类型开放超图的 DPOI 桥在数学上正确的作用域内已经闭合：内在有限
+位置化开放超图与 adhesive slice 的完整 `ExactPositionalObject` 子范畴
+显式等价；每个合法单态匹配都有规范的两个 pushout 与 Van Kampen 方块；
+每对 parallel-independent 匹配都有内在 residual 和规范 concurrency
+同构。kernel 已检查的 malformed/boundary-duplicate 反例排除了与整个
+无限制 presheaf slice 等价的错误主张。
+
+CPO 层现在包含真实的非离散有限严格片段
+`P_s α = (Set α)⊥`：divergence 与 deadlock 分离，strict choice 和直接像
+连续，并且 `PUnit` 上存在三段严格链。它是真实的
+`NondeterministicComputation`，但不是作用于所有 omega-CPO 的
+`CpoPowerdomainPackage`。尚缺的 FMS 层被精确定位为：
+Abramsky/omega-ideal completion 及其自由泛性质、strong/Kleisli coherence、
+连续自然初始递归域解、协调的 hiding/action 映射，以及针对已选择演算范围、
+由来源版本锁定的进程对全抽象证明。Cantilune 还附加要求逐标签原生一步精确
+对应、强 powerdomain-observation 逆像律（含 divergence observation 策略），
+以及指定 divergence/deadlock 不等性。这三项是本地验收条件，不是 FMS
+full-abstraction 定理的直接陈述。论文引文仍是外部证据，不是 Lean inhabitant。
+
+P1b 的结构反射现已对有限 request/accept 演算完成 kernel 构建。
+prefix-count 不变量证明 complete 不可发生一步；free-subject 与
+communication/unary-prefix 不变量分类 established；nominal-incidence
+closure 则经 alpha/ACU/scope extrusion、capture-avoiding substitution
+及四种 `res(com)` / `open+close` split presentation 分类全部 requesting
+代表元。它导出精确 native residual reflection 与无条件
+`pi_ra_certificate`，未采用弱步或观测过滤。集成 dirty worktree 已完成
+新一轮完整 CI/公理审计；在绑定不可变 commit 并经独立评审前，这仍只是实现证据。
+
+### 16.1 共享 P1a 业务视图与终态/生产性状态
+
+十四个固定签名 P1c 业务事件现组成三个 P1a 视图的同一个真实源执行包。
+DAG、Petri 或态射目标的每一步都保留源 family 标签，并包含相应的独立
+native matrix 推导。因此 soundness、精确 reflection、path coverage、
+终态保持和精确源 `DPOEvent` replay 指向同一个 occurrence。该参考 carrier
+的图与资源 fibre 为空；任意产品规则的 rank 保持、pre-net 重构、资源
+语义、静态 SMC realization 与异构 admission 仍是独立证书输入。
+
+对每个具体 admitted mismatch、reconnect 或 quiescent-delete occurrence，
+一次可 replay 的业务转换会到达且仅到达以下四类控制状态之一：成功、外部
+等待、真正死锁，或带有显式可观察 external-hold 无限轨迹的 productive
+状态。四类两两互斥；每个已分类控制终点都表示同一个计算得到的目标
+`Config`、同一 verified replay 记录、同一四视图推导，以及 admitted
+资源/会话证据。该 disposition 是图重写之后的外部策略决定，不是第二次
+重写，也不冻结产品策略。
+
+### 16.2 闭合修正与当前验证边界
+
+第一版 `ProductRuleAdmission.Certificate` 不能作为合法的完成见证。它的
+`FourCoherentProjectionCertificates` 字段把签名 admission 内嵌为同一个
+固定签名 source `ExecutionPackage` 的一步，因此原生 replay 保持版本；
+同一证书又把这些端点等同于一个由 `advancesEpoch` 要求严格增加版本的
+admission。因此该 record 对所有参数都不可居住。source 声明
+`certificate_uninhabited_fixed_signature_admission` 现已由 kernel 检查该
+矛盾。修正后的 root-built `HeterogeneousProductRuleAdmission` 接口分离
+固定签名业务证书与异构 source/four-target admission bundle。
+`P1cAdmittedFourOccurrence.fixedOccurrence` 为每个具体 admitted 参考
+occurrence 提供实质固定 epoch DAG/Petri/native-late-pi/态射记录，以及精确
+source 与四目标 replay。`FiniteExecutableEpochProjectionReference.fourTypedViews`
+现还提供一个非空跨 epoch 参考 bundle：独立 old/new target package、两侧
+固定 epoch projection certificate、四个独立类型化原生 admission、严格版本
+推进与精确 replay；其中 pi 构造子保留真正可见的 registration input，其余
+三视图仍是有限可执行参考语义而非生产模型。尚无产品 inhabitant 把跨 epoch
+admission 连接到
+全部静态、Petri、资源、授权、公平性、概率与调度层。
+
+七个数值 requesting fingerprint 是必要条件而非充分条件：
+`badRequesting` 具有全部七个值及原生 `tau` 导数，但该导数的 free-name 集
+使它不可能与 established 目标结构同余。增强 bundle 再固定 free names 与
+free subjects，能排除这一已知反例；其 root-built 算术与语法引理还导出
+两个长度为二的活动线程、精确原生 `4 -> 2` 消耗、残余 send/receive 极性
+及外层 restriction/parallel 正常形。root-built nominal-orbit 层进一步证明：
+唯一自由 payload 未被外层 binder 捕获，并位于两个活动线程之一的 output-value
+位置；该接口经全部 alpha/structural 构造保持。原生构造反演进一步证明单个
+顺序两前缀线程不能自行做静默步，覆盖 capture-avoiding slow freshening
+分支，并按结构同余提取两个 residual 单前缀通信线程。linked endpoint
+normalization 覆盖四种 direct/crossed sync/close presentation。一个 kernel-checked
+parallel-zero 反例证明不能要求原生目标语法精确属于 linked endpoint；最终
+定理必须存在性地产生 linked endpoint，并以结构同余关联实际目标。下述
+nominal-incidence closure 现已对每个真实 split 构造该分类。
+
+固定 Lean 4.32.0 普通 evidence gate 已在当前 dirty worktree 上通过：
+283 个 Lean 文件、root build 8938 jobs 成功，以及 667 份只含
+`propext`、`Classical.choice` 与 `Quot.sound` 的依赖报告。当前仍不存在
+完整 FMS inhabitant、生产规则 inhabitant、不可变 commit-bound 构建、
+独立 QA-L4 评审、FCP 结论或 ADR 接受。因此 manifest 中所有状态仍为
+`partial_scaffold` 或 `implemented_unverified`，没有任何 `proved` 或
+`reviewed`。
+
+### 16.3 P1b 标记化 split 与非空的修正产品证书
+
+requesting 证明现又越过两层语义边界。`P1bLabelledThreadInversion`
+精确反演真实的 `syncLeft`、`syncRight`、`closeLeft` 与 `closeRight`
+构造，并覆盖 capture-avoiding slow freshening。随后
+`P1bRequestingPolarityOrbit`、`P1bRequestingThreadPolarityClassifier`
+与 `P1bNativeSplitContext` 在完整 alpha/structural 轨道上证明：
+每个真实 requesting 原生步都有一个共享 restriction context、一条
+send/send 线程、一条 receive/receive 线程，以及四种精确 split 推导之一。
+因此原生规则选择、context 对齐与 polarity 已不再属于剩余义务。
+
+`P1bRestrictionEnvelope` 独立证明双 essential binder、单 essential binder、
+垃圾 restriction 消去及 up-to-`Late.Struct` 正规化。其经内核检查的
+scope-extrusion 例子还否定了“每个代表元的外层 restriction list 必须同时
+暴露 public 与 session”的更强命题。`P1bRequestingReflectionClosure`
+证明完整 `StandardLateReflection` 等价于 target-up-to-structure
+linked-endpoint classifier，并能从该 classifier 构造最终投影证书；它也证明
+精确 target 语法与纯聚合 residual shape 都不充分。
+
+`P1bNominalIncidenceBoundary` 现把该步骤记录为一个以真实
+`SplitCommunication` 为索引的非循环命题。它只要求包装后的精确 residual
+正规化为某个存在性受限通道上的 output/input pair，并携带固定自由 payload；
+命题本身不提 canonical established endpoint。Lean kernel 已证明由该命题可
+完成未知通道与 binder 正规化、完整 requesting reflection 及投影证书构造。
+`P1bNominalIncidenceProof` 把 source-side 工作归约为
+`RequestingSplitSupportTransfer`；`P1bNominalIncidenceClosure` 随后分别对
+`syncLeft`、`syncRight`、`closeLeft` 与 `closeRight` 构造该 transfer。
+因此 `requestingPolarizedNominalIncidence`、`requestingNativeResidual`、
+`standardLateReflection` 及无条件 `pi_ra_certificate` 均已 kernel-build。
+CENTRAL-13 现为 `implemented_unverified`；本地完整 CI/公理审计已经通过，
+仍须不可变 provenance 与独立 QA-L4 评审，才可标记 `proved` 或 `reviewed`。
+
+`HeterogeneousProductRuleAdmissionReference` 现已实例化整个修正后的通用
+产品证书，而不只是 four-target admission 子记录。该见证含严格异构
+`0 -> 1` admission、四个 extension-indexed projection family、忠实 Arrow
+realization、static/operational 交换 cell、独立内部业务重写、rank、
+资源/会话策略、qualification、authorization、稳定公平窗口、正概率桥与
+scheduling 证据；原生可推导性与 replay 仍是独立字段。这证明接口可构造且
+不循环：参考 kernel 从非稳定 ready 到稳定 done 的真实业务边赋概率一。
+但四个目标是 identity 参考语义，不是生产 DAG、pre-net、π 与态射
+模型；每个真实产品规则仍须提供实质四视图 family 及自己的策略/概率证书。
+
+该参考业务关系现对签名敏感：Lean kernel 已证明它在旧签名下不可用，并在
+admission 后可用。Replay 会校验记录的 recipe 与 source configuration，
+且回归定理拒绝错误规则与错误源。这消除了有限见证中的两个反空洞缺陷，但
+不会把 identity 视图变成生产模型。
+
+`P1cProductRuleProofBundle` 现又给出更强的固定 epoch 见证。其 reconnect
+occurrence 会真实地向源图增加 `(0, 1)`；四个目标 wrapper 使用不同的状态/
+事件类型，并携带独立 DAG、individual-token Petri、原生 standard-late-π
+及态射业务推导。事件映射是双射，四个源事件均有原生目标步，且每个目标步
+都反射到源步。该 bundle 还包含精确 `DPOEvent` replay、rank、quiescence、
+authorization、外部 scheduler、稳定/公平窗口与概率一业务进展。这闭合一个
+实质非恒等参考规则，不代表生产产品包已经实例化。
+
+Open-process presentation 也新增了原子支撑 gate。
+`OpenSMCNominalAtomBoundary` 用互异的类型化具名端口与精确擦除自由支撑等式，
+替代不可检查的 sort-only atom admission。已有非闭 output 例子可在其真实
+具名边界通过，并在空具名边界被 kernel 拒绝。组合层具名接口以及原生
+plug/hide/restriction 保持仍开放。
+
+最后，`FMSCpoFiniteHoareMonad` 已把有限非空 Hoare 构造提升为有限 ωCPO 与
+连续映射全子范畴上的真实 categorical Monad，含连续 Kleisli extension、
+两条单位律、结合律与 choice 分配律。它仍无 empty deadlock 和独立 divergence，
+因此既不是全 ωCPO Abramsky powerdomain，也不是所需 FMS 域解。
+
+## 17. FMS 定理边界与本地验收条件（2026-07-26）
+
+本节是来源范围校正；它不改变当前 Pre-FCP/M1 证明状态，不采纳 RFC-0002
+第 16 节，也不解除任何证明义务。
+
+由来源支持的 FMS 义务包括：
+
+1. 基础 `Cpo` 范畴上的 enriched free pointed-semilattice/Abramsky
+   powerdomain，以及它到 `Cpo^I` 的逐点提升；
+2. `A = P(H A)` 的连续自然**初始**解及其协调 roll/unroll 映射；
+3. 指称所需的 allocation/restriction、action、parallel 与 hiding coherence；
+4. 针对显式选定源演算范围、按进程项对量化的 adequacy 与 full abstraction。
+
+“证明一般 algebraic compactness”只是可选的更强构造路线，不是来源定理，
+也不是本规范固定的方法。同样，FMS full abstraction 并非“递归域中每个元素
+均可定义”的定理。任何独立 definability 定理都必须先经 RFC/ADR 明确其
+语义 carrier、逼近类与量词。
+
+FMS 源演算含 guarded replication `!α.P`；当前 Lean `Raw.Proc` 是有限控制
+语法，既无 replication 也无 recursion。因此，任何针对当前语法的定理都
+不得宣称为 FMS 任意进程定理；加入该语法仍受既有 stop condition 约束。
+
+最后，Cantilune 的逐标签原生一步 soundness/completeness、强
+`PowerdomainObservation.map_iff`/`multiplication_iff` 逆像律，以及指定
+divergence/deadlock 不等性，都是显式附加验收条件。任何 exact package 都
+必须证明它们，但不得把它们归因于所引 FMS 定理。本次澄清没有居留 complete
+或 exact FMS package。
+
+## 18. 精确 action、递归域边界与有限产品链
+
+当前 Lean 构造固定了实际世界索引 action 端函子
+
+`H X(n) = N(n) × B X(n) + (N(n) × N(n)) × X(n)
+          + N(n) × X(n+1) + X(n)`。
+
+它对任意有限世界单射及模型自然变换的作用连续且满足函子律，`H` 已证明局部
+连续。未分离 omega-Scott lower/Hoare 幂端函子 `P` 同样局部连续，因此实际
+递归端函子 `P ∘ H` 局部连续。选定积上的 Fubini 与 strength 满足自然性、
+单位、对称、结合及 multiplication 协调图。
+
+对完整格目标，
+
+`S ↦ sSup (g '' carrier(S))`
+
+是 `g` 从 principal computation 出发的唯一任意上确界保持扩张。该定理不是
+Abramsky 验收定理：`sSupHom` 是承重前提，源对象仍是 bottom 与 empty
+deadlock 重合的未分离 lower/Hoare computation。
+
+除原有有限初始塔外，Lean 现已构造连续 embedding-projection 对、
+singleton-seeded EP 迭代塔、任意连续投影链的 coherent-thread 逆极限、
+其逐 world 自然模型提升、联合单态有限投影，以及规范连续 fold
+`F L → L`。缺失的承重步骤精确为 shifted cone 的投影极限保持 witness；
+Lean 已证明它等价于连续 inverse `L → F L`，也等价于规范 fold 的 `IsIso`，
+并可由 witness 构造 fixed-point witness。现有 hom-local-continuity 不产生
+该 inhabitant；运输到 `AgentDomainSolution` 前仍需 initial-algebra 与
+terminal-coalgebra 证据。
+
+操作层的一般 bound-output action/derivative α 类保留真实 standard late-π
+一步。递归扩展还构造了 action/derivative 联合 α 商、existentially
+saturated 强原生一步，以及 embedded、sync、close 的精确
+derivative-alpha/target-alpha bridge；不触发数值 freshening 时严格等变，
+总 executable substitution 也已证明在所有 freshening 分支按
+`RecursiveAlpha` 等变。完整 sync/close `NativeStep` 仍需 substitution
+对 alpha-related source body 的 congruence。contextual 具名边界 category 与
+proof-carrying 不交叠 partial tensor 已构造，但二者都不是所需 total
+operational SMC。边界元数据 renaming 另有精确恒等/组合、单位/结合、
+source-support congruence 与顺序 freshening 律；当前 atom certificate
+仍排除非空同名 wire，bound-name α 不能修复非空 plug identity，非单射
+fusion 会改变 mismatch 行为，任意 contextual tensor interchange 也为假。
+
+对任意有限的 supplied 跨 epoch 产品行序列，Lean 现可构造同步的 source、
+DAG、Petri、π 与 morphism 链，并保持：
+
+- 精确 endpoint-free replay；
+- 精确 rule-event 与 typed admission-event 标记；
+- 严格签名版本边界；
+- 精确 execution-epoch 对齐；
+- 在源概率空间上保留每个依赖事件与四个原生投影推导的共同轨迹。
+
+直接单行 FMS adapter 本身仍不充分。独立的共同 package 链层现已固定同一个
+`ExactFMSAcceptancePackage`，在相邻行传递 eventful endpoint，并给出条件化
+任意有限共同 FMS path 接口。真实 kernel 定理还能耦合两个调用方提供的
+Ionescu--Tulcea law，并几乎必然保留原生事件标签、精确 DPO replay、
+epoch/签名对齐和连续共同 FMS 指称端点。这些仍是参数化定理：仓库没有构造
+exact FMS package、生产 kernel/coupling，也没有构造八个产品 Owner 的运行
+事实集。
+## 19. 分离交换非决定性的相容性边界
+
+严格 pointed continuous-semilattice carrier functor 现在具有全源普通
+SolutionSet、普通自由伴随和 CPO-富集 hom 等价；这些是实际构造，不是
+验收前提。
+
+对该自由扩张，规范顺序 Fubini 联合连续，把两个 pure value 映射为 pure
+pair，并在第一计算参数上保持 divergence、deadlock 与 choice。下述三项
+联合不相容：
+
+1. divergence 与 deadlock 不同；
+2. sequencing 在第一计算参数上对两个常量都严格；
+3. Fubini 在交换两个计算后保持不变。
+
+在 `(divergence, deadlock)` 上，第 2 项使一种顺序得到 deadlock、交换后
+得到 divergence，而第 3 项要求二者相等。Lean 以与具体表示无关的
+package 级定理 `no_distinguishedFubiniStrictness` 检查了这个论证。
+
+因此，后续定义不得在保留三项要求的同时声称闭合分离式 FMS package。
+在递归 `A ≅ P(H A)`、hiding、adequacy 或 full abstraction inhabitant
+能够通过完整门槛之前，规范语义必须先由 RFC/ADR 修改。
+
+## 20. 精确剩余语义见证
+
+内核现已构造前两项承重见证，并显式保留第三项区分：
+
+1. `concreteBilimitExhaustivity`：有限 approximant 单调并逐点以 omega-sup
+   穷尽恒等映射，由此构造递归 fold 的双侧 inverse 与未分离 omega-Scott
+   `concreteActualFixedPointWitness`；
+2. `RecursiveAlpha.substitutionCongruent`：把总 fresh-choice α 等变提升为
+   全构造原生一步等变；
+3. monadic `powerHiding` 协调与真实递归 agent restriction/指称定理之间的
+   明确区分。
+
+第 1 项的 fixed point 不是初始代数、终结余代数、代数紧致性定理或 Abramsky
+powerdomain。任何定理也不得在没有构造来源相容的递归域、语法指称、
+restriction 自然变换与所声明操作等价之前，把第 3 项报告为 adequacy、
+definability 或 full abstraction。
+
+产品级四投影与概率定理仍对真实 rule bundle、原生 kernel、coupling 和运行
+事实全称量化。八个计划产品包不存在这些 inhabitant，所以通用定理不会自动
+实例化出生产一致性总定理。
