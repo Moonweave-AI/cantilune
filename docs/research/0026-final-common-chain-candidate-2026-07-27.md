@@ -70,10 +70,10 @@ witness 拼接。CENTRAL-18 与通用四投影总定理已经绑定到同一源�
 
 ## 最终证据绑定
 
-- verified source commit：`e26b23bdb3de159ba566d49b8653a105ec7c4acd`
-- evidence commit：`cdebb5be59c7e07cd623ffce826b805595b65203`
-- complete build/audit record：`docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`
-- build-evidence SHA-256：`7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73`
+- verified source commit：`89df6fef65abab42a8a57cca2c461b305f0b97c3`
+- evidence commit：`5fa9d5f60d5a9b2c62266b641a1cc7b8140bbf43`
+- complete build/audit record：`docs/qa/evidence/2026-07-28-cantilune-theory-source-89df6fef.md`
+- build-evidence SHA-256：`eab4f8e878e9bee7cddb9937ea714c2026c18a64ebe1b508b07ac471f48c8ae6`
 - pointer/manifest commit：本文件所在提交；完整 SHA 由外部交付回执记录
 - independent human review：Pending
 

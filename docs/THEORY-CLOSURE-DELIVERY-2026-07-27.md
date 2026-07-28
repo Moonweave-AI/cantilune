@@ -20,11 +20,11 @@ Evidence binding:
 
 | Field | Value |
 |---|---|
-| Verified source commit | `e26b23bdb3de159ba566d49b8653a105ec7c4acd` |
-| Evidence commit | `cdebb5be59c7e07cd623ffce826b805595b65203` |
+| Verified source commit | `89df6fef65abab42a8a57cca2c461b305f0b97c3` |
+| Evidence commit | `5fa9d5f60d5a9b2c62266b641a1cc7b8140bbf43` |
 | Pointer / manifest commit | This document's committed revision; reported externally |
-| Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md` |
-| Build-evidence SHA-256 | `7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73` |
+| Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-89df6fef.md` |
+| Build-evidence SHA-256 | `eab4f8e878e9bee7cddb9937ea714c2026c18a64ebe1b508b07ac471f48c8ae6` |
 | Branch | `codex/theory-foundation` |
 | Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
 | Human review | Pending |
@@ -251,7 +251,7 @@ The strict gate must confirm:
 - CENTRAL-18 contains the operation/registry/metadata/payload/admission/
   trajectory common chain, rather than merely adjacent product and FMS facts.
 
-The controlling result is `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`; this document does not
+The controlling result is `docs/qa/evidence/2026-07-28-cantilune-theory-source-89df6fef.md`; this document does not
 substitute for actually running the commands.
 
 # Review and governance disposition
