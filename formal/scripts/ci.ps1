@@ -1315,6 +1315,10 @@ foreach ($obligation in $obligations) {
     if ($evidenceParentPathExitCode -notin @(0, 128)) {
       throw "Unable to test build-evidence introduction at the evidence parent: $normalizedBuildEvidence"
     }
+    # Do not leak the expected 128 through LASTEXITCODE. GitHub Actions and
+    # local wrappers commonly propagate that automatic variable after a
+    # successful PowerShell script invocation.
+    $global:LASTEXITCODE = 0
 
     $buildEvidenceText = Get-Content -LiteralPath $buildEvidencePath -Raw
     foreach ($requiredEvidenceToken in @(
