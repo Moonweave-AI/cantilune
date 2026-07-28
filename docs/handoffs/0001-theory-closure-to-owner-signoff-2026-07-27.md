@@ -22,10 +22,10 @@ explicit continuity gap rather than an invented assignment.
 
 The proof handoff is bound to:
 
-- source commit: `89df6fef65abab42a8a57cca2c461b305f0b97c3`;
-- single-parent evidence commit: `5fa9d5f60d5a9b2c62266b641a1cc7b8140bbf43`;
-- complete build/audit evidence: `docs/qa/evidence/2026-07-28-cantilune-theory-source-89df6fef.md`;
-- build-evidence SHA-256: `eab4f8e878e9bee7cddb9937ea714c2026c18a64ebe1b508b07ac471f48c8ae6`;
+- source commit: `59a1a6885ef6a2774b2731f487f83228e67d15dc`;
+- single-parent evidence commit: `ed26cb74c4425b0d3025521f939695fd3fb8dee5`;
+- complete build/audit evidence: `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`;
+- build-evidence SHA-256: `36f1335e148a0d458f1bdfbd3d7eacf27cfd45bcd0ea2fb60a6b404b5ddc51b8`;
 - pointer/manifest commit: this document's committed revision, reported
   externally.
 
@@ -189,8 +189,8 @@ attempt to bypass review must stop the affected workflow.
 
 | Action | Owner | Due / review trigger | Canonical evidence |
 |---|---|---|---|
-| Freeze the proof-sensitive source commit — completed | DRI | Completed 2026-07-28 | `89df6fef65abab42a8a57cca2c461b305f0b97c3` |
-| Run the clean-start/process-drained build, create the evidence and pointer commits, and preserve zero proof-sensitive diff — completed | DRI / Lean reviewer | Completed 2026-07-28 | `5fa9d5f60d5a9b2c62266b641a1cc7b8140bbf43` / `docs/qa/evidence/2026-07-28-cantilune-theory-source-89df6fef.md` |
+| Freeze the proof-sensitive source commit — completed | DRI | Completed 2026-07-28 | `59a1a6885ef6a2774b2731f487f83228e67d15dc` |
+| Run the clean-start/process-drained build, create the evidence and pointer commits, and preserve zero proof-sensitive diff — completed | DRI / Lean reviewer | Completed 2026-07-28 | `ed26cb74c4425b0d3025521f939695fd3fb8dee5` / `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
 | Verify manifest symbols and status against evidence | Lean/provenance reviewer | Before signature | `formal/proof-obligations.json` |
 | Review FreeSMC, DPOI, SCC/Petri and total composition | Category/DPO/Petri reviewer | Exact source commit | QA packet review table |
 | Review late-pi, D1-A FMS, restriction/hiding and full-abstraction scope | Pi/domain reviewer | Exact source commit | QA packet review table |
