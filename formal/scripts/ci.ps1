@@ -1295,12 +1295,24 @@ foreach ($obligation in $obligations) {
         $headEvidenceEntry.Mode -cne $evidenceEntry.Mode) {
       throw "Build evidence must be byte-identical between baseline.evidenceCommit and the final pointer commit: $normalizedBuildEvidence"
     }
-    & git -C $repoRoot cat-file -e `
-      "$evidenceParentCommit`:$normalizedBuildEvidence" 2>$null
-    if ($LASTEXITCODE -eq 0) {
+    # A missing parent-tree path is the success case for this introduction
+    # check. Windows PowerShell promotes native stderr to a terminating error
+    # under ErrorActionPreference=Stop, so isolate the expected Git failure and
+    # inspect its exit code explicitly.
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+      $ErrorActionPreference = "Continue"
+      & git -C $repoRoot cat-file -e `
+        "$evidenceParentCommit`:$normalizedBuildEvidence" 2>$null
+      $evidenceParentPathExitCode = $LASTEXITCODE
+    }
+    finally {
+      $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($evidenceParentPathExitCode -eq 0) {
       throw "baseline.evidenceCommit must introduce, not merely inherit, build evidence: $normalizedBuildEvidence"
     }
-    if ($LASTEXITCODE -notin @(0, 128)) {
+    if ($evidenceParentPathExitCode -notin @(0, 128)) {
       throw "Unable to test build-evidence introduction at the evidence parent: $normalizedBuildEvidence"
     }
 
