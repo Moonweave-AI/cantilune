@@ -474,6 +474,356 @@ function Assert-NoLeanPlaceholders {
   }
 }
 
+function Wait-LeanProcessDrain {
+  param(
+    [int]$TimeoutSeconds = 15,
+    [int]$PollMilliseconds = 500,
+    [int]$StablePasses = 2
+  )
+
+  $clock = [Diagnostics.Stopwatch]::StartNew()
+  $stable = 0
+  $lastProcesses = @()
+  while ($clock.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+    $lastProcesses = @(
+      Get-Process `
+        -Name @("lake", "lean", "leanir") `
+        -ErrorAction SilentlyContinue |
+        Where-Object { $_.Id -ne $PID }
+    )
+    if ($lastProcesses.Count -eq 0) {
+      $stable++
+      if ($stable -ge $StablePasses) {
+        Write-Host "Lean/Lake process drain gate: clean ($StablePasses stable polls)."
+        return
+      }
+    }
+    else {
+      $stable = 0
+    }
+    Start-Sleep -Milliseconds $PollMilliseconds
+  }
+
+  $detail = (
+    $lastProcesses |
+      ForEach-Object { "$($_.ProcessName)#$($_.Id)" }
+  ) -join ", "
+  throw "Lean/Lake process drain did not quiesce within $TimeoutSeconds seconds: $detail"
+}
+
+function Get-ResolvedMathlibImportArtifacts {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$FormalRoot
+  )
+
+  $mathlibRoot = Join-Path $FormalRoot ".lake\packages\mathlib"
+  $setupPath = Join-Path `
+    $mathlibRoot `
+    ".lake\build\ir\Mathlib.setup.json"
+  if (-not (Test-Path -LiteralPath $setupPath -PathType Leaf)) {
+    throw "Mathlib setup manifest is missing after the umbrella build: $setupPath"
+  }
+
+  try {
+    $setup = Get-Content -LiteralPath $setupPath -Raw |
+      ConvertFrom-Json
+  }
+  catch {
+    throw "Unable to parse the Mathlib setup manifest: $($_.Exception.Message)"
+  }
+
+  $artifacts = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase
+  )
+  foreach ($property in $setup.importArts.PSObject.Properties) {
+    $moduleArtifacts = @(
+      $property.Value | ForEach-Object { [string]$_ }
+    )
+    if ($moduleArtifacts.Count -notin @(1, 3, 4)) {
+      throw "Unexpected Lake import-artifact arity $($moduleArtifacts.Count) for $($property.Name)."
+    }
+    foreach ($artifact in $moduleArtifacts) {
+      [void]$artifacts.Add([IO.Path]::GetFullPath($artifact))
+    }
+    if ($moduleArtifacts.Count -eq 3) {
+      $olean = @(
+        $moduleArtifacts |
+          Where-Object {
+            $_.EndsWith(
+              ".olean",
+              [StringComparison]::OrdinalIgnoreCase
+            )
+          }
+      )
+      if ($olean.Count -ne 1) {
+        throw "Module import lacks one unique .olean artifact for $($property.Name)."
+      }
+      [void]$artifacts.Add(
+        [IO.Path]::GetFullPath($olean[0] + ".private")
+      )
+    }
+  }
+
+  $mathlibStem = Join-Path `
+    $mathlibRoot `
+    ".lake\build\lib\lean\Mathlib"
+  foreach ($suffix in @(
+      ".olean",
+      ".ir",
+      ".olean.server",
+      ".olean.private"
+    )) {
+    [void]$artifacts.Add(
+      [IO.Path]::GetFullPath($mathlibStem + $suffix)
+    )
+  }
+
+  $leanLibOutput = @(& lean --print-libdir 2>&1)
+  if ($LASTEXITCODE -ne 0) {
+    throw "lean --print-libdir failed with exit code $LASTEXITCODE."
+  }
+  $leanLib = @(
+    $leanLibOutput |
+      ForEach-Object { $_.ToString().Trim() } |
+      Where-Object { $_ }
+  )[-1]
+  if (-not (Test-Path -LiteralPath $leanLib -PathType Container)) {
+    throw "Pinned Lean library directory is missing: $leanLib"
+  }
+  Get-ChildItem -LiteralPath $leanLib -Recurse -File |
+    Where-Object {
+      $_.Name -match "\.(?:olean(?:\.(?:server|private))?|ir)$"
+    } |
+    ForEach-Object { [void]$artifacts.Add($_.FullName) }
+
+  return @($artifacts | Sort-Object)
+}
+
+function Wait-LeanArtifactReadability {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Paths,
+
+    [int]$TimeoutSeconds = 300,
+
+    [int]$PollMilliseconds = 750,
+
+    [int]$StablePasses = 3,
+
+    [string]$Label = "Lean artifact"
+  )
+
+  if ($Paths.Count -eq 0) {
+    throw "$Label readiness received an empty expected set."
+  }
+
+  $clock = [Diagnostics.Stopwatch]::StartNew()
+  $previousFingerprint = $null
+  $stable = 0
+  $attempt = 0
+  $lastProblems = @()
+  while ($clock.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+    $attempt++
+    $records = [Collections.Generic.List[string]]::new()
+    $problems = [Collections.Generic.List[string]]::new()
+    foreach ($path in $Paths) {
+      if ($clock.Elapsed.TotalSeconds -ge $TimeoutSeconds) {
+        $problems.Add("deadline reached while scanning at $path")
+        break
+      }
+      try {
+        $item = Get-Item -LiteralPath $path -ErrorAction Stop
+        if ($item.PSIsContainer) {
+          throw [IO.IOException]::new("expected a regular file")
+        }
+        $stream = [IO.File]::Open(
+          $item.FullName,
+          [IO.FileMode]::Open,
+          [IO.FileAccess]::Read,
+          [IO.FileShare]::Read
+        )
+        try {
+          if ($stream.Length -le 0) {
+            throw [IO.IOException]::new("zero-length artifact")
+          }
+          if ($stream.ReadByte() -lt 0) {
+            throw [IO.IOException]::new("cannot read first byte")
+          }
+          [void]$stream.Seek(-1, [IO.SeekOrigin]::End)
+          if ($stream.ReadByte() -lt 0) {
+            throw [IO.IOException]::new("cannot read last byte")
+          }
+          $records.Add(
+            "$($item.FullName)|$($stream.Length)|$($item.LastWriteTimeUtc.Ticks)"
+          )
+        }
+        finally {
+          $stream.Dispose()
+        }
+      }
+      catch {
+        if ($problems.Count -lt 20) {
+          $problems.Add("$path :: $($_.Exception.Message)")
+        }
+      }
+    }
+
+    $lastProblems = @($problems)
+    if ($problems.Count -eq 0) {
+      $fingerprint = $records -join "`n"
+      if ($null -ne $previousFingerprint -and
+          $fingerprint -ceq $previousFingerprint) {
+        $stable++
+      }
+      else {
+        $previousFingerprint = $fingerprint
+        $stable = 1
+      }
+      if ($stable -ge $StablePasses) {
+        Write-Host "$Label readability gate: $($Paths.Count) files, $StablePasses stable readable passes."
+        return
+      }
+    }
+    else {
+      $previousFingerprint = $null
+      $stable = 0
+    }
+
+    if ($clock.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+      Start-Sleep -Milliseconds $PollMilliseconds
+    }
+  }
+
+  $detail =
+    if ($lastProblems.Count) {
+      $lastProblems -join "`n"
+    }
+    else {
+      "artifact metadata never reached the required stable-pass count"
+    }
+  throw "$Label readability gate timed out after $TimeoutSeconds seconds (attempts=$attempt):`n$detail"
+}
+
+function Get-CantiluneSerialBuildModules {
+  param(
+    [Parameter(Mandatory = $true)]
+    [IO.FileInfo[]]$SourceFiles
+  )
+
+  $queryOutput = @(& lake query "@/Cantilune:modules" --json)
+  if ($LASTEXITCODE -ne 0) {
+    throw "Unable to query the Cantilune library module order: exit code $LASTEXITCODE."
+  }
+  $queryText = $queryOutput -join "`n"
+  try {
+    [object[]]$modules = $queryText | ConvertFrom-Json
+  }
+  catch {
+    throw "Unable to parse the Cantilune library module order: $($_.Exception.Message)"
+  }
+  if ($modules.Count -eq 0) {
+    throw "Lake returned an empty Cantilune module order."
+  }
+
+  $queried = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::Ordinal
+  )
+  foreach ($module in $modules) {
+    $name = [string]$module
+    if ($name -notmatch "^[\p{L}_][\p{L}\p{N}_'.]*$") {
+      throw "Lake returned an invalid Cantilune module name: $name"
+    }
+    if (-not $queried.Add($name)) {
+      throw "Lake returned a duplicate Cantilune module name: $name"
+    }
+  }
+
+  $expected = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::Ordinal
+  )
+  foreach ($sourceFile in $SourceFiles) {
+    $relativePath = $sourceFile.FullName.
+      Substring($formalRoot.Length + 1).
+      Replace("\", "/")
+    $withoutExtension = $relativePath.Substring(
+      0,
+      $relativePath.Length - ".lean".Length
+    )
+    $name = $withoutExtension.Replace("/", ".")
+    [void]$expected.Add($name)
+  }
+
+  $unexpected = @(
+    $queried |
+      Where-Object { -not $expected.Contains($_) } |
+      Sort-Object
+  )
+  if ($unexpected.Count -gt 0) {
+    throw "Lake module order contains sources outside the pinned Lean snapshot:`n$($unexpected -join "`n")"
+  }
+
+  # This regression module intentionally is not imported by Tests.All.  Keep
+  # the exception explicit so every pinned .lean file is still compiled, and
+  # any future detached source makes the evidence gate fail closed.
+  $permittedDetachedModules = @(
+    "Cantilune.Tests.FMSCpoSeparatedSum"
+  )
+  $detached = @(
+    $expected |
+      Where-Object { -not $queried.Contains($_) } |
+      Sort-Object
+  )
+  Assert-ExactOrdinalSet `
+    -Expected $permittedDetachedModules `
+    -Actual $detached `
+    -Label "detached Cantilune module"
+
+  $result = [Collections.Generic.List[string]]::new()
+  foreach ($module in $modules) {
+    $result.Add([string]$module)
+  }
+  foreach ($module in $permittedDetachedModules) {
+    $result.Add($module)
+  }
+  if ($result.Count -ne $SourceFiles.Count) {
+    throw "Serial module order covers $($result.Count) modules, expected $($SourceFiles.Count)."
+  }
+  Write-Host "Serial Cantilune module order: $($result.Count) modules (Lake dependency order plus $($permittedDetachedModules.Count) explicit detached regression)."
+  return @($result)
+}
+
+function Get-CantiluneModuleArtifacts {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Modules
+  )
+
+  $artifacts = [Collections.Generic.List[string]]::new()
+  foreach ($module in $Modules) {
+    $relativeStem = $module.Replace(
+      ".",
+      [IO.Path]::DirectorySeparatorChar
+    )
+    $libraryStem = Join-Path `
+      $formalRoot `
+      ".lake\build\lib\lean\$relativeStem"
+    $irStem = Join-Path `
+      $formalRoot `
+      ".lake\build\ir\$relativeStem"
+    foreach ($path in @(
+        ($libraryStem + ".olean"),
+        ($libraryStem + ".ilean"),
+        ($irStem + ".c"),
+        ($irStem + ".c.hash"),
+        ($irStem + ".setup.json")
+      )) {
+      $artifacts.Add([IO.Path]::GetFullPath($path))
+    }
+  }
+  return @($artifacts)
+}
+
 $toolchain = (Get-Content -LiteralPath $toolchainPath -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($toolchain)) {
   throw "formal/lean-toolchain is empty."
@@ -1035,6 +1385,49 @@ try {
     throw "Pinned mathlib umbrella build failed with exit code $LASTEXITCODE."
   }
   Write-Host "Pinned mathlib umbrella build gate: complete."
+
+  # A successful umbrella job is already a Lake dependency barrier.  The
+  # explicit process/readability gates additionally detect foreign concurrent
+  # builds and transient Windows mapping failures before the project imports
+  # the large legacy import-all closure.
+  Wait-LeanProcessDrain
+  $resolvedArtifacts = Get-ResolvedMathlibImportArtifacts `
+    -FormalRoot $formalRoot
+  Wait-LeanArtifactReadability `
+    -Paths $resolvedArtifacts `
+    -Label "Pinned dependency artifact"
+
+  # Lake 5 has no public job-count flag.  A parallel root build can start one
+  # legacy import-all Lean process per ready Cantilune module, exhausting
+  # memory on Windows and surfacing random reads of already-published
+  # .olean.private files as failures.  Lake's :modules query is dependency
+  # first, so build one not-yet-materialized module per invocation.
+  $serialModules = Get-CantiluneSerialBuildModules `
+    -SourceFiles $sourceFiles
+  for ($moduleIndex = 0;
+      $moduleIndex -lt $serialModules.Count;
+      $moduleIndex++) {
+    $module = $serialModules[$moduleIndex]
+    Write-Host "Serial Cantilune build [$($moduleIndex + 1)/$($serialModules.Count)]: $module"
+    & lake build "+$module"
+    if ($LASTEXITCODE -ne 0) {
+      throw "Serial Cantilune module build failed for $module with exit code $LASTEXITCODE."
+    }
+  }
+
+  $projectArtifacts = Get-CantiluneModuleArtifacts `
+    -Modules $serialModules
+  Wait-LeanArtifactReadability `
+    -Paths $projectArtifacts `
+    -Label "Cantilune project artifact"
+
+  # Refuse to launch another aggregate parallel build until Lake proves that
+  # every default target is already materialized by the serial phase.
+  & lake --no-build build
+  if ($LASTEXITCODE -ne 0) {
+    throw "Aggregate Cantilune target is not fully materialized after the serial build: exit code $LASTEXITCODE."
+  }
+  Write-Host "Aggregate Cantilune no-build closure gate: complete."
 
   & lake build
   if ($LASTEXITCODE -ne 0) {
