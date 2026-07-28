@@ -51,7 +51,9 @@ jobs:
   lean:
     name: Pinned Lean build and evidence gate
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # The proof gate intentionally serializes 565 legacy import-all modules
+    # after a clean build; measured local closure is approximately four hours.
+    timeout-minutes: 360
 
     steps:
       - name: Check out source
