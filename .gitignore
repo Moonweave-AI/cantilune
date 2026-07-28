@@ -9,3 +9,13 @@ formal/build/
 *.obj
 *.exe
 tmp/
+
+# Local agent/runtime state must never enter source-control deliveries.
+.agents/
+.claude/
+.opencode/
+.swarm/
+
+# Raw proof-run logs and self-containing repository bundles are local artifacts.
+docs/qa/evidence/runtime-*/
+*.bundle
