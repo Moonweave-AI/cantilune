@@ -1,10 +1,10 @@
 ---
 title: Cantilune Core Theory handoff to Owner sign-off
 document_type: handoff
-status: evidence-binding-and-receipt-pending
+status: proved-review-pending-and-owner-receipt-pending
 risk: S2
 quality_target: QA-L4
-maturity: Pre-FCP/M1
+maturity: M2 / FCP-ready candidate
 current_owner: Joker-of-Gotham
 current_dri: Joker-of-Gotham
 next_owner: Joker-of-Gotham
@@ -15,25 +15,24 @@ handoff_date: 2026-07-28
 # Handoff conclusion
 
 This handoff transfers no ownership. Joker-of-Gotham remains both Owner and
-DRI. It packages the autonomous implementation work for immutable evidence
-binding, independent QA-L4 review, and the Owner's later governance decision.
+DRI. It packages the proved autonomous implementation and immutable evidence
+for independent QA-L4 review and the Owner's later governance decision.
 No Owner Registry change is claimed by this handoff; a backup Owner remains an
 explicit continuity gap rather than an invented assignment.
 
 The proof handoff is bound to:
 
-- source commit: `SOURCE_COMMIT_PENDING`;
-- descendant evidence/manifest commit: `EVIDENCE_COMMIT_PENDING`;
-- complete build/audit evidence: `BUILD_EVIDENCE_PENDING`;
-- build-evidence SHA-256: `BUILD_EVIDENCE_SHA256_PENDING`.
+- source commit: `e26b23bdb3de159ba566d49b8653a105ec7c4acd`;
+- single-parent evidence commit: `cdebb5be59c7e07cd623ffce826b805595b65203`;
+- complete build/audit evidence: `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`;
+- build-evidence SHA-256: `7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73`;
+- pointer/manifest commit: this document's committed revision, reported
+  externally.
 
-Until all technical values are real and mutually consistent and CENTRAL-18's
-common chain is complete, the technical state is
-`implemented / immutable-evidence-pending`. Once the source build and the
-strict proved gate on the descendant evidence commit pass while
-proof-sensitive paths remain identical to the source commit, the maximum state
-before human review is
-**`proved / review-pending`**.
+All technical values are now real and mutually consistent, CENTRAL-18's common
+chain is complete, the hash-bound clean-build continuation passed, and the
+strict proved/tree gate preserves every proof-sensitive path. The maximum state
+before human review is therefore **`proved / review-pending`**.
 
 This handoff does not assert `reviewed`, QA-L4 complete, FCP Passed, or ADR
 Accepted.
@@ -62,9 +61,10 @@ Excluded and deferred:
 
 # Current state
 
-## Completed candidate work
+## Completed proved work
 
-The candidate tree contains the formal constructions and regressions needed by
+The immutable source tree contains the formal constructions and regressions
+needed by
 the ratified generic Core Theory boundary. The controlling theorem inventory
 is `formal/proof-obligations.json`; the controlling source fingerprint is
 `formal/source-integrity.json`. Neither chat summaries nor historical
@@ -98,7 +98,7 @@ The Open-pi result must also be read as a two-layer construction:
 - no raw alpha/ACU/scope process quotient is claimed to contain a reusable
   finite relay identity.
 
-The mutable total-composition implementation now carries one
+The proof-bound total-composition implementation carries one
 `CompleteProductCommonTrajectoryCertificate`: the same fixed-epoch candidate,
 operation/registry `refinesTo` family, canonical `StableMetadata`, payload,
 native/replay/raw derivations, selected-event `TrajectoryAgreement`, and
@@ -117,28 +117,25 @@ records remain selected-occurrence sidecars.
 Dynamic admission is explicitly phased as a visible input to
 `admissionEstablished` followed by a genuine native tau reconnect. The named
 Open-pi bridge requires pairwise-fresh singleton wire names and globally
-disjoint canonical tensor blocks. An incremental mutable-tree root build
-completed successfully; its job count is non-normative and it remains
-diagnostic until replaced by the
-commit-bound clean evidence below.
+disjoint canonical tensor blocks. The commit-bound evidence records a pinned
+clean start, process-drained continuation through all 565 modules, complete
+artifact readability, aggregate no-build closure, and the corrected 1,624-item
+kernel audit.
 
 ## Pending decisions and external acts
 
-1. Replace the two evidence placeholders with the exact immutable source
-   commit and complete strict-gate record.
-2. Obtain independent category/DPO/Petri, pi/domain, and Lean/provenance
+1. Obtain independent category/DPO/Petri, pi/domain, and Lean/provenance
    review bound to that exact commit.
-3. Resolve any review findings without changing proof-sensitive files
+2. Resolve any review findings without changing proof-sensitive files
    silently; such a change invalidates prior signatures and requires a new
    source commit and build record.
-4. Obtain explicit Owner receipt and final sign-off.
-5. Run the real FCP process and, only after its result, update ADR-0001.
+3. Obtain explicit Owner receipt and final sign-off.
+4. Run the real FCP process and, only after its result, update ADR-0001.
 
 # Open risks and blockers
 
 | Risk / blocker | Consequence | Required response | Owner |
 |---|---|---|---|
-| Evidence placeholders are unresolved | Cannot call the candidate `proved` | Bind exact source commit, run strict gate, record immutable evidence | DRI |
 | No independent human signatures | Cannot call the work reviewed or QA-L4 complete | Assign and obtain the three review perspectives | Owner/DRI |
 | D1-A is mistaken for separated FMS | Overstates source fidelity and observation strength | Preserve the no-go and bottom/Hoare boundary in every review and governance record | Pi/domain reviewer |
 | Algebraic wires are mistaken for raw-process identities | Produces a false Open-pi categorical claim | Review the two-layer adequacy/commutation statement and raw-wire no-go | Category/pi reviewers |
@@ -148,7 +145,7 @@ commit-bound clean evidence below.
 
 There is no production deployment, secret-handling, personal-data, or embodied
 control action in this handoff. No Stop-Ship condition was asserted by the
-candidate evidence. Any future secret leak, unprovenanced dependency, or
+proved evidence. Any future secret leak, unprovenanced dependency, or
 attempt to bypass review must stop the affected workflow.
 
 # Access and security checklist
@@ -185,15 +182,15 @@ attempt to bypass review must stop the affected workflow.
 10. [Finite strong-observation no-go](../research/0023-fms-unseparated-finite-strong-no-go-2026-07-27.md).
 11. [All-domain definability no-go](../research/0024-fms-all-domain-definability-cardinal-no-go-2026-07-27.md).
 12. [Concrete D1-A acceptance scope](../research/0025-concrete-d1a-fms-acceptance-2026-07-27.md).
-13. [Final common-chain candidate](../research/0026-final-common-chain-candidate-2026-07-27.md).
+13. [Final common-chain proof record](../research/0026-final-common-chain-candidate-2026-07-27.md).
 14. [Final load-bearing seams](../research/0027-final-load-bearing-seams-2026-07-27.md).
 
 # Next actions
 
 | Action | Owner | Due / review trigger | Canonical evidence |
 |---|---|---|---|
-| Freeze the proof-sensitive source commit | DRI | Before any `proved` claim | `SOURCE_COMMIT_PENDING` |
-| Run root build on the frozen source; create descendant evidence/manifest commit; run strict proved gate with zero proof-sensitive diff | DRI / Lean reviewer | Before technical promotion | `EVIDENCE_COMMIT_PENDING` / `BUILD_EVIDENCE_PENDING` |
+| Freeze the proof-sensitive source commit — completed | DRI | Completed 2026-07-28 | `e26b23bdb3de159ba566d49b8653a105ec7c4acd` |
+| Run the clean-start/process-drained build, create the evidence and pointer commits, and preserve zero proof-sensitive diff — completed | DRI / Lean reviewer | Completed 2026-07-28 | `cdebb5be59c7e07cd623ffce826b805595b65203` / `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md` |
 | Verify manifest symbols and status against evidence | Lean/provenance reviewer | Before signature | `formal/proof-obligations.json` |
 | Review FreeSMC, DPOI, SCC/Petri and total composition | Category/DPO/Petri reviewer | Exact source commit | QA packet review table |
 | Review late-pi, D1-A FMS, restriction/hiding and full-abstraction scope | Pi/domain reviewer | Exact source commit | QA packet review table |
@@ -213,10 +210,10 @@ sources:
   abstraction.
 - [ ] I understand that actual-Agent full abstraction is limited to the
   deterministic typed prefix-trie sublanguage and that CENTRAL-18's
-  registry/metadata/admission/trajectory common chain is implemented but
-  still requires immutable commit/build evidence.
-- [ ] I can identify the first action: verify the exact immutable source
-  commit and strict build evidence.
+  registry/metadata/admission/trajectory common chain is proved at the recorded
+  immutable source commit.
+- [ ] I can identify the first action: conduct the independent QA-L4 review
+  against the recorded source and evidence commits.
 - [ ] I understand that the eight production packages are not instantiated.
 - [ ] I understand that agent/kernel evidence is not an independent human
   review or governance acceptance.

@@ -1,15 +1,15 @@
-# Cantilune final common-chain candidate（2026-07-27）
+# Cantilune final common-chain proof record（2026-07-27）
 
-状态：`candidate / immutable-evidence-pending / review-pending`
+状态：`proved / review-pending`
 
 Owner / DRI：Joker-of-Gotham
 
-风险 / 质量 / 成熟度：S2 / QA-L4 target / M1（Pre-FCP）
+风险 / 质量 / 成熟度：S2 / QA-L4 target / M2（FCP-ready candidate）
 
 ## 目的
 
-本日志记录最终技术闭包的精确候选边界。它不是 build evidence、独立
-人类评审、FCP 结果或 ADR 接受记录。
+本日志记录最终技术闭包的精确证明边界，并指向不可变 build evidence。
+它不是独立人类评审、FCP 结果或 ADR 接受记录。
 
 ## 已构造的独立承重层
 
@@ -35,7 +35,7 @@ Owner / DRI：Joker-of-Gotham
 6. generic/reference execution：
    admission、rank、resource/session、四投影、authorization、
    fairness/stable-window/positive-epsilon、replay、SCC、terminal 和
-   feedback 的通用结构及实质 `.instanceReconnect` 参考候选。
+   feedback 的通用结构及实质 `.instanceReconnect` 参考实例。
 
 ## 不得合并或扩大
 
@@ -49,34 +49,33 @@ Owner / DRI：Joker-of-Gotham
 - presented algebraic wire identity 不等于 raw finite relay 的结构单位；
 - 八个 production package 没有被实例化。
 
-## CENTRAL-18 尚需的同一链
+## CENTRAL-18 已闭合的同一链
 
-当前 `ProductPiFMSAlignment` 已连接 product π candidate、normative
-family、raw native step 与 actual-Agent commutation，但最终证书还必须
-由同一个 inhabitant：
+`CompleteProductCommonTrajectoryCertificate` 的同一个 inhabitant 已经：
 
 1. 选择 `OperationId`；
 2. 证明 registry `refinesTo`/`familyAt` 等于同一 normative family；
 3. 保持 payload 和 `StableMetadata` 的 version、rule、session、
    correlation、occurrence；
-4. 证明 heterogeneous admission endpoint 是同一
-   fixed-epoch candidate.before；
+4. 证明 heterogeneous admission endpoint 是同一 fixed-epoch
+   candidate.before；
 5. 携带 `TrajectoryAgreement`，其 selected mark 等于同一 candidate
    event；以及
 6. 对 `.instanceReconnect` 把 admission、四 native/replay views、
    probability trajectory、SCC/terminal/feedback 和 actual-Agent
    endpoints 收进同一 record。
 
-这些字段不得由不相关 existential witness 拼接。在其 kernel-built
-之前，CENTRAL-18 和总定理均保持 candidate。
+这些字段由同一 kernel-built record 连接，而非不相关 existential
+witness 拼接。CENTRAL-18 与通用四投影总定理已经绑定到同一源提交。
 
-## 最终证据待绑定
+## 最终证据绑定
 
-- verified source commit：`SOURCE_COMMIT_PENDING`
-- evidence/manifest commit：`EVIDENCE_COMMIT_PENDING`
-- complete build/audit record：`BUILD_EVIDENCE_PENDING`
-- build-evidence SHA-256：`BUILD_EVIDENCE_SHA256_PENDING`
+- verified source commit：`e26b23bdb3de159ba566d49b8653a105ec7c4acd`
+- evidence commit：`cdebb5be59c7e07cd623ffce826b805595b65203`
+- complete build/audit record：`docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`
+- build-evidence SHA-256：`7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73`
+- pointer/manifest commit：本文件所在提交；完整 SHA 由外部交付回执记录
 - independent human review：Pending
 
-技术证据完成后状态最多为 `proved / review-pending`。RFC-0002 保持
-Draft / Pre-FCP，ADR-0001 保持 Proposed。
+当前技术状态为 `proved / review-pending`。RFC-0002 保持 Draft /
+Pre-FCP，ADR-0001 保持 Proposed。

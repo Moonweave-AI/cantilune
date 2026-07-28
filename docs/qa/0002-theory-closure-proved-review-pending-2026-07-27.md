@@ -1,10 +1,10 @@
 ---
-title: Cantilune Core Theory QA-L4 evidence-binding / review-pending packet
+title: Cantilune Core Theory proved / QA-L4 review-pending packet
 document_type: quality-evidence-and-review-packet
-status: evidence-binding-pending / human-review-pending
+status: proved / human-review-pending
 risk: S2
 quality_target: QA-L4
-maturity: Pre-FCP/M1
+maturity: M2 / FCP-ready candidate
 owner: Joker-of-Gotham
 dri: Joker-of-Gotham
 updated: 2026-07-28
@@ -19,20 +19,17 @@ signature.
 
 The aggregate proof state is determined mechanically:
 
-- verified source commit: `SOURCE_COMMIT_PENDING`;
-- descendant evidence/manifest commit: `EVIDENCE_COMMIT_PENDING`;
-- complete build and axiom-audit record: `BUILD_EVIDENCE_PENDING`;
-- build-evidence SHA-256: `BUILD_EVIDENCE_SHA256_PENDING`;
-- technical status is `proved` only when these values are replaced by real,
-  mutually consistent evidence, CENTRAL-18 contains its complete common
-  chain, the source build succeeds on the verified source commit, and
-  `formal/scripts/ci.ps1 -RequireProved` succeeds on the descendant evidence
-  commit after proving all proof-sensitive paths equal the source commit;
-- until then, the technical status is
-  `implemented / immutable-evidence-pending`;
-- after the technical status becomes `proved`, the aggregate governance state
-  remains **`proved / review-pending`** until independent human review and the
-  final Owner/DRI signature.
+- verified source commit: `e26b23bdb3de159ba566d49b8653a105ec7c4acd`;
+- single-parent evidence commit: `cdebb5be59c7e07cd623ffce826b805595b65203`;
+- complete build and axiom-audit record: `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`;
+- build-evidence SHA-256: `7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73`;
+- pointer/manifest commit: this packet's committed revision, reported
+  externally;
+- the clean-start/process-drained build, complete 1,624-item audit,
+  immutable-tree seal, and CENTRAL-18 common chain are bound to these values;
+- the technical status is therefore `proved`, while the aggregate governance
+  state remains **`proved / review-pending`** until independent human review
+  and the final Owner/DRI signature.
 
 Nothing in this packet declares QA-L4 complete, RFC-0002 through FCP, or
 ADR-0001 Accepted.
@@ -44,7 +41,7 @@ ADR-0001 Accepted.
 | Work object | Load-bearing formal theory, reference semantics, and proof provenance |
 | Risk | S2 |
 | Quality target | QA-L4: kernel verification plus independent specialist review |
-| Maturity | M1 / Pre-FCP |
+| Maturity | M2 / FCP-ready candidate |
 | Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
 | Ownership transfer | None |
 | Decision authority | RFC-0002 section 25 and its kernel-backed compatibility amendments |
@@ -142,20 +139,20 @@ above.
 
 | Area | Required evidence | Candidate proof surface | Gate state |
 |---|---|---|---|
-| Free SMC | Equality quotient, category/SMC coherence, universal comparison and uniqueness | `formal/Cantilune/Core/FreeSMCArbitraryUniversal.lean` and manifest symbol for CENTRAL-01 | Evidence binding pending |
-| Open hypergraph and DPOI | Exact finite positional equivalence, arbitrary legal monic occurrence in that scope, complement/result uniqueness, Van Kampen and concurrency | Core DPOI modules and CENTRAL-02/03 | Evidence binding pending |
-| Signature and replay | Extension coherence, representative-independent rewrite, exact `DPOEvent` replay, path lift/reflection | CENTRAL-04 through CENTRAL-07 | Evidence binding pending |
-| P1a | Product-supplied whole-LTS DAG/Petri/morphism certificates with path and terminal coverage; selected canonical SCC-DAG and provenance-Petri sidecars; separate fourteen-event fixed-signature three-carrier replay reference | `CompleteProductP1aProjectionScope`, `P1aSemanticCertificate`, `FixedSignatureReferenceP1aScope`, CENTRAL-08/09 | Implementation present; sidecars and reference are explicitly not identified with one another; evidence binding pending |
-| Open-pi | Typed polarised algebraic SMC, fresh nominal realization, pairwise-fresh singleton wire names, globally disjoint canonical tensor blocks, joint derivative-alpha, native plug/hide/restriction representatives and exact compatibility boundary | `OpenSMCCanonicalPositional`, `OpenSMCPolarisedHomBridge` | Evidence binding pending |
-| P1b | Exact structural late residual, alpha/capture avoidance, `res(com)`, `open+close`, ordinary `com`, reflection and terminal classification | P1b structural-late bridge and CENTRAL-13 | Evidence binding pending |
-| P1c | Fifteen native families, sixty-operation total registry, enriched metadata, strong one-step refinement/replay, and explicit visible-admission then native-tau reconnect phase | `P1cOperationRegistry`, `P1cFullNativeRefinement`, CENTRAL-14 | Evidence binding pending |
-| D1-A FMS | Distinct separated and D1-A branches; all-object lower omega-Scott effect, Monad/Fubini coherence, actual recursive agent-domain solution, restriction/hiding, finite and `RecursiveProc` guarded/contextual Hoare theorems, deterministic-prefix actual-Agent theorem, total finite-control coalgebra and fifteen-family commutation | `MaximumCompatibleD1AFMSClosure`, `FMSConcreteD1AAcceptance`, actual-Agent prefix/total-coalgebra/bridge modules | Evidence binding pending |
-| Feedback/probability | Finite-height hard closure, no internal oscillation, conditional almost-sure hitting, expected bound, event/replay/epoch alignment | `CompleteFiniteHeightClosure`, CENTRAL-15/16 | Evidence binding pending |
-| Terminal semantics | Success, external wait, deadlock and productive infinity do not drift across the admitted reference occurrence | terminal theorem and CENTRAL-17 | Evidence binding pending |
-| Total composition | Generic four-projection theorem plus one substantive reconnect conformance witness, with one operation/`refinesTo`/metadata/payload/admission/selected-trajectory/actual-Agent chain | `CompleteProductCommonTrajectoryCertificate`, Core/Technical Closure theorem and CENTRAL-18 | Common-chain implementation present; immutable evidence binding pending |
-| Static assurance | Complete root imports, zero whole-word `sorry`/`admit`/`axiom`/`unsafe`, clean build | Strict CI record | `BUILD_EVIDENCE_PENDING` |
-| Kernel assumptions | Every maintained declaration found exactly once and restricted to the documented Lean foundations | Axiom-audit output | `BUILD_EVIDENCE_PENDING` |
-| Provenance | Toolchain, dependency lock, source aggregate, proof manifest and exact commit agree | Integrity record and build evidence | Pending exact binding |
+| Free SMC | Equality quotient, category/SMC coherence, universal comparison and uniqueness | `formal/Cantilune/Core/FreeSMCArbitraryUniversal.lean` and manifest symbol for CENTRAL-01 | Proved at S; review pending |
+| Open hypergraph and DPOI | Exact finite positional equivalence, arbitrary legal monic occurrence in that scope, complement/result uniqueness, Van Kampen and concurrency | Core DPOI modules and CENTRAL-02/03 | Proved at S; review pending |
+| Signature and replay | Extension coherence, representative-independent rewrite, exact `DPOEvent` replay, path lift/reflection | CENTRAL-04 through CENTRAL-07 | Proved at S; review pending |
+| P1a | Product-supplied whole-LTS DAG/Petri/morphism certificates with path and terminal coverage; selected canonical SCC-DAG and provenance-Petri sidecars; separate fourteen-event fixed-signature three-carrier replay reference | `CompleteProductP1aProjectionScope`, `P1aSemanticCertificate`, `FixedSignatureReferenceP1aScope`, CENTRAL-08/09 | Proved at S; sidecars and reference remain distinct; review pending |
+| Open-pi | Typed polarised algebraic SMC, fresh nominal realization, pairwise-fresh singleton wire names, globally disjoint canonical tensor blocks, joint derivative-alpha, native plug/hide/restriction representatives and exact compatibility boundary | `OpenSMCCanonicalPositional`, `OpenSMCPolarisedHomBridge` | Proved at S; review pending |
+| P1b | Exact structural late residual, alpha/capture avoidance, `res(com)`, `open+close`, ordinary `com`, reflection and terminal classification | P1b structural-late bridge and CENTRAL-13 | Proved at S; review pending |
+| P1c | Fifteen native families, sixty-operation total registry, enriched metadata, strong one-step refinement/replay, and explicit visible-admission then native-tau reconnect phase | `P1cOperationRegistry`, `P1cFullNativeRefinement`, CENTRAL-14 | Proved at S; review pending |
+| D1-A FMS | Distinct separated and D1-A branches; all-object lower omega-Scott effect, Monad/Fubini coherence, actual recursive agent-domain solution, restriction/hiding, finite and `RecursiveProc` guarded/contextual Hoare theorems, deterministic-prefix actual-Agent theorem, total finite-control coalgebra and fifteen-family commutation | `MaximumCompatibleD1AFMSClosure`, `FMSConcreteD1AAcceptance`, actual-Agent prefix/total-coalgebra/bridge modules | Proved at S; review pending |
+| Feedback/probability | Finite-height hard closure, no internal oscillation, conditional almost-sure hitting, expected bound, event/replay/epoch alignment | `CompleteFiniteHeightClosure`, CENTRAL-15/16 | Proved at S; review pending |
+| Terminal semantics | Success, external wait, deadlock and productive infinity do not drift across the admitted reference occurrence | terminal theorem and CENTRAL-17 | Proved at S; review pending |
+| Total composition | Generic four-projection theorem plus one substantive reconnect conformance witness, with one operation/`refinesTo`/metadata/payload/admission/selected-trajectory/actual-Agent chain | `CompleteProductCommonTrajectoryCertificate`, Core/Technical Closure theorem and CENTRAL-18 | Proved at S; review pending |
+| Static assurance | Complete root imports, zero whole-word `sorry`/`admit`/`axiom`/`unsafe`, clean build | Strict CI record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md` |
+| Kernel assumptions | Every maintained declaration found exactly once and restricted to the documented Lean foundations | Axiom-audit output | `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md` |
+| Provenance | Toolchain, dependency lock, source aggregate, proof manifest and exact commit agree | Integrity record and build evidence | Bound at S/E/P; review pending |
 | Independent review | Category/DPO/Petri, pi/domain, and Lean/provenance review bound to the exact commit | Signed review records | Pending human reviewers |
 
 # QA-L4 gates
@@ -171,17 +168,18 @@ Pass criteria:
   boundary are recorded;
 - no product certificate or review result is fabricated.
 
-Technical disposition: to be determined by the final strict gate and document
-audit. Human disposition: review pending.
+Technical disposition: passed by the strict gate and document audit. Human
+disposition: review pending.
 
 ## Q1 — Reproducible kernel gate
 
-Pass criteria across verified source commit `SOURCE_COMMIT_PENDING` and its
-descendant evidence commit `EVIDENCE_COMMIT_PENDING`:
+Pass criteria across verified source commit `e26b23bdb3de159ba566d49b8653a105ec7c4acd`, its
+single-parent evidence commit `cdebb5be59c7e07cd623ffce826b805595b65203`,
+and this later pointer commit:
 
-- the pinned root `lake build` succeeds;
-- `formal/scripts/ci.ps1 -RequireProved` succeeds;
-- the strict gate proves every proof-sensitive path in the evidence commit is
+- the pinned clean-start/process-drained root build succeeds;
+- `formal/scripts/ci.ps1 -RequireProved -VerifyTreeOnly` succeeds at P;
+- the strict gate proves every proof-sensitive path in the pointer commit is
   identical to the verified source commit;
 - the source scan finds zero whole-word
   `sorry`, `admit`, `axiom`, or `unsafe`;
@@ -189,12 +187,12 @@ descendant evidence commit `EVIDENCE_COMMIT_PENDING`:
 - only the documented Lean foundations appear;
 - the source aggregate and pinned inputs match
   `formal/source-integrity.json`;
-- `formal/proof-obligations.json` contains only `proved` or `reviewed` for the
-  accepted Core Theory scope.
+- `formal/proof-obligations.json` contains only `proved` for the accepted Core
+  Theory scope;
 - CENTRAL-18 binds one operation/registry/metadata/payload/admission/
   `TrajectoryAgreement`/actual-Agent chain.
 
-Evidence: `BUILD_EVIDENCE_PENDING`.
+Evidence: `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`.
 
 ## Q2 — Semantic regression and negative-boundary gate
 
@@ -214,7 +212,7 @@ The reviewer must inspect positive and negative coverage for:
 - the D1-A strong-observation, explicit-bottom, all-domain-definability and
   raw-wire no-go theorems.
 
-Evidence: `BUILD_EVIDENCE_PENDING`.
+Evidence: `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`.
 
 ## Q3 — Independent mathematical review
 
@@ -234,6 +232,9 @@ The technical scope passes only when Q0–Q2 pass for the exact immutable source
 commit and the substantive reference witness is included. This gate does not
 require any of the eight production packages; it requires the generic
 certificate interface through which those packages will later conform.
+
+Technical disposition: passed. Independent Q3 and governance Q5 remain
+pending.
 
 ## Q5 — Governance acceptance
 
@@ -281,10 +282,6 @@ Owner/DRI final signature: **Pending**.
 
 # Release-quality disposition
 
-Before all technical evidence placeholders are replaced and CENTRAL-18's
-common chain is present: **do not promote; immutable evidence binding
-pending**.
-
-After they are replaced and the strict proved gate passes:
-**Core Theory proved / review-pending; suitable for independent QA-L4 review,
-but not yet FCP Passed or ADR Accepted**.
+Current disposition: **Core Theory proved / review-pending; suitable for
+independent QA-L4 review, but not yet QA-L4 complete, FCP Passed, or ADR
+Accepted**.

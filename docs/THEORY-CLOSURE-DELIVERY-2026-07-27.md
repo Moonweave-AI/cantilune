@@ -1,10 +1,10 @@
 ---
 title: Cantilune Core Theory closure delivery
 document_type: technical-delivery
-status: immutable-evidence-pending / review-pending
+status: proved / review-pending
 risk: S2
 quality_target: QA-L4
-maturity: Pre-FCP/M1
+maturity: M2 / FCP-ready candidate
 owner: Joker-of-Gotham
 dri: Joker-of-Gotham
 updated: 2026-07-28
@@ -20,23 +20,23 @@ Evidence binding:
 
 | Field | Value |
 |---|---|
-| Verified source commit | `SOURCE_COMMIT_PENDING` |
-| Evidence / manifest commit | `EVIDENCE_COMMIT_PENDING` |
-| Complete build/audit record | `BUILD_EVIDENCE_PENDING` |
-| Build-evidence SHA-256 | `BUILD_EVIDENCE_SHA256_PENDING` |
+| Verified source commit | `e26b23bdb3de159ba566d49b8653a105ec7c4acd` |
+| Evidence commit | `cdebb5be59c7e07cd623ffce826b805595b65203` |
+| Pointer / manifest commit | This document's committed revision; reported externally |
+| Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md` |
+| Build-evidence SHA-256 | `7725fdb5a2230a080106c7cf6bf8ffcbaefd45a5c3971155b459adfda293fc73` |
 | Branch | `codex/theory-foundation` |
 | Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
 | Human review | Pending |
 | FCP result | Pending |
 | ADR status | Proposed |
 
-The status rule is exact: while any technical evidence value is a placeholder,
-the delivery is `implemented / immutable-evidence-pending`. When the source
-commit, descendant evidence commit, evidence record and hash are real and
-consistent, CENTRAL-18 is complete, and the strict proved gate passes, the
-technical state becomes
-**`proved / review-pending`**. It does not become reviewed, FCP Passed,
-QA-L4 complete, or ADR Accepted without the corresponding human records.
+The technical evidence values are now real and consistent: the source commit,
+single-parent evidence commit, evidence record and hash are bound; CENTRAL-18
+is complete; and the strict proved/tree gate passes at the later pointer
+commit. The technical state is therefore **`proved / review-pending`**. It
+does not become reviewed, FCP Passed, QA-L4 complete, or ADR Accepted without
+the corresponding human records.
 
 # What the delivery contains
 
@@ -156,10 +156,10 @@ D1-A.
   admission-to-reconnect certificate with a literal heterogeneous
   actual-Agent endpoint seam.
 
-The complete CENTRAL-18 implementation is present in the mutable source.
-It remains `implemented / immutable-evidence-pending` until the exact source
-commit, clean build/audit record, proved manifest, and strict descendant gate
-are bound. Unrelated existentials do not discharge the generic certificate.
+The complete CENTRAL-18 implementation is bound to the immutable source
+commit, the resumed clean-build/audit record, and the proved manifest. It is
+`proved / review-pending`. Unrelated existentials do not discharge the generic
+certificate.
 
 # Proof boundaries fixed by kernel no-go results
 
@@ -212,7 +212,7 @@ requires a separate Product Conformance record and review.
 | `formal/proof-obligations.json` | Central theorem inventory and evidence status |
 | `formal/source-integrity.json` | Source and pinned-input hashes |
 | `formal/axiom-audit-targets.txt` | Maintained kernel-assumption surface |
-| `formal/scripts/ci.ps1` | Development/proved/reviewed gate |
+| `formal/scripts/ci.ps1` | Development and proved/review-pending gate |
 | `formal/scripts/recompute-integrity.ps1` | Integrity regeneration |
 | `docs/rfc/0002-projection-consistency.md` | Ratified architecture and compatibility boundary |
 | `docs/adr/0001-unified-formal-structure.md` | Proposed architecture decision |
@@ -225,16 +225,17 @@ not controlling evidence.
 
 # Reproduction and verification
 
-Run the pinned toolchain against the exact verified source commit. The
-evidence commit introduces the build record and a later pointer commit binds
-the manifest metadata; the strict proved gate must verify that every
+The pinned build began with `-CleanBuild`, was interrupted only by the external
+runner limit, and resumed after a stable process-drain check. The evidence
+commit introduces the hash-bound composite record; this later pointer commit
+binds the manifest metadata. The strict proved/tree gate verifies that every
 proof-sensitive path is byte-identical to the verified source commit. The
-evidence record must show, at minimum:
+recorded verification commands are:
 
 ```powershell
-cd formal
-lake build Cantilune.Tests.All Cantilune   # at verified source commit
-.\scripts\ci.ps1 -RequireProved            # at descendant evidence commit
+.\formal\scripts\ci.ps1 -CleanBuild        # initial source-bound run
+.\formal\scripts\ci.ps1                    # process-drained continuation
+.\formal\scripts\ci.ps1 -RequireProved -VerifyTreeOnly  # at pointer commit
 ```
 
 The strict gate must confirm:
@@ -245,19 +246,19 @@ The strict gate must confirm:
 - zero whole-word `sorry`, `admit`, `axiom`, or `unsafe`;
 - every axiom-audit target resolves exactly once and uses only the documented
   foundations;
-- every accepted central obligation is `proved` or `reviewed` and points to
-  the same verified source commit and build record.
+- every accepted central obligation is `proved` and points to the same
+  verified source commit and build record;
 - CENTRAL-18 contains the operation/registry/metadata/payload/admission/
   trajectory common chain, rather than merely adjacent product and FMS facts.
 
-The controlling result is `BUILD_EVIDENCE_PENDING`; this document does not
+The controlling result is `docs/qa/evidence/2026-07-28-cantilune-theory-source-e26b23bd.md`; this document does not
 substitute for actually running the commands.
 
 # Review and governance disposition
 
 | Gate | Current disposition |
 |---|---|
-| Kernel proof and reproducibility | Pending exact evidence binding |
+| Kernel proof and reproducibility | Proved; independent review pending |
 | Category/DPO/Petri independent review | Pending |
 | Pi/domain independent review | Pending |
 | Lean/provenance independent review | Pending |
@@ -266,7 +267,7 @@ substitute for actually running the commands.
 | ADR-0001 | Proposed |
 | Eight production packages | Deferred Product Conformance |
 
-After successful immutable binding, the exact handoff statement is:
+The exact handoff statement is:
 
 > Cantilune generic Core Theory and its substantive reference execution
 > package are proved by the pinned Lean kernel at the recorded source commit;
