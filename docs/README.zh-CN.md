@@ -55,11 +55,11 @@ Cantilune 是一个面向 **通用 agent 编排** 的语言与控制底座构想
 
 语义目标是一个重写系统：
 
-\[
+$$
   \mathsf{CantiluneGraph}=(\mathcal C,\mathcal R),
-\]
+$$
 
-其中 \(\mathcal C\) 描述合法组合，\(\mathcal R\) 描述带身份的重构事件。
+其中 $\mathcal C$ 描述合法组合， $\mathcal R$ 描述带身份的重构事件。
 数学是内部内核：它应当让编排更容易理解、检视和控制，而不是要求应用作者书写
 范畴论。
 
@@ -67,20 +67,20 @@ Cantilune 是一个面向 **通用 agent 编排** 的语言与控制底座构想
 |---|---|---|
 | 自由对称幺半范畴 | 类型化的串行、并行和重连组合 | 非法连接与隐式复制/丢弃可与合法组合区分 |
 | 类型开放超图与 DPOI 重写 | 添加、替换、重连或删除协同子图 | 变更具有显式的边界、新鲜性、悬挂与静默条件 |
-| Late \(\pi\)-演算 | 创建、隐藏、转移和关闭通信会话 | 委派与交接是协议，而不只是共享状态变更 |
+| Late $\pi$-演算 | 创建、隐藏、转移和关闭通信会话 | 委派与交接是协议，而不只是共享状态变更 |
 | individual-token Petri 语义 | 表示唯一权限、配额、锁、预算和会话 token | 权限与资源不能被静默复制或消失 |
 | FMS 风格的指称研究分支 | 为已支持的并发行为给出组合性解释 | 在已记录的范围内关联操作语义与指称视图 |
 | 投影证书 | 关联图、依赖、资源、通信与身份视图 | 一个源事件具有对应目标事件和可重放身份 |
 
-对一个通过证书的事件 \(e\)，预期的一致性条件为：
+对一个通过证书的事件 $e$，预期的一致性条件为：
 
-\[
+$$
   C \xrightarrow{e} C'
   \quad\Longrightarrow\quad
   P_i(C)\xrightarrow{\Phi_i(e)}P_i(C')
   \qquad
   (i\in\{\mathrm{DAG},\mathrm{Petri},\pi,\mathrm{morphism}\}).
-\]
+$$
 
 换言之，事件并不是事后恰好一致的四块仪表盘；它是一个有身份的变更，并在四个
 有用视图中各有原生对应。
@@ -220,13 +220,13 @@ bundle 和 agent 临时目录已经从交付工作区移除；它们不属于 PR
 - 通用定理以携带投影、admission、资源、授权、公平性与重放证书的规则族为参数；
   这并不实例化计划中的八个生产包。八包已明确推迟到独立的 Product
   Conformance 阶段，每个包仍须提交自己的规则、资源、授权、公平性、稳定窗口、
-  正 \(\varepsilon\) 与跨 epoch 投影证书。
+  正 $\varepsilon$ 与跨 epoch 投影证书。
 - 中央 FMS 结论是最大相容的 D1-A 证据记录，而不是把分离的源论文分支与非分离
   D1-A 分支冒充为同一个模型。选定的 D1-A effect 在指称 effect 底元处令
-  divergence 与 deadlock 相同，以保留对称 Fubini；原生 late-\(\pi\) LTS、终态
+  divergence 与 deadlock 相同，以保留对称 Fubini；原生 late $\pi$ LTS、终态
   分类与产品语义层仍严格区分二者。
 - 项目不主张该非分离 effect 上构造子敏感的强互模拟全抽象，也不主张任意进程
-  可以定义每个 \(\omega\)-CPO 的每个元素。实际的 full-abstraction 与 definability
+  可以定义每个 $\omega$-CPO 的每个元素。实际的 full-abstraction 与 definability
   结论只覆盖已声明的 D1-A bottom/Hoare 观察、guarded/contextual 范围和确定性
   typed prefix-trie 子语言；内核 no-go 结果明确划定了更强主张的边界。
 - 形式语义规范仍为 **Draft**。提交绑定的内核证明不等于独立 QA-L4 审查，不等于

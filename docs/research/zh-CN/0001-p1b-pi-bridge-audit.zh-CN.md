@@ -54,9 +54,9 @@ Step E 目前也不可证。仓库既未定义 P1b 文法，也未定义具象�
 
 对于 half-pi (II) 的 request/accept 信道创建子语言，当前第 13 节的构造能否定义一个 SMC 函子
 
-\[
+$$
 E : C \longrightarrow \mathrm{Mod}
-\]
+$$
 
 它保持张量、复合、对称与单位，并且其对项目重写规则的像能否被证明是真正的 π 演算步骤？
 
@@ -182,25 +182,25 @@ docs(proof): Petri pre-net
 
 FMS 范畴是
 
-\[
+$$
 \mathrm{Mod} = [\mathbb I,\mathbf{Set}]
 \quad\text{or}\quad
 [\mathbb I,\mathbf{Cpo}],
-\]
+$$
 
 而非如第 13 节某部分所写的 `[I^op, Set]`。
 
 这在操作上是重要的。对于注入
 
-\[
+$$
 up_n : n \longrightarrow n+1,
-\]
+$$
 
 一个协变函子给出
 
-\[
+$$
 X(up_n) : X(n) \longrightarrow X(n+1),
-\]
+$$
 
 这是所需的弱化/新鲜名字映射 `up_X : X -> delta X`，其中 `(delta X)(n) = X(n+1)`。
 一个 `I^op` 上的预层会反转该箭射。可以将整个模型在一个相反的索引约定上重新表述，但那样 `delta`、`up` 与所有相关类型都必须一致地改变。当前的混用并非一个无害的记号选择。
@@ -211,25 +211,23 @@ X(up_n) : X(n) \longrightarrow X(n+1),
 
 令
 
-\[
+$$
 A = \mu X.\mathcal P(HX)
-\]
+$$
 
 为 `Mod` 中 distinguished 的 FMS agent object。则：
 
 - `Mod` 的一个对象是一个函子；
 - `Mod` 的一个态射是一个自然变换；
 - 名字上下文 `V` 中的开放进程指称一个态射
-  \[
-  \llbracket P\rrbracket : N^{|V|}\longrightarrow A;
-  \]
+  $\llbracket P\rrbracket : N^{|V|}\longrightarrow A$；
 - 枚举 `n` 名上下文中的封闭解释是 `A(n)` 的一个元素；只有真正零名的情形才是 `A(0)` 的一个元素，等价于一个全局元素 `1 -> A`。
 
 源自由 SMC 中的一个生成元 `g : U -> V` 必须被映射到一个自然变换
 
-\[
+$$
 E(g):E(U)\longrightarrow E(V).
-\]
+$$
 
 仅将 `g` 映射到一个进程项或一个类 `[P]` 并不提供该箭射，除非对象映射与精确的源/目标对象也被定义。
 
@@ -239,24 +237,23 @@ E(g):E(U)\longrightarrow E(V).
 
 来源区分
 
-\[
+$$
 sum:A\times A\longrightarrow A
-\]
+$$
 
 与
 
-\[
+$$
 par:A\times A\longrightarrow A.
-\]
+$$
 
 `sum` 由半格/自由非确定性结构诱导。`par` 使用 `sum`、左合并与同步递归定义。来源翻译形如
 
-\[
-\llbracket P\mid Q\rrbracket
-=
+$$
+\llbracket P\mid Q\rrbracket =
 par\circ
 \langle\llbracket P\rrbracket,\llbracket Q\rrbracket\rangle.
-\]
+$$
 
 因此第 13 节关于 π 并行 "是单子的 join" 的陈述是错误的。
 
@@ -266,11 +263,10 @@ par\circ
 
 所提出的表达式
 
-\[
-X\otimes_{\mathrm{Mod}}Y
-=
+$$
+X\otimes_{\mathrm{Mod}}Y =
 \{\,P\mid Q\mid P\in X(n), Q\in Y(n)\,\}
-\]
+$$
 
 未在 `Mod` 上定义一个张量双函子：
 
@@ -282,9 +278,9 @@ X\otimes_{\mathrm{Mod}}Y
 
 同样，SMC 中的一个对称是一个自然同构
 
-\[
+$$
 \sigma_{X,Y}:X\otimes Y\longrightarrow Y\otimes X,
-\]
+$$
 
 而非一个交换两个进程元素的等式。
 
@@ -294,25 +290,25 @@ X\otimes_{\mathrm{Mod}}Y
 
 `Set^I` 与相关的 `Cpo^I` 模型都有逐点有限积：
 
-\[
+$$
 (X\boxtimes Y)(n)=X(n)\times Y(n),
-\]
+$$
 
-\[
+$$
 (\eta\boxtimes\theta)_n=\eta_n\times\theta_n,
-\]
+$$
 
 且单位是常数终函子
 
-\[
+$$
 \mathbf 1(n)=1.
-\]
+$$
 
 结合子、单位子与辫子逐分量继承自 `Set`/`Cpo`；因此五边形、三角形、自然性与六边形逐分量成立。
 
 对于共享名字上下文 `Gamma` 中的两个项，π 并行被内部解释：
 
-\[
+$$
 \Gamma
 \xrightarrow{\Delta}
 \Gamma\times\Gamma
@@ -320,7 +316,7 @@ X\otimes_{\mathrm{Mod}}Y
 A\times A
 \xrightarrow{par}
 A.
-\]
+$$
 
 这是正确的范畴分离：
 
@@ -335,9 +331,9 @@ A.
 
 如果裸进程项被做成一个 **离散** 范畴的对象且相等意味着字面抽象语法相等，那么
 
-\[
+$$
 (P\mid Q)\mid R \ne P\mid(Q\mid R)
-\]
+$$
 
 且它们之间没有结合子箭射。在该精确设置下，裸 `|` 不是 SMC 张量。
 
@@ -391,41 +387,25 @@ A.
 
 令 `C = FreeSMC(G0)`。选择：
 
-1. 对每个生成源类型 `t`，一个对象
-   \[
-   E_0(t)\in\mathrm{Mod};
-   \]
+1. 对每个生成源类型 `t`，一个对象 $E_0(t)\in\mathrm{Mod}$；
 2. 对每个生成元
-   \[
-   g:t_1\otimes\cdots\otimes t_k
-     \longrightarrow
-     u_1\otimes\cdots\otimes u_m,
-   \]
+   $g:t_1\otimes\cdots\otimes t_k\longrightarrow u_1\otimes\cdots\otimes u_m$，
    一个自然变换
-   \[
-   E_g:
-   \prod_i E_0(t_i)
-   \longrightarrow
-   \prod_j E_0(u_j).
-   \]
+   $E_g:\prod_i E_0(t_i)\longrightarrow\prod_j E_0(u_j)$。
 
 按逐点积与终对象扩展对象映射。则自由 SMC 泛性质给出一个强对称幺半扩展，唯一到相干幺半自然同构，
 
-\[
+$$
 \bar E:C\longrightarrow(\mathrm{Mod},\times,1).
-\]
+$$
 
-其张量函子将 \(\bar E(f\otimes g)\) 相干地关联到 \(\bar E(f)\times\bar E(g)\)；字面相等与严格唯一性需要一个显式严格化/括号化约定。
+其张量函子将 $\bar E(f\otimes g)$ 相干地关联到 $\bar E(f)\times\bar E(g)$；字面相等与严格唯一性需要一个显式严格化/括号化约定。
 
 这是一个有条件正确的 Step C/D。它 **不** 确立当前 P1b 主张，因为：
 
 - 第 13 节中不存在这样的对象指派；
 - 一个进程项通常具有类型 `N^k -> A`，而非任意工作流生成元所声明的 `E(source) -> E(target)`；
-- π 前缀运算诸如
-  \[
-  in:N\times(N\Rightarrow A)\to A
-  \]
-  是内部自然变换，而非范畴复合；
+- π 前缀运算诸如 $in:N\times(N\Rightarrow A)\to A$ 是内部自然变换，而非范畴复合；
 - 源张量被映射到积/配对，而非直接映射到 π `|`；
 - 自由扩展不必忠实：目标等式可能识别不同的自由图；并且
 - 通用项目类型（`Goal`、`TaskPlan`、契约等）没有到 FMS 名字/agent 对象的定义解释。
@@ -434,9 +414,9 @@ A.
 
 强张量函子必须是同构。在一个包含两个不同 agent 行为 `p != q` 的阶段，交换性给出
 
-\[
+$$
 par(p,q)=par(q,p),
-\]
+$$
 
 而 `(p,q) != (q,p)`。因此 `par` 在该阶段不单射，不能是同构。
 
@@ -489,24 +469,24 @@ P,Q ::=
 
 最小源归约：
 
-\[
+$$
 (\nu s)
 \bigl(req_a(s).P\mid acc_a(x).Q\bigr)
 \longrightarrow_{hs}
 (\nu s)\bigl(P\mid Q\{s/x\}\bigr)
-\]
+$$
 
 与
 
-\[
+$$
 out_s(v).P\mid in_s(x).Q
 \longrightarrow_{msg}
 P\mid Q\{v/x\}.
-\]
+$$
 
 一种到标准 π 语法的操作编码是：
 
-\[
+$$
 \begin{aligned}
 \llbracket req_a(s).P\rrbracket
   &= \overline a\langle s\rangle.\llbracket P\rrbracket,\\
@@ -517,15 +497,15 @@ P\mid Q\{v/x\}.
 \llbracket in_s(x).Q\rrbracket
   &= s(x).\llbracket Q\rrbracket.
 \end{aligned}
-\]
+$$
 
 对于所展示的 `hs` 项，其限制包围两个参与者，直接标号推导使用一个 free-output/input `com` 前提并通过 `res` 将其 `tau` 结论提升穿过限制。如果所选结构同余允许作用域外延且 `s` 对接收方新鲜，则该项同余于一个仅在发送方周围有 `(nu s)` 的项；该形状使用一个 `open` 约束输出前提与一个 `close` 结论。因此新鲜性本身不选择 `com` 与 `open`/`close`：限制位置与同余策略才选择。对于 `msg`，一个自由值/名通信使用 `com`。
 
 ### 所需的保持与反射义务
 
-首先独立于原生 π LTS 定义一个原始可观测推导域 `D_pi_obs`，连同管理步骤策略与一个使所选可观测商 LTS 良定义的、与代表无关的目标状态同余 \(\equiv_\pi^{obs}\)；该域不得被定义为前向像。在该域中定义源事件与推导之间的关系 `Lift_pi`。然后，对于每个具象源事件 `e = (rho,m,delta)` 且 `rho` 属于 `{hs,msg}`，证明：
+首先独立于原生 π LTS 定义一个原始可观测推导域 `D_pi_obs`，连同管理步骤策略与一个使所选可观测商 LTS 良定义的、与代表无关的目标状态同余 $\equiv_\pi^{obs}$；该域不得被定义为前向像。在该域中定义源事件与推导之间的关系 `Lift_pi`。然后，对于每个具象源事件 `e = (rho,m,delta)` 且 `rho` 属于 `{hs,msg}`，证明：
 
-\[
+$$
 g\xrightarrow{e}h
 \quad\Longrightarrow\quad
 \exists P,d\in\mathcal D_\pi^{obs}.\;
@@ -534,11 +514,11 @@ d:\llbracket g\rrbracket\xrightarrow{\tau}_{\pi}P
 P\equiv_\pi^{obs}\llbracket h\rrbracket
 \ \land\
 \operatorname{Lift}_\pi(e,d),
-\]
+$$
 
 对于 RFC 更强的 "无捏造、无丢弃或额外通信步骤" 措辞，还证明反射：
 
-\[
+$$
 d\in\mathcal D_\pi^{obs},\quad
 d:\llbracket g\rrbracket\xrightarrow{\tau}_{\pi}P
 \quad\Longrightarrow\quad
@@ -548,7 +528,7 @@ g\xrightarrow{e}h
 P\equiv_\pi^{obs}\llbracket h\rrbracket
 \ \land\
 \operatorname{Lift}_\pi(e,d).
-\]
+$$
 
 反射需要保留的服务/会话命名空间、新鲜性与类型条件，以排除无关编码组件之间的意外同步。它还需要一个粒度定理：一个源步骤对应恰好一个目标 `tau` 步骤。如果允许管理目标步骤，则该定理必须陈述一个弱/多步模拟。一个被记录的出现可被标记为 `(e,d)` 同时擦除到原生推导 `d`；从原始 `d` 唯一恢复 `e` 需要一个单独的单射性定理且不被假设。
 
@@ -564,15 +544,15 @@ P\equiv_\pi^{obs}\llbracket h\rrbracket
 
 静态解释与操作编码具有不同类型：
 
-\[
+$$
 C_{\mathrm{RA}}
 \xrightarrow{E_{\mathrm{stat}}}
 \mathcal D.
-\]
+$$
 
-对每个枚举名字阶段 \(n\)，一个分阶段操作/指称分解只能有形式
+对每个枚举名字阶段 $n$，一个分阶段操作/指称分解只能有形式
 
-\[
+$$
 \mathrm{Conf}_{\mathrm{RA}}(n)
 \xrightarrow{\llbracket-\rrbracket_{\mathrm{op}}}
 \mathrm{Proc}_{\pi}(n)
@@ -580,9 +560,9 @@ C_{\mathrm{RA}}
 \mathrm{Proc}_{\pi}(n)/{\sim_n}
 \xrightarrow{\mathrm{den}_n}
 A(n).
-\]
+$$
 
-这里 \(A\) 是 `Mod` 的一个对象；它不是 `Mod` 的子集或子范畴。一个替代的全局表述必须首先构造一个进程类函子 \(Q\in\mathrm{Mod}\) 然后给出一个自然变换 \(\mathrm{den}:Q\to A\)。自然性与代表无关性仍是证明义务。原始操作对应属于商之前；商的完全抽象不替代它。
+这里 $A$ 是 `Mod` 的一个对象；它不是 `Mod` 的子集或子范畴。一个替代的全局表述必须首先构造一个进程类函子 $Q\in\mathrm{Mod}$ 然后给出一个自然变换 $\mathrm{den}:Q\to A$。自然性与代表无关性仍是证明义务。原始操作对应属于商之前；商的完全抽象不替代它。
 
 ## F2 审计：强幺半性不保持 DPO 推出
 
@@ -592,39 +572,39 @@ A(n).
 
 令
 
-\[
+$$
 F:\mathbf{Set}\longrightarrow\mathbf{Set},
 \qquad
 F(X)=X^2=X\times X.
-\]
+$$
 
 以笛卡尔张量，`F` 是强对称幺半的。张量函子是自然双射
 
-\[
+$$
 (X\times X)\times(Y\times Y)
 \cong
 (X\times Y)\times(X\times Y),
-\]
+$$
 
 且 `F(1) = 1`。
 
 考虑沿单态射的推出
 
-\[
+$$
 1\longleftarrow\varnothing\longrightarrow 1.
-\]
+$$
 
 其推出是二元集 `2`。应用 `F` 给出相同的 Span
 
-\[
+$$
 1\longleftarrow\varnothing\longrightarrow 1,
-\]
+$$
 
 其推出仍是 `2`；然而，
 
-\[
+$$
 F(2)=2^2=4.
-\]
+$$
 
 典范比较 `2 -> 4` 不是同构。因此该强对称幺半函子甚至不保持沿单态射的这个推出。
 

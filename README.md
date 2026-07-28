@@ -63,11 +63,11 @@ constructed, composed, and changed.
 
 The semantic target is a rewriting system
 
-\[
+$$
   \mathsf{CantiluneGraph}=(\mathcal C,\mathcal R),
-\]
+$$
 
-where \(\mathcal C\) defines legal composition and \(\mathcal R\) defines
+where $\mathcal C$ defines legal composition and $\mathcal R$ defines
 identified reconfiguration events. The mathematics is an internal kernel; it
 should make orchestration easier to understand, inspect, and control—not force
 application authors to write category theory.
@@ -76,20 +76,20 @@ application authors to write category theory.
 |---|---|---|
 | Free symmetric monoidal category | Typed sequential, parallel, and rewired composition | Illegal connections and hidden copy/discard are distinct from legal composition |
 | Typed open hypergraphs + DPOI rewriting | Add, replace, reconnect, or delete a collaboration subgraph | A change has explicit boundary, freshness, dangling, and quiescence conditions |
-| Late \(\pi\)-calculus | Create, hide, transfer, and close communication sessions | Delegation and handoff are protocols, not merely shared-state mutations |
+| Late $\pi$-calculus | Create, hide, transfer, and close communication sessions | Delegation and handoff are protocols, not merely shared-state mutations |
 | Individual-token Petri semantics | Represent unique permission, quota, lock, budget, and session tokens | Authority and resources cannot silently duplicate or disappear |
 | FMS-style denotational research branch | Give a compositional account of supported concurrent behavior | Operational and denotational views can be related within a documented scope |
 | Projection certificates | Relate graph, dependency, resource, communication, and identity views | One source event has corresponding target events and a replay identity |
 
-For a certified event \(e\), the intended consistency condition is
+For a certified event $e$, the intended consistency condition is
 
-\[
+$$
   C \xrightarrow{e} C'
   \quad\Longrightarrow\quad
   P_i(C)\xrightarrow{\Phi_i(e)}P_i(C')
   \qquad
   (i\in\{\mathrm{DAG},\mathrm{Petri},\pi,\mathrm{morphism}\}).
-\]
+$$
 
 In plain terms: an event is not four dashboards that happen to agree after the
 fact. It is one identified change with native counterparts in four useful
@@ -246,7 +246,7 @@ The formal work is deliberately explicit about its scope and limits.
   operational layer still distinguishes them.
 - The project does **not** claim constructor-sensitive strong-bisimulation full
   abstraction for that unseparated effect, nor definability of every element of
-  every \(\omega\)-CPO. Recorded no-go results delimit those claims.
+  every $\omega$-CPO. Recorded no-go results delimit those claims.
 - Proof status does not imply that the formal-semantics RFC or ADR has completed
   its human governance lifecycle.
 

@@ -84,9 +84,9 @@ stage ("C0") before attempting coherence or rule-by-rule proofs.
 For the request/accept channel-creation sublanguage of half-pi (II), can the
 current Section 13 construction define an SMC functor
 
-\[
+$$
 E : C \longrightarrow \mathrm{Mod}
-\]
+$$
 
 that preserves tensor, composition, symmetry, and unit, and can its images of
 the project rewrite rules be proved to be genuine pi-calculus steps?
@@ -243,25 +243,25 @@ in the canonical spec; the missing accepted P1b BNF and rule set remain.
 
 The FMS category is
 
-\[
+$$
 \mathrm{Mod} = [\mathbb I,\mathbf{Set}]
 \quad\text{or}\quad
 [\mathbb I,\mathbf{Cpo}],
-\]
+$$
 
 not `[I^op, Set]` as written in one part of Section 13.
 
 This is operationally significant. For the injection
 
-\[
+$$
 up_n : n \longrightarrow n+1,
-\]
+$$
 
 a covariant functor gives
 
-\[
+$$
 X(up_n) : X(n) \longrightarrow X(n+1),
-\]
+$$
 
 which is the required weakening/fresh-name map
 `up_X : X -> delta X`, with `(delta X)(n) = X(n+1)`.
@@ -276,18 +276,16 @@ notation choice.
 
 Let
 
-\[
+$$
 A = \mu X.\mathcal P(HX)
-\]
+$$
 
 be the distinguished FMS agent object in `Mod`. Then:
 
 - an object of `Mod` is a functor;
 - a morphism of `Mod` is a natural transformation;
 - an open process in name context `V` denotes a morphism
-  \[
-  \llbracket P\rrbracket : N^{|V|}\longrightarrow A;
-  \]
+  $\llbracket P\rrbracket : N^{|V|}\longrightarrow A$;
 - the closed interpretation in an enumerated `n`-name context is an element
   of `A(n)`; only the genuinely zero-name case is an element of `A(0)`,
   equivalently a global element `1 -> A`.
@@ -295,9 +293,9 @@ be the distinguished FMS agent object in `Mod`. Then:
 A generator `g : U -> V` in the source free SMC must be mapped to a natural
 transformation
 
-\[
+$$
 E(g):E(U)\longrightarrow E(V).
-\]
+$$
 
 Mapping `g` merely to a process term or a class `[P]` does not provide this
 arrow unless the object map and the exact source/target objects are also
@@ -309,26 +307,25 @@ defined.
 
 The source distinguishes:
 
-\[
+$$
 sum:A\times A\longrightarrow A
-\]
+$$
 
 from
 
-\[
+$$
 par:A\times A\longrightarrow A.
-\]
+$$
 
 `sum` is induced by the semilattice/free-nondeterminism structure. `par` is
 defined recursively using `sum`, left merge, and synchronisation. The source
 translation has the form
 
-\[
-\llbracket P\mid Q\rrbracket
-=
+$$
+\llbracket P\mid Q\rrbracket =
 par\circ
 \langle\llbracket P\rrbracket,\llbracket Q\rrbracket\rangle.
-\]
+$$
 
 Therefore the Section 13 statement that pi parallel "is the monad's join" is
 false.
@@ -339,11 +336,10 @@ false.
 
 The proposed expression
 
-\[
-X\otimes_{\mathrm{Mod}}Y
-=
+$$
+X\otimes_{\mathrm{Mod}}Y =
 \{\,P\mid Q\mid P\in X(n), Q\in Y(n)\,\}
-\]
+$$
 
 does not define a tensor bifunctor on `Mod`:
 
@@ -357,9 +353,9 @@ does not define a tensor bifunctor on `Mod`:
 
 Likewise, a symmetry in an SMC is a natural isomorphism
 
-\[
+$$
 \sigma_{X,Y}:X\otimes Y\longrightarrow Y\otimes X,
-\]
+$$
 
 not an equation that swaps two process elements.
 
@@ -369,19 +365,19 @@ not an equation that swaps two process elements.
 
 Both `Set^I` and the relevant `Cpo^I` model have pointwise finite products:
 
-\[
+$$
 (X\boxtimes Y)(n)=X(n)\times Y(n),
-\]
+$$
 
-\[
+$$
 (\eta\boxtimes\theta)_n=\eta_n\times\theta_n,
-\]
+$$
 
 and the unit is the constant terminal functor
 
-\[
+$$
 \mathbf 1(n)=1.
-\]
+$$
 
 Associator, unitors, and braiding are inherited componentwise from
 `Set`/`Cpo`; pentagon, triangle, naturality, and hexagon therefore hold
@@ -390,7 +386,7 @@ componentwise.
 For two terms in a shared name context `Gamma`, pi parallel is interpreted
 internally:
 
-\[
+$$
 \Gamma
 \xrightarrow{\Delta}
 \Gamma\times\Gamma
@@ -398,7 +394,7 @@ internally:
 A\times A
 \xrightarrow{par}
 A.
-\]
+$$
 
 This is the correct categorical separation:
 
@@ -419,9 +415,9 @@ unused alternative.**
 If raw process terms are made objects of a **discrete** category and equality
 means literal abstract-syntax equality, then
 
-\[
+$$
 (P\mid Q)\mid R \ne P\mid(Q\mid R)
-\]
+$$
 
 and there is no associator arrow between them. In that precise setup, raw `|`
 is not an SMC tensor.
@@ -501,33 +497,22 @@ isolated coherence-diagram calculation.**
 Let `C = FreeSMC(G0)`. Choose:
 
 1. for every generating source type `t`, an object
-   \[
-   E_0(t)\in\mathrm{Mod};
-   \]
+   $E_0(t)\in\mathrm{Mod}$;
 2. for every generator
-   \[
-   g:t_1\otimes\cdots\otimes t_k
-     \longrightarrow
-     u_1\otimes\cdots\otimes u_m,
-   \]
+   $g:t_1\otimes\cdots\otimes t_k\longrightarrow u_1\otimes\cdots\otimes u_m$,
    a natural transformation
-   \[
-   E_g:
-   \prod_i E_0(t_i)
-   \longrightarrow
-   \prod_j E_0(u_j).
-   \]
+   $E_g:\prod_i E_0(t_i)\longrightarrow\prod_j E_0(u_j)$.
 
 Extend the object map by pointwise product and terminal object. The free-SMC
 universal property then gives a strong symmetric-monoidal extension, unique
 up to coherent monoidal natural isomorphism,
 
-\[
+$$
 \bar E:C\longrightarrow(\mathrm{Mod},\times,1).
-\]
+$$
 
-Its tensorator relates \(\bar E(f\otimes g)\) coherently to
-\(\bar E(f)\times\bar E(g)\); literal equality and strict uniqueness require
+Its tensorator relates $\bar E(f\otimes g)$ coherently to
+$\bar E(f)\times\bar E(g)$; literal equality and strict uniqueness require
 an explicit strictification/parenthesization convention.
 
 This is a correct conditional Step C/D. It does **not** establish the current
@@ -536,11 +521,8 @@ P1b claim because:
 - no such object assignment is present in Section 13;
 - a process term generally has type `N^k -> A`, not the declared
   `E(source) -> E(target)` of an arbitrary workflow generator;
-- pi prefix operations such as
-  \[
-  in:N\times(N\Rightarrow A)\to A
-  \]
-  are internal natural transformations, not categorical composition;
+- pi prefix operations such as $in:N\times(N\Rightarrow A)\to A$ are internal
+  natural transformations, not categorical composition;
 - source tensor is mapped to product/pairing, not directly to pi `|`;
 - a free extension need not be faithful: target equations may identify
   distinct free diagrams; and
@@ -552,9 +534,9 @@ P1b claim because:
 A strong tensorator must be an isomorphism. At a stage containing two distinct
 agent behaviours `p != q`, commutativity gives
 
-\[
+$$
 par(p,q)=par(q,p),
-\]
+$$
 
 while `(p,q) != (q,p)`. Thus `par` is not injective at that stage and cannot be
 an isomorphism.
@@ -622,24 +604,24 @@ the handshake rule allocates it.
 
 Minimum source reductions:
 
-\[
+$$
 (\nu s)
 \bigl(req_a(s).P\mid acc_a(x).Q\bigr)
 \longrightarrow_{hs}
 (\nu s)\bigl(P\mid Q\{s/x\}\bigr)
-\]
+$$
 
 and
 
-\[
+$$
 out_s(v).P\mid in_s(x).Q
 \longrightarrow_{msg}
 P\mid Q\{v/x\}.
-\]
+$$
 
 One operational encoding into standard pi syntax is:
 
-\[
+$$
 \begin{aligned}
 \llbracket req_a(s).P\rrbracket
   &= \overline a\langle s\rangle.\llbracket P\rrbracket,\\
@@ -650,7 +632,7 @@ One operational encoding into standard pi syntax is:
 \llbracket in_s(x).Q\rrbracket
   &= s(x).\llbracket Q\rrbracket.
 \end{aligned}
-\]
+$$
 
 For the displayed `hs` term, whose restriction encloses both participants,
 the direct labelled derivation uses a free-output/input `com` premise and
@@ -667,13 +649,13 @@ communication uses `com`.
 First define a raw observable derivation domain `D_pi_obs` independently from
 the native pi LTS, together with an administrative-step policy and one
 representative-independent target-state congruence
-\(\equiv_\pi^{obs}\) that makes the selected observable quotient LTS well
+$\equiv_\pi^{obs}$ that makes the selected observable quotient LTS well
 defined; the domain must not be defined as the forward image. Define a
 relation `Lift_pi` between source events and derivations in that domain. Then,
 for each concrete source event `e = (rho,m,delta)` with `rho` in
 `{hs,msg}`, prove:
 
-\[
+$$
 g\xrightarrow{e}h
 \quad\Longrightarrow\quad
 \exists P,d\in\mathcal D_\pi^{obs}.\;
@@ -682,12 +664,12 @@ d:\llbracket g\rrbracket\xrightarrow{\tau}_{\pi}P
 P\equiv_\pi^{obs}\llbracket h\rrbracket
 \ \land\
 \operatorname{Lift}_\pi(e,d),
-\]
+$$
 
 For the RFC's stronger "no fabrication, no dropped or extra communication
 step" language, also prove reflection:
 
-\[
+$$
 d\in\mathcal D_\pi^{obs},\quad
 d:\llbracket g\rrbracket\xrightarrow{\tau}_{\pi}P
 \quad\Longrightarrow\quad
@@ -697,7 +679,7 @@ g\xrightarrow{e}h
 P\equiv_\pi^{obs}\llbracket h\rrbracket
 \ \land\
 \operatorname{Lift}_\pi(e,d).
-\]
+$$
 
 Reflection needs reserved service/session namespaces, freshness, and typing
 conditions to exclude accidental synchronisations between unrelated encoded
@@ -728,16 +710,16 @@ and is not assumed.
 
 The static interpretation and operational encoding have different types:
 
-\[
+$$
 C_{\mathrm{RA}}
 \xrightarrow{E_{\mathrm{stat}}}
 \mathcal D.
-\]
+$$
 
-For each enumerated name stage \(n\), a stagewise operational/denotational
+For each enumerated name stage $n$, a stagewise operational/denotational
 factorisation can only have the form
 
-\[
+$$
 \mathrm{Conf}_{\mathrm{RA}}(n)
 \xrightarrow{\llbracket-\rrbracket_{\mathrm{op}}}
 \mathrm{Proc}_{\pi}(n)
@@ -745,12 +727,12 @@ factorisation can only have the form
 \mathrm{Proc}_{\pi}(n)/{\sim_n}
 \xrightarrow{\mathrm{den}_n}
 A(n).
-\]
+$$
 
-Here \(A\) is an object of `Mod`; it is not a subset or subcategory of `Mod`.
+Here $A$ is an object of `Mod`; it is not a subset or subcategory of `Mod`.
 An alternative global formulation must first construct a process-class
-functor \(Q\in\mathrm{Mod}\) and then give a natural transformation
-\(\mathrm{den}:Q\to A\). Naturality and representative independence remain
+functor $Q\in\mathrm{Mod}$ and then give a natural transformation
+$\mathrm{den}:Q\to A$. Naturality and representative independence remain
 proof obligations. The raw operational correspondence belongs before the
 quotient; full abstraction of the quotient does not replace it.
 
@@ -764,40 +746,40 @@ monoidality alone does not imply that preservation.
 
 Let
 
-\[
+$$
 F:\mathbf{Set}\longrightarrow\mathbf{Set},
 \qquad
 F(X)=X^2=X\times X.
-\]
+$$
 
 With cartesian tensor, `F` is strong symmetric monoidal. The tensorator is the
 natural bijection
 
-\[
+$$
 (X\times X)\times(Y\times Y)
 \cong
 (X\times Y)\times(X\times Y),
-\]
+$$
 
 and `F(1) = 1`.
 
 Consider the pushout along monomorphisms
 
-\[
+$$
 1\longleftarrow\varnothing\longrightarrow 1.
-\]
+$$
 
 Its pushout is the two-element set `2`. Applying `F` gives the same span
 
-\[
+$$
 1\longleftarrow\varnothing\longrightarrow 1,
-\]
+$$
 
 whose pushout is still `2`; however,
 
-\[
+$$
 F(2)=2^2=4.
-\]
+$$
 
 The canonical comparison `2 -> 4` is not an isomorphism. Thus this strong
 symmetric monoidal functor does not preserve even this pushout along
