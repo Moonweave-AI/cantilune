@@ -55,9 +55,16 @@ Included:
 Excluded and deferred:
 
 - all eight production-package instantiations;
-- pushes, pull requests, releases or deployments;
+- releases or deployments;
 - independent human review signatures;
 - FCP passage and ADR acceptance.
+
+Publication is no longer deferred: branch `codex/theory-foundation` was
+published through cleanup commit
+`9375a2edafd5a7d7574a6a3d527f806122292051`, and
+[PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) is the active review
+vehicle. Later documentation-only commits do not change source S, evidence E,
+or pointer P.
 
 # Current state
 
@@ -154,14 +161,14 @@ attempt to bypass review must stop the affected workflow.
 - [x] Candidate branch is `codex/theory-foundation`.
 - [x] Source/build verification is local and read/write only within the
   authorised repository.
-- [x] No push or pull request is authorised by the ratified implementation
-  decision.
+- [x] The Owner subsequently authorised publication; branch
+  `codex/theory-foundation` and PR #1 are now available remotely.
 - [x] No credentials, tokens, private keys, or copied environment secrets are
   included in this document.
 - [x] Primary papers are read-only research inputs; citations do not replace
   Lean inhabitants.
-- [ ] Independent reviewers have read access to the immutable source commit
-  and build/audit record.
+- [x] Independent reviewers have read access to the immutable source commit
+  and build/audit record through PR #1.
 - [ ] Reviewer identities and conflict-of-interest declarations are recorded.
 - [ ] A backup Owner is recorded if required by the project's continuity
   policy.
@@ -191,6 +198,7 @@ attempt to bypass review must stop the affected workflow.
 |---|---|---|---|
 | Freeze the proof-sensitive source commit — completed | DRI | Completed 2026-07-28 | `59a1a6885ef6a2774b2731f487f83228e67d15dc` |
 | Run the clean-start/process-drained build, create the evidence and pointer commits, and preserve zero proof-sensitive diff — completed | DRI / Lean reviewer | Completed 2026-07-28 | `ed26cb74c4425b0d3025521f939695fd3fb8dee5` / `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
+| Remove generated publication artifacts, publish the branch, and open PR #1 — completed | DRI | Completed 2026-07-28 | `9375a2edafd5a7d7574a6a3d527f806122292051` / PR #1 |
 | Verify manifest symbols and status against evidence | Lean/provenance reviewer | Before signature | `formal/proof-obligations.json` |
 | Review FreeSMC, DPOI, SCC/Petri and total composition | Category/DPO/Petri reviewer | Exact source commit | QA packet review table |
 | Review late-pi, D1-A FMS, restriction/hiding and full-abstraction scope | Pi/domain reviewer | Exact source commit | QA packet review table |

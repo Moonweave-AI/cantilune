@@ -1,8 +1,16 @@
-# Cantilune DRI 决策仪表板
+# [已被取代] Cantilune DRI 决策仪表板
+
+> **当前记录 — 2026-07-28：**D1–D10 已获确认；通用核心理论与非空参考执行包
+> 当前为 `proved / review-pending`，成熟度为 M2 / FCP-ready candidate。
+> 本文件仅保留为历史决策工作表，不再表示当前仍有这些技术决策待选。当前交付状态
+> 由[理论闭合交付记录](THEORY-CLOSURE-DELIVERY-2026-07-27.md)、
+> [`formal/proof-obligations.json`](../formal/proof-obligations.json)和
+> [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1)共同给出。独立
+> QA-L4 审查、实际 FCP 处置与 ADR-0001 接受仍待完成。
 
 **最后更新**: 2026-07-27  
 **决策负责人**: Joker-of-Gotham  
-**状态**: Pre-FCP / M1
+**历史快照状态**: Pre-FCP / M1
 
 ---
 

@@ -1,5 +1,11 @@
 # Cantilune Theory Reviewer Assignments
 
+**Current status (2026-07-28):** the table below records interim DRI coverage,
+not independent QA-L4 signatures. The immutable source and evidence are now
+available in [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1);
+independent reviewers remain unassigned and are required before FCP
+disposition.
+
 | Role | Current Assignment | Status | COI Documented |
 |------|-------------------|--------|----------------|
 | **Formal Mathematics Reviewer** | DRI (Joker-of-Gotham) | Temporary | Yes |
@@ -26,7 +32,8 @@ Target external reviewers (to be recruited):
 - **Process Semantics**: π-calculus expert (bisimulation/LTS/observable semantics)
 - **Lean**: Lean 4 community member (mathlib contributor preferred)
 
-Expected recruitment timeline: After Gates 4, 5, 7 complete (~2026-10-15)
+Recruitment trigger: now, against the immutable S/E/P chain in PR #1 and before
+FCP disposition.
 
 ## Approval
 

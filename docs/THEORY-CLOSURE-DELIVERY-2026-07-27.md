@@ -26,6 +26,8 @@ Evidence binding:
 | Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
 | Build-evidence SHA-256 | `36f1335e148a0d458f1bdfbd3d7eacf27cfd45bcd0ea2fb60a6b404b5ddc51b8` |
 | Branch | `codex/theory-foundation` |
+| Published cleanup head | `9375a2edafd5a7d7574a6a3d527f806122292051` |
+| Review vehicle | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) |
 | Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
 | Human review | Pending |
 | FCP result | Pending |
@@ -37,6 +39,12 @@ is complete; and the strict proved/tree gate passes at the later pointer
 commit. The technical state is therefore **`proved / review-pending`**. It
 does not become reviewed, FCP Passed, QA-L4 complete, or ADR Accepted without
 the corresponding human records.
+
+The published cleanup head is a descendant of pointer P. It removes generated
+and temporary publication artifacts; it does not replace the proof identity
+S/E/P. Subsequent README and review-metadata commits are documentation-only.
+The live PR-head check, rather than a prose snapshot, is authoritative for
+remote CI status.
 
 # What the delivery contains
 

@@ -23,8 +23,11 @@ The aggregate proof state is determined mechanically:
 - single-parent evidence commit: `ed26cb74c4425b0d3025521f939695fd3fb8dee5`;
 - complete build and axiom-audit record: `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`;
 - build-evidence SHA-256: `36f1335e148a0d458f1bdfbd3d7eacf27cfd45bcd0ea2fb60a6b404b5ddc51b8`;
-- pointer/manifest commit: this packet's committed revision, reported
-  externally;
+- pointer/manifest commit:
+  `0382b74074c546abe1bf3f37f3c03d7e4d2c3611`;
+- published cleanup head:
+  `9375a2edafd5a7d7574a6a3d527f806122292051`;
+- review vehicle: [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1);
 - the clean-start/process-drained build, complete 1,624-item audit,
   immutable-tree seal, and CENTRAL-18 common chain are bound to these values;
 - the technical status is therefore `proved`, while the aggregate governance

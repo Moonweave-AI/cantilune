@@ -34,6 +34,18 @@ verify `source-integrity.json`, reject unknown kernel dependencies, and bind
 any `proved/reviewed` claim to an existing source commit and durable evidence
 files.
 
+The current generic Core Theory is already bound as `proved /
+review-pending`. To verify that a checkout still has the sealed proof tree
+without recreating the deleted `.lake` cache, run:
+
+```powershell
+.\formal\scripts\ci.ps1 -RequireProved -VerifyTreeOnly
+```
+
+For an independent kernel rebuild, run the ordinary `lake build` and evidence
+gate above. `formal/.lake/` is generated, ignored, and intentionally absent
+from version control; the pinned toolchain and lock file reconstruct it.
+
 No project theorem may use `sorry`, `admit`, a project-defined axiom, or
 `unsafe`. A successful local build is still not an independent review or an
 immutable proof record; see `build-evidence/` and `proof-obligations.json`.

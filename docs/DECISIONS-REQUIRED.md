@@ -1,8 +1,18 @@
-# Cantilune DRI Decision Dashboard
+# [SUPERSEDED] Cantilune DRI Decision Dashboard
+
+> **Current record — 2026-07-28:** D1–D10 have been ratified and the generic
+> Core Theory plus a nonempty reference package is `proved / review-pending`
+> at M2 / FCP-ready-candidate maturity. This file is retained as the historical
+> decision worksheet and is not a list of currently open technical decisions.
+> The current delivery is controlled by
+> [the theory-closure record](THEORY-CLOSURE-DELIVERY-2026-07-27.md),
+> [`formal/proof-obligations.json`](../formal/proof-obligations.json), and
+> [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1). Independent QA-L4
+> review, the actual FCP disposition, and ADR-0001 acceptance remain pending.
 
 **Last Updated**: 2026-07-27  
 **Decision Owner**: Joker-of-Gotham  
-**Status**: Pre-FCP / M1
+**Historical snapshot status**: Pre-FCP / M1
 
 ---
 
