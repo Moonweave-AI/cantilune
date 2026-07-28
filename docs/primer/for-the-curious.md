@@ -6,7 +6,7 @@
 | Audience | Readers who want to understand *what* cantilune is and *why* before any formal notation |
 | Paired with | the formal spec `docs/spec/formal-semantics.md` and RFC-0001 |
 
-> **A note on rigor.** This primer is deliberately notation-light. But "easy to read" is not the same as "loose with the truth." Every claim here has a precise version in the spec, and the same honesty rules apply: three of cantilune's four pillars are solid *by construction*, the fourth (agent communication) is something we still have to **earn** and have not yet proven, and the whole framework is **unverified** until the proofs are written and reviewed. If a sentence here feels too good to be true, the spec will tell you exactly how good it actually is.
+> **A note on rigor.** This primer is deliberately notation-light. But "easy to read" is not the same as "loose with the truth." Every claim here has a precise version in the spec, and the same honesty rules apply: the static presentation and identity view are definitional, while all four runtime projections require complete certificates. The current finite witnesses do not yet prove the whole framework, which remains **unverified** until the central proofs and independent review are complete.
 
 ---
 
@@ -58,7 +58,14 @@ So we have one object — the SMC-with-rewriting — and we want to look at it f
 
 The crucial claim — and the one that makes cantilune different from "four modules glued together" — is that these are **four readings of one thing**, not four things taped together. The analogy: one database can be described through relational algebra, through transactions, through storage layout, through concurrency — and they had better all describe the same database, or something is wrong. cantilune's four views had better all describe the same run.
 
-That "had better" is where the project lives or dies, and we are honest about it: three of the four views are *straightforwardly* readings of the same object (the spec calls this "by construction"), but the communication view (π) is harder, because of a choice we made to let agents talk freely rather than by a fixed script. So the π view is something we still have to **prove** agrees with the others — we have not proven it yet, and if we cannot, we will honestly scale back what "free conversation" means rather than pretend. This single open question is important enough that it has its own document (RFC-0002) and is called, with some drama, the project's *life-line*.
+That "had better" is where the project lives or dies. Every runtime view must
+prove that each source event becomes one native target event, that target
+events reflect back, and that terminal states do not drift. The morphism
+identity case is immediate; DAG and Petri have finite reference certificates
+but still need the general reconfiguration result. Communication (π) is the
+hardest because half-π (II) also needs a typed-open/FMS commuting bridge. These
+obligations are tracked in RFC-0002, the project's deliberately dramatic
+*life-line*.
 
 ### 4.1 Three things easy to misread (read this if "agree" feels vague)
 
@@ -68,14 +75,16 @@ The paragraph above packs a lot into the word "agree." It is worth slowing down,
 
 **Second: the opposite of "agree" is "four engines arguing forever," not "four slightly different printouts."** Suppose you did *not* build cantilune, but instead built four independent engines — a DAG engine, a Petri engine, a π engine, a morphism engine — each stepping on its own. Now you want to claim "they all describe the same run." But there is no shared sequence underneath; each engine is its own book. You can only write glue code asserting "when the DAG engine does X, the Petri engine should do Y." Glue is code; glue has bugs; timestamps drift by a second; and when something disagrees, there is **no higher authority** to settle it, because there is no "the fact itself," only four engines each telling its own story. *That* is the argument that never ends. cantilune avoids it by making the rewriting sequence the single fact, and the four views *translations* of it — so a disagreement is a localizable bug in one translation, not a philosophical dispute about which engine is right. One book, four translations — not four authors each writing a book and then reconciling.
 
-**Third — and this is the one that matters for "why only π": a view can "invent a step" only if its translation is not yet trusted, and only π's translation is not yet trusted.** Here is the distinction that is easy to miss. *Every* view, in principle, faces a "is my translation faithful?" question — could the DAG view quietly turn one real step into two, or the Petri view collapse two steps into one? In principle, yes, for all four. The difference is **where the guarantee comes from**:
-
-- For DAG, there is essentially no translation — the view *is* the graph you started with — so nothing can be invented.
-- For the morphism view, the view *is* the object itself, so again nothing to invent.
-- For the Petri view, there is a standing theorem in the mathematics literature ("Petri nets are a kind of monoidal category," Meseguer–Montanari, plus a known fix called *pre-nets*). The faithfulness of the Petri translation is *already proven by others*; cantilune just cites it.
-- For the π view, **the translation does not come from a standing theorem**, because of our own choice. We chose *free conversation* (agents talk however they like at runtime) over a *fixed script* (agents follow a declared protocol). Had we chosen the fixed script, the π translation would *also* be a standing result — but we chose freedom, and the free version's natural semantics live in a heavier structure (a *presheaf*) that is not in the same mathematical family as our object. So cantilune has to **build a new bridge** from our object to that heavier structure, and **prove** the bridge is faithful.
-
-So the honest, precise statement of "why only π" is: **all four views could in principle invent a step, but for three of them the no-inventing guarantee is already supplied by existing mathematics, while for π the guarantee must be supplied by a bridge we have to build and verify ourselves — and we have not verified it yet.** It is not that the π *theory* is special; it is that *we chose a freer version of it*, and that version needs a bridge that is not off-the-shelf. "Proving" the π view means proving that bridge is faithful — that a real rewriting step in our object genuinely corresponds to a real reduction step on the π side, not a pseudo-step the bridge fabricated. And we are only confident we can build that bridge for the "declared channels" part; for fully-free "open any channel at runtime," the bridge may not hold, in which case we honestly limit it.
+**Third: no view gets to "invent a step."** Every projection needs a
+source-to-target native derivation and a reflection proof. Existing category
+theory guides the static DAG and pre-net constructions, but it does not prove
+Cantilune's dynamic rule map, token provenance, deletion policy, replay, or
+terminal classification. The morphism identity view is the one truly
+definition-level case. π has additional work because our finite-control
+mobility choice requires both an operational typed-open route and a
+denotational FMS route, plus a theorem that they commute. If any event needs a
+weak multi-step simulation, that is a design change for RFC review, not a
+detail to hide in the translation.
 
 ### 4.2 A concrete run, four readings of one step
 
@@ -108,7 +117,10 @@ This is why the π view, alone, is 待证 — and why, even so, the other three 
 If the four views really do agree, then a few things you normally have to build as separate products just *come for free*, because of the shape:
 
 - **The trace is the run.** Since a run is a sequence of swaps, the trace *is* that sequence. You do not "add logging" and hope you logged enough; the run is the log.
-- **Replay cannot drift.** In other tools, the replay engine and the real engine are two pieces of code, and over time they disagree. Here, replay is just running the same swaps again — there is no second engine to drift.
+- **Replay has an explicit anti-drift obligation.** A complete event is reduced
+  to an endpoint-free recipe and run against its claimed source by the declared
+  deterministic kernel; verification proves that this recomputes the recorded
+  target. A log that merely repeats its stored answer does not count as replay.
 - **The four views cannot lie to each other.** Because they are readings of the same swaps, what you see in the data-flow view, the resource view, the comms view, and the composition view are guaranteed to be the same run. In other tools, each view is a separate story that may or may not match.
 - **There is a clean line for "what the model decides."** The model decides *what happens inside one box* (read input, produce output, call a tool). Everything *between* boxes — what runs in parallel, what waits, who messages whom — is decided by the shape and a policy, not by the model improvising. This is the answer to the "thick control plane" problem: not a thinner control plane, but a line you can actually point to.
 

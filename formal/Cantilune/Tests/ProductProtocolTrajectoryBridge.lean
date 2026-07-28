@@ -1,0 +1,27 @@
+import Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge
+
+/-!
+# Candidate-indexed protocol/common-trajectory regression
+-/
+
+namespace Cantilune.Tests.ProductProtocolTrajectoryBridge
+
+#check
+  Cantilune.Theorems.ProductProtocolTrajectoryBridge.CandidateIndexedProtocolBridge
+#check
+  Cantilune.Theorems.ProductProtocolTrajectoryBridge.CompleteProductProtocolTrajectoryCertificate
+#check
+  Cantilune.Theorems.ProductProtocolTrajectoryBridge.CompleteProductProtocolTrajectoryCertificate.complete_protocol_candidate_evidence
+#check
+  Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge.referenceProtocolBridge
+#check
+  Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge.referenceCompleteProtocolTrajectory
+#check
+  Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge.reference_complete_protocol_candidate_evidence
+
+#print axioms
+  Cantilune.Theorems.ProductProtocolTrajectoryBridge.CompleteProductProtocolTrajectoryCertificate.complete_protocol_candidate_evidence
+#print axioms
+  Cantilune.Theorems.SubstantiveProtocolTrajectoryBridge.reference_complete_protocol_candidate_evidence
+
+end Cantilune.Tests.ProductProtocolTrajectoryBridge

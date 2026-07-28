@@ -1,0 +1,19 @@
+import Cantilune.Pi.FMSCpoNondeterministicKleisli
+
+namespace Cantilune.Tests.FMSCpoNondeterministicKleisli
+
+open Cantilune.Pi.FMSCpoNondeterministicKleisli
+
+#check ordinaryKleisliExtension
+#check ordinaryKleisliExtension_unit
+#check ordinaryKleisliExtension_divergence
+#check ordinaryKleisliExtension_deadlock
+#check ordinaryKleisliExtension_choice
+#check ordinaryFreeLift_free
+#check ordinaryKleisliPowerdomainCoherence
+
+#print axioms ordinaryKleisliExtension_unit
+#print axioms ordinaryFreeLift_free
+#print axioms ordinaryKleisliPowerdomainCoherence
+
+end Cantilune.Tests.FMSCpoNondeterministicKleisli

@@ -1,0 +1,10 @@
+import Cantilune.Pi.FMSUnseparatedFiniteStrongNoGo
+
+open Cantilune.Pi.FMSUnseparatedFiniteStrongNoGo
+
+#check absorbedChoice_denotation_eq
+#check absorbedChoice_not_stronglyEquivalent
+#check not_strongFullAbstract
+
+#print axioms absorbedChoice_denotation_eq
+#print axioms not_strongFullAbstract

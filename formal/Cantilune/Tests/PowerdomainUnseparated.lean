@@ -1,0 +1,21 @@
+import Cantilune.Pi.PowerdomainUnseparated
+
+open Cantilune.Pi.PowerdomainUnseparated
+
+#check divergence_eq_deadlock
+#check unseparated_monad_exists
+#check fubiniRaw_swap
+#check chosenProductStrongCommutativeCertificate_exists
+#check concrete_actual_agent_equation_inhabited
+#check AdequacyPackage.termination_iff
+#check FullAbstractionPackage.full_abstraction_of_package
+#check DefinabilityPackage.compact_definable_of_package
+
+#print axioms divergence_eq_deadlock
+#print axioms unseparated_monad_exists
+#print axioms fubiniRaw_swap
+#print axioms chosenProductStrongCommutativeCertificate_exists
+#print axioms concrete_actual_agent_equation_inhabited
+#print axioms AdequacyPackage.termination_iff
+#print axioms FullAbstractionPackage.full_abstraction_of_package
+#print axioms DefinabilityPackage.compact_definable_of_package

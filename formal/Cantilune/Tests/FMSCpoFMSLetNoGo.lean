@@ -1,0 +1,15 @@
+import Cantilune.Pi.FMSCpoFMSLetNoGo
+
+namespace Cantilune.Tests.FMSCpoFMSLetNoGo
+
+open Cantilune.Pi.FMSCpoFMSLetNoGo
+
+#check CommutativeLetWithStrictConstants
+#check CommutativeLetWithStrictConstants.divergence_eq_deadlock
+#check SeparatedCommutativeLet
+#check no_separated_commutative_let
+
+#print axioms Cantilune.Pi.FMSCpoFMSLetNoGo.CommutativeLetWithStrictConstants.divergence_eq_deadlock
+#print axioms Cantilune.Pi.FMSCpoFMSLetNoGo.no_separated_commutative_let
+
+end Cantilune.Tests.FMSCpoFMSLetNoGo

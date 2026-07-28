@@ -1,0 +1,17 @@
+import Cantilune.Pi.FMSCpoNondeterministicGeneratedCardinality
+
+namespace Cantilune.Tests.FMSCpoNondeterministicGeneratedCardinality
+
+open Cantilune.Pi.FMSCpoNondeterministicGeneratedCardinality
+
+#check GeneratedSyntax.Syntax
+#check GeneratedSyntax.syntax_cardinal_le
+#check GeneratedSyntax.evaluate
+#check GeneratedSyntax.imageClosedCarrier
+#check GeneratedSyntax.representative_injective
+#check GeneratedSyntax.generatedCarrier_cardinal_le
+
+#print axioms GeneratedSyntax.syntax_cardinal_le
+#print axioms GeneratedSyntax.generatedCarrier_cardinal_le
+
+end Cantilune.Tests.FMSCpoNondeterministicGeneratedCardinality

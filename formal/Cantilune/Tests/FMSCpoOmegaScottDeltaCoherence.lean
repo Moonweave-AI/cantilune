@@ -1,0 +1,28 @@
+import Cantilune.Pi.FMSCpoOmegaScottDeltaCoherence
+
+namespace Cantilune.Tests.FMSCpoOmegaScottDeltaCoherence
+
+open Cantilune.Pi.FMSCpoOmegaScottDeltaCoherence
+
+#check shiftPowerIso
+#check shift_unit_coherence
+#check shift_multiplication_component
+#check allocation_power_coherence
+#check powerHiding
+#check powerHiding_after_allocate
+#check powerHiding_unit_coherence
+#check powerHiding_multiplication_coherence
+#check shift_fubini_component
+#check allocation_fubini_coherence
+#check powerHiding_pointwiseFubini_coherence
+
+#print axioms shiftPowerIso
+#print axioms shift_multiplication_component
+#print axioms allocation_power_coherence
+#print axioms powerHiding_after_allocate
+#print axioms powerHiding_unit_coherence
+#print axioms powerHiding_multiplication_coherence
+#print axioms allocation_fubini_coherence
+#print axioms powerHiding_pointwiseFubini_coherence
+
+end Cantilune.Tests.FMSCpoOmegaScottDeltaCoherence

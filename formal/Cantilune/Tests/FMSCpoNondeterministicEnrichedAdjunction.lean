@@ -1,0 +1,30 @@
+import Cantilune.Pi.FMSCpoNondeterministicEnrichedAdjunction
+
+namespace Cantilune.Tests.FMSCpoNondeterministicEnrichedAdjunction
+
+open Cantilune.Pi.FMSCpoNondeterministicEnrichedAdjunction.NDωCPO
+
+#check ordinaryFreeLift_monotone
+#check ordinaryFreeLiftRaw_monotone
+#check ordinaryFreeLift_omegaSup
+#check ordinaryFreeLiftContinuous
+#check ordinaryFreeLiftArrowContinuous
+#check ordinaryRestrictionContinuous
+#check enrichedFreeForgetHomEquivalence
+#check cpoEnrichedFreeForgetAdjunction
+#check enrichedHom_forward_natural_left
+#check enrichedHom_forward_natural_right
+#check enrichedHom_inverse_natural_left
+#check enrichedHom_inverse_natural_right
+#check ordinaryMap_eq_freeLift
+#check ordinaryMapHomContinuous
+#check enrichedPowerdomainCoherenceOfSolutionSet
+
+#print axioms ordinaryFreeLift_monotone
+#print axioms ordinaryFreeLift_omegaSup
+#print axioms cpoEnrichedFreeForgetAdjunction
+#print axioms enrichedHom_inverse_natural_right
+#print axioms ordinaryMap_eq_freeLift
+#print axioms enrichedPowerdomainCoherenceOfSolutionSet
+
+end Cantilune.Tests.FMSCpoNondeterministicEnrichedAdjunction

@@ -1,0 +1,38 @@
+import Cantilune.Theorems.FMSCommonFiniteCrossEpochChain
+
+/-!
+# Composable common-FMS finite-chain regression
+-/
+
+namespace Cantilune.Tests.FMSCommonFiniteCrossEpochChain
+
+open Cantilune.Theorems
+
+#check ExactFMSNativePath.append
+#check ExactFMSNativePath.append_three
+#check ExactFMSNativePath.append_action_length
+#check Cantilune.Theorems.EpochChain.endpointAppend
+#check Cantilune.Theorems.EpochChain.endpointAppend_assoc
+#check FiniteCrossEpochProductChain.endpointAppend
+#check FiniteCrossEpochProductChain.endpointAppend_assoc
+#check FiniteCrossEpochProductChain.sourceChain_endpointAppend
+#check FiniteCrossEpochProductChain.dagChain_endpointAppend
+#check FiniteCrossEpochProductChain.petriChain_endpointAppend
+#check FiniteCrossEpochProductChain.piChain_endpointAppend
+#check FiniteCrossEpochProductChain.morphismChain_endpointAppend
+#check FiniteCrossEpochProductChain.ReplayAgreement.endpointAppend
+#check FiniteCrossEpochProductChain.AllBoundariesStrict.endpointAppend
+#check FiniteCrossEpochProductChain.AllEventMarksPreserved.endpointAppend
+#check FiniteCrossEpochProductChain.AllAdmissionMarksPreserved.endpointAppend
+#check FiniteCrossEpochProductChain.CompleteAgreement.endpointAppend
+#check FiniteCommonFMSPathAgreement.endpointAppendWithPositions
+
+#print axioms ExactFMSNativePath.append
+#print axioms
+  FiniteCrossEpochProductChain.sourceChain_endpointAppend
+#print axioms
+  FiniteCrossEpochProductChain.CompleteAgreement.endpointAppend
+#print axioms
+  FiniteCommonFMSPathAgreement.endpointAppendWithPositions
+
+end Cantilune.Tests.FMSCommonFiniteCrossEpochChain

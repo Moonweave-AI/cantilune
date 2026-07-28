@@ -1,0 +1,49 @@
+import Cantilune.Core.GeneralFiniteOpenDPOI
+import Cantilune.Core.PositionalImageCharacterization
+import Cantilune.Core.PositionalBoundaryDuplicateObstruction
+
+/-!
+# General finite open-DPOI API regression
+
+These checks ensure that the public theorem boundary continues to expose a
+real categorical equivalence, arbitrary legal monic matches, and the general
+parallel-independent concurrency diamond.
+-/
+
+open Cantilune.Core
+open Cantilune.Core.GeneralFiniteOpenDPOI
+open Cantilune.Core.PositionalImageCharacterization
+open Cantilune.Core.PositionalBoundaryDuplicateObstruction
+
+#check finite_open_hypergraph_equivalence
+#check canonicalImageObject
+#check finite_image_preimage_iso
+#check finite_image_preimage_map_commutes
+#check arbitrary_legal_monic_match_has_intrinsic_dpoi
+#check arbitrary_legal_monic_match_intrinsic_witness
+#check arbitrary_legal_monic_match_original_arrows
+#check arbitrary_legal_monic_match_complement_vanKampen
+#check arbitrary_legal_monic_match_result_vanKampen
+#check arbitrary_legal_monic_match_squares_vanKampen
+#check arbitrary_parallel_independent_matches_have_intrinsic_residuals
+#check first_after_second_intrinsic_witness
+#check second_after_first_intrinsic_witness
+#check intrinsic_concurrency_result_iso
+#check intrinsic_second_right_to_first_result
+#check intrinsic_first_right_to_second_result
+#check intrinsic_concurrency_second_right_map
+#check intrinsic_concurrency_first_right_map
+#check arbitrary_parallel_independent_matches_commute
+#check FiniteCompleteFixedBoundary
+#check ExactPositionalObject
+#check ExactPositionalObject.toFiniteCompleteFixedBoundary
+#check Reconstruction.graph
+#check Reconstruction.typedIso
+#check exactPositionalObject_mem_essImage
+#check IsoTransport.exactPositionalObject_of_iso
+#check Encoded.exactPositionalObject
+#check essImage_iff_exactPositionalObject
+#check ExactPositionalSubcategory
+#check duplicateTyped_finiteCompleteFixedBoundary
+#check duplicateTyped_not_exactPositionalObject
+#check duplicateTyped_not_in_essImage

@@ -1,0 +1,18 @@
+import Cantilune.Pi.FMSCpoPowerdomainPackageCoherenceNoGo
+
+namespace Cantilune.Tests.FMSCpoPowerdomainPackageCoherenceNoGo
+
+open Cantilune.Pi.FMSCpoPowerdomainPackageCoherenceNoGo
+
+#check DistinguishedFubiniStrictness
+#check deadlock_eq_divergence_on_product
+#check no_distinguishedFubiniStrictness
+#check StrengthenedExactFMSAcceptancePackage
+#check no_strengthenedExactFMSAcceptancePackage
+
+#print axioms braiding_pairValue
+#print axioms deadlock_eq_divergence_on_product
+#print axioms no_distinguishedFubiniStrictness
+#print axioms no_strengthenedExactFMSAcceptancePackage
+
+end Cantilune.Tests.FMSCpoPowerdomainPackageCoherenceNoGo

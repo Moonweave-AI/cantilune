@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 2,
+  "scope": "finite-epoch P1c reference calculus",
+  "authoritativeLeanModule": "Cantilune.Pi.P1cCompleteMatrix",
+  "semantics": {
+    "native_strong": "One proof of an independently installed native target relation with distinct endpoints; no weak or reflexive-transitive closure constructor is available.",
+    "reference_boundary": "The matrix is a nonempty theory witness. It does not freeze product rules or claim that the reference DAG/Petri states are a product API."
+  },
+  "events": [
+    "freeOutput",
+    "boundOutput",
+    "lateInput",
+    "communication",
+    "openClose",
+    "restriction",
+    "scopeExtrusion",
+    "delegation",
+    "choiceLeft",
+    "choiceRight",
+    "matchSuccess",
+    "mismatchGuard",
+    "dynamicPartnerAdmission",
+    "instanceReconnect",
+    "instanceDeleteQuiescent"
+  ],
+  "projections": ["dag", "petri", "pi", "morphism"],
+  "matrix": {
+    "freeOutput": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "boundOutput": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "lateInput": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "communication": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "openClose": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "restriction": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "requestAcceptCertificate"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "scopeExtrusion": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "delegation": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "mobilityCertificate"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "choiceLeft": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "choiceRight": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "matchSuccess": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "mismatchGuard": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "dynamicPartnerAdmission": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "admissionCertificate"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "instanceReconnect": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "mobilityCertificate"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    },
+    "instanceDeleteQuiescent": {
+      "dag": {"status": "native_strong", "provenance": "dagRewrite"},
+      "petri": {"status": "native_strong", "provenance": "petriFiring"},
+      "pi": {"status": "native_strong", "provenance": "piKernel"},
+      "morphism": {"status": "native_strong", "provenance": "morphismIdentity"}
+    }
+  },
+  "counts": {
+    "events": 15,
+    "projections": 4,
+    "cells": 60,
+    "nativeStrong": 60,
+    "partialTypedObligation": 0
+  },
+  "leanAudit": {
+    "completeMatrix": "Cantilune.Pi.P1cCompleteMatrix.completeMatrix",
+    "completeProof": "Cantilune.Pi.P1cCompleteMatrix.p1c_rule_matrix_complete",
+    "nativeCellCount": "Cantilune.Pi.P1cCompleteMatrix.all_sixty_cells_native",
+    "operationalCertificates": "Cantilune.Pi.P1cProjectionCertificates.p1c_operational_certificates",
+    "standardLateBridge": "Cantilune.Pi.P1cProjectionCertificates.PiTarget.step_standard_late",
+    "tests": [
+      "Cantilune.Tests.P1cCompleteMatrix",
+      "Cantilune.Tests.P1cProjectionCertificates"
+    ]
+  }
+}

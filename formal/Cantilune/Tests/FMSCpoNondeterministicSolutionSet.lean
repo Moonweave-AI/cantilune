@@ -1,0 +1,55 @@
+import Cantilune.Pi.FMSCpoNondeterministicSolutionSet
+
+namespace Cantilune.Tests.FMSCpoNondeterministicSolutionSet
+
+open CategoryTheory
+open CategoryTheory.Limits
+open Cantilune.Pi.FMSCpoNondeterministicCategory
+open Cantilune.Pi.FMSCpoNondeterministicLimits
+open Cantilune.Pi.FMSCpoNondeterministicSolutionSet
+
+#check SolutionSet.carrier_solutionSetCondition_iff_isRightAdjoint
+#check SolutionSet.carrierIsRightAdjointOfSolutionSet
+#check SolutionSet.freeFunctorOfSolutionSet
+#check SolutionSet.freeAdjunctionOfSolutionSet
+#check SolutionSet.ordinaryMonadOfSolutionSet
+#check SolutionSet.ordinaryDivergence
+#check SolutionSet.ordinaryDeadlock
+#check SolutionSet.ordinaryChoice
+#check SolutionSet.ordinaryMap_divergence
+#check SolutionSet.ordinaryMap_deadlock
+#check SolutionSet.ordinaryMap_choice
+#check SolutionSet.ordinaryMultiplication_divergence
+#check SolutionSet.ordinaryMultiplication_deadlock
+#check SolutionSet.ordinaryMultiplication_choice
+#check SolutionSet.ordinaryFreeLift
+#check SolutionSet.ordinaryFreeLift_unit
+#check SolutionSet.ordinaryFreeLift_divergence
+#check SolutionSet.ordinaryFreeLift_deadlock
+#check SolutionSet.ordinaryFreeLift_choice
+#check SolutionSet.ordinaryFreeLift_unique
+#check SolutionSet.OrdinaryFubiniWitness
+#check SolutionSet.powerdomainPackageOfSolutionSet
+#check SolutionSet.freeObject_divergence_ne_deadlock
+#check SolutionSet.freeObjectOfSolutionSet_divergence_ne_deadlock
+#check SolutionSet.emptyCpo_solutionSet
+#check SolutionSet.emptyCpoUniversalIsInitial
+
+#print axioms SolutionSet.carrier_solutionSetCondition_iff_isRightAdjoint
+#print axioms SolutionSet.freeObject_divergence_ne_deadlock
+#print axioms SolutionSet.ordinaryMap_divergence
+#print axioms SolutionSet.ordinaryMultiplication_divergence
+#print axioms SolutionSet.ordinaryMultiplication_choice
+#print axioms SolutionSet.ordinaryFreeLift_unit
+#print axioms SolutionSet.ordinaryFreeLift_unique
+#print axioms SolutionSet.powerdomainPackageOfSolutionSet
+#print axioms SolutionSet.freeObjectOfSolutionSet_divergence_ne_deadlock
+#print axioms SolutionSet.emptyCpo_solutionSet
+#print axioms SolutionSet.emptyCpoUniversalIsInitial
+
+example
+    (solution : SolutionSetCondition.{0} SolutionSet.carrierFunctor) :
+    SolutionSet.carrierFunctor.IsRightAdjoint :=
+  SolutionSet.carrierIsRightAdjointOfSolutionSet solution
+
+end Cantilune.Tests.FMSCpoNondeterministicSolutionSet
