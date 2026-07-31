@@ -1,0 +1,35 @@
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  node distance=10mm,
+  phase/.style={rounded corners=3mm,draw=MWLine,fill=MWMist,minimum width=33mm,minimum height=16mm,align=center,font=\small\sffamily},
+  complete/.style={rounded corners=3mm,draw=MWMint!70!MWLine,fill=MWMint!10!white,minimum width=33mm,minimum height=16mm,align=center,font=\small\sffamily},
+  gate/.style={diamond,aspect=1.8,draw=MWLilac!55,fill=MWLilac!8,align=center,font=\scriptsize\bfseries\sffamily,inner sep=2mm},
+  flow/.style={->,draw=MWSlate,line width=0.8pt},
+  pending/.style={->,draw=MWAmber,line width=0.9pt,dashed}
+]
+  \node[complete] (source) {Verified source\\commit \(S\)};
+  \node[complete,right=of source] (evidence) {Build evidence\\commit \(E\)};
+  \node[complete,right=of evidence] (pointer) {Manifest pointer\\and delivery record};
+  \node[gate,below=13mm of evidence] (review) {Independent\\QA-L4 review};
+  \node[phase,right=of review] (fcp) {FCP disposition\\and ADR decision};
+  \node[phase,left=of review] (product) {Product-specific\\conformance};
+
+  \draw[flow] (source)--(evidence);
+  \draw[flow] (evidence)--(pointer);
+  \draw[pending] (pointer.south) |- (review.east);
+  \draw[pending] (review)--(fcp);
+  \draw[pending] (review)--(product);
+
+  \node[font=\scriptsize\MWMono,text=MWMint!70!MWInk,below=2mm of source] {bound};
+  \node[font=\scriptsize\MWMono,text=MWMint!70!MWInk,below=2mm of pointer] {proved / review-pending};
+  \node[font=\scriptsize\MWMono,text=MWAmber,below=2mm of review] {pending};
+\end{tikzpicture}
+\caption{Theory review path, not a product release plan. The current evidence binds a generic
+core to source and build evidence; independent review, FCP disposition, and concrete product
+conformance are subsequent and separate gates.}
+\label{fig:release-timeline}
+\MWSourceNote{Based on the theory-closure delivery record and formal-project build guidance
+\citep{cantiluneClosure,cantiluneFormalReadme}.}
+\end{figure}

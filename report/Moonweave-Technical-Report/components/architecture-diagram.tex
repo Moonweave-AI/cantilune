@@ -1,0 +1,64 @@
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=10mm and 10mm,
+  >=Latex,
+  every node/.style={font=\small\sffamily},
+  layer/.style={
+    rounded corners=3mm,
+    draw=MWLine,
+    fill=MWMist,
+    minimum height=14mm,
+    align=center,
+    inner xsep=6mm
+  },
+  core/.style={
+    layer,
+    fill=MWLilac!9!white,
+    draw=MWLilac!55,
+    minimum width=48mm,
+    text=MWInk
+  },
+  projection/.style={
+    layer,
+    minimum width=31mm,
+    minimum height=15mm
+  },
+  edge/.style={->,draw=MWSlate,line width=0.8pt},
+  certificate/.style={->,draw=MWCyan,line width=0.9pt,dashed}
+]
+  \node[layer] (declaration) {Typed generators, contracts,\\and declared policy};
+  \node[core,below=of declaration] (core) {\(\mathsf{CantiluneGraph}=(\mathcal C,\mathcal R)\)\\
+  legal composition + identified rewriting};
+
+  \node[projection,below left=15mm and 31mm of core] (dag) {DAG view\\dependencies and readiness};
+  \node[projection,below=15mm of core] (petri) {Petri view\\tokens and resources};
+  \node[projection,below right=15mm and 31mm of core] (pi) {\(\pi\) view\\sessions and delegation};
+  \node[projection,below=13mm of petri] (morphism) {Morphism view\\composition and refactoring};
+
+  \draw[edge] (declaration) -- (core);
+  \draw[edge] (core) -- (dag);
+  \draw[edge] (core) -- (petri);
+  \draw[edge] (core) -- (pi);
+  \draw[edge] (core) -- (morphism);
+
+  \node[font=\scriptsize\sffamily\color{MWSoftText},right=4mm of core,align=left,text width=34mm] (event) {event identity:\\[-1mm]
+  rule, match, derivation, replay data};
+  \draw[certificate] (event.west) -- (core.east);
+
+  \node[
+    draw=MWLilac!40,
+    rounded corners=3mm,
+    fit=(dag)(petri)(pi)(morphism),
+    inner sep=5mm
+  ] {};
+\end{tikzpicture}%
+}
+\caption{Cantilune's intended unified semantic object. The core specifies legal typed
+composition and identified rewriting; DAG, Petri, \(\pi\), and morphism are readings of that one
+object. Dashed cyan denotes the certificate obligation rather than a claim that every projection
+is automatically complete.}
+\label{fig:architecture}
+\MWSourceNote{Aligned to the formal specification and RFC-0001 \citep{cantiluneSpec,cantiluneRFCOne}.}
+\end{figure}

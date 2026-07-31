@@ -1,0 +1,36 @@
+\documentclass{moonweave-report}
+
+\input{config/project-profile}
+\input{config/strings}
+
+\renewcommand{\MWProjectName}{My Project}
+\renewcommand{\MWReportTitleEN}{My Project Technical Report}
+\renewcommand{\MWReportTitleCN}{我的项目技术报告}
+\renewcommand{\MWReportVersion}{v0.1.0}
+\renewcommand{\MWReportStatus}{DRAFT}
+
+\begin{document}
+
+\chapter{System claim / 系统声明}
+
+State one bounded claim, its evidence, and its limitation.
+
+\begin{MWInsight}
+This minimal file demonstrates stable English–Chinese typography and reusable
+components. Build it from the project root with XeLaTeX.
+\end{MWInsight}
+
+\begin{table}[H]
+\centering
+\caption{Minimal evidence table.}
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}YY@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Claim} & \textbf{Evidence} & \textbf{Limitation} \\
+\midrule
+Example claim & Versioned evaluation & Documented scope only \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

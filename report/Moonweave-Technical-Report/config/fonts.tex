@@ -1,0 +1,84 @@
+% Self-contained Latin and CJK typography.
+% Fonts are distributed in assets/fonts/ with their original licenses.
+
+\defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+
+\setmainfont[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*,
+  BoldFeatures={FakeBold=1.7},
+  ItalicFont=*,
+  ItalicFeatures={FakeSlant=0.12},
+  BoldItalicFont=*,
+  BoldItalicFeatures={FakeBold=1.7,FakeSlant=0.12}
+]{LXGWNeoXiHei}
+
+\setsansfont[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*,
+  BoldFeatures={FakeBold=1.7},
+  ItalicFont=*,
+  ItalicFeatures={FakeSlant=0.12},
+  BoldItalicFont=*,
+  BoldItalicFeatures={FakeBold=1.7,FakeSlant=0.12}
+]{LXGWNeoXiHei}
+
+\setmonofont[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*-Regular,
+  BoldFont=*-Bold,
+  ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic,
+  Scale=0.90
+]{LiberationMono}
+
+\newfontfamily\MWDisplayFont[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*,
+  BoldFont=*,
+  BoldFeatures={FakeBold=1.5},
+  ItalicFont=*,
+  ItalicFeatures={FakeSlant=0.10}
+]{LXGWNeoZhiSong}
+
+% Optional Latin-only families for projects that do not mix scripts.
+\newfontfamily\MWLatinSans[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*-Regular,
+  BoldFont=*-Bold,
+  ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic
+]{NotoSans}
+
+\newfontfamily\MWLatinSerif[
+  Path=assets/fonts/,
+  Extension=.ttf,
+  UprightFont=*-Regular,
+  BoldFont=*-Bold,
+  ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic
+]{NotoSerif}
+
+% Native Chinese line-breaking keeps mixed prose breakable without manual
+% spaces; the selected primary families cover both Latin and CJK.
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 0.08em minus 0.01em
+
+\newcommand{\MWDisplayText}[1]{{%
+  \MWDisplayFont
+  #1%
+}}
+
+\newcommand{\MWCJKDisplayText}[1]{{%
+  \MWDisplayFont
+  #1%
+}}
+
+\newcommand{\MWMono}{\ttfamily}

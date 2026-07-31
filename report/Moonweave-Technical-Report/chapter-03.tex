@@ -1,0 +1,27 @@
+% !TEX program = xelatex
+
+\documentclass{moonweave-report}
+
+\input{config/project-profile}
+\input{config/strings}
+\input{metadata}
+\input{components/chart-styles}
+
+\hypersetup{
+  pdftitle={Cantilune Mathematical Foundations and Theoretical Argument},
+  pdfauthor={Moonweave AI},
+  pdfsubject={Proof-theoretic reconstruction of the Cantilune mathematical system}
+}
+
+\begin{document}
+
+\mainmatter
+\setcounter{chapter}{2}
+\input{chapters/03-mathematical-foundations}
+
+\clearpage
+\nocite{*}
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

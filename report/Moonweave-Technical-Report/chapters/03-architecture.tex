@@ -1,0 +1,66 @@
+\MWChapter{Semantic architecture and certificates}{语义架构与证书}
+\label{ch:architecture}
+
+\section{Layers of the theory / 理论层次}
+
+\begin{table}[H]
+\centering
+\caption{The semantic layers and their roles in the current research branch.}
+\label{tab:components}
+\begin{tabularx}{\textwidth}{@{}L{0.23\textwidth}L{0.31\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Layer} & \textbf{Responsibility} & \textbf{What it does not establish by itself} \\
+\midrule
+Free SMC presentation & Legal typed sequential, parallel, and symmetric composition & A concrete scheduler or a projection's operational semantics \\
+Typed open hypergraph / DPOI & Add, replace, reconnect, or delete a collaboration subgraph under stated boundary and gluing conditions & Global confluence, every proposed match, or every product rule \\
+Projection certificates & Connect an identified source event to target transitions and replay evidence & A universal product instance without product-supplied certificates \\
+Late-\(\pi\) layer & Sessions, request/accept, mobility, alpha conversion, and structural laws & A released channel API or unrestricted runtime protocol claim \\
+Petri layer & Ordered interfaces and individual-token provenance & Boundedness, liveness, or numerical caps without net-level checks \\
+Feedback / FMS boundary & Evidence closure, terminal classes, and the selected D1-A semantic route & A single unified source-paper FMS model or unrestricted full abstraction \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Identified reconfiguration / 具备身份的重构}
+
+For a configuration \(G\), a concrete rewrite event is represented schematically as
+\begin{equation}
+  e=(\rho,m,\delta),\qquad G\xrightarrow{e}G',
+  \label{eq:identified-event}
+\end{equation}
+where \(\rho\) is the rule, \(m\) the chosen match, and \(\delta\) retains derivation,
+representative, freshness, or allocation information. This is the minimum information needed to
+distinguish two applications of the same named rule and to define replay at the selected equality
+or isomorphism \citep{cantiluneSpec}.
+
+\section{Projection consistency target / 投影一致性目标}
+
+For each useful reading \(P_i\), the intended condition is
+\begin{equation}
+  G\xrightarrow{e}G'\quad\Longrightarrow\quad
+  P_i(G)\xrightarrow{\Phi_i(e)}P_i(G'),
+  \qquad i\in\{\mathrm{DAG},\mathrm{Petri},\pi,\mathrm{morphism}\}.
+  \label{eq:projection-consistency}
+\end{equation}
+The implication is a proof obligation, not a visualization convention. It must include the target
+event relation and appropriate preservation, reflection, replay, and terminal-classification
+clauses. The morphism reading is the identity view; the remaining readings require explicit
+certificates \citep{cantiluneRFCOne,cantiluneRFCTwo}.
+
+\begin{MWCodeBox}[Schematic event-certificate record]
+\begin{lstlisting}[style=moonweave]
+source event:     operation id, rule id, match, derivation, epoch
+projection map:   target event(s), correspondence witness, replay identity
+terminal view:    success | external wait | deadlock | productive-infinite
+provenance:       source commit, manifest entry, build-evidence reference
+\end{lstlisting}
+\end{MWCodeBox}
+
+\section{Admission boundary / 准入边界}
+
+Dynamic graph change is intentionally constrained. The theory records structural, freshness,
+dangling, quiescence, resource, authorization, and replay conditions as applicable certificates.
+A future node or model may propose a new subgraph or channel, but the proposal is not equivalent
+to an accepted reconfiguration. This is the formal analogue of a visible control boundary, not a
+claim about an already deployed policy service.

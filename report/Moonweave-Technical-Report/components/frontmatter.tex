@@ -1,0 +1,114 @@
+\chapter*{\MWLabelDocumentControl}
+\addcontentsline{toc}{chapter}{\MWLabelDocumentControl}
+
+\begin{MWCallout}[MWLilac]{Source boundary / 唯一事实源}
+This report is aligned to the \texttt{codex/theory-foundation} branch of the Cantilune repository.
+It distinguishes a kernel-checked generic theory from independent review, FCP disposition,
+product conformance, and any future runtime release. A source revision, evidence revision, or
+review decision invalidates the affected claims until this record is updated.
+\end{MWCallout}
+
+\begin{longtable}{@{}L{0.31\textwidth}L{0.64\textwidth}@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Field / 字段} & \textbf{Value / 值} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Field / 字段} & \textbf{Value / 值} \\
+\midrule
+\endhead
+Organization & \MWOrganization \\
+Project & \MWProjectName \\
+Report type & \MWReportType \\
+Status & \MWTheoryStatus \\
+Version & \MWReportVersion \\
+Owner / DRI & \MWOwner \\
+Authors & \MWAuthors \\
+Required reviewers & \MWReviewers \\
+Published & \MWPublishedDate \\
+Last reviewed & \MWLastReviewed \\
+Review trigger & \MWReviewCycle \\
+Source branch & \texttt{\MWSourceBranch} \\
+Verified source commit & \texttt{\MWCodeRevision} \\
+Evidence commit & \texttt{\MWEvidenceCommit} \\
+Formal specification & \texttt{docs/spec/formal-semantics.md} \\
+Proof manifest & \texttt{formal/proof-obligations.json} \\
+Runtime / model & \MWModelVersion \\
+Dataset & \MWDataVersion \\
+License & \MWLicense \\
+Contact & \href{mailto:\MWContact}{\MWContact} \\
+Repository & \url{\MWRepositoryURL} \\
+\bottomrule
+\end{longtable}
+
+\clearpage
+\chapter*{\MWLabelAbstract}
+\addcontentsline{toc}{chapter}{\MWLabelAbstract}
+
+\begin{MWAbstractBox}
+\MWKicker{English}
+\textbf{Cantilune} is a pre-alpha formal-semantics and orchestration research project. Its
+proposed substrate represents an orchestration as \(\mathsf{CantiluneGraph}=(\mathcal C,\mathcal R)\):
+a typed symmetric monoidal category for legal composition together with identified
+string-diagram rewriting events. DAG, Petri, \(\pi\)-calculus, and morphism views are intended as
+projections of that one object rather than disconnected runtime models. This report records the
+current theory-closure evidence: a generic core bound to source and evidence commits with status
+\emph{proved / review-pending}. It does not claim a released runtime, SDK, scheduler, product
+package, benchmark result, or production safety property.
+\end{MWAbstractBox}
+
+\vspace{4mm}
+
+\begin{MWAbstractBox}
+\MWKicker{简体中文}
+\textbf{Cantilune} 是一个 pre-alpha 阶段的形式语义与编排研究项目。其拟议的基础结构将编排表述为
+\(\mathsf{CantiluneGraph}=(\mathcal C,\mathcal R)\)：以类型化对称幺半范畴描述合法组合，并以具备
+身份的字符串图重写事件描述演化。DAG、Petri、\(\pi\) 演算与态射视图被设计为同一形式对象的投影，
+而不是彼此脱节的运行时模型。本报告记录当前理论闭包证据：通用核心已绑定到源码与证据提交，状态为
+\emph{proved / review-pending}。它不宣称已发布运行时、SDK、调度器、产品包、基准结果或生产安全属性。
+\end{MWAbstractBox}
+
+\vspace{4mm}
+{\small\color{MWMuted}\textbf{Keywords / 关键词：} \MWKeywords}
+
+\clearpage
+\chapter*{\MWLabelExecutiveSummary}
+\addcontentsline{toc}{chapter}{\MWLabelExecutiveSummary}
+
+This evidence package answers a narrower question than a product release report: what formal
+object is specified, what theory has a commit-bound proof record, and which claims remain outside
+that record. The repository's README, formal specification, proof manifest, and delivery record
+are the authoritative sources \citep{cantiluneReadme,cantiluneSpec,cantiluneManifest,cantiluneClosure}.
+
+\begin{MWMetricGrid}
+  \MWMetricCard[MWCyan]{18 / 18}{Central obligations}{Manifest status: proved}
+  \MWMetricCard[MWLilac]{60}{Registry operations}{Reference P1c operation registry}
+  \MWMetricCard[MWMint]{4}{Projection readings}{DAG, Petri, pi, morphism}
+\end{MWMetricGrid}
+
+\begin{MWDecision}
+\textbf{No deployment decision.} The generic formal core is evidence-bound, but independent
+review, FCP disposition, ADR acceptance, and product-specific conformance remain pending.
+Cantilune therefore remains a research and contract-design project, not a runtime release.
+\end{MWDecision}
+
+\begin{itemize}
+  \item \textbf{Formal object:} \(\mathcal C\) specifies typed sequential and parallel composition;
+    \(\mathcal R\) specifies identified reconfiguration events.
+  \item \textbf{Consistency target:} one source event should have certified counterparts in DAG,
+    Petri, \(\pi\), and morphism readings, including replay identity and terminal classification.
+  \item \textbf{Evidence boundary:} the current record binds the generic core to the verified
+    source and evidence commits; it does not instantiate the planned production packages.
+  \item \textbf{Non-claims:} no model integration, tools, I/O, performance benchmark, availability
+    target, or real-world authorization guarantee is established by this theory report.
+\end{itemize}
+
+\clearpage
+\tableofcontents
+
+\clearpage
+\listoffigures
+\vspace{8mm}
+\listoftables

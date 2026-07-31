@@ -1,0 +1,46 @@
+\MWChapter{Review gates and product path}{评审门与产品路径}
+\label{ch:deployment}
+
+\section{Theory promotion path / 理论推进路径}
+
+The next path is a review and conformance sequence, not a canary deployment. The current branch
+binds generic source and build evidence; subsequent gates test whether that record withstands
+independent scrutiny and whether a concrete package can instantiate the declared interfaces.
+
+\input{components/release-timeline}
+
+\section{Gate register / 门控登记}
+
+\begin{table}[H]
+\centering
+\caption{Required gates after the current evidence-bound generic core.}
+\label{tab:monitoring}
+\begin{tabularx}{\textwidth}{@{}L{0.23\textwidth}L{0.20\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Gate} & \textbf{Current status} & \textbf{Required exit evidence} \\
+\midrule
+Pinned rebuild and integrity audit & Recorded for the evidence-bound source & Reproducible build/audit under the pinned toolchain and recorded provenance \\
+Independent QA-L4 review & Pending & Reviewer independent of the DRI, review evidence, and recorded conflict-of-interest disposition \\
+FCP decision & Pending & Formal review outcome against the stated core-theory scope and open boundaries \\
+ADR disposition & Proposed / pending & Human decision that accepts, revises, or rejects the architecture boundary \\
+Product conformance & Deferred & A package-specific rule schema plus projection, admission, resource, authorization, fairness, and replay certificates \\
+Runtime validation & Not started & Concrete implementation, security model, external-interface tests, and empirical evidence appropriate to its claims \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Change triggers / 变更触发条件}
+
+{\raggedright
+The evidence record should be re-evaluated when any of the following changes: the verified source
+commit, Lean or mathlib lock, proof manifest, evidence hash, central theorem scope, reviewer
+assignment, FCP/ADR status, or a product's declared operational rule family. A documentation-only
+change may preserve the existing proof identity, but it must not silently rewrite the status or
+scope communicated to readers.\par}
+
+\begin{MWCallout}[MWAmber]{No rollback protocol is claimed}
+There is no deployed Cantilune runtime to promote or roll back. The reversible operation here is a
+claim: if a source/evidence binding or review conclusion becomes invalid, the report must return
+to the narrower status rather than retaining an obsolete “proved” or “ready” summary.
+\end{MWCallout}

@@ -1,0 +1,48 @@
+\MWChapter{Limitations and non-claims}{局限与非声明}
+\label{ch:limitations}
+
+\section{Formal boundary / 形式边界}
+
+The formal specification and current closure record are intentionally precise about what they do
+not prove. The following limitations are part of the result, not footnotes to it.
+
+\begin{table}[H]
+\centering
+\caption{Load-bearing limitations of the current Cantilune theory record.}
+\label{tab:limitations}
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}Y L{0.25\textwidth}@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Boundary} & \textbf{What is stated} & \textbf{What must not be inferred} \\
+\midrule
+Runtime absence & The formal core excludes runtime, LLM, I/O, tools, and network integration & That Cantilune already executes agents, tools, or workflows \\
+Generic/product separation & Generic certificate interfaces and reference witnesses are present & That the eight planned production packages are instantiated or conformant \\
+Projection scope & Certificates are parameterized by supplied target and product evidence; the morphism view is identity & That every arbitrary DAG, Petri, or \(\pi\) implementation automatically agrees with the source \\
+DPOI / rewriting scope & Legal monic and boundary/gluing conditions are stated for the mechanized setting & Global confluence, critical-pair completeness, or validity of every proposed rewrite \\
+D1-A FMS route & The maximum-compatible branch records specified lower-effect and contextual observation results & A single unified FMS model, constructor-sensitive strong-bisimulation full abstraction, or all-domain definability \\
+Review status & Source/build evidence is bound for the generic core & Independent review, FCP passage, ADR acceptance, or production readiness \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Operational limitations / 操作性局限}
+
+The formal object does not supply wall-clock bounds, cloud capacity, data governance, access
+control implementation, user experience, interoperability certification, or recovery procedures.
+It also does not turn a future model's internal reasoning into a verified proof. A product report
+would need to specify the concrete rule schema, success predicate, policy boundary, resource
+model, external interfaces, and evidence collection before it could assess any of those concerns.
+
+\section{Interpretive limitations / 解释性局限}
+
+The phrase “one event across four views” has a strong meaning: a source event must retain a
+specified identity in its target counterparts. It does not mean that four visualizations or four
+logs are automatically consistent after the fact. Similarly, a reference execution shows that a
+certificate interface is nonempty; it does not prove that all applications of the interface are
+valid without their own supplied evidence \citep{cantiluneRFCOne,cantiluneRFCTwo}.
+
+\begin{MWRisk}
+The most serious communication failure would be to report Cantilune as a released, safer, faster,
+or more capable agent runtime. None of those comparative or operational claims is supported by
+the current repository evidence.
+\end{MWRisk}

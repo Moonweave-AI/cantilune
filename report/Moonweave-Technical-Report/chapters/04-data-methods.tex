@@ -1,0 +1,60 @@
+\MWChapter{Method, provenance, and reproducibility}{方法、溯源与可复现性}
+\label{ch:methods}
+
+\section{Evidence model / 证据模型}
+
+The relevant reproducibility unit is not a dataset split or model checkpoint. It is a chain that
+binds a named theorem to an immutable source revision, a build/audit record, and a manifest entry.
+The current delivery record identifies source \(S\), evidence \(E\), and a later pointer/manifest
+revision \(P\); cleanup or documentation commits do not replace the proof identity of that chain
+\citep{cantiluneClosure}.
+
+\begin{table}[H]
+\centering
+\caption{Evidence fields required to interpret a formal claim.}
+\label{tab:manifest}
+\begin{tabularx}{\textwidth}{@{}L{0.26\textwidth}Y L{0.26\textwidth}@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Field} & \textbf{Current record} & \textbf{Why it matters} \\
+\midrule
+Source branch & \texttt{codex/theory-foundation} & Fixes the reviewed repository state \\
+Verified source \(S\) & \texttt{59a1a688\ldots e67d15dc} & Identifies the Lean source tree behind the stated proof status \\
+Evidence \(E\) & \texttt{ed26cb74\ldots 3fb8dee5} & Binds the build/audit record to the source claim \\
+Manifest & \texttt{formal/proof-obligations.json} & Names declarations, status, provenance, and review fields \\
+Build evidence & QA record bound to source \(S\) & Records the source-integrity and audit outcome \\
+Review status & \emph{review-pending} & Prevents a local or automated build from being reported as independent approval \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Rebuild protocol / 重建协议}
+
+The formal project pins Lean and mathlib through its toolchain and lock files. Routine work must
+not silently update dependencies; the repository documents an ordinary kernel rebuild and a
+separate provenance-aware evidence gate \citep{cantiluneFormalReadme}.
+
+\begin{MWCodeBox}[Repository verification commands]
+\begin{lstlisting}[style=moonweave,language=bash]
+lake build
+.\formal\scripts\ci.ps1
+.\formal\scripts\ci.ps1 -RequireProved -VerifyTreeOnly
+\end{lstlisting}
+\end{MWCodeBox}
+
+The commands are not an installation guide for an end-user product. The first rebuilds the
+kernel-checked project with the pinned toolchain; the evidence scripts verify source integrity,
+known dependencies, and the relationship between declared proof status and durable evidence.
+
+\section{Methodological exclusions / 方法上的排除项}
+
+No training corpus, benchmark dataset, model provider revision, inference hardware profile, or
+latency/cost experiment is part of the present evidence package. Such artifacts would become
+necessary only for a future product or runtime report. Reporting no empirical result is more
+accurate than repurposing template curves or synthetic measurements.
+
+\begin{MWRisk}
+The status \emph{proved / review-pending} is intentionally narrower than “validated product.”
+A successful local build is neither an independent review nor a substitute for FCP disposition,
+ADR acceptance, or per-product conformance evidence.
+\end{MWRisk}

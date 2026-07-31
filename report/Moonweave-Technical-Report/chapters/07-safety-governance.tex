@@ -1,0 +1,47 @@
+\MWChapter{Governance, review, and theory risk}{治理、评审与理论风险}
+\label{ch:safety}
+
+\section{Governance boundary / 治理边界}
+
+The current formal evidence is deliberately governed as high-impact theory work. The specification,
+RFC, proof manifest, and delivery record distinguish automated proof checking from independent
+review and from a human FCP or ADR decision. A DRI can prepare evidence; that fact does not make
+the DRI an independent reviewer \citep{cantiluneSpec,cantiluneRFCTwo,cantiluneClosure}.
+
+\input{components/risk-matrix}
+
+\section{Current risk register / 当前风险登记}
+
+\begin{table}[H]
+\centering
+\caption{Risks that remain material even when the generic proof manifest reports \emph{proved}.}
+\label{tab:controls}
+\begin{tabularx}{\textwidth}{@{}L{0.23\textwidth}Y L{0.22\textwidth}@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Risk} & \textbf{Current control or evidence} & \textbf{Residual condition} \\
+\midrule
+R1: scope overclaim & This report labels all formal, product, review, and deployment boundaries explicitly & Readers may still infer runtime capability unless every public summary preserves the boundary \\
+R2: non-independent review & Manifest and delivery record keep review evidence, reviewer identity, and conflict-of-interest fields explicit & Independent QA-L4 review and FCP disposition are pending \\
+R3: product conformance gap & Generic certificate interfaces and reference witnesses are recorded; eight planned packages remain deferred & A concrete package can diverge unless its own rules and certificates are reviewed \\
+R4: stale provenance & Verified source, evidence commit, manifest, and integrity gate are recorded & Later source, toolchain, or documentation changes require renewed binding and review \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Review decision / 评审决策}
+
+\begin{MWDecision}
+\textbf{Research-only status.} The report accepts the generic theory record as \emph{proved /
+review-pending}; it does not authorize deployment, production use, or a product safety claim.
+Any promotion requires independent review evidence, the applicable FCP and ADR outcome, and
+product-specific conformance certificates.
+\end{MWDecision}
+
+\section{Responsible communication / 负责任的沟通}
+
+The theory explains how a future orchestration system could make authority, resources, sessions,
+and topology changes inspectable. It does not prove that a real deployment will prevent harmful
+actions, satisfy a policy regime, protect personal data, or meet a service-level objective.
+Those would require implementation, threat modeling, interface tests, operational controls, and
+domain-specific human review beyond the scope of this branch.

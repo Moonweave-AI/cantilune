@@ -1,0 +1,34 @@
+\MWChapter{Conclusion and next decisions}{结论与后续决策}
+\label{ch:conclusion}
+
+Cantilune proposes a single formal object for visible, evolvable orchestration: typed composition
+in \(\mathcal C\), identified reconfiguration in \(\mathcal R\), and certified readings into
+dependency, resource, communication, and compositional views. The current repository evidence
+binds a generic Core Theory to a verified source and build record; that is a meaningful formal
+milestone, but it is not a runtime or product launch \citep{cantiluneReadme,cantiluneClosure}.
+
+\begin{MWDecision}
+\textbf{Current decision: retain pre-alpha research status.} Publish the formal boundary and
+evidence chain as \emph{proved / review-pending}; do not describe Cantilune as deployed,
+independently reviewed, FCP-approved, or product-conformant until those distinct records exist.
+\end{MWDecision}
+
+\section{Prioritized next work / 优先后续工作}
+
+\begin{enumerate}
+  \item Obtain independent category/DPO/Petri, \(\pi\)/domain, and Lean/provenance reviews with
+    explicit conflict-of-interest records.
+  \item Complete the applicable FCP and ADR decision path without widening the proof claims beyond
+    their declared D1-A and projection boundaries.
+  \item Define one concrete product package and provide its complete per-rule conformance
+    certificates, including admission, resource, authorization, fairness, and replay evidence.
+  \item Only after a runtime exists, prepare a separate implementation report for interfaces,
+    security, usability, performance, reliability, and operational safety.
+\end{enumerate}
+
+\section{Reader checklist / 读者检查表}
+
+When reusing or extending this report, preserve the distinction between specification,
+mechanization, evidence binding, independent review, and product conformance. Update the source
+branch and commit identifiers before copying a theorem status, and remove any empirical or
+deployment language that is not supported by the target project's own artifacts.

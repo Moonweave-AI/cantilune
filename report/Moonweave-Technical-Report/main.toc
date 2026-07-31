@@ -1,0 +1,112 @@
+\contentsline {chapter}{Document control / 文档控制}{i}{chapter*.1}%
+\contentsline {chapter}{Abstract / 摘要}{ii}{chapter*.2}%
+\contentsline {chapter}{Executive summary / 执行摘要}{iii}{chapter*.3}%
+\contentsline {chapter}{\numberline {1}Context, claims, and scope / 背景、声明与范围}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Problem statement / 问题定义}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Scope and non-goals / 范围与非目标}{2}{section.1.2}%
+\contentsline {section}{\numberline {1.3}Claim taxonomy / 声明分类}{2}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Success criterion for this report / 本报告的成功条件}{3}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Formal object and system overview / 形式对象与系统概览}{4}{chapter.2}%
+\contentsline {section}{\numberline {2.1}The unified object / 统一形式对象}{4}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Design invariants / 设计不变量}{4}{section.2.2}%
+\contentsline {section}{\numberline {2.3}The four readings / 四个读法}{5}{section.2.3}%
+\contentsline {chapter}{\numberline {3}Mathematical foundations and theoretical argument / 数学基础与理论论证}{6}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Top-level Modeling / 顶层建模}{6}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Coordinative World State and Events / 协调世界与协调事件}{6}{subsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.1.1} Composition of Coordinative World / 协调世界的构成}{7}{subsubsection.3.1.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.1.2}Composition of Coordinative Events / 协调事件的构成}{8}{subsubsection.3.1.1.2}%
+\contentsline {subsection}{\numberline {3.1.2}Coordinative Calculus / 协调演算}{9}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2} The Sigma-Indexed Semantic Triad / Sigma-索引的语义三元组 }{10}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1} The Common Signature Index / 共同签名索引 }{10}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2} Static Coordinative Semantics C-Sigma / 静态协调语义 C-Sigma }{11}{subsection.3.2.2}%
+\contentsline {paragraph}{Typed Raw Diagrams / 内在类型化的原始图式}{11}{paragraph*.11}%
+\contentsline {paragraph}{Structural Equality and Quotient / 结构等价与取商}{12}{paragraph*.12}%
+\contentsline {paragraph}{Universal Interpretation / 泛解释性质}{13}{paragraph*.13}%
+\contentsline {subsection}{\numberline {3.2.3}Executable Coordinative Semantics Exec-Sigma / 可执行协调语义 Exec-Sigma}{13}{subsection.3.2.3}%
+\contentsline {paragraph}{Complete Event Records / 完整事件记录}{13}{paragraph*.14}%
+\contentsline {paragraph}{Replay Recipe and Kernel / 重放配方与重放核}{14}{paragraph*.15}%
+\contentsline {paragraph}{Observable Labeled Transition System / 可观察标号转移系统}{15}{paragraph*.16}%
+\contentsline {paragraph}{Paths and Terminal States / 路径与终止状态}{16}{paragraph*.17}%
+\contentsline {paragraph}{The Execution Package / 执行语义包}{16}{paragraph*.18}%
+\contentsline {subsection}{\numberline {3.2.4}Projective Coordinative Semantics Proj-Sigma / 投影协调语义 Proj-Sigma}{18}{subsection.3.2.4}%
+\contentsline {paragraph}{Operational Projection Certificate / 操作投影证书}{18}{paragraph*.19}%
+\contentsline {paragraph}{Finite Path Preservation and Reflection / 有限路径的保持与反射}{19}{paragraph*.20}%
+\contentsline {paragraph}{Static Projection Certificate / 静态投影证书}{20}{paragraph*.21}%
+\contentsline {paragraph}{Categorical Realization of Execution / 执行过程的范畴实现}{20}{paragraph*.22}%
+\contentsline {paragraph}{Static--Operational Coherence / 静态与操作语义的一致性}{21}{paragraph*.23}%
+\contentsline {subsection}{\numberline {3.2.5} Signature Extensions, Reindexing, and Admission / 签名扩展、重索引与准入 }{22}{subsection.3.2.5}%
+\contentsline {paragraph}{Signature Extension / 签名扩展}{22}{paragraph*.24}%
+\contentsline {paragraph}{Static Reindexing / 静态语义的重索引}{22}{paragraph*.25}%
+\contentsline {paragraph}{Executable Reindexing / 执行语义的重索引}{23}{paragraph*.26}%
+\contentsline {paragraph}{Projective Reindexing / 投影语义的重索引}{24}{paragraph*.27}%
+\contentsline {paragraph}{Four-View Signature Admission / 四视图签名准入}{24}{paragraph*.28}%
+\contentsline {paragraph}{Complete and Coherent Projection / 完整且一致的投影}{25}{paragraph*.29}%
+\contentsline {subsection}{\numberline {3.2.6} Semantic Closure of the Triad / 语义三元组的闭合 }{26}{subsection.3.2.6}%
+\contentsline {section}{\numberline {3.3} Typed Open-Hypergraph Rewriting and Concrete Structural Projections / 类型化开放超图重写与具体结构投影 }{27}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Typed Open-Hypergraph Semantics H-Sigma / 类型化开放超图语义 H-Sigma}{27}{subsection.3.3.1}%
+\contentsline {paragraph}{Finite Typed Open Hypergraphs / 有限类型化开放超图}{27}{paragraph*.30}%
+\contentsline {paragraph}{Open-Hypergraph Morphisms / 开放超图态射}{28}{paragraph*.31}%
+\contentsline {paragraph}{The Adhesive Proof Environment / Adhesive 证明环境}{29}{paragraph*.32}%
+\contentsline {subsection}{\numberline {3.3.2} DPOI Rewriting and Concurrency / DPOI 重写与并发性 }{29}{subsection.3.3.2}%
+\contentsline {paragraph}{Rules and Matches / 规则与匹配}{29}{paragraph*.33}%
+\contentsline {paragraph}{Gluing and Boundary Retention / 胶合与边界保留}{30}{paragraph*.34}%
+\contentsline {paragraph}{The Double-Pushout Witness / 双 pushout 见证}{31}{paragraph*.35}%
+\contentsline {paragraph}{Uniqueness of the DPO Result / DPO 结果的唯一性}{31}{paragraph*.36}%
+\contentsline {paragraph}{Parallel Independence / 并行独立性}{32}{paragraph*.37}%
+\contentsline {subsection}{\numberline {3.3.3} One Executable Occurrence and Three Concrete Views / 一个可执行事件及其三种具体表示 }{33}{subsection.3.3.3}%
+\contentsline {paragraph}{The Canonical DAG View / 规范 DAG 表示}{34}{paragraph*.38}%
+\contentsline {paragraph}{The Reconfigurable Petri View / 可重构 Petri 表示}{35}{paragraph*.39}%
+\contentsline {paragraph}{The Morphism View / Morphism 表示}{38}{paragraph*.40}%
+\contentsline {subsection}{\numberline {3.3.4} Whole-LTS Scope and Selected-Occurrence Semantics / 整 LTS 范围与选定事件语义 }{38}{subsection.3.3.4}%
+\contentsline {paragraph}{Whole-LTS Coverage / 整 LTS 覆盖}{38}{paragraph*.41}%
+\contentsline {paragraph}{Selected Petri Occurrence / 选定 Petri 事件}{40}{paragraph*.42}%
+\contentsline {subsection}{\numberline {3.3.5} Chapter Closure / 本章闭合 }{40}{subsection.3.3.5}%
+\contentsline {section}{\numberline {3.4} Complete Semantic Closure / 完整语义闭包 }{41}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1} Open-pi and Typed One-Step Semantics / Open-pi 与类型化单步语义 }{41}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2} P1b and P1c Protocol Semantics / P1b 与 P1c 协议语义 }{44}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3} Maximum-Compatible FMS Semantics / 最大相容 FMS 语义 }{47}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4} Feedback, Probability and Terminal Semantics / 反馈、概率与终态语义 }{50}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5} Final Dependent Closure / 最终依赖闭包 }{54}{subsection.3.4.5}%
+\contentsline {chapter}{\numberline {4}Semantic architecture and certificates / 语义架构与证书}{58}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Layers of the theory / 理论层次}{58}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Identified reconfiguration / 具备身份的重构}{58}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Projection consistency target / 投影一致性目标}{59}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Admission boundary / 准入边界}{59}{section.4.4}%
+\contentsline {chapter}{\numberline {5}Method, provenance, and reproducibility / 方法、溯源与可复现性}{60}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Evidence model / 证据模型}{60}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Rebuild protocol / 重建协议}{60}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Methodological exclusions / 方法上的排除项}{61}{section.5.3}%
+\contentsline {chapter}{\numberline {6}Mechanization and assurance / 机械验证与保障}{62}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Formal project surface / 形式化项目范围}{62}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Current recorded scale / 当前记录规模}{62}{section.6.2}%
+\contentsline {section}{\numberline {6.3}What the assurance gate means / 保障门的含义}{63}{section.6.3}%
+\contentsline {chapter}{\numberline {7}Evidence and conformance status / 证据与符合性状态}{64}{chapter.7}%
+\contentsline {section}{\numberline {7.1}How to read the status / 如何解读状态}{64}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Recorded theory evidence / 已记录的理论证据}{65}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Consistency is an event-level claim / 一致性是事件级声明}{65}{section.7.3}%
+\contentsline {section}{\numberline {7.4}No empirical scorecard / 不提供经验指标}{66}{section.7.4}%
+\contentsline {chapter}{\numberline {8}Governance, review, and theory risk / 治理、评审与理论风险}{67}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Governance boundary / 治理边界}{67}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Current risk register / 当前风险登记}{68}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Review decision / 评审决策}{68}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Responsible communication / 负责任的沟通}{68}{section.8.4}%
+\contentsline {chapter}{\numberline {9}Limitations and non-claims / 局限与非声明}{69}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Formal boundary / 形式边界}{69}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Operational limitations / 操作性局限}{70}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Interpretive limitations / 解释性局限}{70}{section.9.3}%
+\contentsline {chapter}{\numberline {10}Review gates and product path / 评审门与产品路径}{71}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Theory promotion path / 理论推进路径}{71}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Gate register / 门控登记}{72}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Change triggers / 变更触发条件}{72}{section.10.3}%
+\contentsline {chapter}{\numberline {11}Conclusion and next decisions / 结论与后续决策}{73}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Prioritized next work / 优先后续工作}{73}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Reader checklist / 读者检查表}{73}{section.11.2}%
+\contentsline {chapter}{\numberline {A}Reproducibility record / 可复现性记录}{74}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Evidence manifest / 证据清单}{74}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Verification interpretation / 验证含义}{74}{section.A.2}%
+\contentsline {chapter}{\numberline {B}Status glossary and responsibilities / 状态词汇与职责}{75}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Status glossary}{75}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Responsibility model}{75}{section.B.2}%
+\contentsline {chapter}{\numberline {C}Publication checklist and change log / 发布检查与变更记录}{76}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Publication checklist}{76}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Change log}{76}{section.C.2}%

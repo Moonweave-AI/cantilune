@@ -1,0 +1,17 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Cantilune's intended unified semantic object. The core specifies legal typed composition and identified rewriting; DAG, Petri, \(\pi \), and morphism are readings of that one object. Dashed cyan denotes the certificate obligation rather than a claim that every projection is automatically complete.}}{4}{figure.caption.9}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {8.1}{\ignorespaces Current pre-FCP theory risk register. R1: claim exceeds proved scope; R2: no independent review or FCP disposition; R3: product conformance remains uninstantiated; R4: source/evidence binding or toolchain verification becomes stale. Marker shape supplements color.}}{67}{figure.caption.47}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {10.1}{\ignorespaces Theory review path, not a product release plan. The current evidence binds a generic core to source and build evidence; independent review, FCP disposition, and concrete product conformance are subsequent and separate gates.}}{71}{figure.caption.50}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

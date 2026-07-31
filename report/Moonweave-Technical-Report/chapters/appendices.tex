@@ -1,0 +1,114 @@
+\MWChapter{Reproducibility record}{可复现性记录}
+\label{app:reproducibility}
+
+\section{Evidence manifest / 证据清单}
+
+\begin{table}[H]
+\centering
+\caption{Reproduction record for the current theory claim.}
+\begin{tabularx}{\textwidth}{@{}L{0.29\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Item} & \textbf{Recorded value} \\
+\midrule
+Repository & \url{\MWRepositoryURL} \\
+Branch & \texttt{\MWSourceBranch} \\
+Verified source \(S\) & \texttt{\MWCodeRevision} \\
+Evidence commit \(E\) & \texttt{\MWEvidenceCommit} \\
+Pointer record \(P\) & \texttt{0382b74074c546abe1bf3f37f3c03d7e4d2c3611} \\
+Normative prose & \texttt{docs/spec/formal-semantics.md}, RFC-0001, and RFC-0002 \\
+Proof manifest & \texttt{formal/proof-obligations.json} \\
+Integrity record & \texttt{formal/source-integrity.json} \\
+Toolchain and lock & \texttt{formal/lean-toolchain} and \texttt{formal/lake-manifest.json} \\
+Build gate & \texttt{lake build}; \texttt{formal/scripts/ci.ps1} \\
+Runtime / dataset & Not applicable: the current report has no released runtime, model, or empirical dataset \\
+Review state & \MWTheoryStatus \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Verification interpretation / 验证含义}
+
+The ordinary build reconstructs the pinned Lean project. The provenance-aware gate checks source
+integrity and binds a proof status to the manifest and durable evidence. Neither command provides
+an independent review. A future reviewer should validate both the mechanical evidence and the
+scope statement attached to each central theorem \citep{cantiluneFormalReadme,cantiluneManifest}.
+
+\MWChapter{Status glossary and responsibilities}{状态词汇与职责}
+\label{app:status}
+
+\section{Status glossary}
+
+\begin{table}[H]
+\centering
+\caption{Terms used consistently in this report.}
+\begin{tabularx}{\textwidth}{@{}L{0.23\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Term} & \textbf{Meaning in this report} \\
+\midrule
+Specified & Defined in normative prose; it may still await proof, review, or implementation \\
+Mechanized & Represented by a named Lean declaration in the formal project \\
+Proved & Bound by the recorded manifest to the verified source and build evidence \\
+Review-pending & No independent reviewer, FCP result, or ADR outcome has been recorded for the claim \\
+Product conformance & A concrete package supplies and validates the certificates required by its own rules and policies \\
+Runtime validation & Empirical and operational evidence for an implemented system; absent from this report \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Responsibility model}
+
+\begin{table}[H]
+\centering
+\caption{Roles derived from the current formal documentation.}
+\begin{tabularx}{\textwidth}{@{}L{0.27\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Role} & \textbf{Current responsibility} \\
+\midrule
+Owner / DRI & Joker-of-Gotham; owns the formal specification, evidence package, and stated scope \\
+Formal contributors & Maintain Lean declarations, manifests, integrity records, and explicit theorem boundaries \\
+Independent reviewers & Review category/DPO/Petri, \(\pi\)/domain, and Lean/provenance evidence independently of the DRI \\
+FCP / ADR decision makers & Record the human governance decision; this cannot be inferred from a successful build \\
+Future product owners & Instantiate package-specific rules, interfaces, policies, and conformance certificates \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\MWChapter{Publication checklist and change log}{发布检查与变更记录}
+\label{app:publication}
+
+\section{Publication checklist}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{0.08\textwidth}L{0.58\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Done} & \textbf{Check} & \textbf{Evidence} \\
+\midrule
+\(\square\) & Source branch, verified source, evidence commit, and pointer record match the cited artifacts & Document control and Appendix A \\
+\(\square\) & Every theorem-status claim carries its review-pending boundary where applicable & Chapters \ref{ch:infrastructure} and \ref{ch:evaluation} \\
+\(\square\) & No runtime, benchmark, safety-performance, or deployment claim appears without a matching artifact & Chapters \ref{ch:context} and \ref{ch:limitations} \\
+\(\square\) & Figures describe formal structure or review gates rather than fictional operational telemetry & Figures \ref{fig:architecture}, \ref{fig:risk-matrix}, and \ref{fig:release-timeline} \\
+\(\square\) & Independent review, FCP, ADR, and product status stay pending until recorded & Chapters \ref{ch:safety} and \ref{ch:deployment} \\
+\(\square\) & PDF build has no missing references, missing glyphs, or material overflow & Validation log \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Change log}
+
+\begin{table}[H]
+\centering
+\caption{Report history.}
+\begin{tabularx}{\textwidth}{@{}L{0.14\textwidth}L{0.16\textwidth}L{0.24\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Version} & \textbf{Date} & \textbf{Owner} & \textbf{Change} \\
+\midrule
+v0.1 & 2026-07-28 & Joker-of-Gotham (DRI) & Re-aligned report to the \texttt{codex/theory-foundation} branch, including formal scope, proof provenance, governance boundary, and non-claims \\
+\bottomrule
+\end{tabularx}
+\end{table}

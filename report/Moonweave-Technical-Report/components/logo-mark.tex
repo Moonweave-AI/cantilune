@@ -1,0 +1,25 @@
+\providecommand{\MWOntologyMark}[1][1]{%
+  \begin{tikzpicture}[scale=#1,line cap=round,line join=round,baseline=(current bounding box.center)]
+    \fill[MWNight,rounded corners=8pt] (-1.25,-1.25) rectangle (1.25,1.25);
+    \fill[MWNightElevated] (0,0) circle (0.87);
+    \draw[MWBrightCyan,line width=0.6pt] (0,0) circle (0.87);
+    \draw[MWBrightLilac,line width=0.45pt,dashed] (0,0) circle (0.59);
+    \draw[MWBrightCyan,line width=2.4pt]
+      (-0.72,-0.04) .. controls (-0.38,0.42) and (0.38,0.42) .. (0.72,-0.04);
+    \draw[MWBrightBlush,line width=2.4pt]
+      (-0.72,0.04) .. controls (-0.38,-0.42) and (0.38,-0.42) .. (0.72,0.04);
+    \draw[MWBrightMint,line width=1.8pt,opacity=0.9] (-0.48,0.48) -- (0.48,-0.48);
+    \draw[MWBrightCyan,line width=1.8pt,opacity=0.9] (0.48,0.48) -- (-0.48,-0.48);
+    \fill[MWBrightCyan] (-0.72,0) circle (0.09);
+    \fill[MWBrightCyan] (0.72,0) circle (0.09);
+    \fill[MWMoonMilk] (0,0.42) circle (0.09);
+    \fill[MWMoonMilk] (0,-0.42) circle (0.09);
+    \fill[MWBrightLilac] (-0.48,0.48) circle (0.09);
+    \fill[MWBrightLilac] (0.48,0.48) circle (0.09);
+    \fill[MWBrightMint] (-0.48,-0.48) circle (0.09);
+    \fill[MWBrightMint] (0.48,-0.48) circle (0.09);
+    \fill[MWNight] (0,0) circle (0.22);
+    \draw[MWMoonMilk,line width=0.7pt] (0,0) circle (0.22);
+    \draw[MWMoonMilk,line width=1.3pt] (-0.09,0)--(0.09,0) (0,-0.09)--(0,0.09);
+  \end{tikzpicture}%
+}

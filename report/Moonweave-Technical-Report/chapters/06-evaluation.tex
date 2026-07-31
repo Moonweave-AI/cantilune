@@ -1,0 +1,61 @@
+\MWChapter{Evidence and conformance status}{证据与符合性状态}
+\label{ch:evaluation}
+
+\section{How to read the status / 如何解读状态}
+
+The central evidence is a proof-obligation manifest, not a benchmark suite. “Proved” means the
+named obligation is bound to the recorded source and build evidence; “review-pending” means the
+corresponding independent review and governance decision have not been recorded. The two labels
+must appear together wherever the current core theory is summarized \citep{cantiluneClosure,cantiluneManifest}.
+
+\section{Recorded theory evidence / 已记录的理论证据}
+
+\begin{table}[H]
+\centering
+\caption{Current evidence statements and their deliberate boundaries.}
+\label{tab:headline-results}
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}L{0.23\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Surface} & \textbf{Recorded evidence} & \textbf{Not established by that evidence} \\
+\midrule
+Generic core theory & 18/18 central obligations recorded \emph{proved} against the verified source and evidence chain & Independent QA-L4 review, FCP result, or ADR acceptance \\
+P1a complete interface & A separate fixed-signature fourteen-event reference provides non-vacuity witnesses for supplied whole-LTS certificates & A certificate automatically generated for an arbitrary product rule family \\
+P1c operation layer & Fifteen normative native event families and a sixty-operation registry have recorded strong late-\(\pi\) representatives & A public session API, provider integration, or runtime interoperability guarantee \\
+D1-A boundary & Maximum-compatible D1-A closure records the selected lower-effect route and stated adequacy/full-abstraction scopes & A unified source-paper FMS model, unrestricted actual-Agent theorem, or reverse definability \\
+Feedback layer & Finite-height closure, terminal classification, replay, and conditional hitting statements are part of the theory record & A production monitoring system \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Consistency is an event-level claim / 一致性是事件级声明}
+
+For a recorded source change \(G\xrightarrow{e}G'\), the useful claim is not merely that four
+dashboards can display related information. It is that every supplied projection certificate
+relates the same event identity to a target step and preserves the declared observation boundary.
+This is why the repository separates source events, target derivations, replay, terminal classes,
+and product certificates \citep{cantiluneRFCTwo}.
+
+\begin{equation}
+  \operatorname{Replay}(G,e)=G'
+  \quad\text{and}\quad
+  \operatorname{Replay}\bigl(P_i(G),\Phi_i(e)\bigr)=P_i(G')
+  \label{eq:replay}
+\end{equation}
+
+Equation \cref{eq:replay} is a target relation whose exact equality and certificate premises are
+defined by the formal artifacts; it is not an assertion that every future implementation can
+replay arbitrary external side effects.
+
+\section{No empirical scorecard / 不提供经验指标}
+
+The earlier runtime-template bars, latency curves, success rates, and safety-suite counts have
+been removed from this report. They had no evidentiary relation to Cantilune's current formal
+source tree. A future empirical report must name a released artifact, population, metrics,
+baselines, raw evidence, and uncertainty before it can make performance or safety claims.
+
+\begin{MWInsight}
+Formal status and empirical status answer different questions. A kernel-checked theorem can
+establish a stated mathematical consequence without establishing speed, usability, robustness,
+or real-world safety; conversely, a benchmark cannot replace a missing semantic proof.
+\end{MWInsight}

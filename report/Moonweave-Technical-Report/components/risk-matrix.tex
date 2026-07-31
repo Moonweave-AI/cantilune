@@ -1,0 +1,35 @@
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1.18cm,y=0.82cm,font=\scriptsize\sffamily]
+  \foreach \x in {1,...,5}{
+    \foreach \y in {1,...,5}{
+      \pgfmathtruncatemacro{\r}{\x*\y}
+      \ifnum\r<6
+        \def\cellcolor{MWMint!18}
+      \else\ifnum\r<13
+        \def\cellcolor{MWAmber!20}
+      \else
+        \def\cellcolor{MWBlush!22}
+      \fi\fi
+      \fill[\cellcolor] (\x-0.5,\y-0.5) rectangle (\x+0.5,\y+0.5);
+      \draw[white,line width=1pt] (\x-0.5,\y-0.5) rectangle (\x+0.5,\y+0.5);
+    }
+  }
+  \draw[MWLine] (0.5,0.5) rectangle (5.5,5.5);
+  \foreach \x in {1,...,5}\node[below=3pt,text=MWMuted] at (\x,0.5) {\x};
+  \foreach \y in {1,...,5}\node[left=3pt,text=MWMuted] at (0.5,\y) {\y};
+  \node[below=15pt,font=\small\sffamily,text=MWMuted] at (3,0.5) {Likelihood / 可能性};
+  \node[rotate=90,above=16pt,font=\small\sffamily,text=MWMuted] at (0.5,3) {Impact / 影响};
+
+  \node[circle,fill=MWBlush,text=white,inner sep=2.4pt] at (4,5) {R1};
+  \node[diamond,fill=MWLilac,text=white,inner sep=2.7pt] at (4,4) {R2};
+  \node[rectangle,rounded corners=1pt,fill=MWAmber,text=white,inner sep=2.5pt] at (3,4) {R3};
+  \node[circle,draw=MWCyan,line width=1pt,fill=white,text=MWInk,inner sep=2.1pt] at (2,3) {R4};
+\end{tikzpicture}
+\caption{Current pre-FCP theory risk register. R1: claim exceeds proved scope; R2: no independent
+review or FCP disposition; R3: product conformance remains uninstantiated; R4: source/evidence
+binding or toolchain verification becomes stale. Marker shape supplements color.}
+\label{fig:risk-matrix}
+\MWSourceNote{Assessment derived from the current formal specification, proof manifest, and
+theory-closure delivery record \citep{cantiluneSpec,cantiluneManifest,cantiluneClosure}.}
+\end{figure}

@@ -1,0 +1,64 @@
+\MWChapter{Formal object and system overview}{形式对象与系统概览}
+\label{ch:overview}
+
+\section{The unified object / 统一形式对象}
+
+The proposed semantic target is
+\begin{equation}
+  \mathsf{CantiluneGraph}=(\mathcal C,\mathcal R),
+  \label{eq:cantilune-graph}
+\end{equation}
+where \(\mathcal C\) is a typed symmetric monoidal category describing legal sequential
+composition \((\circ)\), parallel composition \((\otimes)\), and symmetry; \(\mathcal R\) is a
+set of string-diagram rewriting rules describing identified changes to the collaboration
+structure \citep{cantiluneSpec,cantiluneRFCOne}. A rule name alone is insufficient to identify an
+execution: a concrete event includes the selected rule, match/redex, and derivation or
+fresh-allocation data needed for replay.
+
+\input{components/architecture-diagram}
+
+\section{Design invariants / 设计不变量}
+
+\begin{MWMetricGrid}
+  \MWMetricCard[MWCyan]{One}{Formal object}{Structure and evolution are not separate models}
+  \MWMetricCard[MWLilac]{Four}{Projection readings}{DAG, Petri, pi, and morphism views}
+  \MWMetricCard[MWMint]{One}{Event identity}{Rule, match, derivation, and replay provenance}
+\end{MWMetricGrid}
+
+\begin{enumerate}
+  \item \textbf{Composition is typed.} A wire connects compatible output and input ports; it is a
+    contract and a typing obligation, not an untyped arrow.
+  \item \textbf{Reconfiguration is explicit.} A topology, authority, or session change is proposed
+    as a rule application with stated admission conditions, rather than a hidden mutation.
+  \item \textbf{Views must earn agreement.} A non-identity projection requires a specified target
+    transition system, event lift, preservation/reflection evidence, and terminal-observation
+    conditions; monoidal structure alone is not enough.
+  \item \textbf{Model work is local to a node.} The architectural proposal is: the model proposes
+    within a node; the formal structure and declarative policy dispose between nodes
+    \citep{cantiluneRFCOne}.
+\end{enumerate}
+
+\section{The four readings / 四个读法}
+
+\begin{table}[H]
+\centering
+\caption{The four views are readings of the same intended object, not four product modules.}
+\label{tab:four-readings}
+\begin{tabularx}{\textwidth}{@{}L{0.20\textwidth}L{0.28\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{View} & \textbf{Question it answers} & \textbf{Formal obligation} \\
+\midrule
+DAG & What depends on what; what is runnable, blocked, or cyclic? & A certified observable transition reading for dependency progress \\
+Petri & Which individual token, quota, lock, budget, or approval is held? & Ordered-interface, provenance-preserving resource and firing semantics \\
+\(\pi\) & Which session exists; who delegated, accepted, rejected, or transferred control? & Typed/open process bridge and native late-\(\pi\) event correspondence \\
+Morphism & How do pieces compose, run in parallel, and admit refactoring? & Identity reading of the symmetric monoidal structure \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{MWCallout}[MWAmber]{Interpretation boundary}
+The diagram and table describe a formal target. They do not assert that an LLM, tool adapter,
+or production control plane has already implemented these readings. The specification itself
+excludes runtime, LLM, I/O, and tool/network integration from the pure formal core.
+\end{MWCallout}

@@ -1,0 +1,72 @@
+\MWChapter{Context, claims, and scope}{背景、声明与范围}
+\label{ch:context}
+
+\MWKicker{Why this report exists}
+Cantilune is a research project about an inspectable semantic substrate for orchestration. The
+repository explicitly describes it as pre-alpha: it is not yet a runtime, SDK, scheduler, or
+agent product \citep{cantiluneReadme}. This report therefore records a theory and evidence
+boundary rather than presenting product performance or a release recommendation.
+
+\section{Problem statement / 问题定义}
+
+When several agents, tools, people, services, permissions, sessions, and scarce resources share
+work, the hard questions are coordination questions: who owns a task, which authority or token is
+held, when a handoff is valid, and how a change can be replayed. Cantilune proposes that these
+questions should be visible in one evolving formal object instead of being implicit in prompts,
+callbacks, and mutable application state \citep{cantiluneReadme,cantiluneRFCOne}.
+
+\begin{MWInsight}
+The unit of accountability is not an LLM response. It is an identified reconfiguration event with
+its rule, match, derivation data, projection counterparts, and provenance. Whether a future
+runtime can produce such events is a separate product-conformance question.
+\end{MWInsight}
+
+\section{Scope and non-goals / 范围与非目标}
+
+\begin{table}[H]
+\centering
+\caption{Scope fixed by the current branch. “Planned” is deliberately not reported as shipped.}
+\label{tab:scope}
+\begin{tabularx}{\textwidth}{@{}L{0.22\textwidth}YY@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Dimension} & \textbf{In scope / 范围内} & \textbf{Out of scope / 范围外} \\
+\midrule
+Formal core & Typed composition, string-diagram rewriting, event identity, and projection-certificate interfaces & A deployed scheduler or service implementation \\
+Mechanization & Lean 4 source, proof manifest, source integrity, and commit-bound build evidence & Independent mathematical review or governance approval \\
+Reference witnesses & Fixed-signature and normative-family reference executions used to show interfaces are nonempty & Product-specific rules, policies, schemas, or runtime adapters \\
+Interoperability & Intended boundaries for agents, tools, people, MCP/A2A services, and external systems & A claim of live protocol compatibility or provider feature parity \\
+Evaluation & Formal proof status and artifact provenance & Latency, cost, benchmark, reliability, or safety-performance claims \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Claim taxonomy / 声明分类}
+
+Every statement in this report belongs to one of the following classes. The classification avoids
+turning a mechanized interface into a claim about a future product.
+
+\begin{table}[H]
+\centering
+\caption{Evidence classes used throughout this report.}
+\label{tab:claim-taxonomy}
+\begin{tabularx}{\textwidth}{@{}L{0.19\textwidth}L{0.28\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Class} & \textbf{Example} & \textbf{Minimum evidence} \\
+\midrule
+Specified & \(\mathsf{CantiluneGraph}=(\mathcal C,\mathcal R)\) is the proposed formal object & Normative specification and linked RFC \\
+Mechanized & A named theorem has a Lean declaration & Source path, declaration name, and manifest entry \\
+Evidence-bound & A theorem is reported \emph{proved} & Verified source commit, build evidence, and integrity record \\
+Review-pending & The core is ready for independent review & Explicit absence of independent reviewer, FCP, or ADR decision \\
+Deferred & A production package must supply its own conformance certificate & Product rule family, policy, and reviewed evidence \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Success criterion for this report / 本报告的成功条件}
+
+The report is successful only if a reader can separate three statements: what is formally
+specified, what has a commit-bound kernel-checked record, and what remains to be independently
+reviewed or instantiated. It does not use aggregate task success, service-level objectives, or
+deployment readiness as substitutes for those distinctions.

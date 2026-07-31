@@ -1,0 +1,82 @@
+\input{components/logo-mark}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[MWNight] (current page.south west) rectangle (current page.north east);
+
+  % Restrained grid: present enough to establish structure without competing with the title.
+  \foreach \x in {0.10,0.28,0.46,0.64,0.82,1.00}
+    \draw[MWNightSoft!78!MWNight,line width=0.25pt]
+      ($(current page.south west)!\x!(current page.south east)$) --
+      ($(current page.north west)!\x!(current page.north east)$);
+  \foreach \y in {0.08,0.25,0.42,0.59,0.76,0.93}
+    \draw[MWNightSoft!78!MWNight,line width=0.25pt]
+      ($(current page.south west)!\y!(current page.north west)$) --
+      ($(current page.south east)!\y!(current page.north east)$);
+
+  % A single orbital mark replaces the competing, full-page flowing paths.
+  \coordinate (mworbit) at ($(current page.north east)+(-43mm,-55mm)$);
+  \fill[MWNightElevated] (mworbit) circle (34mm);
+  \draw[MWBrightLilac,opacity=0.42,line width=0.7pt]
+    (mworbit) circle (26mm);
+  \draw[MWBrightCyan,opacity=0.60,line width=1.0pt]
+    ($(mworbit)+(128:26mm)$) arc[start angle=128,end angle=324,radius=26mm];
+  \draw[MWBrightMint,opacity=0.52,line width=0.65pt]
+    ($(mworbit)+(38:18mm)$) arc[start angle=38,end angle=242,radius=18mm];
+  \fill[MWBrightCyan] ($(mworbit)+(128:26mm)$) circle (1.45pt);
+  \fill[MWBrightMint] ($(mworbit)+(242:18mm)$) circle (1.25pt);
+  \fill[MWBrightLilac] (mworbit) circle (2.1pt);
+\end{tikzpicture}
+
+\color{MWMoonMilk}
+\vspace*{3mm}
+
+\noindent
+\begin{minipage}[c]{0.12\textwidth}
+  \MWOntologyMark[0.22]
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.82\textwidth}
+  {\small\bfseries\sffamily\MakeUppercase{\MWOrganization}}\par
+  \vspace{0.2em}
+  {\MWMono\scriptsize\color{MWDarkMuted}RESEARCH \(\cdot\) ENGINEERING \(\cdot\) GOVERNANCE}
+\end{minipage}
+
+\vfill
+
+\begin{minipage}{0.79\textwidth}
+  \raggedright
+  {\MWMono\scriptsize\bfseries\color{MWBrightCyan}\MakeUppercase{\MWReportType}}\par
+  \vspace{5mm}
+  {\fontsize{34}{39}\selectfont\bfseries\MWDisplayText{\MWReportTitleEN}\par}
+  \vspace{3mm}
+  {\fontsize{21}{26}\selectfont\MWCJKDisplayText{\MWReportTitleCN}\par}
+  \vspace{5mm}
+  {\large\color{MWDarkMuted}\MWReportSubtitle\par}
+\end{minipage}
+
+\vfill
+
+% Fixed label columns keep every metadata value on the same visual baseline.
+\newcommand{\MWCoverMetaPair}[2]{%
+  \noindent
+  \makebox[25mm][l]{\color{MWDarkMuted}\MWMono\scriptsize\strut #1}%
+  \hspace{3mm}{\color{MWMoonMilk}\bfseries\sffamily\strut #2}\par%
+}
+
+\noindent
+\begin{minipage}[t]{0.47\textwidth}
+  \MWCoverMetaPair{PROJECT}{\MWProjectName}\par\vspace{3.5mm}
+  \MWCoverMetaPair{STATUS}{\MWStatusBadge{\MWCoverStatus}}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\textwidth}
+  \MWCoverMetaPair{VERSION}{\MWReportVersion}\par\vspace{3.5mm}
+  \MWCoverMetaPair{PUBLISHED}{\MWPublishedDate}
+\end{minipage}
+
+\vspace*{8mm}
+{\footnotesize\color{MWDarkMuted}
+  Evidence-bearing document \(\cdot\) Formal claims, source, evidence, scope, and review status are versioned.
+}
+\end{titlepage}

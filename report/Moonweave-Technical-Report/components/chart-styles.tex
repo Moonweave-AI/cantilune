@@ -1,0 +1,32 @@
+\pgfplotsset{
+  moonweave axis/.style={
+    width=\linewidth,
+    height=0.56\linewidth,
+    axis line style={draw=MWLine},
+    tick style={draw=MWLine},
+    grid=major,
+    major grid style={draw=MWLine!55,line width=0.25pt},
+    minor grid style={draw=MWLine!30,line width=0.2pt},
+    label style={font=\small\sffamily,color=MWMuted},
+    tick label style={font=\footnotesize\sffamily,color=MWMuted},
+    legend style={
+      draw=none,
+      fill=none,
+      font=\footnotesize\sffamily,
+      text=MWMuted,
+      cells={anchor=west}
+    },
+    title style={font=\small\bfseries\sffamily,color=MWInk},
+    every axis plot/.append style={line width=1.35pt},
+    clip marker paths=true
+  },
+  moonweave bars/.style={
+    moonweave axis,
+    ybar,
+    bar width=10pt,
+    enlarge x limits=0.18,
+    nodes near coords,
+    nodes near coords style={font=\scriptsize\sffamily,color=MWMuted,/pgf/number format/fixed,/pgf/number format/precision=1}
+  }
+}
+

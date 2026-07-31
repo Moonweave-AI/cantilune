@@ -1,0 +1,59 @@
+\MWChapter{Mechanization and assurance}{机械验证与保障}
+\label{ch:infrastructure}
+
+\section{Formal project surface / 形式化项目范围}
+
+The repository's \texttt{formal/} directory is a single Lean 4 proof project. Its lock file pins
+Lean and mathlib, while the proof manifest connects central declarations to source integrity,
+build evidence, and review metadata. The project gate rejects unknown kernel dependencies and
+does not permit project theorems to rely on \texttt{sorry}, \texttt{admit}, project-defined axioms,
+or \texttt{unsafe} declarations \citep{cantiluneFormalReadme}.
+
+\begin{table}[H]
+\centering
+\caption{Mechanized assurance surfaces relevant to the theory report.}
+\label{tab:infra}
+\begin{tabularx}{\textwidth}{@{}L{0.25\textwidth}L{0.29\textwidth}Y@{}}
+\toprule
+\rowcolor{MWSoft!70}
+\textbf{Surface} & \textbf{Recorded artifact} & \textbf{Assurance purpose} \\
+\midrule
+Theory source & Cantilune Lean source tree & Defines the mechanized categorical, rewriting, \(\pi\), feedback, and closure objects \\
+Toolchain lock & Pinned Lean toolchain and resolved dependency lock & Makes the declared Lean and mathlib dependency state reconstructible \\
+Proof manifest & Machine-readable central-obligation manifest & Names central obligations, Lean symbols, status, commits, and review fields \\
+Source integrity & Source-integrity digest & Detects evidence/source mismatch before a proved claim is accepted \\
+Build evidence & Durable QA build record & Preserves a durable audit trail rather than relying on a transient local cache \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Current recorded scale / 当前记录规模}
+
+The branch README reports 565 maintained Lean source files, 1,624 audited declarations, and
+18/18 central proof obligations recorded as \emph{proved}; these values describe the repository
+evidence record, not a benchmark or a product reliability metric \citep{cantiluneReadme,cantiluneManifest}.
+
+\begin{MWMetricGrid}
+  \MWMetricCard[MWCyan]{565}{Maintained source files}{Lean source count in the branch record}
+  \MWMetricCard[MWLilac]{1,624}{Audited declarations}{Recorded kernel-audit surface}
+  \MWMetricCard[MWMint]{18 / 18}{Central obligations}{Manifest status: proved}
+\end{MWMetricGrid}
+
+\section{What the assurance gate means / 保障门的含义}
+
+\begin{enumerate}
+  \item \textbf{Kernel checking} establishes that the named Lean declarations elaborate under the
+    pinned environment and the project gate's dependency restrictions.
+  \item \textbf{Provenance binding} establishes that a status refers to a specific source and
+    evidence record rather than an unpinned working tree.
+  \item \textbf{Independent review} is not supplied by either of the first two steps. The manifest
+    and delivery record retain explicit pending fields for reviewer and conflict-of-interest data.
+  \item \textbf{Product conformance} is a later obligation: a concrete package must supply its
+    own rule, projection, admission, resource, authorization, fairness, and replay certificates.
+\end{enumerate}
+
+\begin{MWCallout}[MWAmber]{No operational service claim}
+This section concerns the integrity of formal artifacts. It is not infrastructure evidence for
+availability, throughput, data protection, tool execution, or operational incident response,
+because no such runtime is in scope for the current branch.
+\end{MWCallout}
