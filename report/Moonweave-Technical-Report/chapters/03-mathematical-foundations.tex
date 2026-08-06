@@ -1,14 +1,13 @@
 \MWChapter{Mathematical foundations and theoretical argument}{数学基础与理论论证}
 \label{ch:mathematical-foundations}
 
-\MWKicker{Proof-theoretic reconstruction / 证明论重构}
-本章从协调世界的顶层接口出发，将 Cantilune 的形式理论重构为一个闭合的
-“变量--可接受性公理--定理--理论--结论”体系。正文中的每个符号均在首次使用前
-给出类型，每项结论均注明其成立所需的前提；经典数学来源、本文新增结构与机械证明
-证据彼此分开，从而不再以工程阶段、计划代号或代码文件名代替数学论证。
+\MWKicker{Abstract / 摘要}
+
+本章建立 Cantilune 关于 Agent Orchestration 的完整数学理论。首先，协调系统被建模为一个由签名约束、通过协调事件不断改变的协调世界，从而明确整个理论所处理的状态、事件与规则；随后引入协调语义，规定这些事件如何成为合法、可观察且可重放的真实执行；在此基础上，同一次协调发生被分别投影到 DAG、Petri、$\pi$ 与态射四个观测域，以解释其对依赖结构、资源流动、交互行为和组合形式的不同影响；进一步通过路径保持、反向解释、终态一致、签名重索引与发生身份保持，证明这些观测在不同执行阶段和不同 epoch 中仍然描述同一条协调历史；最后，利用有限高度证据序和由原生事件支撑的有限 Markov kernel，证明协调执行在明确的稳定窗口、公平性与正进展条件下几乎必然进入并永久保持在稳定区域。由此，本章形成一条从协调世界的构造、协调变化的发生、多维语义的解释和一致性，到长期反馈稳定化的完整数学闭环。
 
 % === Top-level Modeling / 顶层建模 ===
-\section{Top-level Modeling / 顶层建模}
+
+\section{The Coordination World: States, Events, and Rules / 协调世界：状态、事件与规则}
 
 本节给出 Cantilune 对 Agent Orchestration 的顶层数学建模。其将协作理解为一个具有明确结构、资源归属、证据与策略状态的协调世界。该世界在每一时刻表现为配置$X_i\in\operatorname{Config}(\Sigma)$，并通过可识别、可审计且可重放的协调事件$e$ 演化为后继配置 $X_{i+1}$。为说明何种协作结构能够被构造、何种结构变化能够发生，本节进一步从签名 $\Sigma$ 引入协调演算$\mathsf{Calc}_{\Sigma}=(\mathcal C_{\Sigma},\mathcal R_{\Sigma})$：其中 $\mathcal C_{\Sigma}$ 给出类型正确的静态协作结构语言，$\mathcal R_{\Sigma}$ 给出其允许的重写动力学。由此，状态、事件、结构与演化被置于同一形式框架中，并为后续的 DPO 重写、四投影、replay 与终态分析建立共同的数学起点。
 
@@ -19,41 +18,41 @@ Agent Orchestration 通常被建模为多个 agent 之间互相通信，但是�
 因此，Cantilune 将 Agent Orchestration 建模为“一个不断被合法改变的协作世界”。该世界每时刻都具有一个状态，被定义为“协调世界状态（$X$）”。在给定当前签名 $\Sigma$ 时，$X$ 是一个合法运行时配置：
 
 \begin{equation}
-\boxed{X\in\operatorname{Config}(\Sigma).
-}\label{eq:coordinating-world-state}
+  \boxed{X\in\operatorname{Config}(\Sigma).
+  }\label{eq:coordinating-world-state}
 \end{equation}
 
 它包含当前状态下的参与者、工作对象、工作关系、稀缺资源、收集到的证据、适用策略等等。该状态会不断发生变化，变化由事件产生，该事件被定义为“协调事件（$e$）”。因此，整个 orchestration 的过程可以被定义为：
 
 \begin{equation}
-\boxed{X\xrightarrow{e}X'}.
-\label{eq:coordinating-world-state-and-events}
+  \boxed{X\xrightarrow{e}X'}.
+  \label{eq:coordinating-world-state-and-events}
 \end{equation}
 
 \begin{MWCallout}[MWCyan]{Example / 案例}
-让 planner 将任务 $T$ 委派给 coder，它是一个事件
-$e_{\mathrm{delegate}}$，使世界从 $X$ 变成 $X'$。在 $X$ 中，
-任务 $T$ 由 planner 负责；在 $X'$ 中，任务 $T$ 由 coder
-负责或由 coder 执行。
+  让 planner 将任务 $T$ 委派给 coder，它是一个事件
+  $e_{\mathrm{delegate}}$，使世界从 $X$ 变成 $X'$。在 $X$ 中，
+  任务 $T$ 由 planner 负责；在 $X'$ 中，任务 $T$ 由 coder
+  负责或由 coder 执行。
 
-若任务需要唯一写权限，则该权限从 planner 转移给 coder；
-planner 与 coder 之间可能产生一个新的私有会话；reviewer 的依赖
-状态变成“等待 coder 的候选结果”；事件记录里保留任务 $T$、
-双方身份、权限 token、会话名和授权证据。
+  若任务需要唯一写权限，则该权限从 planner 转移给 coder；
+  planner 与 coder 之间可能产生一个新的私有会话；reviewer 的依赖
+  状态变成“等待 coder 的候选结果”；事件记录里保留任务 $T$、
+  双方身份、权限 token、会话名和授权证据。
 \end{MWCallout}
 
 这就是 Cantilune 的顶层建模：\textbf{orchestration 是对协作世界的受约束、可识别、可重放的状态变换。}
 
-\subsubsection{ Composition of Coordinative World / 协调世界的构成}
+\subsection{ Composition of Coordinative World / 协调世界的构成}
 
 我们用 $\Sigma$ 定义协调世界中允许出现的类型，作为“协作语言与类型合同”，公式表示为：
 
 \begin{equation}
-\boxed{\Sigma
-=
-(\mathsf{Obj},\mathsf{Gen},
-\operatorname{in},\operatorname{out},
-\mathsf{mode},\mathsf{contract})}\label{eq:definition-of-sigma}
+  \boxed{\Sigma
+    =
+    (\mathsf{Obj},\mathsf{Gen},
+      \operatorname{in},\operatorname{out},
+  \mathsf{mode},\mathsf{contract})}\label{eq:definition-of-sigma}
 \end{equation}
 
 其中：
@@ -66,1703 +65,1792 @@ planner 与 coder 之间可能产生一个新的私有会话；reviewer 的依�
   \item $\mathsf{mode}$：是签名中每种类型的结构使用方式，即该类型的值能否被复制、能否被丢弃,回答的不是“端口是输入还是输出”，而是一份这种类型的东西，是否能被复制，是否能被不用就扔掉。
 \end{enumerate}
 
+\begin{MWCallout}[MWCyan]{Static Coordination Calculus and Rewrite Foundations / 静态协调演算与重写基础}
+  定义：
+
+  \begin{equation}
+    \mathsf{Calc}_{\Sigma}=(\mathcal C_{\Sigma},\mathcal R_{\Sigma})
+    \label{eq:definition-of-calc}
+  \end{equation}
+
+  其中 $\mathcal C_{\Sigma}$ 表示在签名 $\Sigma$ 下所有合法组合结构， $\mathcal R_{\Sigma}$ 表示允许改变这些结构的协调规则。
+
+  更具体的，$\mathcal C_{\Sigma}$ 表示在签名 $\Sigma$ 被表示为：
+
+  \begin{equation}
+    \mathcal C_{\Sigma}=\text{FreeSMC}(\Sigma)/\equiv_\Sigma
+    \label{eq:definition-of-static-composition-category}
+  \end{equation}
+
+  自由 SMC 提供组合语义，表示所有“不违反组合规则”的结构；$\equiv_\Sigma$ 则表示取商，即因为 FreeSMC 生成的东西太多，所以通过取商把等价结构合并。
+
+  协调规则进一步表示为：
+
+  \begin{equation}
+  \boxed{r\in\mathcal R_\Sigma, r=(L \leftarrow K \rightarrow R)
+  }
+  \label{eq:coordinate-rules}
+  \end{equation}
+
+  其中 $L$ 表示匹配前结构，$K$ 表示接口保持部分，$R$ 表示替换后结构。该式表示什么被找到、什么被保留、什么被替换，从而保证了信息在变化过程中不会丢失。
+
+  另外有三个性质，同样为后面的“状态”和“事件”提供生成基础：
+
+  \paragraph{Free SMC 泛性质} 令 $F_{\Sigma}:\Sigma\rightarrow\mathcal C_{\Sigma}$ 为签名到自由对称幺半范畴的规范嵌入。对于任意对称幺半范畴 $\mathcal D$ 及签名解释 $f:\Sigma\rightarrow\mathcal D$，存在一个强对称幺半函子 $\bar f:\mathcal C_{\Sigma}\rightarrow\mathcal D$，使 $\bar f\circ F_{\Sigma}\cong f$；该函子在相干幺半自然同构意义下唯一。这表明，一旦基本组件的解释被确定，复杂组合结构的解释便由其组合规律确定，而不能任意指定。
+
+  \paragraph{DPO 结果唯一性} 如果 $X \xRightarrow r Y_1$ 以及 $X \xRightarrow r Y_2$，则 $Y_1\cong Y_2$，这表示同一个协调规则、同一个匹配，不会产生两个语义冲突结果。
+
+  \paragraph{并发交换} 若 $r_1\parallel r_2$ 满足独立性 $Independent(r_1,r_2)$，则$ X \xRightarrow{r_1} X_1 \xRightarrow{r_2} Y$，且  $X \xRightarrow{r_2} X_2 \xRightarrow{r_1} Y'$，则满足 $Y\cong Y'$，这表示多个协调事件可以并行执行，并行执行的事件互不影响。
+\end{MWCallout}
+
 进一步的，我们定义 $\operatorname{Config}(\Sigma)$：
 
 \begin{equation}
-\boxed{
-\begin{aligned}
-\operatorname{Config}(\Sigma)
-:=
-\Bigl\{
-&
-(v,V,E,\ell,D,U,N,
-o_D,o_U,o_N,O,\pi,Z)
-\ \Bigm|\
-\\
-&
-v\in\mathbb N,V\in\mathcal P_{\mathrm{fin}}(\mathsf{NodeId}),E\in
-\mathcal P_{\mathrm{fin}}
-(\mathsf{NodeId}\times\mathsf{NodeId}),
-\\
-&
-\ell\in
-\bigl(
-\mathsf{NodeId}
-\rightharpoonup
-\operatorname{Gen}(\Sigma)
-\bigr),D\in\mathcal P_{\mathrm{fin}}(\mathsf{DataId}),
-\\
-&
-U\in\mathcal P_{\mathrm{fin}}(\mathsf{ResourceId}),N\in\mathcal P_{\mathrm{fin}}(\mathsf{NameId}),
-\\
-&
-o_D\in
-\bigl(
-\mathsf{DataId}
-\rightharpoonup
-\mathsf{NodeId}
-\bigr),
-\\
-&
-o_U\in
-\bigl(
-\mathsf{ResourceId}
-\rightharpoonup
-\mathsf{NodeId}
-\bigr),
-\\
-&
-o_N\in
-\bigl(
-\mathsf{NameId}
-\rightharpoonup
-\mathsf{NodeId}
-\bigr),
-\\
-&
-O\in\mathsf{Observation}^{*},
-\qquad
-\pi\in\mathsf{PolicyState},
-\\
-&
-Z\in\mathcal P_{\mathrm{fin}}(\mathsf{TombstoneId})
-\Bigr\}.
-\end{aligned}}\label{eq:definition-of-config-sigma}
+  \boxed{
+    \begin{aligned}
+      \operatorname{Config}(\Sigma)
+      :=
+      \Bigl\{
+        &
+        (v,V,E,\ell,D,U,N,
+        o_D,o_U,o_N,O,\pi,Z)
+        \ \Bigm|\
+        \\
+        &
+        v\in\mathbb N,V\in\mathcal P_{\mathrm{fin}}(\mathsf{NodeId}),E\in
+        \mathcal P_{\mathrm{fin}}
+        (\mathsf{NodeId}\times\mathsf{NodeId}),
+        \\
+        &
+        \ell\in
+        \bigl(
+          \mathsf{NodeId}
+          \rightharpoonup
+          \operatorname{Gen}(\Sigma)
+        \bigr),D\in\mathcal P_{\mathrm{fin}}(\mathsf{DataId}),
+        \\
+        &
+        U\in\mathcal P_{\mathrm{fin}}(\mathsf{ResourceId}),N\in\mathcal P_{\mathrm{fin}}(\mathsf{NameId}),
+        \\
+        &
+        o_D\in
+        \bigl(
+          \mathsf{DataId}
+          \rightharpoonup
+          \mathsf{NodeId}
+        \bigr),
+        \\
+        &
+        o_U\in
+        \bigl(
+          \mathsf{ResourceId}
+          \rightharpoonup
+          \mathsf{NodeId}
+        \bigr),
+        \\
+        &
+        o_N\in
+        \bigl(
+          \mathsf{NameId}
+          \rightharpoonup
+          \mathsf{NodeId}
+        \bigr),
+        \\
+        &
+        O\in\mathsf{Observation}^{*},
+        \qquad
+        \pi\in\mathsf{PolicyState},
+        \\
+        &
+        Z\in\mathcal P_{\mathrm{fin}}(\mathsf{TombstoneId})
+      \Bigr\}.
+  \end{aligned}}\label{eq:definition-of-config-sigma}
 \end{equation}
 
 进而 $X$ 可以表示为：
 
 \begin{equation}
-\boxed{X=
-(v,V,E,\ell,D,U,N,
-o_D,o_U,o_N,O,\pi,Z) \in \operatorname{Config}(\Sigma) }\label{eq:definition-of-x-detail}
+  \boxed{X=
+    (v,V,E,\ell,D,U,N,
+  o_D,o_U,o_N,O,\pi,Z) \in \operatorname{Config}(\Sigma) }\label{eq:definition-of-x-detail}
 \end{equation}
 
 \begin{longtblr}[
-  caption = {协调世界配置的字段说明。},
-  label = {tab:config-sigma-fields},
-]{
-  width = \textwidth,
-  colspec = {Q[l,wd=0.075\textwidth] Q[l,wd=0.225\textwidth] Q[l,wd=0.25\textwidth] X[l]},
-  rowhead = 1,
-  row{1} = {bg=MWSoft!70,font=\bfseries},
-  colsep = 4pt,
-  rowsep = 2.5pt,
-  cells = {font = \scriptsize},
-}
-\toprule
-字段 & 类型 & 形式含义 & 在 Agent Orchestration 中的含义 \\
-\midrule
-\(v\) & \(\mathbb N\) & 配置记录的签名版本 & 当前世界所属的版本或 epoch 标识。它用于审计与 replay；它不是签名 \(\Sigma\) 本身。 \\
-\(V\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{NodeId})\) & 活跃节点的有限集合 & 当前存在的 Agent、任务、工具调用、产物处理节点、审核节点等实例。 \\
-\(E\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{NodeId}\times\mathsf{NodeId})\) & 活跃节点间的有限有向边集合 & 当前的依赖、控制、数据流或协作关系。例如“Reviewer 等待 Coder 的候选结果”。 \\
-\(\ell\) & \(\mathsf{NodeId}\rightharpoonup\operatorname{Gen}(\Sigma)\) & 从节点标识到签名生成元的部分标注 & 指出某个节点在当前运行中是什么合法操作实例，例如 Planner、Coder、\texttt{delegate}、\texttt{review} 或 \texttt{createSession}。 \\
-\(D\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{DataId})\) & 活跃数据 token 的有限集合 & 任务描述、计划、候选产物、测试结果、审核结论等可传递或可消费的工作对象。 \\
-\(U\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{ResourceId})\) & 活跃资源 token 的有限集合 & 不可随意复制的写权限、预算、配额、独占工具槽、锁等线性能力。 \\
-\(N\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{NameId})\) & 活跃名字或会话的有限集合 & 私有 channel、任务 session、临时关联标识、可被传递的通信端点。 \\
-\(o_D\) & \(\mathsf{DataId}\rightharpoonup\mathsf{NodeId}\) & 数据 token 的归属映射 & 哪个活跃节点当前负责、持有或有权提交某份产物。 \\
-\(o_U\) & \(\mathsf{ResourceId}\rightharpoonup\mathsf{NodeId}\) & 资源 token 的归属映射 & 谁当前持有唯一写权限、预算或独占执行资格。它保证资源转移不是悄悄复制。 \\
-\(o_N\) & \(\mathsf{NameId}\rightharpoonup\mathsf{NodeId}\) & 名字或会话的归属映射 & 哪个节点当前控制、创建或负责关闭某个私有会话。 \\
-\(O\) & \(\mathsf{Observation}^{*}\) & 外部观察构成的有限序列 & 人类批准、评审意见、工具回执、环境输入、投票等。使用序列而非集合，因此发生顺序保留。 \\
-\(\pi\) & \(\mathsf{PolicyState}\) & 策略状态 & 当前授权模式、投票或 quorum 进度、重试策略、反馈聚合、epoch 内排名信息等。 \\
-\(Z\) & \(\mathcal P_{\mathrm{fin}}(\mathsf{TombstoneId})\) & 已删除实体的墓碑集合 & 被删除的节点、资源或会话不会从审计历史中“失忆”；墓碑支持 trace 对账与 replay。 \\
-\bottomrule
+    caption = {协调世界配置的字段说明。},
+    label = {tab:config-sigma-fields},
+  ]{
+    width = \textwidth,
+    colspec = {Q[l,wd=0.075\textwidth] Q[l,wd=0.225\textwidth] Q[l,wd=0.25\textwidth] X[l]},
+    rowhead = 1,
+    row{1} = {bg=MWSoft!70,font=\bfseries},
+    colsep = 4pt,
+    rowsep = 2.5pt,
+    cells = {font = \scriptsize},
+  }
+  \toprule
+  字段 & 类型 & 形式含义 & 在 Agent Orchestration 中的含义 \\
+  \midrule
+  $v$ & $\mathbb N$ & 配置记录的签名版本 & 当前世界所属的版本或 epoch 标识。它用于审计与 replay；它不是签名 $\Sigma$ 本身。 \\
+  $V$ & $\mathcal P_{\mathrm{fin}}(\mathsf{NodeId})$ & 活跃节点的有限集合 & 当前存在的 Agent、任务、工具调用、产物处理节点、审核节点等实例。 \\
+  $E$ & $\mathcal P_{\mathrm{fin}}(\mathsf{NodeId}\times\mathsf{NodeId})$ & 活跃节点间的有限有向边集合 & 当前的依赖、控制、数据流或协作关系。例如“Reviewer 等待 Coder 的候选结果”。 \\
+  $\ell$ & $\mathsf{NodeId}\rightharpoonup\operatorname{Gen}(\Sigma)$ & 从节点标识到签名生成元的部分标注 & 指出某个节点在当前运行中是什么合法操作实例，例如 Planner、Coder、\texttt{delegate}、\texttt{review} 或 \texttt{createSession}。 \\
+  $D$ & $\mathcal P_{\mathrm{fin}}(\mathsf{DataId})$ & 活跃数据 token 的有限集合 & 任务描述、计划、候选产物、测试结果、审核结论等可传递或可消费的工作对象。 \\
+  $U$ & $\mathcal P_{\mathrm{fin}}(\mathsf{ResourceId})$ & 活跃资源 token 的有限集合 & 不可随意复制的写权限、预算、配额、独占工具槽、锁等线性能力。 \\
+  $N$ & $\mathcal P_{\mathrm{fin}}(\mathsf{NameId})$ & 活跃名字或会话的有限集合 & 私有 channel、任务 session、临时关联标识、可被传递的通信端点。 \\
+  $o_D$ & $\mathsf{DataId}\rightharpoonup\mathsf{NodeId}$ & 数据 token 的归属映射 & 哪个活跃节点当前负责、持有或有权提交某份产物。 \\
+  $o_U$ & $\mathsf{ResourceId}\rightharpoonup\mathsf{NodeId}$ & 资源 token 的归属映射 & 谁当前持有唯一写权限、预算或独占执行资格。它保证资源转移不是悄悄复制。 \\
+  $o_N$ & $\mathsf{NameId}\rightharpoonup\mathsf{NodeId}$ & 名字或会话的归属映射 & 哪个节点当前控制、创建或负责关闭某个私有会话。 \\
+  $O$ & $\mathsf{Observation}^{*}$ & 外部观察构成的有限序列 & 人类批准、评审意见、工具回执、环境输入、投票等。使用序列而非集合，因此发生顺序保留。 \\
+  $\pi$ & $\mathsf{PolicyState}$ & 策略状态 & 当前授权模式、投票或 quorum 进度、重试策略、反馈聚合、epoch 内排名信息等。 \\
+  $Z$ & $\mathcal P_{\mathrm{fin}}(\mathsf{TombstoneId})$ & 已删除实体的墓碑集合 & 被删除的节点、资源或会话不会从审计历史中“失忆”；墓碑支持 trace 对账与 replay。 \\
+  \bottomrule
 \end{longtblr}
 
-\subsubsection{Composition of Coordinative Events / 协调事件的构成}
+\subsection{Composition of Coordinative Events / 协调事件的构成}
 
 与协调世界类似，我们也可以用一组变量来定义协调事件：
 
 \begin{equation}
-\boxed{e=
-(v,\rho,X,X',m,\kappa,\nu,\alpha,\omega,k).}\label{eq:definition-of-e-detail}
+  \boxed{e=
+  (v,\rho,X,X',m,\kappa,\nu,\alpha,\omega,k).}\label{eq:definition-of-e-detail}
 \end{equation}
 
 \begin{longtblr}[
-  caption = {协调事件的字段说明。},
-  label = {tab:coordinative-event-fields},
-]{
-  width = \textwidth,
-  colspec = {Q[l,wd=0.13\textwidth] X[l]},
-  rowhead = 1,
-  row{1} = {bg=MWSoft!70,font=\bfseries},
-  colsep = 4pt,
-  rowsep = 2.5pt,
-  cells = {font = \scriptsize},
-}
-\toprule
-字段 & 回答的问题 \\
-\midrule
-\(v\) & 此次事件发生在哪个版本或 epoch？ \\
-\(\rho\) & 使用了哪条规则？例如委派。 \\
-\(X\) & 事件发生前，世界是什么状态？ \\
-\(X'\) & 事件发生后，世界是什么状态？ \\
-\(m\) & 规则具体匹配到了 \(X\) 中的哪些实体？ \\
-\(\kappa\) & 改变局部结构时，哪些外部连接被保留？ \\
-\(\nu\) & 是否生成了新鲜名字，例如新私有 session？ \\
-\(\alpha\) & 什么授权、策略或资源证据允许这次事件？ \\
-\(\omega\) & 有什么外部观察或批准证据？ \\
-\(k\) & 这是内部、外部还是行政性事件？ \\
-\bottomrule
+    caption = {协调事件的字段说明。},
+    label = {tab:coordinative-event-fields},
+  ]{
+    width = \textwidth,
+    colspec = {Q[l,wd=0.13\textwidth] X[l]},
+    rowhead = 1,
+    row{1} = {bg=MWSoft!70,font=\bfseries},
+    colsep = 4pt,
+    rowsep = 2.5pt,
+    cells = {font = \scriptsize},
+  }
+  \toprule
+  字段 & 回答的问题 \\
+  \midrule
+  $v$ & 此次事件发生在哪个版本或 epoch？ \\
+  $\rho$ & 使用了哪条规则？例如委派。 \\
+  $X$ & 事件发生前，世界是什么状态？ \\
+  $X'$ & 事件发生后，世界是什么状态？ \\
+  $m$ & 规则具体匹配到了 $X$ 中的哪些实体？ \\
+  $\kappa$ & 改变局部结构时，哪些外部连接被保留？ \\
+  $\nu$ & 是否生成了新鲜名字，例如新私有 session？ \\
+  $\alpha$ & 什么授权、策略或资源证据允许这次事件？ \\
+  $\omega$ & 有什么外部观察或批准证据？ \\
+  $k$ & 这是内部、外部还是行政性事件？ \\
+  \bottomrule
 \end{longtblr}
 
 其中尤其要注意的是 $e$ 和 $\rho$ 的区别，前者是一次具体发生的事件，后者则是“规则”，代表一种可发生变化的模板；同一条规则可以被多次、在不同对象上使用。
 
 \begin{MWCallout}[MWCyan]{Example / 案例}
-假设当前配置中有：任务 $T$；Planner $p$；Coder $c$；唯一写权限 $w$；尚不存在的私有会话。
+  假设当前配置中有：任务 $T$；Planner $p$；Coder $c$；唯一写权限 $w$；尚不存在的私有会话。
 
-规则只说：
+  规则只说：
 
-\begin{equation}
-\rho_{\mathrm{delegate}}
-=
-\text{“允许委派任务”}.\label{eq:delegate-rule-template}
-\end{equation}
+  \begin{equation}
+    \rho_{\mathrm{delegate}}
+    =
+    \text{“允许委派任务”}.\label{eq:delegate-rule-template}
+  \end{equation}
 
-实际事件则会说：
+  实际事件则会说：
 
-\begin{equation}
-e_1=
-(
-v,
-\rho_{\mathrm{delegate}},
-X, X', m_1, \kappa_1, \{s\}, \alpha_1, \omega_1, k
-).\label{eq:delegate-event-instance}
-\end{equation}
+  \begin{equation}
+    \boxed{
+      e_1=
+      (
+        v,
+        \rho_{\mathrm{delegate}},
+        X, X', m_1, \kappa_1, \{s\}, \alpha_1, \omega_1, k
+    ).}\label{eq:delegate-event-instance}
+  \end{equation}
 
-其中：
+  其中：
 
-\begin{itemize}
-  \item $m_1$ 指明：本次匹配的是任务 $T$、Planner $p$、Coder $c$ 与权限 $w$。
-  \item ${s}$ 指明：本次创建的新私有会话叫 $s$。
-  \item $\alpha_1$ 指明：Planner 确实有权把该任务和权限交给 Coder
-  \item $\omega_1$ 指明：若需要人工批准或评审记录，它是什么。
-  \item $X'$ 指明：任务责任、写权限归属、会话集合和 Reviewer 的等待关系具体变成什么。
-\end{itemize}
+  \begin{itemize}
+    \item $m_1$ 指明：本次匹配的是任务 $T$、Planner $p$、Coder $c$ 与权限 $w$。
+    \item ${s}$ 指明：本次创建的新私有会话叫 $s$。
+    \item $\alpha_1$ 指明：Planner 确实有权把该任务和权限交给 Coder
+    \item $\omega_1$ 指明：若需要人工批准或评审记录，它是什么。
+    \item $X'$ 指明：任务责任、写权限归属、会话集合和 Reviewer 的等待关系具体变成什么。
+  \end{itemize}
 
-如果 Planner 把另一个任务 $T'$ 委派给另一个 Coder $c'$，即使仍使用同一条规则，也已经是另一件事件：$e_2\neq e_1$，因为 $m_2\neq m_1$。
+  如果 Planner 把另一个任务 $T'$ 委派给另一个 Coder $c'$，即使仍使用同一条规则，也已经是另一件事件：$e_2\neq e_1$，因为 $m_2\neq m_1$。
 \end{MWCallout}
-
-
-\subsection{Coordinative Calculus / 协调演算}
-
-在先前的部分，我们定义了
-$X\in\operatorname{Config}(\Sigma)$
-作为协调世界的运行时状态，并以协调事件 $e$ 表示该世界的一次具体变化。
-然而，仅有状态与事件记录还不足以区分：哪些协调结构在类型上能够被构造，
-以及哪些状态变化属于系统允许的协调行为。
-
-为此，Cantilune 在签名 $\Sigma$ 下引入协调演算：
-
-\begin{equation}
-\boxed{
-\mathsf{Calc}_{\Sigma}
-=
-(\mathcal C_{\Sigma},\mathcal R_{\Sigma}).
-}
-\label{eq:definition-of-coordinative-calculus}
-\end{equation}
-
-其中，$\mathcal C_{\Sigma}$ 是由 $\Sigma$ 生成的静态协调结构语言；
-$\mathcal R_{\Sigma}$ 是在同一签名下声明的协调变化模板集合。
-在接口层面，$\mathcal C_{\Sigma}$ 的对象是对象类型的有限有序组合：
-
-\begin{equation}
-\operatorname{Ob}(\mathcal C_{\Sigma})
-=
-\mathsf{Obj}^{*},
-\end{equation}
-
-每个生成元 $g\in\mathsf{Gen}$ 给出基本操作：
-
-\begin{equation}
-g:
-\operatorname{in}(g)
-\longrightarrow
-\operatorname{out}(g).
-\end{equation}
-
-这些基本操作可通过恒等、顺序组合、并列组合、显式交换，以及
-$\mathsf{mode}$ 所允许的复制和丢弃操作构成更大的静态协调图式。
-
-每个 $\rho\in\mathcal R_{\Sigma}$ 是可重复使用的协调变化模板。
-当 $\rho$ 在具体配置 $X_i$ 上形成一次满足资源、授权、策略与外部证据条件的
-具体事件 $e$ 时，产生运行时变化：
-
-\begin{equation}
-\boxed{
-X_i\xrightarrow{e}X_{i+1}.
-}
-\end{equation}
-
-本节只给出协调演算的顶层接口。
-$\mathcal C_{\Sigma}$ 的精确商构造、执行语义
-$\mathsf{Exec}_{\Sigma}$、认证投影语义
-$\mathsf{Proj}_{\Sigma}$，以及三者在签名扩展下的相容性，
-将在下一章中给出。
 
 % =========================
 
-% === Proof Architecture / 证明体系 ===
+% =========================
 
-\section{Proof Architecture and Conceptual Lineage / 证明体系与概念谱系}
-\label{sec:proof-architecture}
+\section{From Description to Execution: The Semantics of Coordination /
+从描述到执行：协调语义}
 
-上一节给出了状态 $X$、事件 $e$、签名 $\Sigma$ 与协调演算
-$\mathsf{Calc}_{\Sigma}$ 的顶层接口。以下不再引入另一套模型，而是逐层回答五个问题：
-哪些量是自由变化的变量；哪些条件界定一个可接受的 Cantilune 模型；这些条件推出
-哪些定理；各定理如何组成一个统一理论；以及该理论最终允许作出什么结论。
+协调语义以良构协调状态为状态空间，以经重放验证的协调事件为转移标签，以原生合法转移关系连接连续状态，并由此生成有限或无限的协调执行路径。状态表示等价保证执行意义不依赖具体表示，事件可观察性从原生执行中选择对外可见的协调步骤，终态分类则解释一条可观察路径为何停止。因此，Agent Orchestration 的生命过程被表示为一条从初始协调状态出发、经连续合法事件演化并最终进入成功、外部等待或死锁状态的协调执行路径。
 
-\begin{MWCallout}[MWCyan]{Chapter thesis / 本章核心命题}
-固定一个满足显式可接受性条件的有限协调签名及其执行模型。若同一业务发生同时携带
-完整 DPO replay、四个独立语义视图的全迁移系统投影、严格签名准入、名称传递与域语义
-对齐证书，则该发生在 DAG、Petri、强迟 $\pi$ 与态射四个视图中具有同一条可追溯语义；
-若再给出有限高度证据、稳定公平窗口和正进展概率下界，则执行几乎必然进入并永久留在
-稳定区。前一结论是条件化的相容性定理，后一结论是条件化的随机稳定化定理。
-\end{MWCallout}
+\subsection{The Gap Between Describability and Executability /
+可描述性与可执行性之间的语义缺口}
 
-\subsection{The five-part logical object / 五元逻辑对象}
+在上一章，我们定义了协调世界 $X$ 和协调事件 $e$，用于描述 Agent Orchestration 的整个生命过程；同时使用 $\Sigma$ 为协调语言定义静态规范，为描述 Agent Orchestration 定义了一套语言标准。
 
-全文的数学论证组织为
+但是，\textbf{整个生命过程是如何发生的，到底生命过程中能发生什么样的变化，以及什么样的变化是符合规范的}，这些问题却并没有被正确建模和描述清楚。因此，本章我们引入“协调语义 (The Semantics of Coordination)”来解决上述问题。
 
-\begin{equation}
-\boxed{
-\mathfrak T_{\mathrm{Can}}
-=
-(\mathcal V,\mathcal A,\mathcal T,\mathcal M,\mathcal C),
-}
-\label{eq:cantilune-five-part-theory}
-\end{equation}
+\subsection{The Structure and Scope of Coordination Semantics /
+协调语义的整体结构与作用范围}
 
-其中 $\mathcal V$ 是全局变量与类型，$\mathcal A$ 是模型可接受性公理，
-$\mathcal T$ 是由这些前提机械证明的定理族，$\mathcal M$ 是把定理族连接为同一协调
-语义的组合理论，$\mathcal C$ 是最终相容性与稳定化结论。这里的“公理”是对待研究
-模型的输入条件，并不是向 Lean 证明内核添加的项目自定义公理。形式化工程本身只使用
-基础逻辑与商类型所需的标准原则；项目定理的机械证明状态由证明清单单独记录
-\citep{cantiluneManifest,cantiluneFormalReadme}。
+\subsubsection{The Structure of Coordination Semantics / 协调语义的整体结构}
 
-五部分之间的依赖方向是
+在考虑不同协调执行环境的背景下，协调语义被定义为：
 
 \begin{equation}
-\boxed{
-\mathcal V
-\longrightarrow
-\mathcal A
-\longrightarrow
-\mathcal T
-\longrightarrow
-\mathcal M
-\longrightarrow
-\mathcal C.
-}
-\label{eq:proof-dependency-direction}
+  \boxed{
+    \mathsf{Sem}_{\Sigma,\mathfrak E}
+    =
+    \bigl(
+      \mathsf{St}_{\Sigma},
+      \mathsf{Ev}_{\Sigma,\mathfrak E},
+      \Rightarrow_{\Sigma,\mathfrak E},
+      \operatorname{Replay}_{\Sigma,\mathfrak E},
+      \simeq_{\Sigma,\mathfrak E},
+      \operatorname{Visible}_{\Sigma,\mathfrak E},
+      \operatorname{Outcome}_{\Sigma,\mathfrak E}
+    \bigr)
+  }\label{eq:coordination-semantics-structure}
 \end{equation}
 
-箭头不可逆：结论不能反过来补造缺失的投影证书，代码中的一个参考实例也不能替代
-对任意生产实例的可接受性验证。
-
-\subsection{Conceptual lineage / 概念谱系}
-
-本理论有意区分“经典结构”与“Cantilune 特化”。前者提供数学语言，后者给出为
-可审计 Agent coordination 所需的加强条件。两者的边界如下。
+其中，各数学对象的表述如下。
 
 \begin{longtblr}[
-  caption = {数学概念的来源与 Cantilune 特化。},
-  label = {tab:conceptual-lineage},
-]{
-  width = \textwidth,
-  colspec = {Q[l,wd=0.19\textwidth] Q[l,wd=0.30\textwidth] X[l]},
-  rowhead = 1,
-  row{1} = {bg=MWSoft!70,font=\bfseries},
-  colsep = 4pt,
-  rowsep = 3pt,
-  cells = {font = \scriptsize},
-}
-\toprule
-层次 & 经典数学来源 & Cantilune 中的特化 \\
-\midrule
-静态组合 &
-对称幺半范畴的恒等、复合、张量与对称结构 \citep{macLane1998} &
-有限有类型签名、结构使用 mode，以及只在 mode 许可时出现的显式
-copy/drop primitive。本文不额外假定余幺半群方程。 \\
-结构重写 &
-粘合范畴中的双推前重写与并行独立
-\citep{lackSobocinski2004,lackSobocinski2005} &
-有限精确位置编码的有类型开放超图、边界保持、新鲜支撑与可执行代表元。 \\
-并发资源 &
-Petri net 的函子语义与 firing 解释 \citep{bruniEtAl2001} &
-对同一选中 occurrence 的声明增量、incidence、enabling、firing 与 token
-provenance 等式。 \\
-名称传递 &
-强迟 $\pi$ 语义及其世界索引指称模型
-\citep{fioreMoggiSangiorgi2002} &
-request/accept 子语言、15 类审计事件族、稳定元数据、原生强迁移与四视图对齐。 \\
-递归与非确定性 &
-$\omega$CPO、连续映射与递归域方程的 domain theory
-\citep{abramskyJung1994} &
-下 $\omega$-Scott 闭集幂结构、名称抽象、隐藏、有限 Hoare 与有限 trace
-观察边界。 \\
-随机稳定化 &
-有限 Markov kernel、停时与几何尾界 &
-有限高度证据、上闭稳定区、epochwise fairness、原生事件标签和精确 replay。 \\
-\bottomrule
+    caption = {协调语义的组成对象及其名称。},
+    label = {tab:coordination-semantics-objects},
+  ]{
+    width = \textwidth,
+    colspec = {Q[l,wd=0.39\textwidth] Q[l,wd=0.25\textwidth] X[l]},
+    rowhead = 1,
+    row{1} = {bg=MWSoft!70,font=\bfseries},
+    colsep = 4pt,
+    rowsep = 2.5pt,
+    cells = {font = \scriptsize},
+  }
+  \toprule
+  数学对象 & 中文名称 & 英文名称 \\
+  \midrule
+  $\mathsf{St}_{\Sigma}$ & 良构协调状态空间 & well-formed coordination-state space \\
+  $\mathsf{Ev}_{\Sigma,\mathfrak E}$ & 经重放验证的协调事件空间 & replay-verified coordination-event space \\
+  $\Rightarrow_{\Sigma,\mathfrak E}$ & 原生合法协调转移关系 & native legal coordination-transition relation \\
+  $\operatorname{Replay}_{\Sigma,\mathfrak E}$ & 去端点确定性重放核 & endpoint-free deterministic replay kernel \\
+  $\simeq_{\Sigma,\mathfrak E}$ & 状态表示等价关系 & state-representation equivalence relation \\
+  $\operatorname{Visible}_{\Sigma,\mathfrak E}$ & 事件可观察性判定 & event-visibility predicate \\
+  $\operatorname{Outcome}_{\Sigma,\mathfrak E}$ & 派生终态结果分类 & derived terminal-outcome classification \\
+  \bottomrule
 \end{longtblr}
 
-因此，本章不会把“用了某个经典概念”写成“经典文献已经证明了 Cantilune 的结论”。
-经典结果只说明数学工具的来源；所有跨视图、审计、准入和 replay 结论都仍需本文的
-显式证书。
-
-\subsection{Dependency spine / 依赖主干}
-
-全文唯一的定义依赖主干为
+\paragraph{良构协调状态空间 $\mathsf{St}_{\Sigma}$} 良构协调状态空间表示所有合法协调世界状态构成的空间，写作：
 
 \begin{equation}
-\begin{aligned}
-\Sigma
-&\longrightarrow \mathcal C_{\Sigma}
-\longrightarrow \mathsf{Hyp}_{\Sigma}
-\longrightarrow \mathsf{DPO}_{\Sigma}
-\longrightarrow \mathsf{Event}_{\Sigma}
-\longrightarrow \mathcal L_{\Sigma}
-\\
-&\longrightarrow
-\bigl(
-\mathcal L_{\mathrm{DAG}},
-\mathcal L_{\mathrm{Petri}},
-\mathcal L_{\pi},
-\mathcal L_{\mathrm{Mor}}
-\bigr)
-\longrightarrow \mathsf{FourCoh}
-\\
-&\hspace{8em}
-\searrow\ \mathsf{Agent}
-\qquad\qquad
-\searrow\ (Q,U,K)
-\longrightarrow \mathsf{Stable}.
-\end{aligned}
-\label{eq:semantic-dependency-spine}
+  \boxed{
+    \mathsf{St}_{\Sigma}
+    =
+    \left\{
+      X\in\operatorname{Config}(\Sigma)
+      \;\middle|\;
+      \mathsf{WF}_{\Sigma}(X)
+      \land
+      \mathsf{OwnWF}_{\Sigma}(X)
+    \right\}.
+  }\label{eq:well-formed-coordination-state-space}
 \end{equation}
 
-$\mathsf{Hyp}_{\Sigma}$ 表示有类型开放超图范畴；
-$\mathsf{DPO}_{\Sigma}$ 表示其 DPO 动力学；
-$\mathcal L_{\Sigma}$ 是源执行 LTS；括号内恰为四个语义投影；
-$\mathsf{Agent}$ 是 $\pi$ 行的指称解释，并不是第五个投影；
-$(Q,U,K)$ 则是反馈层的证据空间、稳定区与 Markov kernel。
+该空间需要保证良构性 $\mathsf{WF}_{\Sigma}(X)$ 和所有权良构性 $\mathsf{OwnWF}_{\Sigma}(X)$，前者保证每个活跃的节点都有合法的生成元 $g \in Gen_{\Sigma}$ 标注、只有活跃节点才会被标注、每个活跃边的两个端点都是活跃端点，保证了协调世界的结构完整性；后者保证每个活跃数据token都有活跃节点负责、活跃资源token都有活跃节点持有，每个活跃名字或session都有活跃节点控制。
 
+另外，良构协调状态空间对自己的转移空间是封闭的，数学表示为：
 
-% === Variables and Axioms / 变量与公理 ===
+\begin{equation}
+  \boxed{
+    X\in\mathsf{St}_\Sigma
+    \land
+    X\xRightarrow eY
+    \Longrightarrow
+    Y\in\mathsf{St}_\Sigma.
+  }\label{eq:well-formed-coordination-state-space-transformation}
+\end{equation}
 
-\section{Global Variables and Admissibility Axioms / 全局变量与可接受性公理}
-\label{sec:variables-and-axioms}
+\paragraph{去端点确定性重放核 $\operatorname{Replay}_{\Sigma,\mathfrak E}$} 去端点确定性重放核是一个函数，作为一种计算机制而存在，表示为：
 
-\subsection{Typed variable ledger / 有类型变量表}
+\begin{equation}
+  \boxed{
+    \operatorname{Replay}_{\Sigma,\mathfrak E}:
+    \operatorname{Recipe}_{\Sigma}
+    \times
+    \mathsf{St}_{\Sigma}
+    \longrightarrow
+    \operatorname{Option}(\mathsf{St}_{\Sigma}).
+  }\label{eq:deterministic-replay-kernel-interface}
+\end{equation}
 
-固定下列变量。除非另有说明，本章中的所有定理都在这些类型下陈述。
+反映了由事件配方和源状态何以重计算出目标状态。
 
-\begin{longtblr}[
-  caption = {全局数学变量。},
-  label = {tab:global-variable-ledger},
-]{
-  width = \textwidth,
-  colspec = {Q[l,wd=0.18\textwidth] Q[l,wd=0.31\textwidth] X[l]},
-  rowhead = 1,
-  row{1} = {bg=MWSoft!70,font=\bfseries},
-  colsep = 4pt,
-  rowsep = 3pt,
-  cells = {font = \scriptsize},
-}
-\toprule
-变量 & 类型 & 含义 \\
-\midrule
-$\Sigma$ &
-有限签名
-$(O,G,\operatorname{in},\operatorname{out},\mathsf{mode},\mathsf{contract})$ &
-原子对象、primitive、端口词、结构使用权限与合同。 \\
-$w,u,v$ & $O^{*}$ & 原子对象组成的有限有序词，即静态接口。 \\
-$g$ & $G$ & 一个 primitive，具有
-$g:\operatorname{in}(g)\to\operatorname{out}(g)$。 \\
-$X,Y,Z$ & $\operatorname{Config}(\Sigma)$ & 源执行中的协调世界状态。 \\
-$\rho$ & $\mathcal R_{\Sigma}$ & 规则 span；它是可重复使用的变化模板。 \\
-$m$ & 合法 match & 将规则左侧单态地嵌入具体状态。 \\
-$e$ & $\mathsf{Event}_{\Sigma}$ & 携带版本、规则、match、接口、新鲜性与证据的一次 occurrence。 \\
-$r$ & $\mathsf{Recipe}_{\Sigma}$ & 不存储终点的确定性 replay recipe。 \\
-$\mathcal L$ &
-$(S,E,\sim,\to,\mathsf{obs},\mathsf{succ},\mathsf{wait},\mathsf{ver})$ &
-可观察 LTS；$\sim$ 是状态等价关系。 \\
-$\alpha$ & $\Sigma\hookrightarrow\Sigma^{+}$ & 保持类型词、mode 与 contract 的签名扩展。 \\
-$j$ & $\{\mathrm D,\mathrm N,\pi,\mathrm M\}$ &
-DAG、Petri、强迟 $\pi$、态射四个视图的索引。 \\
-$P_j$ & $\mathcal L_{\Sigma}\Rightarrow\mathcal L_j$ &
-从源 LTS 到第 $j$ 个独立目标 LTS 的投影证书。 \\
-$n,m$ & $\mathbb N$ & 名称世界的有限基数。 \\
-$\iota$ & $n\hookrightarrow m$ & 世界之间的有限注入。 \\
-$A$ & $\mathsf{World}\to\omega\mathsf{CPO}$ &
-世界索引的 Agent 域。 \\
-$Q$ & 有限高度 join 半格 & 反馈证据空间。 \\
-$U$ & $U\subseteq Q$ & 向上闭的稳定区。 \\
-$K$ & $S\times S\to[0,1]$ & 有限状态 Markov kernel。 \\
-$H$ & $\mathbb N$ & 证据高度的统一上界。 \\
-$\varepsilon$ & $(0,1]$ & 每次公平机会的进展概率下界。 \\
-\bottomrule
-\end{longtblr}
+\paragraph{经重放验证的协调事件空间 $\mathsf{Ev}_{\Sigma,\mathfrak E}$} 经重放验证的协调事件空间表示，所有完整事件记录中，能够由执行环境的重放核从其源状态重新计算出其目标状态的事件，写作：
 
-四视图记号只用于区分数学语义，不表示四份互不相关的数据。最终结论要求它们通过
-同一个 $e$、同一个版本与同一个 occurrence identity 连接。
+\begin{equation}
+  \boxed{
+    \mathsf{Ev}_{\Sigma,\mathfrak E}
+    =
+    \left\{
+      e\in\mathsf{DPOEv}_{\Sigma}
+      \;\middle|\;
+      K_{\mathfrak E}
+      \bigl(
+        \operatorname{recipe}(e),
+        \operatorname{src}(e)
+      \bigr)
+      =
+      \operatorname{some}\bigl(\operatorname{tgt}(e)\bigr)
+    \right\}
+  }\label{eq:replay-verified-coordination-event-space}
+\end{equation}
 
-\subsection{Admissibility axioms / 可接受性公理}
+该空间作为事件集合，包含的事件被表示为 $e\in\mathsf{DPOEv}_{\Sigma}$，即候选事件 $e$ 必须首先是一个 DPO 结构重写事件。另外这些事件还需要满足：$K_{\mathfrak E}(recipe(e),src(e))=some(tgt(e))$。
 
-下列十项公理定义“完整可接受模型”。它们不是无条件的世界规律，而是总定理的精确
-输入接口。任何缺失项都会使相应结论停止，而不会由其余项自动补全。
+$recipe(e)=(\rho,m,\kappa,\nu,\alpha)$ 是事件配方，$src(e)$ 是输入 $X$ (即事件发生前的状态)；因此 $K_{\mathfrak E}(recipe(e)$ $,src(e))$ 表示为在执行环境 $\mathfrak E$ 中根据事件配方在源状态重新执行一次。但是重新执行不一定能保证完全成功，当重新执行成功时，即表示为 $some(tgt(e))$。换句话说， 用事件配方从源状态重新执行，如果成功，那么得到的结果必须恰好等于事件记录中的目标状态。
 
-\begin{enumerate}
-  \item[\textbf{A1}.] \textbf{Finite typed signature / 有限有类型签名。}
-  $O$ 与 $G$ 有限且等价可判定；每个 $g$ 的输入输出词有类型；
-  copy 或 drop 只在 $\mathsf{mode}$ 给出相应许可证时可形成。合同随合法构造保持。
+\paragraph{原生合法协调转移关系 $\Rightarrow_{\Sigma,\mathfrak E}$} 原生合法协调转移关系也可以表示为 $\Rightarrow^{e}_{\Sigma,\mathfrak E}$，表示经过验证的协调事件 $e$ 确实以 $X$ 为源状态、以 $X'$ 为目标状态，构成了一次合法的 \textit{原生} 协调发生。完整写作：
 
-  \item[\textbf{A2}.] \textbf{Adhesive DPO legality / 粘合 DPO 合法性。}
-  规则腿与 match 满足单态、gluing、边界保持和新鲜支撑条件；所需推前补与第二推前
-  均存在。并发结论还要求两次直接导出具有显式 parallel-independence 分解。
+\begin{equation}
+  \boxed{
+    X
+    \mathrel{\Rightarrow_{\Sigma,\mathfrak E}^{e}}
+    X'
+  }\label{eq:native-legal-coordination-transition}
+\end{equation}
 
-  \item[\textbf{A3}.] \textbf{Complete event and deterministic replay /
-  完整事件与确定性重放。}
-  每个被认证事件都携带足以重建 DPO 结果的 recipe；recipe 不把目标状态作为输入，
-  replay kernel 对给定 recipe 和源状态是确定的。
+它表示协调世界发生了一次合法演化；相比于 $\mathsf{Ev}_{\Sigma,\mathfrak E}$ 用于说明事件可信，原生合法协调转移关系则表明什么事件真的改变协调世界。
 
-  \item[\textbf{A4}.] \textbf{Quotient-compatible execution / 商相容执行。}
-  若 $X\sim X_1$、$Y\sim Y_1$ 且 $X\xrightarrow eY$，则存在对应迁移
-  $X_1\xrightarrow{e_1}Y_1$。观察、成功、等待与版本在 $\sim$ 下良定义。
+\paragraph{状态表示等价关系 $\simeq_{\Sigma,\mathfrak E}
+\;\subseteq\; \mathsf{St}_{\Sigma}\times\mathsf{St}_{\Sigma}$} 状态表示等价关系表示，两个状态虽然使用了不同标识、不同代表元或不同内部表示，但是描述的是同一个可观察的协调世界：
 
-  \item[\textbf{A5}.] \textbf{Complete four-view projections / 完整四视图投影。}
-  对每个 $j\in\{\mathrm D,\mathrm N,\pi,\mathrm M\}$，$P_j$ 同时给出状态映射、
-  事件映射、soundness、从投影像出发的每步 reflection、事件 Lift，以及终态、版本
-  和资源保持；证书覆盖整个目标 LTS，而不只是一条被选中边。
+\begin{equation}
+  \boxed{
+    \simeq_{\Sigma,\mathfrak E}
+    \;\subseteq\;
+    \mathsf{St}_{\Sigma}\times\mathsf{St}_{\Sigma}
+  }\label{eq:state-representation-equivalence-relation}
+\end{equation}
 
-  \item[\textbf{A6}.] \textbf{Extension naturality and strict admission /
-  扩展自然性与严格准入。}
-  $\alpha:\Sigma\hookrightarrow\Sigma^{+}$ 在四视图中自然重索引；
-  新规则的加入由独立的 strict-admission 见证承担。单纯 reindex 不得冒充准入。
+该定义解决了状态表示和状态语义之间的分离问题，使得系统真正有机会能将语义从“表示”的高度提升到“意义”的高度。
 
-  \item[\textbf{A7}.] \textbf{Selected occurrence adequacy / 选中发生的充分证据。}
-  被选中的 $X\xrightarrow{e_*}Y$ 携带原生迁移、精确 replay、资源变化、静止性或
-  rank、qualification、authorization 与 occurrence identity。此处的业务 rank
-  与后文 SCC rank、反馈高度均为不同变量。
+\paragraph{事件可观察性判定 $\operatorname{Visible}_{\Sigma,\mathfrak E}$} 事件可判定观察性判定，决定了哪些原生协调事件进入可观察执行语义，即哪些发生过的事件应该被观察者看到，表示为：
 
-  \item[\textbf{A8}.] \textbf{Occurrence sidecars / 发生级伴随证书。}
-  DAG 凝聚与 Petri firing 对同一 $e_*$ 给出局部 sidecar；Petri sidecar 精确陈述
-  声明增量、incidence、enabling、firing 和 token provenance，DAG sidecar 精确陈述
-  SCC 内部边或凝聚边的二分。
+\begin{equation}
+  \boxed{
+    \operatorname{Visible}_{\Sigma,\mathfrak E}:
+    \mathsf{Ev}_{\Sigma,\mathfrak E}\longrightarrow\mathsf{Prop}.
+  }\label{eq:event-visibility-predicate}
+\end{equation}
 
-  \item[\textbf{A9}.] \textbf{Name-passing and denotational seam /
-  名称传递与指称接缝。}
-  选中 registry row 的事件坐标、稳定元数据、原生强迟 $\pi$ 导数以及 FMS Agent
-  端点字面相等；“大致对应”或仅存在弱迁移不足以满足本公理。
+它接受一个事件 $e$，返回一个命题 $\text{True/False}$，判断这个事件是否可观察。
 
-  \item[\textbf{A10}.] \textbf{Finite-height stochastic progress /
-  有限高度随机进展。}
-  $Q$ 有高度界 $H$，$U$ 向上闭，正概率 kernel 边均有原生事件标签；存在稳定
-  epoch 窗口、epochwise fairness、单调证据与每次机会至少
-  $\varepsilon$ 的严格进展概率，并且事件与 epoch 对齐。
-\end{enumerate}
+进一步可以定义：
 
-\begin{MWCallout}[MWAmber]{Logical boundary / 逻辑边界}
-\textbf{A5} 是全 LTS 证书，\textbf{A8} 是选中 occurrence 的局部语义说明；
-二者不能互换。\textbf{A9} 把 FMS 绑定到 $\pi$ 行，但不会产生第五个投影。
-\textbf{A10} 是有条件的公平进展假设，因此后文的概率 $1$ 结论不是无条件 liveness。
+\begin{equation}
+  \boxed{
+    X\xRightarrow[e]{\mathrm{obs}}X'
+    \quad\Longleftrightarrow\quad
+    X\Rightarrow^{e}X'
+    \land
+    \operatorname{Visible}_{\Sigma,\mathfrak E}(e).
+  }\label{eq:observable-coordination-step}
+\end{equation}
+
+表示事件 $e$ 确实发生，且值得被观察。例如，\texttt{internal} 和 \texttt{external} 事件可观察，\texttt{administrative} 事件不可观察。因此行政事件可以合法且可重放，但不进入 \texttt{observable path}。
+
+\paragraph{派生终态结果分类 $\operatorname{Outcome}_{\Sigma,\mathfrak E}$} 派生终态结果分类定义了协调执行最终停在哪里、为什么停止，回应了“当协调系统没有继续可观察动作时意味着什么”这一问题。首先定义：
+
+\begin{equation}
+  \boxed{
+    \operatorname{Normal}(X)
+    \quad\Longleftrightarrow\quad
+    \neg\exists e,X',
+    \;
+    X\xRightarrow[e]{\mathrm{obs}}X'.
+  }\label{eq:normal-coordination-state}
+\end{equation}
+
+表示当不存在 $e$ 和 $X'$，使 $X\xRightarrow[e]{\mathrm{obs}}X'$ 时，即此时已经没有任何可观察事件了，这种情况表示为 $\operatorname{Normal}(X)$。
+
+$\operatorname{Normal}(X)$ 有多种结果，包括 $\text{SuccessfulTermination}$、$\text{ExternalWait}$ 和 $\text{Deadlocked}$ 等。将它们的一般形式记为 $\text{Result}_{i}$，则 派生终态结果分类可以写作：
+
+\begin{equation}
+  \boxed{
+    Outcome:
+    \{X\in St_\Sigma|Normal(X)\} \rightarrow \{\text{Result}_{i}\}
+  }\label{eq:terminal-outcome-classification}
+\end{equation}
+
+它们合起来共同构成了协调语义：一个从良构状态出发，通过经验证事件不断产生合法后继状态，并能够对整个执行历史进行重放、等价识别、观察筛选和终态解释的状态转移系统。
+
+进一步的，从单步语义提升为执行语义，定义：
+
+\begin{equation}
+  \boxed{
+    \operatorname{Path}_{\Sigma,\mathfrak E}
+    \left(
+      X,\mathbf e,Y
+    \right)
+  }\label{eq:coordination-path-predicate}
+\end{equation}
+
+表示事件序列 $e$ 将协调世界 $X$ 合法演化到 $Y$。
+
+则可以递归定义：
+
+\begin{equation}
+  \boxed{
+    \frac{}{
+      \operatorname{Path}_{\Sigma,\mathfrak E}(X,[],X)
+  }}\label{eq:coordination-path-empty-rule}
+\end{equation}
+
+以及：
+
+\begin{equation}
+  \boxed{
+    \frac{
+      X\Rightarrow_{\Sigma,\mathfrak E}^{e}Y
+      \qquad
+      \operatorname{Path}_{\Sigma,\mathfrak E}(Y,\mathbf e,Z)
+    }{
+      \operatorname{Path}_{\Sigma,\mathfrak E}
+      (X,e::\mathbf e,Z)
+  }.}\label{eq:coordination-path-cons-rule}
+\end{equation}
+
+因此一段有限的协调过程则表示为：
+
+\begin{equation}
+  \boxed{
+    X_0
+    \xRightarrow{e_1}
+    X_1
+    \xRightarrow{e_2}
+    X_2
+    \cdots
+    \xRightarrow{e_n}
+    X_n
+  }\label{eq:finite-coordination-execution}
+\end{equation}
+
+\subsubsection{The Scope of Coordination Semantics /
+协调语义的作用范围}
+
+在定义协调语义的组成结构后，还需要明确该语义系统所描述的对象范围。协调语义关注的是：在给定协调签名与执行环境下，协调状态如何通过合法事件持续演化，并形成可验证的执行过程。因此，其描述对象应限定为由语义规则所诱导的协调执行路径，即从某一协调状态出发，经由一系列满足语义约束的事件转移，最终到达另一协调状态的执行片段。
+
+形式化地，协调语义的作用范围定义为：
+
+\begin{equation}
+  \boxed{
+    \operatorname{Scope}
+    \bigl(\mathsf{Sem}_{\Sigma,\mathfrak E}\bigr)
+    =
+    \left\{
+      \tau
+      \mid
+      \mathsf{ObsPath}_{\Sigma,\mathfrak E}(\tau)
+    \right\}
+  }\label{eq:coordination-semantics-scope}
+\end{equation}
+
+其中，每条执行路径为：
+
+\begin{equation}
+  \boxed{
+    \tau:
+    X_0
+    \xRightarrow[e_1]{obs}
+    X_1
+    \xRightarrow[e_2]{obs}
+    \dots
+    \xRightarrow[e_n]{obs}
+    X_n
+  }\label{eq:observable-coordination-trace}
+\end{equation}
+
+同时满足：
+
+\begin{equation}
+  \boxed{
+    \forall i<n,\quad
+    X_i
+    \Rightarrow_{\Sigma,\mathfrak E}^{e_{i+1}}
+    X_{i+1}
+    \land
+    \operatorname{Visible}_{\Sigma,\mathfrak E}(e_{i+1}).
+  }\label{eq:observable-path-step-condition}
+\end{equation}
+
+% =========================
+
+% =========================
+
+\section{Four Observational Semantics /
+四种观测语义}
+
+协调语义完整记录了协调世界的状态、事件及其执行过程，并回答一次状态变化能否合法发生。然而，同一个协调事件通常同时具有多种含义：它可能改变任务依赖关系、转移资源和权限、建立新的通信会话，或者改变一个协调结构与其上下文的组合方式。为了分别揭示这些不同维度，Cantilune 将同一个源协调事件投影到四个独立定义的观测语义中。
+
+\subsection{General Definition of the Observation Projections /
+观测投影的总体定义}
+
+Cantilune 用四个观测面构建观测体系：
+
+\begin{equation}
+  \boxed{
+    I=\{ \mathsf{DAG}, \mathsf{Petri}, \pi, \mathsf{Mor} \}
+  }\label{eq:observation-index-set}
+\end{equation}
+
+其中，$\text{DAG}$ 观测协调依赖与因果结构，$\text{Petri}$ 观测资源、权限和状态流动，$\pi$ 观测通道、命名和会话演化， $\text{Mor}$ 观测组合结构与接口关系。
+
+对于任意 $i \in I$，定义观测投影：
+
+\begin{equation}
+  \boxed{
+  P_i:\mathcal{L}_{\mathsf C}\rightarrow\mathcal{L}_i}
+  \label{eq:observation-projection}
+\end{equation}
+
+其中 $\mathcal{L}_{\mathsf C}$ 是源协调语义， $\mathcal{L}_{\mathsf i}$ 是第 $i$ 个观测语义。这里每个观测面都不是重新构造一个协调过程，而是对同一个协调过程建立一种解释。
+
+展开观测投影，其内部结构写作：
+
+\begin{equation}
+  \boxed{P_i=(P_i^{S},P_i^{E})}
+  \label{eq:observation-projection-components}
+\end{equation}
+
+其中 $P_i^{S}: S_{C} \rightarrow S_{i}$，把完整协调状态投影到第 $i$ 个观测语义中的状态；$P_i^{E}: E_{C} \rightarrow E_{i}$，把完整协调事件投影到第 $i$ 个观测语义中的事件。
+
+要实现观测投影，必须满足三个条件：状态等价的良定义性、正向保持和反向可解释性。
+
+\begin{MWCallout}[MWCyan]{状态等价的良定义性}
+  状态等价的良定义性回答：投影后的状态是否仍然代表同一个协调世界。
+
+  协调语义中的状态 $X \in S_{C}$ 通常不是唯一表示，例如状态 $X$ 和状态 $Y$，它们存在差别，例如编号不同、内部字段顺序不同等等，但是并不影响语义的结构调整，因此 $X\approx_{\mathsf C}Y$。即，两个状态虽然形式不同，但是在协调意义上相同。
+
+  该条件保证投影 $P_{i}^{S}$ 实际作用在 $S_{C} / \approx_{c}$ 的商空间中。也就是说：
+
+  \begin{equation}
+    \boxed{ P_i^S: S_{\mathsf C}/\approx_{\mathsf C} \rightarrow S_i/\approx_i}
+    \label{eq:projection-on-state-quotients}
+  \end{equation}
+
+  该式表明：观测的是协调状态本身，而不是状态的某一种编码方式。
 \end{MWCallout}
 
+\begin{MWCallout}[MWCyan]{正向保持}
+  正向保持回答：源协调事件是否真的在目标观测面中发生。它说明每次源协调变化在第 $i$ 个观测面中都形成一次原生的可观察变化。
 
-% === Static Calculus / 静态演算 ===
+  协调语义可以描述出协调事件的发生：$X \xrightarrow e Y$，而观测语义只关注协调事件中的一部分。因此，正向保持的引入能防止观测语义中的某部分发生遗漏，使得不同角度的观测语义都能同时支持协调事件的发生。
 
-\section{Static Coordination Syntax / 静态协调语法}
-\label{sec:static-coordination-syntax}
+  具体来说，正向保持表示为：
 
-\subsection{Raw diagrams and the quotient category / 原始图式与商范畴}
+  \begin{equation}
+    \boxed{X\xRightarrow[e]{\mathsf{obs}}_{\mathsf C}Y
+      \Longrightarrow P_i^{\mathsf S}(X)
+      \xRightarrow[P_i^{\mathsf E}(e)]{\mathsf{obs}}_i
+    P_i^{\mathsf S}(Y).}
+    \label{eq:projection-forward-preservation}
+  \end{equation}
 
-令 $O^{*}$ 为 $O$ 上的有限词。对 $u,v\in O^{*}$，原始有类型图式
-$d:u\Rightarrow_{\Sigma}v$ 由下列构造归纳生成：
-
-\begin{equation}
-\begin{aligned}
-d ::= {}&
-\operatorname{id}_{u}
-\mid \operatorname{gen}(g)
-\mid d_2\circ d_1
-\mid d_1\otimes d_2
-\mid \sigma_{u,v}
-\\
-&\mid \operatorname{copy}_{a}(p)
-\mid \operatorname{drop}_{a}(q),
-\end{aligned}
-\label{eq:raw-smc-grammar}
-\end{equation}
-
-其中 $g\in G$，$p$ 与 $q$ 分别是 $\mathsf{mode}(a)$ 允许复制与丢弃的证据。
-因此 copy/drop 是带许可证的显式 primitive。仅凭
-$\mathsf{mode}(a)=\mathsf{Cartesian}$ 或 $\mathsf{Affine}$，本理论并不额外加入
-自然交换余幺半群律。
-
-令 $\equiv_{\mathrm{smc}}$ 是由范畴律、张量双函子律、结合子与幺元子自然性、
-对称的互逆性，以及 pentagon、triangle、hexagon 相容性生成的最小同余。定义
-
-\begin{equation}
-\boxed{
-\mathcal C_{\Sigma}(u,v)
-=
-\{d:u\Rightarrow_{\Sigma}v\}/\!\equiv_{\mathrm{smc}} .
-}
-\label{eq:free-smc-quotient}
-\end{equation}
-
-复合与张量在该商上良定义，故 $\mathcal C_{\Sigma}$ 是由 $\Sigma$ 生成、并配备
-mode-admissible distinguished copy/drop generators 的自由对称幺半范畴。
-
-\begin{MWCallout}[MWLilac]{Theorem: free interpretation / 定理：自由解释}
-设 $\mathcal D$ 为对称幺半范畴。若为每个 $a\in O$ 选择目标对象，为每个
-$g\in G$ 选择类型正确的目标态射，并为许可的 copy/drop 选择与 primitive 解释相容的
-态射，则存在一个保持这些选择的对称幺半函子
-\[
-\llbracket-\rrbracket:\mathcal C_{\Sigma}\longrightarrow\mathcal D.
-\]
-任意两个在原子对象与全部 primitive 上一致的此类解释之间，存在唯一具有给定原子
-分量的幺半自然同构。
+  它表示 $P_{i}$ 是一个迁移保持映射 $P_{i}: \mathcal{L} \rightarrow \mathcal{L}_{i}$，满足 $\rightarrow_{\mathsf C} \subseteq (P_i^S)^{-1} \circ \rightarrow_i \circ P_i^S$。简单来说就是，源系统发生的每一步，在目标系统中都有对应的一步。
 \end{MWCallout}
 
-该定理说明：静态协调图式的意义由原子类型和 primitive 的意义唯一控制；它没有把
-运行时 DPO 事件、概率选择或外部批准塞入静态语法。动态语义必须在下一层另行给出。
+\begin{MWCallout}[MWCyan]{反向可解释性}
+  反向可解释性回答：目标观测面中的变化是否一定来自真实协调事件。它说明从一个投影状态出发，目标语义中发生的任何原生可观察变化，都必须能由某个源协调事件解释。
 
-\subsection{Extension of syntax / 语法扩展}
+  相比于正向保持回答“源发生的事情，观测面有没有看到”，反向解释则回答“观测面看到的事情，源是否真实发生过”。
 
-签名扩展
+  具体来说，其表示为：
 
-\begin{equation}
-\alpha:\Sigma\hookrightarrow\Sigma^{+}
-\label{eq:signature-extension-map}
-\end{equation}
+  \begin{equation}
+    \boxed{P_i^S(X) \xRightarrow[d]{obs,i} Z \Rightarrow \exists e,Y: X\xRightarrow[e]{obs,\mathsf C}Y
+    }
+    \label{eq:projection-backward-reflection}
+  \end{equation}
 
-由对象与 primitive 的单射组成，并严格保持输入词、输出词、mode 与 contract。
-逐构造重索引得到
-
-\begin{equation}
-\alpha_{\mathcal C}:\mathcal C_{\Sigma}\longrightarrow\mathcal C_{\Sigma^{+}}.
-\label{eq:signature-reindex-functor}
-\end{equation}
-
-\begin{MWCallout}[MWLilac]{Theorem: coherent signature extension / 定理：相容签名扩展}
-若
-$\Sigma\xhookrightarrow{\alpha}\Sigma'
-\xhookrightarrow{\beta}\Sigma''$，则
-\[
-(\beta\circ\alpha)_{\mathcal C}
-=
-\beta_{\mathcal C}\circ\alpha_{\mathcal C},
-\qquad
-(\operatorname{id}_{\Sigma})_{\mathcal C}
-=
-\operatorname{id}_{\mathcal C_{\Sigma}}.
-\]
-同一相容性同时保持对象词、primitive、mode 与 contract，并可被四个语义视图继承。
+  其中，左侧表示，在第 $i$ 个观察面中，如果发生了一次可观察变化；右边表示，那么一定存在源协调事件 $e$，使源协调系统也发生了一次对应变化。$d$ 表示触发该变化的目标域事件。
 \end{MWCallout}
 
-重索引只把旧结构放入更大签名；它不证明新 primitive 已获授权。真正改变允许规则集合
-的动作称为 \emph{strict admission}，必须另有授权、资格与版本证书。这个区分将在
-跨 epoch 理论中再次使用。
+至此，观测投影总体定义完成。观测投影不是把协调状态转换成另一种图形表示，而是在一个独立定义的目标语义中，为源协调状态和事件提供解释，并证明源行为不会丢失、目标行为不会凭空产生、终态判断与版本信息不会发生改变。
 
+\subsection{The Four Observation Domains /
+四个观测域}
 
-% === DPO Dynamics / DPO 动力学 ===
-
-\section{Typed Open-Hypergraph Dynamics / 有类型开放超图动力学}
-\label{sec:typed-open-hypergraph-dynamics}
-
-\subsection{The ambient adhesive category / 环境粘合范畴}
-
-把 $\Sigma$ 的对象与 primitive 编码为有限有类型开放超图。其节点与超边带类型，
-输入输出边界保留位置顺序，因而静态词接口可以被精确恢复。记所得范畴为
-$\mathsf{Hyp}_{\Sigma}$。它等价于一个有类型预层 slice 中的有限、精确、可重现全子范畴；
-后者为粘合范畴，故沿单态的推前具有 DPO 所需的 Van Kampen 性质
-\citep{lackSobocinski2004,lackSobocinski2005}。
-
-位置编码桥只在上述有限精确范围内使用。它不声称任意无限 slice 对象都能由运行时
-开放超图表示。
-
-\subsection{Rules, matches and direct derivations / 规则、匹配与直接导出}
-
-一条规则是 $\mathsf{Hyp}_{\Sigma}$ 中的单态 span
+上一节我们对观测语义进行了整体描述，这部分则具体描述，同一个协调事件 $e$，在具体哪些语义域中、被解释为什么：
 
 \begin{equation}
-\boxed{
-\rho
-=
-\left(
-L\xleftarrow{\ell}K\xrightarrow{r}R
-\right).
-}
-\label{eq:dpo-rule-span}
-\end{equation}
-
-$L$ 是待替换局部图，$K$ 是必须保留的接口，$R$ 是替换结果。对单态 match
-$m:L\hookrightarrow X$，直接导出由两个推前方块给出：
-
-\begin{equation}
-\begin{array}{ccccc@{\qquad}ccccc}
-K & \xrightarrow{\ell} & L
-&&&
-K & \xrightarrow{r} & R
-\\[-1pt]
-\big\downarrow\,{\scriptstyle k}
-&&
-\big\downarrow\,{\scriptstyle m}
-&&&
-\big\downarrow\,{\scriptstyle k}
-&&
-\big\downarrow\,{\scriptstyle n}
-\\[-1pt]
-D & \xrightarrow{d} & X
-&&&
-D & \xrightarrow{h} & Y .
-\end{array}
-\label{eq:dpo-two-pushouts}
-\end{equation}
-
-左方块给出 pushout complement $D$，右方块给出重写结果 $Y$。开放边界、未删除接口、
-资源归属与新鲜名字均在 match 合法性中检查，而不是在重写后补救。
-
-\begin{MWCallout}[MWLilac]{Theorem: two levels of DPO uniqueness / 定理：DPO 的两层唯一性}
-对同一 complement span 和同一规则右腿，任意两个第二推前结果 $Y_1,Y_2$ 之间存在
-唯一保持余锥腿的典范同构
-\[
-\varphi:Y_1\cong Y_2.
-\]
-进一步，在有限精确表示中固定 inclusion match 与具体 fresh support 后，计算构造选出
-典范代表元；满足同一计算规范的两个认证端点字面相等，且 proof representative 的选择
-不改变该端点。
-\end{MWCallout}
-
-第一层是范畴论中的“唯一到同构”，第二层才是执行器中的“同一确定端点”。这两层共同
-支持 replay，但不可压缩成笼统的“DPO 结果绝对唯一”。
-
-\subsection{Parallel independence / 并行独立}
-
-考虑同一 $X$ 上的两次直接导出
-
-\begin{equation}
-X\xRightarrow{\rho_1,m_1}Y_1,
-\qquad
-X\xRightarrow{\rho_2,m_2}Y_2.
-\label{eq:parallel-derivations}
-\end{equation}
-
-若 $m_1,m_2$ 给出显式 parallel-independence 分解，即任一规则删除或创建的部分不破坏
-另一规则所需的保留部分，则两步均存在 residual：
-
-\begin{equation}
-Y_1\xRightarrow{\rho_2/m_1}Z_{12},
-\qquad
-Y_2\xRightarrow{\rho_1/m_2}Z_{21}.
-\label{eq:residual-derivations}
-\end{equation}
-
-\begin{MWCallout}[MWLilac]{Theorem: conditional concurrency diamond / 定理：条件并发菱形}
-在 \textbf{A2} 的粘合性与 parallel-independence 前提下，存在保持两条规则右腿的
-典范同构
-\[
-Z_{12}\cong Z_{21}.
-\]
-因而两次独立变化的执行顺序不改变最终协调结构，至多改变其表示。
-\end{MWCallout}
-
-这是有条件的交换菱形，不是全局 confluence、Church--Rosser 或任意事件可交换性。
-具有资源冲突、名称捕获或共同删除对象的 match 不在结论范围内。
-
-% === Execution and Replay / 执行与重放 ===
-
-\section{Observable Execution and Replay / 可观察执行与重放}
-\label{sec:observable-execution-replay}
-
-\subsection{Complete events / 完整事件}
-
-顶层事件元组中的 $X'$ 适合审计，但不能被当作 replay 的计算依据，否则“重放成功”
-会退化为直接读取已存终点。为此，从完整事件 $e$ 中删除源、终点和任何证明对象，得到
-recipe
-
-\begin{equation}
-r(e)
-=
-(v,\rho,m,\kappa,\nu,\alpha,\omega,k,\ldots)
-\in\mathsf{Recipe}_{\Sigma},
-\label{eq:replay-recipe}
-\end{equation}
-
-其中省略号只表示完成具体有限 DPO 构造所需的确定数据，不包含目标状态。replay kernel
-是偏函数
-
-\begin{equation}
-\mathsf{run}_{\Sigma}:
-\mathsf{Recipe}_{\Sigma}\times\operatorname{Config}(\Sigma)
-\rightharpoonup
-\operatorname{Config}(\Sigma).
-\label{eq:replay-kernel}
-\end{equation}
-
-其定义域恰由版本一致、match 合法、边界保持、新鲜性、合同与授权检查确定。
-
-\begin{MWCallout}[MWLilac]{Theorem: replay uniqueness / 定理：重放唯一性}
-若同一 recipe $r$ 在同一源状态 $X$ 上得到两个认证结果，
-\[
-\mathsf{run}_{\Sigma}(r,X)=Y_1,
-\qquad
-\mathsf{run}_{\Sigma}(r,X)=Y_2,
-\]
-则 $Y_1=Y_2$。因此认证事件的目标由源和 endpoint-free recipe 唯一决定，而不是由
-被记录的目标、rule identifier 或非确定的 proof representative 决定。
-\end{MWCallout}
-
-该结论依赖前节 DPO 的两层唯一性：范畴层排除语义歧义，有限精确表示层选出字面相等
-的可执行端点。
-
-\subsection{Observable quotient LTS / 可观察商迁移系统}
-
-一个可观察 LTS 定义为
-
-\begin{equation}
-\boxed{
-\mathcal L
-=
-(S,E,\sim,\to,
-\mathsf{obs},\mathsf{succ},\mathsf{wait},\mathsf{ver}),
-}
-\label{eq:observable-lts}
-\end{equation}
-
-其中 $\sim$ 是 $S$ 上的等价关系，$\to\subseteq S\times E\times S$；
-$\mathsf{obs}$ 给出外部观察，$\mathsf{succ}$ 与 $\mathsf{wait}$ 是状态谓词，
-$\mathsf{ver}:S\to\mathbb N$ 给出版本。定义
-
-\begin{equation}
-\operatorname{Normal}(x)
-\quad:\!\!\Longleftrightarrow\quad
-\nexists e,y,
-\bigl(x\xrightarrow e y\land\mathsf{obs}(e)\bigr).
-\label{eq:normal-state}
-\end{equation}
-
-一般 LTS 的三个正常终态为
-
-\begin{equation}
-\begin{aligned}
-\operatorname{Success}(x)
-&:\!\!\Longleftrightarrow
-\operatorname{Normal}(x)\land\mathsf{succ}(x),\\
-\operatorname{ExternalWait}(x)
-&:\!\!\Longleftrightarrow
-\operatorname{Normal}(x)\land\neg\mathsf{succ}(x)\land\mathsf{wait}(x),\\
-\operatorname{Deadlock}(x)
-&:\!\!\Longleftrightarrow
-\operatorname{Normal}(x)\land\neg\mathsf{succ}(x)\land\neg\mathsf{wait}(x).
-\end{aligned}
-\label{eq:three-normal-terminal-classes}
-\end{equation}
-
-\begin{MWCallout}[MWLilac]{Theorem: quotient well-definedness and terminal partition /
-定理：商良定义与终态三分}
-在 \textbf{A4} 下，迁移、观察、成功、等待与版本均下降到商集 $S/{\sim}$。
-每个 normal 状态恰属于
-$\operatorname{Success}$、$\operatorname{ExternalWait}$、
-$\operatorname{Deadlock}$ 三类之一，且三类两两不交。
-\end{MWCallout}
-
-生产性的无限执行不是第四种 normal 状态，因为它仍可继续迁移。后文针对某个具体
-admitted occurrence 的“四类执行分类”是在路径层加入 stable productive infinity，
-不能与式 \eqref{eq:three-normal-terminal-classes} 混同。
-
-\subsection{Paths and replayable traces / 路径与可重放轨迹}
-
-有限路径递归定义为
-
-\begin{equation}
-\begin{aligned}
-\operatorname{Path}_{\mathcal L}(x,x)&\ni\epsilon,\\
-p\in\operatorname{Path}_{\mathcal L}(x,y),
-y\xrightarrow e z
-&\Longrightarrow
-p\cdot e\in\operatorname{Path}_{\mathcal L}(x,z).
-\end{aligned}
-\label{eq:lts-path}
-\end{equation}
-
-若路径中的每条边都携带 recipe 且逐步满足
-$\mathsf{run}(r(e_i),X_i)=X_{i+1}$，则称其为 replayable trace。于是执行证据同时具有
-两个互补面向：LTS 路径给出行为组合，DPO recipe 给出每一步的构造性重现。
-
-
-% === Epoch and Admission / Epoch 与准入 ===
-
-\section{Signature Growth and Epoch Semantics / 签名增长与 Epoch 语义}
-\label{sec:signature-growth-epoch}
-
-\subsection{Reindexing versus admission / 重索引与准入}
-
-设
-
-\begin{equation}
-\Sigma_0\xhookrightarrow{\alpha_0}\Sigma_1
-\xhookrightarrow{\alpha_1}\cdots
-\xhookrightarrow{\alpha_{t-1}}\Sigma_t
-\label{eq:signature-extension-chain}
-\end{equation}
-
-为有限扩展链。每个 $\alpha_i$ 诱导配置、事件、静态图式与四视图状态的重索引。
-纯重索引保持旧版本事实；它既不增加新规则，也不改变一条旧事件的授权来源。
-
-若 $\rho_{\mathrm{new}}\in G_{i+1}\setminus\alpha_i(G_i)$，则严格准入是额外对象
-
-\begin{equation}
-\mathsf{Adm}_i(\rho_{\mathrm{new}})
-=
-(\mathsf{qualified},\mathsf{authorized},
-\mathsf{quiescent},\mathsf{resourceSafe},
-\mathsf{versionStep}).
-\label{eq:strict-admission-certificate}
-\end{equation}
-
-只有 $\mathsf{Adm}_i$ 才允许把新规则用于 $\Sigma_{i+1}$ 的原生事件。
-
-\begin{MWCallout}[MWLilac]{Theorem: finite dependent epoch coherence /
-定理：有限依赖 Epoch 相容性}
-对任意链 \eqref{eq:signature-extension-chain}，复合重索引与逐步重索引相同；
-若每次真正扩张都携带严格准入证书，则源路径、事件 recipe、四视图路径、版本与 admission
-marks 可沿整个链共同运输。运输后的每步仍对应原 occurrence，而不是一个仅共享 rule
-identifier 的新事件。
-\end{MWCallout}
-
-\subsection{Version invariant / 版本不变量}
-
-对事件 $e:X\to Y$，定义版本合法性
-
-\begin{equation}
-\operatorname{EpochOK}(e)
-\quad:\!\!\Longleftrightarrow\quad
-\mathsf{ver}(X)=\mathsf{ver}(e)=\mathsf{ver}(Y),
-\label{eq:epoch-event-alignment}
-\end{equation}
-
-行政准入事件可把下一状态推进至新版本，但该推进必须由
-$\mathsf{versionStep}$ 明示。于是“结构被重索引到新签名”和“世界已承认新规则”
-在数学上是两种不同的边。
-
-
-% === Projection Theory / 投影理论 ===
-
-\section{Certified Semantic Projections / 认证语义投影}
-\label{sec:certified-semantic-projections}
-
-\subsection{Projection certificate / 投影证书}
-
-设源与目标分别为
-$\mathcal L_S=(S_S,E_S,\sim_S,\to_S,\ldots)$ 和
-$\mathcal L_T=(S_T,E_T,\sim_T,\to_T,\ldots)$。
-投影证书
-
-\begin{equation}
-\boxed{
-P
-=
-(f_S,f_E,\mathsf{Lift},
-\mathsf{sound},\mathsf{reflect},
-\mathsf{terminal},\mathsf{version},\mathsf{resource})
-}
-\label{eq:projection-certificate}
-\end{equation}
-
-包含状态映射 $f_S:S_S\to S_T$、事件映射 $f_E:E_S\to E_T$，并满足：
-
-\begin{align}
-x\xrightarrow e_S y
-&\Longrightarrow
-f_S(x)\xrightarrow{f_E(e)}_T f_S(y),
-\label{eq:projection-soundness}\\
-f_S(x)\xrightarrow{a}_T z
-&\Longrightarrow
-\exists e,y,
-x\xrightarrow e_S y\land
-\mathsf{Lift}(e,a)\land
-z\sim_T f_S(y).
-\label{eq:projection-reflection}
-\end{align}
-
-此外 $f_S$ 保持并反射三个 normal 终态，保持版本，并按照目标视图的资源表示保持
-ownership/token 等式。
-
-\begin{MWCallout}[MWLilac]{Theorem: path lifting and reflection / 定理：路径提升与反射}
-每条源路径
-$p:x\leadsto_S y$ 都逐边映射为
-$f_P(p):f_S(x)\leadsto_T f_S(y)$。
-反之，从 $f_S(x)$ 出发的每条原生目标路径都可逐边 Lift 为一条源路径；目标端点与
-被提升源端点的投影在 $\sim_T$ 下相等。成功、外部等待、死锁与版本在两个方向上相容。
-\end{MWCallout}
-
-因此“投影”并非画图函数。只有 soundness 会允许目标丢失行为；加入从投影像出发的
-reflection 后，目标视图才不会凭空产生源语义无法解释的边。
-
-\subsection{The four views / 四个视图}
-
-对同一源 LTS 固定
-
-\begin{equation}
-\mathbf P
-=
-(P_{\mathrm D},P_{\mathrm N},P_{\pi},P_{\mathrm M}),
-\label{eq:four-projection-family}
-\end{equation}
-
-分别指向 DAG、Petri、强迟 $\pi$ 与态射 LTS。源加四视图形成 five-view agreement；
-“四投影”本身始终只指目标四元组。
-
-\subsubsection{DAG view / DAG 视图}
-
-任意开放超图都可能含 self-loop 或一般有向环，因此不存在对所有源对象保持 incidence
-的 total strict-DAG projection。总定义采用 SCC 凝聚：
-
-\begin{equation}
-\operatorname{Cond}(G)
-=
-\bigl(\operatorname{SCC}(G),E_{\operatorname{SCC}}\bigr),
-\label{eq:scc-condensation}
-\end{equation}
-
-每条原边要么位于同一 SCC 内部，要么诱导凝聚边。定义
-$r_{\operatorname{SCC}}(C)$ 为 SCC 偏序下的 canonical lower-cardinality rank，则
-
-\begin{equation}
-C\longrightarrow C'
-\quad\Longrightarrow\quad
-r_{\operatorname{SCC}}(C)<r_{\operatorname{SCC}}(C'),
-\label{eq:scc-rank-increase}
-\end{equation}
-
-从而 $\operatorname{Cond}(G)$ 无有向环。这个 rank 只证明凝聚 DAG 的 acyclicity，
-与业务规则下降量和反馈证据高度 $H$ 均无关。
-
-\subsubsection{Petri view / Petri 视图}
-
-Petri LTS 把资源条件表达为 marking 与 firing。对一个被选中的准入后 occurrence
-$e_*$，局部 sidecar 给出
-
-\begin{equation}
-M\xrightarrow{t_*}M',
-\qquad
-M'=M-\operatorname{pre}(t_*)+\operatorname{post}(t_*),
-\label{eq:petri-firing}
-\end{equation}
-
-并证明：旧 declaration 经签名扩展形成精确前缀；新规则对应一个新 transition；
-source incidence 与 enabling 成立；被消费和产生 token 的 provenance 与
-$e_*$ 的资源坐标相同。Petri 的经典组合思想提供语义背景
-\citep{bruniEtAl2001}，但这些 provenance 等式属于 Cantilune 的 occurrence 证书。
-
-\subsubsection{Morphism view / 态射视图}
-
-态射 LTS 记录源图式或开放超图之间的结构态射，把同一 occurrence 解释为满足接口与
-合同的态射变化。$P_{\mathrm M}$ 的价值在于保留组合边界：DAG 强调依赖序，
-Petri 强调资源守恒，$\pi$ 强调名称传递，而态射视图证明这三种读法没有遗失
-$\mathcal C_{\Sigma}$ 的类型接口。
-
-\subsection{Whole-LTS certificate versus occurrence sidecar /
-全 LTS 证书与发生级伴随证书}
-
-\begin{MWCallout}[MWAmber]{Non-interchangeability / 不可互换性}
-$P_{\mathrm D}$、$P_{\mathrm N}$ 与 $P_{\mathrm M}$ 是产品级全 LTS 假设，
-因此才能导出任意有限路径的 soundness 与 reflection。
-SCC 凝聚和式 \eqref{eq:petri-firing} 是被选中 occurrence 的局部 sidecar，
-只说明该边的结构和资源含义。局部 sidecar 不能反推出全 LTS 投影，反之全 LTS
-投影也不会自动给出精确 token provenance。
-\end{MWCallout}
-
-
-% === Name Passing / 名称传递 ===
-
-\section{Name-Passing and Protocol Semantics / 名称传递与协议语义}
-\label{sec:name-passing-semantics}
-
-\subsection{Categorical boundary of open processes / 开放进程的范畴边界}
-
-令 $\mathsf{Proc}(u,v)$ 为具有极化输入输出接口的开放进程项。原始进程语法上的
-$\alpha$-转换、并行交换结合幺元律与 scope laws 生成同余 $\equiv_{\pi}$。定义
-
-\begin{equation}
-\mathsf{OpenPi}(u,v)
-=
-\mathsf{Proc}(u,v)/{\equiv_{\pi}}.
-\label{eq:open-pi-quotient-hom}
-\end{equation}
-
-plug 给出复合，parallel 给出张量，空进程给出幺元，名字交换给出对称；hide/restriction
-在接口满足条件时闭合。
-
-\begin{MWCallout}[MWLilac]{Theorem: open-process categorical and operational bridge /
-定理：开放进程的范畴--操作桥}
-商 Hom $\mathsf{OpenPi}(u,v)$ 满足所陈述的对称幺半范畴方程，证明携带的极化接口
-在 plug、parallel 与 hide 下保持类型；这些构造同时在原生强迟 $\pi$ 操作语义中闭合。
-\end{MWCallout}
-
-范畴结构位于商 Hom 上，原始 $\pi$ 进程语法本身不是范畴。这一边界防止把
-结构同余前后的代表元差异误写成业务事件差异。
-
-\subsection{Strong late semantics and typed erasure / 强迟语义与类型擦除}
-
-写作
-
-\begin{equation}
-P\xrightarrow{\mu}_{\mathrm{late}}Q
-\label{eq:strong-late-transition}
-\end{equation}
-
-表示一步原生强迟迁移，不经过弱闭包。若
-$P\xrightarrow{\mu}_{\mathrm{typed}}Q$ 是合法有类型标准迁移，类型擦除
-$|-|$ 满足
-
-\begin{equation}
-|P|\xrightarrow{|\mu|}_{\mathrm{late}}|Q|.
-\label{eq:typed-erasure-forward}
-\end{equation}
-
-\begin{MWCallout}[MWLilac]{Theorem: forward operational erasure / 定理：正向操作擦除}
-每个有类型标准 $\pi$ 迁移擦除后都是一个真正的原生无类型强迟迁移。
-该结论只有 typed-to-untyped 方向；它不声称任意无类型导数都能恢复类型。
-\end{MWCallout}
-
-\subsection{The request--accept calculus / 请求--接受演算}
-
-定义有限源演算 $\mathcal L_{\mathrm{RA}}$，其核心状态为
-
-\begin{equation}
-q_0=\mathsf{Idle},\qquad
-q_1=\mathsf{Requested},\qquad
-q_2=\mathsf{Accepted},
-\label{eq:ra-states}
-\end{equation}
-
-并有两条可观察业务边
-
-\begin{equation}
-q_0\xrightarrow{\mathsf{request}}q_1
-\xrightarrow{\mathsf{accept}}q_2.
-\label{eq:ra-transitions}
-\end{equation}
-
-编码 $\eta_{\mathrm{RA}}$ 把它映入未经筛选的结构强迟 $\pi$ 商 LTS。
-
-\begin{MWCallout}[MWLilac]{Theorem: exact request--accept certificate /
-定理：精确请求--接受证书}
-式 \eqref{eq:ra-transitions} 的每一步均编码为真正的原生强迟迁移；从编码像出发的
-对应原生迁移又反射出唯一源事件和结构同余端点。因此该证书是双向的强迁移证书，
-没有用弱迁移隐藏中间步骤。
-\end{MWCallout}
-
-$\mathcal L_{\mathrm{RA}}$ 是一个独立的协议子语言。它当前不携带 selected product
-candidate 所需的 session/correlation 元数据，因此本理论不声称全局 request 事件在
-因果上先于某个被选中的产品 occurrence。
-
-\subsection{Enriched auditable mobility / 丰富可审计移动语义}
-
-裸三元组 $(P,\mu,Q)$ 无法唯一恢复 rule、session、correlation 与 occurrence identity。
-故定义丰富标签
-
-\begin{equation}
-\widehat\mu
-=
-(\mu,\mathsf{family},\mathsf{operation},
-v,\mathsf{rule},\mathsf{session},
-\mathsf{correlation},\mathsf{occurrence},\mathsf{phase}),
-\label{eq:enriched-pi-label}
-\end{equation}
-
-并以 derivative-alpha 与结构同余联合取商。稳定身份元数据位于进程商之外，
-phase 也不被结构同余吞并。
-
-规范 registry 含 15 类事件族；每类事件在四视图矩阵中各占一列，形成
-$15\times4=60$ 个语义单元。另有 60 个封闭登记操作位置。后两个“60”是不同集合：
-前者是事件族--视图矩阵坐标，后者是 API registry 的有限索引。
-
-\begin{MWCallout}[MWLilac]{Theorem: enriched strong-step completeness /
-定理：丰富强步完备性}
-每个规范事件族及每个登记操作位置均存在原生第一步；需要细化的操作携带显式原生
-phase。原始结构 LTS 与丰富商 LTS 之间的映射同时 sound 且 reflective，并保持式
-\eqref{eq:enriched-pi-label} 中的稳定 identity。所有步骤都是 strong late steps。
-\end{MWCallout}
-
-反向边界同样是定理的一部分：不存在仅从裸 $(P,\mu,Q)$ 恢复全部 15 类业务事件及
-审计身份的总函数。
-
-\subsection{Execution classification for an admitted occurrence /
-准入发生的执行分类}
-
-对一个固定 admitted occurrence，从业务起点出发的完整执行恰落入以下四类之一：
-
-\begin{enumerate}
-  \item 到达 $\operatorname{Success}$；
-  \item 到达 $\operatorname{ExternalWait}$；
-  \item 到达 $\operatorname{Deadlock}$；
-  \item 形成稳定且持续生产观察的无限轨迹。
-\end{enumerate}
-
-该四分结论由一个 iff 分类定理与相邻的两两不交定理共同给出。第四类是路径性质，
-前三类是式 \eqref{eq:three-normal-terminal-classes} 的 normal 状态性质。
-
-
-% === Domain Semantics / 域语义 ===
-
-\section{World-Indexed Domain Interpretation / 世界索引域解释}
-\label{sec:world-indexed-domain}
-
-\subsection{Worlds, actions and name abstraction / 世界、动作与名称抽象}
-
-令 $\mathsf{World}$ 的对象为有限序数 $n\in\mathbb N$，态射为有限注入
-$\iota:n\hookrightarrow m$。语义对象是函子
-
-\begin{equation}
-X:\mathsf{World}\longrightarrow\omega\mathsf{CPO}.
-\label{eq:world-indexed-cpo}
-\end{equation}
-
-在世界 $n$ 上，名称对象记为 $N(n)$，名称抽象满足
-
-\begin{equation}
-(N\Rightarrow X)(n)
-\cong
-X(n)^{\,n}\times X(n+1).
-\label{eq:name-abstraction}
-\end{equation}
-
-世界移位函子 $\delta$ 定义为
-
-\begin{equation}
-(\delta X)(n):=X(n+1),
-\label{eq:world-shift}
-\end{equation}
-
-并沿有限注入自然作用。于是动作函子为
-
-\begin{equation}
-\boxed{
-(\mathsf H X)(n)
-=
-N(n)\times(N\Rightarrow X)(n)
-+
-N(n)\times N(n)\times X(n)
-+
-N(n)\times(\delta X)(n)
-+
-X(n).
-}
-\label{eq:fms-action-functor}
-\end{equation}
-
-四个和项分别承载 bound input、free communication、fresh-name movement 与内部延续的
-世界索引形状。具体标签方向由操作桥确定，式 \eqref{eq:fms-action-functor} 只固定
-递归域的类型轮廓。
-
-\subsection{The unseparated lower semantics / 非分离下闭语义}
-
-令 $\mathsf P_{\downarrow\omega}$ 为下 $\omega$-Scott 闭集幂结构，并选定其对称
-Fubini。实际 Agent 函子为
-
-\begin{equation}
-\mathsf F
-=
-\mathsf P_{\downarrow\omega}\circ\mathsf H.
-\label{eq:actual-agent-functor}
-\end{equation}
-
-递归域 $A$ 满足
-
-\begin{equation}
-\boxed{
-\mathsf{fold}:\mathsf F A\cong A:
-\mathsf{unfold}.
-}
-\label{eq:agent-domain-equation}
-\end{equation}
-
-在连续自然映射范畴中，$\mathsf{fold}$ 给出初始代数，$\mathsf{unfold}$ 给出终余代数。
-restriction/hiding 是自然变换，并满足一次 unroll 方程及相应唯一性。
-
-\begin{MWCallout}[MWLilac]{Theorem: maximum-compatible domain closure /
-定理：最大相容域闭包}
-非分离分支在全部世界索引 $\omega$CPO 上给出
-$\mathsf P_{\downarrow\omega}$、对称 Fubini、式
-\eqref{eq:agent-domain-equation}、hiding，以及有限 Hoare、受卫 finite trace 和
-contextual-Hoare 观察下的充分性与完全抽象。有限生成观察具有相应 definability。
-\end{MWCallout}
-
-这里的完全抽象明确受观察语言限制。它不是 constructor-sensitive strong bisimulation
-的无条件完全抽象，也不是“每个 $\omega$CPO 元素都由一个源语法项定义”。
-
-\subsection{The separated evidence branch / 分离证据分支}
-
-另一分支保留更细的源观察分离，得到 all-source solution set 与 CPO-enriched adjunction。
-然而其 canonical sequential Fubini 不交换。反之，非分离分支具有选定的对称下闭结构，
-却把 nullary divergence 与 deadlock 映到同一个 effect bottom。
-
-\begin{equation}
-\begin{array}{c@{\qquad}c}
-\text{separated branch}
-&
-\text{unseparated lower branch}
-\\
-\text{source separation, enriched adjunction}
-&
-\text{symmetric Fubini, domain equation, hiding}
-\\
-\neg\text{ canonical commutative Fubini}
-&
-\text{divergence effect}=\text{deadlock effect}.
-\end{array}
-\label{eq:fms-two-branch-ledger}
-\end{equation}
-
-两分支组成的是 maximum-compatible ledger，而不是一个可把全部优点合并的单一模型。
-操作层仍以式 \eqref{eq:three-normal-terminal-classes} 区分 deadlock 与其他终态；
-非分离域模型的 effect collapse 不会删除该操作区分。
-
-\subsection{The exact denotational seam / 精确指称接缝}
-
-对 registry 中被选中的丰富迁移
-
-\begin{equation}
-\widehat P\xrightarrow{\widehat\mu}\widehat Q,
-\label{eq:selected-enriched-transition}
-\end{equation}
-
-令 $\llbracket-\rrbracket_A$ 为到 Agent 域的解释。\textbf{A9} 要求
-
-\begin{equation}
-\begin{aligned}
-\operatorname{event}(\widehat\mu)&=e_*,\\
-\operatorname{meta}(\widehat\mu)&=
-(v,\mathsf{rule},\mathsf{session},
-\mathsf{correlation},\mathsf{occurrence}),\\
-\operatorname{raw}(\widehat P\xrightarrow{\widehat\mu}\widehat Q)
-&=
-(P\xrightarrow{\mu}_{\mathrm{late}}Q),\\
-\operatorname{agentEndpoints}(\widehat\mu)
-&=
-(\llbracket P\rrbracket_A,\llbracket Q\rrbracket_A).
-\end{aligned}
-\label{eq:exact-denotational-seam}
-\end{equation}
-
-这些是字面坐标等式，而不是事后推测的相似性。FMS 因而解释 $\pi$ 行的端点与观察，
-却不承担 DAG、Petri 或态射投影的路径 reflection。
-
-% === Feedback / 反馈 ===
-
-\section{Finite-Height Feedback and Stochastic Stabilization /
-有限高度反馈与随机稳定化}
-\label{sec:feedback-stabilization}
-
-\subsection{Evidence order and stable region / 证据序与稳定区}
-
-令 $(Q,\sqsubseteq,\sqcup,\bot)$ 为有限高度 join 半格。存在
-$h:Q\to\{0,\ldots,H\}$，使严格增长蕴含
-
-\begin{equation}
-q\sqsubset q'
-\quad\Longrightarrow\quad
-h(q)<h(q').
-\label{eq:feedback-height}
-\end{equation}
-
-令 $U\subseteq Q$ 为向上闭集：
-
-\begin{equation}
-q\in U,\quad q\sqsubseteq q'
-\quad\Longrightarrow\quad
-q'\in U.
-\label{eq:stable-upset}
-\end{equation}
-
-对源执行状态给出证据映射 $\mathsf{ev}:S\to Q$。一次原生事件只允许保持或增加证据：
-
-\begin{equation}
-x\xrightarrow e y
-\quad\Longrightarrow\quad
-\mathsf{ev}(x)\sqsubseteq\mathsf{ev}(y).
-\label{eq:evidence-monotonicity}
-\end{equation}
-
-\begin{MWCallout}[MWLilac]{Theorem: hard forward invariant / 定理：硬前向不变量}
-若 $\mathsf{ev}(x_0)\in U$，则从 $x_0$ 出发的任意有限执行
-$x_0\leadsto x_n$ 都满足 $\mathsf{ev}(x_n)\in U$。
-等价地，任意有限 join 累积一旦进入 $U$ 就不会退出。
-\end{MWCallout}
-
-证明只使用式 \eqref{eq:stable-upset} 与 \eqref{eq:evidence-monotonicity} 的归纳，
-与概率选择无关。这是“最终一直稳定”中“保持”部分的确定性基础。
-
-\subsection{Native finite Markov kernel / 原生有限 Markov Kernel}
-
-令 $S$ 有限，$K(x,y)\in[0,1]$ 满足
-
-\begin{equation}
-\sum_{y\in S}K(x,y)=1.
-\label{eq:markov-row-sum}
-\end{equation}
-
-要求每条正概率边都有原生事件标签：
-
-\begin{equation}
-K(x,y)>0
-\quad\Longrightarrow\quad
-\exists e,\ x\xrightarrow e y
-\land
-\mathsf{run}(r(e),x)=y.
-\label{eq:positive-edge-native-label}
-\end{equation}
-
-从初始状态 $x_0$ 与 $K$ 得到轨迹测度 $\mu_{x_0}$。稳定命中时刻为
-
-\begin{equation}
-T_U(\omega)
-=
-\inf\{t\in\mathbb N\mid\mathsf{ev}(\omega_t)\in U\}.
-\label{eq:stable-hitting-time}
-\end{equation}
-
-在稳定 epoch 窗口内，若当前尚未稳定，则 epochwise fairness 提供一次机会，使证据以
-至少 $\varepsilon$ 的概率严格增长。令 $q_n$ 为连续 $n$ 次公平机会均未产生下一次
-严格证据增长的概率，则几何尾界为
-
-\begin{equation}
-q_n\le(1-\varepsilon)^n.
-\label{eq:opportunity-geometric-tail}
-\end{equation}
-
-式 \eqref{eq:opportunity-geometric-tail} 首先是 opportunity count 的界。只有
-opportunity 与连续 epoch 对齐时，才能把它解释为真实 epoch 计数；这正是
-\textbf{A10} 中 epochwise fairness 与 event--epoch alignment 的作用。
-
-\begin{MWCallout}[MWLilac]{Theorem: replayable stochastic stabilization /
-定理：可重放随机稳定化}
-在 \textbf{A3}、\textbf{A4} 与 \textbf{A10} 下，
-\[
-\mu_{x_0}\bigl(
-\operatorname{EventuallyAlways}U
-\bigr)=1,
-\qquad
-\mathbb E_{x_0}[T_U]\le\frac{H}{\varepsilon}.
-\]
-被抽取的每条正概率进展路径同时携带原生事件、精确 replay 与 epoch 对齐见证；
-命中 $U$ 后，硬前向不变量保证永久留在 $U$。
-\end{MWCallout}
-
-该定理不把概率 $1$ 解释为“每一条轨迹都稳定”，也不对缺乏稳定窗口、公平机会或
-统一正下界的调度器作活性保证。
-
-
-% === Integrated Theory / 组合理论 ===
-
-\section{The Integrated Cantilune Theory / Cantilune 组合理论}
-\label{sec:integrated-theory}
-
-\subsection{A complete certified model / 完整认证模型}
-
-固定一次签名增长 $\alpha:\Sigma\hookrightarrow\Sigma^{+}$、源执行
-$\mathcal L_{\Sigma^{+}}$ 与候选索引 $c$。不含随机调度的核心认证模型记为
-
-\begin{equation}
-\begin{aligned}
-\operatorname{CoreCert}(c,e_*)
-:=\Bigl(
-&\text{\textbf{A1}--\textbf{A9} 的数据与证明},\\
-&X\xrightarrow{e_*}Y,\ r(e_*),
-\mathbf P,
-\mathsf{Adm},
-\mathsf{DAGSide},
-\mathsf{PetriSide},\\
-&\mathsf{SelectedRow},
-\mathsf{RegistryRow},
-\mathsf{LateStep},
-\mathsf{AgentSeam}
-\Bigr).
-\end{aligned}
-\label{eq:complete-certified-model}
-\end{equation}
-
-这里 $c$ 只是在有限候选族中选择一个完整包，不是一个工程阶段。
-\mbox{所有 seam 均绑定同一个 $e_*$。}\allowbreak\mbox{特别地，}
-
-\begin{equation}
-\begin{aligned}
-e_*
-&=
-\operatorname{event}(\mathsf{SelectedRow})
-=
-\operatorname{event}(\mathsf{RegistryRow}),\\
-\operatorname{id}(e_*)
-&=
-(v,\mathsf{rule},\mathsf{session},
-\mathsf{correlation},\mathsf{occurrence}),
-\end{aligned}
-\label{eq:common-occurrence-equality}
-\end{equation}
-
-并且该 identity 在 replay、四个目标事件和 $\pi$--FMS seam 中逐坐标相等。
-加入独立的反馈证书后，定义完整认证模型
-
-\begin{equation}
-\operatorname{Cert}(c,e_*)
-:=
-\operatorname{CoreCert}(c,e_*)
-\mathop{\times}_{\mathsf{SelectedRow}}
-\mathsf{FeedbackCert}(Q,U,K,H,\varepsilon).
-\label{eq:complete-certificate-with-feedback}
-\end{equation}
-
-这里的纤维积要求反馈证书所选正概率 row 的原生事件，正是核心证书中的
-$\mathsf{SelectedRow}$；因此组合两条主定理时不会悄悄换成另一条随机边。
-
-\subsection{Four-view coherence witness / 四视图相容见证}
-
-称 $W$ 为 $\operatorname{FourCoherence}(c,e_*)$ 的见证，当且仅当它同时包含：
-
-\begin{enumerate}
-  \item 源与每个视图之间的有限路径 soundness 和从像出发的 reflection；
-  \item $e_*$ 在四视图中的原生事件与 replay 端点；
-  \item success、external wait、deadlock、版本和资源坐标的保持；
-  \item DAG 的 SCC-internal/condensation-edge 二分与严格 SCC rank；
-  \item Petri 的 declaration delta、incidence、enabling、firing 和 provenance；
-  \item 强迟 $\pi$ 原生导数、丰富 registry identity 与精确 Agent 端点；
-  \item strict admission 的目标恰为选中业务事件的源，且扩展方块相容；
-  \item 所有上述坐标共享式 \eqref{eq:common-occurrence-equality}。
-\end{enumerate}
-
-\begin{MWCallout}[MWLilac]{Main coherence theorem / 主相容性定理}
-对任意候选 $c$ 与 occurrence $e_*$，
-\[
-\boxed{
-\operatorname{CoreCert}(c,e_*)
-\quad\Longrightarrow\quad
-\exists W,\ \operatorname{FourCoherence}(c,e_*;W).
-}
-\]
-因此同一业务发生在 DAG、Petri、强迟 $\pi$、态射四个独立目标 LTS 中具有兼容的
-路径、反射、终态、版本、资源、准入与 replay 解释；$\pi$ 行又与世界索引 Agent 域的
-精确端点一致。
-\end{MWCallout}
-
-\subsection{Why the theorem closes / 定理为何闭合}
-
-证明按下列依赖顺序组合，且每一步只消费之前已经定义的对象。
-
-\begin{enumerate}
-  \item 自由 SMC 普遍性质把静态 primitive 的解释延伸到全部协调图式。
-  \item 有限精确开放超图桥把静态接口放入粘合 DPO 环境；DPO 唯一性给出可执行端点。
-  \item 完整事件把端点构造压缩为 endpoint-free recipe；replay 唯一性固定同一 occurrence。
-  \item 商相容性使源 LTS 的路径与终态不依赖表示元。
-  \item 四个投影证书逐边给出 soundness、reflection 与 Lift，故扩展到任意有限路径。
-  \item 签名自然性运输旧语义，strict admission 单独证明新规则合法，二者共同闭合 epoch。
-  \item DAG 与 Petri sidecar 为同一 $e_*$ 补充结构序和资源 provenance，而不替代全 LTS
-  证书。
-  \item 强迟 $\pi$ 证书保留原生步与稳定身份；字面 seam 等式把该步连接至 Agent 域。
-\end{enumerate}
-
-所以总定理不是“若若干图看起来相似，则相信它们一致”，而是从逐层可组合证书构造
-一个具体 $W$。每个存在量都有来源，每个等式都有共同 occurrence 作为连接点。
-
-\subsection{Stabilization as a separate theorem / 独立的稳定化定理}
-
-四视图相容性描述“同一步在不同语义中是什么”；随机稳定化描述“调度长期会去哪里”。
-两者共用原生事件与 replay，却具有不同前提，因此必须保持为两条主结果。
-
-\begin{MWCallout}[MWLilac]{Main stabilization theorem / 主稳定化定理}
-若 $\mathsf{FeedbackCert}(Q,U,K,H,\varepsilon)$ 成立，则
-\[
-\boxed{
-\mu_{x_0}(\operatorname{EventuallyAlways}U)=1,
-\qquad
-\mathbb E_{x_0}[T_U]\le H/\varepsilon.
-}
-\]
-概率路径中的每条选中边均由源 LTS 原生事件标注，并可由其 recipe 精确重放。
-\end{MWCallout}
-
-\begin{MWCallout}[MWCyan]{Corollary: coherent stable coordination /
-推论：相容且稳定的协调}
-一个完整认证模型同时具有四视图相容见证 $W$ 与几乎必然稳定化结论。故在显式公平
-条件下，Cantilune 不仅能从任一视图追溯同一业务 occurrence，还能证明被调度执行最终
-进入并保持在稳定证据区；期望 epoch 数受 $H/\varepsilon$ 控制。
-\end{MWCallout}
-
-
-% === Theorem Ledger / 定理账本 ===
-
-\section{Closed Theorem Ledger / 闭合定理账本}
-\label{sec:closed-theorem-ledger}
-
-下表按数学依赖而非源码目录列出机械化理论的完整闭包。编号只用于本章引用，不承载
-项目阶段或交付计划含义。
-
-\begin{longtblr}[
-  caption = {从变量与公理到主结论的定理闭包。},
-  label = {tab:closed-theorem-ledger},
-]{
-  width = \textwidth,
-  colspec = {Q[c,wd=0.055\textwidth] Q[l,wd=0.235\textwidth]
-             Q[l,wd=0.22\textwidth] X[l]},
-  rowhead = 1,
-  row{1} = {bg=MWSoft!70,font=\bfseries},
-  colsep = 3.5pt,
-  rowsep = 2.8pt,
-  cells = {font = \scriptsize},
-}
-\toprule
-号 & 数学定理 & 主要前提 & 精确结论 \\
-\midrule
-T1 & 自由解释 &
-\textbf{A1}，目标 SMC 与 primitive compatibility &
-静态解释存在；指定原子分量后幺半自然同构唯一。 \\
-T2 & DPO 两层唯一性 &
-\textbf{A2}，同一 complement/right leg &
-范畴结果唯一到典范同构；固定有限表示后认证端点相等。 \\
-T3 & 并行独立菱形 &
-\textbf{A2}，显式 parallel independence &
-residual 均存在，两种次序的终点典范同构；不推出全局合流。 \\
-T4 & 签名扩展相容性 &
-\textbf{A1}、\textbf{A6} &
-恒等与复合扩展在静态及四视图中自然；纯 reindex 不等于 admission。 \\
-T5 & 商相容执行 &
-\textbf{A4} &
-迁移、观察、终态和版本在状态商上良定义。 \\
-T6 & 事件重放唯一性 &
-\textbf{A2}、\textbf{A3} &
-同一源与 endpoint-free recipe 产生唯一认证终点。 \\
-T7 & 投影路径双向性 &
-\textbf{A4}、\textbf{A5} &
-源路径 soundly 映射；从像出发的目标路径逐步反射并有 Lift。 \\
-T8 & 三个非名称视图闭包 &
-\textbf{A5} 的 DAG、Petri、Morphism 证书 &
-全 LTS 的路径、终态和版本在三个视图中保持并反射。 \\
-T9 & Petri occurrence 等式 &
-\textbf{A7}、\textbf{A8} &
-选中准入事件满足 declaration delta、incidence、enabling、firing 与 provenance。 \\
-T10 & Open-$\pi$ 范畴--操作桥 &
-极化接口与结构同余 &
-商 Hom 构成所需 SMC；plug、parallel、hide 在原生语义中闭合。 \\
-T11 & 有类型擦除 &
-合法 typed late step &
-擦除得到真正 native untyped late step；无反向类型恢复结论。 \\
-T12 & 最大相容域闭包 &
-世界索引 $\omega$CPO 与两分支各自前提 &
-非分离域方程、hiding 与受限完全抽象；分离伴随单独成立，二者不合并。 \\
-T13 & request--accept 精确证书 &
-有限源演算与结构强迟 LTS &
-两条业务边强步 sound/reflect；无 selected-candidate 因果前驱结论。 \\
-T14 & 丰富移动证书 &
-\textbf{A9}，15 类事件族与 registry &
-每类与每登记位置有原生第一步；sound/reflect 并保持稳定 identity。 \\
-T15 & 硬前向不变量 &
-有限高度 join 半格、$U$ 上闭、证据单调 &
-进入 $U$ 后所有有限执行都留在 $U$。 \\
-T16 & 随机命中与 replay &
-\textbf{A3}、\textbf{A10} &
-几乎必然最终一直在 $U$，期望 epoch $\le H/\varepsilon$，路径可原生重放。 \\
-T17 & 准入发生的执行分类 &
-固定 occurrence 的完整执行语义 &
-成功、外部等待、真死锁、稳定生产性无限轨迹构成互斥穷尽分类。 \\
-T18 & 候选索引四视图相容性 &
-$\operatorname{CoreCert}(c,e_*)$ &
-存在 $\operatorname{FourCoherence}$ 见证；同一 occurrence 连接四投影与 $\pi$--FMS seam。 \\
-\bottomrule
-\end{longtblr}
-
-表 \ref{tab:closed-theorem-ledger} 的“依赖”是数学上的概念依赖，并不声称最终机械化
-声明在语法上逐字调用了前面全部定理。组合记录可以直接携带等价字段；只要字段的
-数学内容与此处一致，闭环就成立。
-
-
-% === Scope and Conclusion / 范围与结论 ===
-
-\section{Exact Scope, No-Go Boundaries, and Conclusion /
-精确范围、不可行边界与结论}
-\label{sec:scope-and-conclusion}
-
-\subsection{What is established / 已建立的结论}
-
-在 \textbf{A1}--\textbf{A9} 与完整候选证书下，理论建立：
-
-\begin{equation}
-\operatorname{CoreCert}(c,e_*)
-\Longrightarrow
-\exists W,\operatorname{FourCoherence}(c,e_*;W).
-\label{eq:final-coherence-conclusion}
-\end{equation}
-
-在额外的 \textbf{A10} 下，理论建立：
-
-\begin{equation}
-\operatorname{Cert}(c,e_*)
-\Longrightarrow
-\mu_{x_0}(\operatorname{EventuallyAlways}U)=1
-\ \land
-\mathbb E_{x_0}[T_U]\le H/\varepsilon.
-\label{eq:final-stability-conclusion}
-\end{equation}
-
-两式合起来形成本章的数学闭环：
-
-\begin{equation}
-\boxed{
-\begin{gathered}
-\text{有限签名与静态组合}
-\Longrightarrow
-\text{合法 DPO occurrence}
-\Longrightarrow
-\text{唯一 replay}
-\\
-\Longrightarrow
-\text{商上执行}
-\Longrightarrow
-\text{四视图路径相容}
-\Longrightarrow
-\text{名称与域端点相容},
-\\
-\text{有限高度证据与公平 kernel}
-\Longrightarrow
-\text{几乎必然永久稳定}.
-\end{gathered}
-}
-\label{eq:complete-mathematical-closure}
-\end{equation}
-
-\subsection{What is deliberately not claimed / 明确不作出的结论}
-
-\begin{enumerate}
-  \item DPO 并发定理不推出全局合流；只有显式 parallel-independent 的两步可交换。
-  \item 任意开放超图不存在保持全部 incidence 的 total strict-DAG 投影；总构造是
-  SCC condensation，产品级 strict-DAG 仍需证书。
-  \item 纯签名 reindex 不等于 strict admission；版本变化必须由准入事件证明。
-  \item 裸 $\pi$ 迁移不能恢复审计元数据；丰富 identity 故意位于进程商之外。
-  \item typed erasure 只有正向操作保持，不提供任意 untyped derivative 的类型恢复。
-  \item request--accept 子语言与选中产品 occurrence 之间没有已证明的全局因果前驱关系。
-  \item separated domain branch 与 unseparated lower branch 不能拼成一个兼得所有性质的
-  模型；后者的 effect bottom 合并 divergence 与 deadlock。
-  \item 概率结论需要稳定窗口、公平性、$\varepsilon>0$ 与 epoch 对齐，不是无条件活性。
-  \item 总定理是“完整证书蕴含相容见证”的条件定理，不声称任意候选或全部生产产品
-  已自动获得这些证书。
-\end{enumerate}
-
-\subsection{Proof status and interpretation / 证明状态与解释}
-
-与表 \ref{tab:closed-theorem-ledger} 对应的核心义务在当前形式化清单中登记为
-\emph{kernel-proved}；项目状态仍为 \emph{review-pending}，独立人工复核字段尚未完成
-\citep{cantiluneManifest,cantiluneClosure}。形式化仓库还提供实质性参考见证以排除
-“所有类型都为空”的空洞闭包，但参考见证不是已部署生产包，也不能替代每个生产实例的
-完整证书。
-
-\begin{MWCallout}[MWCyan]{Final interpretation / 最终解释}
-Cantilune 的数学本质不是四份图形化结果之间的事后比对，而是一个以完整 occurrence
-为轴的证明携带语义：自由 SMC 固定可组合结构，DPO 固定合法变化，replay 固定同一
-端点，商 LTS 固定行为等价，四个投影证书固定路径与终态，$\pi$--FMS seam 固定名称
-传递的操作--指称意义，有限高度反馈固定长期稳定性。所有结论都沿同一依赖链返回
-$e_*$，因而变量有类型、公理有边界、定理有前提、理论有连接点、结论有精确范围。
-\end{MWCallout}
+  \boxed{
+    X\xRightarrow[e]{\mathrm{obs}}_{\mathsf C}Y
+    \quad\mapsto\quad
+    \left\{
+      \begin{aligned}
+        &D_X\xRightarrow{\delta_e}_{\mathsf{DAG}}D_Y,\\
+        &M_X\xRightarrow{\Delta_e}_{\mathsf{Petri}}M_Y,\\
+        &p_X\xrightarrow{\alpha_e}_{\pi}p_Y,\\
+        &f_X\xRightarrow{\chi_e}_{\mathsf{Mor}}f_Y.
+      \end{aligned}
+      \right.
+    }
+    \label{eq:four-observation-domain-event-mapping}
+  \end{equation}
+
+  \subsubsection{Dependency Structure: DAG Observation Domains / 依赖结构：DAG 观测域}
+
+  DAG 观测域解释协调事件对依赖结构的影响；其总观测通过 SCC 凝聚保证无环性，而保持原始 incidence 的严格 DAG 只在显式可秩条件下成立。
+
+  定义状态对象为：
+
+  \begin{equation}
+    \boxed{
+      G_X=(V_X,E_X)
+    }
+    \label{eq:dag-source-dependency-graph}
+  \end{equation}
+
+  $G_X$ 不是完整的协调状态，而是从协调状态中提取出的依赖结构 $G_X=\text{Dep}(X)$。其中 $V_{X}=X.\text{node}$，表示协调实体，如 \texttt{agent}、\texttt{task}、\texttt{artifacts}等；$E_{X}=X.\text{edges}$ 表示实体间的关系，如 \texttt{dependency}、\texttt{prerequisite}、\texttt{causal relation}等。
+
+  其中要注意的是，$G_X$ 中可能包含循环 $u \rightarrow v, v \rightarrow u$，甚至包含自环 $u \rightarrow u$。因此由于 $\exists G_X, G_X \notin \text{DAG}$，因此 $P_{\text{DAG}}$ 需要有范围限制。
+
+  因此，当协调结构内部存在循环依赖时，DAG 观测域不删除该循环，而是将其压缩为不可分割的依赖组件。这里采用 SCC 压缩：
+
+  \begin{equation}
+    \boxed{
+      D_X=\operatorname{Cond}(G_X)
+    }
+    \label{eq:dag-condensation}
+  \end{equation}
+
+  其中：
+
+  \begin{equation}
+    \boxed{
+      V(D_X)
+      =
+      V(G_X)/\sim_{SCC}
+    }
+    \label{eq:dag-scc-quotient-vertices}
+  \end{equation}
+
+  此时，一个 DAG 节点就表示一个强连通分量，边 $([u],[v])$ 表示存在 $u \rightarrow v$ 且 $u \neq v$。因此采用 SCC 压缩后图便被压缩为一个有向无环图，此时便可以进行正常投影。
+
+  另外，我们对 DAG 可以采取更为严格的定义。为一个图中每个节点分配一个自然数，如果这个图前序节点分配的编号必须要小于后序节点，则该图便是严格的 DAG。用数学则表示为：
+
+  \begin{equation}
+    \boxed{
+      \text{if} \ \rho:V_X\rightarrow\mathbb N,\text{s.t.} \ (u,v)\in E_X \Rightarrow \rho(u)<\rho(v)
+    }
+    \label{eq:dag-strict-ranking-condition}
+  \end{equation}
+
+  值得注意的是，DAG 观测域并不描述协调事件本身，而是解释该事件如何改变协调对象之间的依赖结构。对于一般有向协调结构，DAG 语义通过强连通分量凝聚获得无环表示；只有在额外满足严格秩约束时，才能保持全部依赖关系而无需折叠。
+
+  \subsubsection{Resource Flow: Petri Observation Domains / 资源流：Petri 观测域}
+
+  Petri 观测域用于描述一次协调变化需要、保留、消耗和产生了哪些具有稳定身份的资源或证据。数学上定义为：
+
+  \begin{equation}
+    \boxed{
+      M_X=\operatorname{Prov}(X)
+    }
+    \label{eq:petri-provenance-marking}
+  \end{equation}
+
+  该定义没有把 marking 简化为匿名 token 数量，而是定义具有 provenance 的个体 token，包括签名版本、节点边及节点标签、数据 token 与其 owner、资源 token 与其 owner、名称与 session owner、外部观察、policy 状态等。
+
+  Petri 事件由协调事件发生前后对应协调状态的精确差分决定，数学表示为：
+
+  \begin{equation}
+    \boxed{\text{For} \ X\xRightarrow[e]{\mathrm{obs}}Y,
+      \Delta_e^- = M_X\setminus M_Y,
+      \qquad
+      \Delta_e^+ = M_Y\setminus M_X
+    }
+    \label{eq:petri-event-token-differences}
+  \end{equation}
+
+  合起来即为：
+
+  \begin{equation}
+    \boxed{
+      \Delta_e=(\Delta^-_e,\Delta^+_e)
+    }
+    \label{eq:petri-event-delta}
+  \end{equation}
+
+  因此，一个 Petri 事件被触发（fire）后，token 如何从一个 marking（状态）变化到另一个 marking（状态）的过程可以表示为：
+
+  \begin{equation}
+    \boxed{
+      (M_X-\Delta^-_e) \cup \Delta^+_e = M_Y
+    }
+    \label{eq:petri-firing-update}
+  \end{equation}
+
+  另外当 token 同时存在于事件触发前后的协调状态时，则它既不属于正差分、也不属于负差分，数学表示为：
+
+  \begin{equation}
+    \boxed{
+      a\in M_X\cap M_Y
+      \Longrightarrow
+      a\notin\Delta_e^-
+      \land
+      a\notin\Delta_e^+
+    }
+    \label{eq:petri-preserved-token}
+  \end{equation}
+
+  同时，Petri 域还包含有序规则声明：
+
+  \begin{equation}
+    \boxed{
+    d=(\nu,\mathsf{ruleId},k)}
+    \label{eq:petri-ordered-rule-declaration}
+  \end{equation}
+
+  其中 $\nu$ 是版本，$k$ 是声明序号；$(\nu,\mathsf{ruleId})$ 唯一标识一项规则。在签名准入时，新声明只能追加，旧声明及其 incidence 必须经重索引继续保留。
+
+  \subsubsection{Communication and Name Passing: $\pi$ Observation Domains / 通信与名称传递：$\pi$ 观测域}
+
+  $\pi$ 观测域负责观测协调变化在 agent 交互层面具体是哪一次通信、同步、名称传递或作用域变化，专门描述 agent 交互层面的通信行为。
+
+  在这里，我们按照 $\pi$-calculus 的表示习惯，将协调状态 $X$ 重写为 $p_{X}$，表示为“一个状态就是一个进程(Process)”。针对事件中的通信过程，利用 $\pi$-calculus 将其表示为：
+
+  \begin{equation}
+    \boxed{
+      \alpha\in
+      \{
+        \tau,
+        \overline a\langle b\rangle,
+        a(x),
+        \overline a(b)
+    \}}
+    \label{eq:pi-action-alphabet}
+  \end{equation}
+
+  其中 $\tau$ 表示内部通信完成，$\overline a\langle b\rangle$ 表示通过 channel $a$ 发送信号 $b$，$a(x)$ 表示等待接收、将收到的来自 channel $a$ 的信号绑定至变量 $x$，$\overline a(b)$ 表示发送一个新的私有名字。
+
+  在 $\pi$ 观测域下，协调过程被投影为通信过程，即：
+
+  \begin{equation}
+    \boxed{
+    P_\pi^E(e)=(e,\alpha_e)}
+    \label{eq:pi-event-projection}
+  \end{equation}
+
+  不只保留 $\alpha_e$。是因为两个不同的协调事件可能都表现为 $\tau$，为了防止动作标签可能丢失事件身份，因此也将源事件纳入到投影中。
+
+  因此，一次源协调变化应解释为一个原生强迁移：
+
+  \begin{equation}
+    \boxed{
+      p_X\xrightarrow{\alpha_e}_{\pi}p_Y.
+    }
+    \label{eq:pi-native-strong-transition}
+  \end{equation}
+
+  进一步的，由于 Cantilune 不希望任意通信，协调变化进一步被表示为：
+
+  \begin{equation}
+    \boxed{
+      p_X \xrightarrow{\alpha_e}_{typed\ \pi} p_Y
+    }
+    \label{eq:typed-pi-transition}
+  \end{equation}
+
+  应用擦除类型 $|\cdot|$ 后，又可以得到普通 $\pi$，即：
+
+  \begin{equation}
+    \boxed{ |p_X| \xrightarrow{|\alpha_e|} |p_Y|}
+    \label{eq:pi-erasure-transition}
+  \end{equation}
+
+  即去掉 Cantilune 额外约束后，它仍然是标准 $\pi$-calculus 合法步骤。
+
+  $\pi$ 观测域把协调变化解释为 agent 之间真实发生的一次强通信步骤，并显式记录同步、名称传递、绑定和作用域变化。
+
+  \subsubsection{Compositional Structure: Morphism Observation Domains / 组合结构：态射观测域}
+
+  态射观测域反映协调变化如何作为一个保持类型接口和组合结构的态射变化出现。
+
+  在投影时，态射观测域不主动丢失信息：
+
+  \begin{equation}
+    \boxed{ P_{Mor}^{S}(X)=X,P_{Mor}^{E}(e)=e, }
+    \label{eq:morphism-identity-projection}
+  \end{equation}
+
+  因此 $X\xRightarrow[e]{\mathrm{obs}}Y$ 被看作：
+
+  \begin{equation}
+    \boxed{ f_X \xRightarrow{\chi_e} f_Y }
+    \label{eq:morphism-observed-transition}
+  \end{equation}
+
+  在 Cantilune 中，态射 $f_{X}$ 表示状态 $X$ 对应的结构，$\chi_e$ 在结构层面的变换。在完整的范畴层中，每个 LTS 状态被实现为箭头：
+
+  \begin{equation}
+    \boxed{
+      f_X=\operatorname{stateArrow}(X),
+      \qquad
+      f_Y=\operatorname{stateArrow}(Y),
+    }
+    \label{eq:morphism-state-arrows}
+  \end{equation}
+
+  而一次可观察步骤被实现为箭头范畴中的态射：
+
+  \begin{equation}
+    \boxed{
+      \chi_e:f_X\longrightarrow f_Y.
+    }
+    \label{eq:morphism-event-arrow}
+  \end{equation}
+
+  静态函子 $F$ 与操作投影之间必须满足交换条件：
+
+  \begin{equation}
+    \boxed{
+      F^{\to}(\chi_e)
+      =
+      \iota_X
+      \mathbin{\gg}
+      \chi_{P(e)}
+      \mathbin{\gg}
+      \iota_Y^{-1}.
+    }
+    \label{eq:morphism-functorial-commutation}
+  \end{equation}
+
+  这说明静态协调结构经过函子解释得到的重写，与操作 LTS 中实际发生的目标迁移是同一个交换方块，而不只是事件名称相似。因此综合来看，态射观测域保留协调变化的类型接口与组合形式，并把一次运行时迁移解释为两个结构箭头之间的可组合变换。
+
+  综上所述，四个观测域对同一次协调发生的四种互补解释：DAG 域说明依赖结构如何改变，Petri 域说明具有稳定身份和归属的资源如何流动，$\pi$ 域说明 agent 之间实际发生了什么通信与名称传递，态射域则说明这次变化如何保持类型接口和组合结构。四者共同回指同一个源状态 $X$、源事件 $e$ 和后继状态 $Y$。相应的投影证书进一步保证，每种解释都是其目标语义中的原生变化，并且从投影像出发的目标变化都能够反向追溯到源协调语义。该过程完整写作：
+
+  \begin{equation}
+    \boxed{
+      X\xRightarrow[e]{\mathrm{obs}}Y
+      \quad\longmapsto\quad
+      \left(
+        D_X\xRightarrow{\delta_e}_{\mathsf{DAG}}D_Y,\;
+        M_X\xRightarrow{\Delta_e}_{\mathsf{Petri}}M_Y,\;
+        p_X\xrightarrow{\alpha_e}_{\pi}p_Y,\;
+        f_X\xRightarrow{\chi_e}_{\mathsf{Mor}}f_Y
+      \right).
+    }
+    \label{eq:four-domain-projection-summary}
+  \end{equation}
+
+  至此，四观测域把一次抽象的“合法协调变化”分解为四个可分别验证的问题：
+
+  \begin{equation}
+    \boxed{
+      \text{结构依赖}
+      \;+\;
+      \text{资源流动}
+      \;+\;
+      \text{交互行为}
+      \;+\;
+      \text{组合形式}.
+    }
+    \label{eq:four-observation-decomposition}
+  \end{equation}
+
+  这四个方面共同构成 Cantilune 对同一协调生命过程的多维语义解释。
+
+  % =========================
+
+  % =========================
+
+  \section{Coherence of Coordination Across Observation Domains and Epochs /
+  跨观测域与 Epoch 的协调一致性}
+
+  在上一章，协调语义被拆解为四个观测语义描述。本章则说明，这些不同视角、不同时间、不同版本下的解释，仍然可以被认为描述的是同一个协调过程。
+
+  \subsection{Execution-Level Coherence Across Observation Views /
+  观测视角下的执行一致性}
+
+  前一章证明，在发生单次协调事件时，该协调过程可以通过四个角度进行观测，但是并未证明在事件序列中，如果源协调系统完成了一段生命周期，那么任何观测域能否重建该生命周期。
+
+  我们首先定义执行轨迹 $\operatorname{Path}_{\Sigma} (X,\mathbf e,Y)$ 表示存在事件序列 $\mathbf e=[e_1,\dots,e_n]$ 使得：
+
+  \begin{equation}
+    \boxed{
+      X=X_0
+      \xRightarrow[e_1]{obs}
+      X_1
+      ...
+      \xRightarrow[e_n]{obs}
+      X_n=Y
+    }
+    \label{eq:source-observable-execution-path}
+  \end{equation}
+
+  然后，我们分别对不同观测域，引入路径正向保持、路径反射和终态一致三个性质。路径正向保持保证局部事件解释一致，路径一致性保证完整协调生命周期一致，终态一致性保证不同观测域对生命周期结果形成统一判断。
+
+  \paragraph{路径正向保持} 基于路径长度归纳，由单步投影保持性，可以推导出路径正向保持性质：
+
+  \begin{equation}
+    \boxed{
+      \operatorname{Path}_{\mathsf C} (X,\mathbf e,Y) \Rightarrow \operatorname{Path}_i (P_i^S(X),P_i^E(\mathbf e),P_i^S(Y))
+    }
+    \label{eq:path-forward-preservation}
+  \end{equation}
+
+  其中 $P_i^E(\mathbf e)=[P_i^E(e_1),...P_i^E(e_n)]$。路径正向保持定理表明，如果源协调系统完成了一段生命周期，那么任何观测域都能够重建该生命周期。
+
+  \paragraph{路径反射} 为了避免目标域可能出现 $P_i(X) \rightarrow Z$ 但是源系统不存在对应变化的情况，通过目标路径结构归纳，并逐步应用单步 reflection，可以得到路径反射性质：
+
+  \begin{equation}
+    \boxed{
+      \operatorname{Path}_{i}
+      (P_i^S(X),\mathbf d,Z)
+      \Rightarrow
+      \exists
+      \mathbf e,Y
+    }
+    \label{eq:path-reflection}
+  \end{equation}
+
+  满足 $\operatorname{Path}_{\mathsf C}(X,\mathbf e,Y)$，且 $\forall k,\operatorname{Lift}_i(e_k,d_k)$，同时 $Z\approx_iP_i^S(Y)$。该性质防止观测域产生源系统不存在的虚假执行。任意从投影状态出发的目标轨迹，都必须能够提升为源协调语义中的真实执行。
+
+  \paragraph{终态一致} 源协调系统完成了一段生命周期则会进入终态，因此定义 $Normal(X)$，表示 $\nexists e,Y,X\xRightarrow[e]{obs}Y$。因为由于路径 soundness 保证源执行不会在目标域中消失，而路径 reflection 保证目标执行不会凭空产生，因此二者共同推出终态结构保持性质：
+
+  \begin{equation}
+    \boxed{
+      Normal(X)
+      \iff
+      Normal_i(P_i(X))
+    }
+    \label{eq:projection-terminal-consistency}
+  \end{equation}
+
+  终态一致性保证了不同观测域对于生命周期结果给出相同判断。
+
+  \subsection{Semantic Preservation Under Signature Evolution /
+  签名演化下的语义保持}
+
+  在前面的描述中，$\Sigma$ 总是被固定，本节讨论当有新的语义变化加入时旧世界还能不能保持原来的意义。
+
+  首先定义：
+
+  \begin{equation}
+    \boxed{
+      \iota:
+      \Sigma
+      \hookrightarrow
+      \Sigma'
+    }
+    \label{eq:signature-embedding}
+  \end{equation}
+
+  进一步定义状态重索引，对协调状态和协调事件在旧语言 $\Sigma$ 向新语言 $\Sigma'$ 转换时发生的改变进行描述：
+
+  \begin{equation}
+    \boxed{
+      \operatorname{reindex}_{\mathsf C}^{\iota}
+      : St_\Sigma
+      \rightarrow
+      St_{\Sigma'},\operatorname{reindex}_{\mathsf C}^{\iota}:
+      Ev_\Sigma
+      \rightarrow
+      Ev_{\Sigma'}
+    }
+    \label{eq:source-state-event-reindexing}
+  \end{equation}
+
+  进一步经证明得出：
+
+  \begin{equation}
+    \boxed{
+      P_{i,\Sigma'}^S
+      (\operatorname{reindex}_{\mathsf C}^{\iota}(X))=\operatorname{reindex}_{i}^{\iota}(P_{i,\Sigma}^S(X)),
+      P_{i,\Sigma'}^E(\operatorname{reindex}_{\mathsf C}^{\iota}(e))=
+    \operatorname{reindex}_{i}^{\iota}(P_{i,\Sigma}^E(e))}
+    \label{eq:projection-reindexing-naturality}
+  \end{equation}
+
+  至此我们可以得到，当新规则加入系统，旧状态会自动适配进新状态、因而旧世界还能保持原来的意义。而新规则本身又可以作为协调事件的一部分，参与协调状态的更新：
+
+  \begin{equation}
+    \boxed{
+      X^-
+      \xRightarrow[a]{admission}
+      X^+
+    }
+    \label{eq:native-signature-admission-transition}
+  \end{equation}
+
+  由此可得，当 Agent Orchestration 的规则空间自身发生变化时，旧的协调历史可以继续保持语义连续，新规则又可以作为新的协调事件被引入，从而实现了语义保持。
+
+  \subsection{Occurrence Identity Across Epoch Transitions /
+  Epoch 转换中的发生身份保持}
+
+  这一部分讨论，同一个协调过程，在不同表示和不同时间尺度下是否保持同一语义。
+
+  考虑这样一种场景，$\Sigma_0 \hookrightarrow \Sigma_1$ 并发生 $X^- \xRightarrow[a]{admit} X^+$ 随后 $X^+ \xRightarrow[e]{obs} Y$，这里 $a$ 是版本变化事件、$e$ 是后续业务事件。
+
+  那么现在的问题是，该场景中在不同角度观测下， $P_{i}(a)$ 和 $P_{i}(e)$ 是否仍然对应同一条源协调历史 $(a,e)$。
+
+  因此定义四域跨 epoch 一致性：
+
+  \begin{equation}
+    \boxed{
+      \operatorname{CrossEpochAgree}
+      \left(
+        \mathbf P,
+        a,e
+      \right).
+    }
+    \label{eq:cross-epoch-agreement}
+  \end{equation}
+
+  它表示固定签名下的路径一致性、投影自然性、原生准入步骤和 occurrence identity 被统一到同一个证明对象中。
+
+  其中包含Replay 连续性，要求 $Replay_{\Sigma_0}(e,X)=Y$，则$Replay_{\Sigma_1}(reindex(e),reindex(X))=reindex(Y)$；Projection 连续性，对于每个观测域有 $P_{i,\Sigma_1}(reindex(e))=reindex_i(P_{i,\Sigma_0}(e))$；Occurrence Identity 连续性，定义事件身份$id(e)$，要求 $id_{\Sigma_0}(e)=id_{\Sigma_1}(reindex(e))$，即同一个协调发生不会因为语言升级而失去身份。
+
+  综上所述，结合观测视角下的执行一致性、签名演化下的语义保持和转换中的发生身份保持，可以得出，一个协调发生可以在多个观察空间、多个语言版本和多个执行阶段中保持统一的语义身份。
+
+  % =========================
+
+  % =========================
+
+  \section{Feedback Stabilization and Core Theoretical Closure /
+  反馈稳定化与核心理论闭包}
+  \label{sec:feedback-stabilization-and-core-closure}
+
+  前面的理论依次回答了四个问题：协调世界由什么构成，协调事件如何合法发生，同一次协调发生在四个观测域中分别意味着什么，以及这些解释如何跨路径与 epoch 保持一致。本节讨论最后一个问题：当协调系统持续接收新的证据并据此演化时，这一过程能否最终进入稳定状态。
+
+  为此，Cantilune 将反馈过程建模为有限高度证据序上的单调演化，并通过一个由原生协调事件支撑的有限 Markov kernel 描述不同合法后继之间的随机选择。在稳定签名窗口、公平观测机会和统一正进展概率成立时，系统几乎必然进入一个向上闭的稳定证据区域；进入该区域以后，证据单调性保证系统不会再次退出。
+
+  最后，本节将协调语义、四观测域、跨 epoch 一致性与反馈稳定化组合起来，给出本章完整的数学闭包。
+
+  \subsection{Feedback Dynamics and Almost-Sure Stabilization /
+  反馈动力学与几乎必然稳定化}
+  \label{subsec:feedback-dynamics-and-stabilization}
+
+  \paragraph{有限高度证据序}
+
+  协调系统在执行过程中会不断获得新的观察、审核结果、外部决策和运行证据。为了描述这些信息如何累积，定义证据空间 $Q$ 为一个具有 join 运算的半格：
+
+  \begin{equation}
+    \boxed{
+      (Q,\sqsubseteq,\sqcup)
+    }
+    \label{eq:feedback-evidence-order}
+  \end{equation}
+
+  其中，$q\sqsubseteq q'$ 表示 $q'$ 至少包含 $q$ 所提供的信息，而 $q\sqcup q'$ 表示将两份证据合并。证据更新只能通过 join 增加信息，不能删除已经获得的证据。
+
+  为了排除无限严格增长，进一步给出有限高度 $H\in\mathbb N$ 和秩函数
+
+  \begin{equation}
+    \boxed{
+      h:Q\longrightarrow\mathbb N
+    }
+    \label{eq:feedback-rank-function}
+  \end{equation}
+
+  满足：
+
+  \begin{equation}
+    \boxed{
+      \forall q\in Q,\quad h(q)\le H,
+      \qquad
+      q\sqsubset q'
+      \Longrightarrow
+      h(q)<h(q').
+    }
+    \label{eq:feedback-finite-height}
+  \end{equation}
+
+  因此，若
+
+  \begin{equation}
+    \boxed{
+      q_0\sqsubset q_1\sqsubset\cdots\sqsubset q_m}
+    \label{eq:feedback-strict-evidence-chain}
+  \end{equation}
+
+  是一条严格证据增长链，则必有：
+
+  \begin{equation}
+    \boxed{
+      h(q_0)+m\le H.
+    }
+    \label{eq:feedback-strict-chain-bound}
+  \end{equation}
+
+  这说明证据可以保持不变，也可以有限次严格增长，但不可能沿证据序无限严格上升。
+
+  \paragraph{稳定证据区域}
+
+  定义稳定证据区域 $U\subseteq Q$ 为一个向上闭集：
+
+  \begin{equation}
+    \boxed{
+      q\in U
+      \land
+      q\sqsubseteq q'
+      \Longrightarrow
+      q'\in U.
+    }
+    \label{eq:feedback-stable-upset}
+  \end{equation}
+
+  $U$ 表示已经满足稳定性要求的证据状态集合。向上闭性说明：如果现有证据已经足以判定系统稳定，那么继续获得更多证据不会使该稳定性失效。
+
+  令
+
+  \begin{equation}
+    \boxed{
+      \eta:
+      \mathsf{St}_{\Sigma}
+      \longrightarrow
+      Q
+    }
+    \label{eq:feedback-state-evidence-map}
+  \end{equation}
+
+  为协调状态的证据解释函数，其中 $\eta(X)$ 表示协调状态 $X$ 当前携带的累积证据。
+
+  要求每一次原生可观察协调变化都保持证据单调性：
+
+  \begin{equation}
+    \boxed{
+      X\xRightarrow[e]{\mathrm{obs}}Y
+      \Longrightarrow
+      \eta(X)\sqsubseteq\eta(Y).
+    }
+    \label{eq:feedback-native-evidence-monotonicity}
+  \end{equation}
+
+  由式 \eqref{eq:feedback-stable-upset} 和式
+  \eqref{eq:feedback-native-evidence-monotonicity} 可以直接得到反馈系统的确定性稳定保持性质：
+
+  \begin{equation}
+    \boxed{
+      \begin{aligned}
+        &
+        \operatorname{Path}_{\Sigma,\mathfrak E}
+        (X_0,[e_1,\ldots,e_n],X_n)
+        \land
+        \eta(X_0)\in U
+        \\
+        &\qquad\Longrightarrow
+        \forall k\le n,\quad
+        \eta(X_k)\in U.
+      \end{aligned}
+    }
+    \label{eq:feedback-hard-forward-invariance}
+  \end{equation}
+
+  因此，稳定区域 $U$ 是协调执行的前向不变量。该结论不依赖任何概率假设：只要一次执行已经进入 $U$，后续任意有限原生执行都不会使其退出。
+
+  \paragraph{内部执行的有限性}
+
+  反馈稳定化还需要排除系统在同一个 epoch 内无限进行内部管理动作。为此，对内部事件给出自然数值秩
+
+  \begin{equation}
+    \boxed{
+    \rho_{\mathrm{int}}:
+    \mathsf{St}_{\Sigma}
+    \longrightarrow
+    \mathbb N.}
+    \label{eq:feedback-internal-rank-function}
+  \end{equation}
+
+  它是一个证明用的度量，表示“当前 epoch 内还允许/还可能剩多少内部整理动作”。
+
+  进一步的，要求每个内部事件严格降低该秩，同时保持所在 epoch 不变。于是，对于完全由内部事件构成的路径
+
+  \begin{equation}
+    \boxed{
+    \operatorname{Path}_{\Sigma,\mathfrak E}
+    (X,\mathbf e,Y).}
+    \label{eq:feedback-internal-only-path}
+  \end{equation}
+
+  有：
+
+  \begin{equation}
+    \boxed{
+      \mathbf e\text{ 中的事件全部为内部事件}
+      \Longrightarrow
+      \begin{cases}
+        |\mathbf e|\le \rho_{\mathrm{int}}(X),\\
+        \operatorname{epoch}(Y)=\operatorname{epoch}(X).
+      \end{cases}
+    }
+    \label{eq:feedback-internal-path-bound}
+  \end{equation}
+
+  因而不存在一条完全由内部事件组成的无限执行。系统不能通过无限行政或内部振荡永久回避后续的可观察反馈机会。
+
+  \paragraph{由原生事件支撑的有限 Markov kernel}
+
+  证据单调性只能证明“进入稳定区域后不会退出”，不能单独证明系统一定会进入稳定区域。为了描述不同合法后继之间的随机选择，令 $S_K$ 为有限的 kernel 状态空间，并给出与源协调执行状态之间的等价：
+
+  \begin{equation}
+    \boxed{
+      \varphi:
+      S_K
+      \simeq
+      \mathsf{St}_{\Sigma}.
+    }
+    \label{eq:feedback-kernel-state-equivalence}
+  \end{equation}
+
+  在这里，$\varphi$ 是一个双射，将 kernel 展现为真实协调状态的一个等价编码上的随机游走。
+
+  定义有限 Markov kernel：
+
+  \begin{equation}
+    \boxed{
+      K:
+      S_K\times S_K
+      \longrightarrow
+      [0,1]
+    }
+    \label{eq:feedback-native-markov-kernel}
+  \end{equation}
+
+  表示从状态 $s$ 转移到状态 $t$ 的概率。
+
+  满足：
+
+  \begin{equation}
+    \boxed{
+      \forall s,t\in S_K,\quad K(s,t)\ge 0,
+      \qquad
+      \forall s\in S_K,\quad
+      \sum_{t\in S_K}K(s,t)=1.
+    }
+    \label{eq:feedback-kernel-probability-laws}
+  \end{equation}
+
+  概率矩阵本身只描述状态选择。为了保证随机轨迹仍然是一条真实的协调执行轨迹，还必须为每条正概率边提供原生事件标签。也就是说，当 $K(s,t)>0$ 时，存在事件 $e_{s,t}$，满足：
+
+  \begin{equation}
+    \boxed{
+      K(s,t)>0
+      \Longrightarrow
+      \left\{
+        \begin{aligned}
+          &
+          \varphi(s)
+          \xRightarrow[e_{s,t}]{\mathrm{obs}}
+          \varphi(t),
+          \\
+          &
+          \operatorname{Replay}_{\Sigma,\mathfrak E}
+          \bigl(
+            \operatorname{recipe}(e_{s,t}),
+            \varphi(s)
+          \bigr)
+          =
+          \operatorname{some}\bigl(\varphi(t)\bigr).
+        \end{aligned}
+        \right.
+      }
+      \label{eq:feedback-positive-edge-native-replay}
+    \end{equation}
+
+    因此，kernel 不会通过正概率边引入源协调语义中不存在的状态变化。被随机选择的每次真实变化都携带同一个原生协调事件及其精确 replay 见证。反馈稳定化不是只研究某一条确定执行路径，而是允许系统在多个合法后继之间随机选择；但每一次正概率选择都必须对应真实协调语义中的原生事件，并且可以被 replay 精确验证。因此，随机轨迹是一条由真实协调事件装饰起来的协调执行轨迹。
+
+    由初始分布 $\mu_0$ 和 kernel $K$ 可以构造无限状态轨迹上的概率测度：
+
+    \begin{equation}
+      \boxed{
+        \mathbb P_{K,\mu_0}
+        \quad\text{on}\quad
+        S_K^{\mathbb N}.
+      }
+      \label{eq:feedback-trajectory-measure}
+    \end{equation}
+
+    在该测度下，几乎每条采样路径的相邻状态都由正概率边连接。由式
+    \eqref{eq:feedback-positive-edge-native-replay}，这些边可以被统一装饰为原生、可重放的协调事件轨迹。
+
+    \paragraph{稳定窗口与公平观测机会}
+
+    概率进展结论只在签名保持稳定的执行后缀中成立。定义稳定公平窗口
+
+    \begin{equation}
+      \boxed{
+        \mathcal W
+        =
+        (\nu,\operatorname{Observed},n_0,\tau)
+      }
+      \label{eq:feedback-stable-fair-window}
+    \end{equation}
+
+    其中：
+
+    \begin{enumerate}
+      \item $\nu:\mathbb N\rightarrow\mathbb N$ 给出每个 epoch 的签名版本；
+      \item $n_0$ 是稳定窗口的起始 epoch；
+      \item $\tau(j)$ 是第 $j$ 个合格观测机会实际发生的 epoch；
+      \item $\operatorname{Observed}(n)$ 表示 epoch $n$ 包含一个合格观测机会。
+    \end{enumerate}
+
+    稳定公平窗口需要满足：
+
+    \begin{equation}
+      \boxed{
+        \begin{aligned}
+          &\forall k\in\mathbb N,\quad
+          \nu(n_0+k)=\nu(n_0),
+          \\
+          &\forall j\in\mathbb N,\quad
+          n_0\le\tau(j),
+          \\
+          &j<j'
+          \Longrightarrow
+          \tau(j)<\tau(j'),
+          \\
+          &\forall j\in\mathbb N,\quad
+          \operatorname{Observed}(\tau(j)),
+          \\
+          &\forall n\ge n_0,\quad
+          \exists j,\ n\le\tau(j).
+        \end{aligned}
+      }
+      \label{eq:feedback-stable-fair-window-laws}
+    \end{equation}
+
+    第一项保证窗口从 $n_{0}$ 开始后签名版本不再变化；第二项保证所有被计数的观测机会都发生在稳定窗口开始后；第三项表示按时间严格向前，不会重复计算同一个 epoch；第四项保证 $\tau(j)$ 指到的都是合格的观测机会；第五项保证未来不会停止出现观测机会。对任意晚的 epoch $n$，总还能找到一个不早于 $n$ 的观测机会。
+
+    如果还要求每个窗口后 epoch 都恰好对应一个观测机会，则得到更强的逐 epoch 公平性：
+
+    \begin{equation}
+      \boxed{
+        \forall j\in\mathbb N,\quad
+        \tau(j)=n_0+j.
+      }
+      \label{eq:feedback-epochwise-fairness}
+    \end{equation}
+
+    一般公平性足以说明合格机会持续发生；只有式
+    \eqref{eq:feedback-epochwise-fairness} 成立时，按“机会数量”得到的数值界才能同时被解释为按“窗口后 epoch 数量”得到的界。
+
+    \paragraph{阶段进展与统一正概率下界} 该部分证明只要每次合格观测机会都有至少 $\varepsilon$ 的概率完成当前阶段，那么当前阶段几乎必然会在有限次机会内完成。
+
+    有限高度 $H$ 表示最多只需考虑 $H$ 个严格证据增长阶段，系统从“不稳定”到“稳定”最多需要经历 $H$ 个严格证据进展阶段，不会有无限多层证据升级。对每个阶段
+
+    \begin{equation}
+    \boxed{
+      r\in\{0,\ldots,H-1\}.}
+      \label{eq:feedback-stage-index-range}
+    \end{equation}
+
+    给出初始分布 $\mu_r$ 和阶段稳定谓词
+
+    \begin{equation}
+    \boxed{
+      b_r:S_K\longrightarrow\{0,1\}.}
+      \label{eq:feedback-phase-stability-predicate}
+    \end{equation}
+
+    其中 $b_r(s)=1$ 表示该阶段要求的下一次证据进展已经完成，$b_r(s)=0$ 则表示未完成。选定一个特殊阶段 $r_\ast$，使其稳定谓词恰好对应证据稳定区域 $U$，即正好证据已经进入稳定区域 $U$。：
+
+    \begin{equation}
+      \boxed{
+        b_{r_\ast}(s)=1
+        \quad\Longleftrightarrow\quad
+        \eta(\varphi(s))\in U.
+      }
+      \label{eq:feedback-hitting-phase-identification}
+    \end{equation}
+
+    假设存在统一常数 $\varepsilon$，满足
+
+    \begin{equation}
+      \boxed{
+        0<\varepsilon\le 1,
+      }
+      \label{eq:feedback-positive-epsilon}
+    \end{equation}
+
+    并且在任意尚未完成阶段 $r$ 的状态中，下一次 kernel 转移有至少 $\varepsilon$ 的概率直接进入该阶段的完成集合：
+
+    \begin{equation}
+      \boxed{
+        b_r(s)=0
+        \Longrightarrow
+        \sum_{\substack{t\in S_K\\b_r(t)=1}}
+        K(s,t)
+        \ge\varepsilon.
+      }
+      \label{eq:feedback-pointwise-progress}
+    \end{equation}
+
+    令 $m_r(n)$ 表示在阶段 $r$ 中，经过前 $n$ 个合格观测机会后仍未命中 $b_r=1$ 的概率。由式
+    \eqref{eq:feedback-pointwise-progress} 可以从同一个 kernel 推导出：
+
+    \begin{equation}
+      \boxed{
+        m_r(n+1)
+        \le
+        (1-\varepsilon)m_r(n).
+      }
+      \label{eq:feedback-miss-recurrence}
+    \end{equation}
+
+    递归应用该式可得几何尾界：
+
+    \begin{equation}
+      \boxed{
+        m_r(n)
+        \le
+        (1-\varepsilon)^n.
+      }
+      \label{eq:feedback-geometric-tail}
+    \end{equation}
+
+    由于 $0<\varepsilon\le 1$，有
+
+    \begin{equation}
+    \boxed{
+      \lim_{n\rightarrow\infty}(1-\varepsilon)^n=0.}
+      \label{eq:feedback-geometric-limit}
+    \end{equation}
+
+    这说明：随着合格观测机会次数增加，“一直没完成”的概率趋向于 0。因此，每个阶段永不命中的轨迹集合具有零测度：
+
+    \begin{equation}
+      \boxed{
+        \mathbb P_{K,\mu_r}
+        \left(
+          \forall n,\ b_r(\omega_n)=0
+        \right)
+        =0.
+      }
+      \label{eq:feedback-phase-never-hit-zero}
+    \end{equation}
+
+    等价地：
+
+    \begin{equation}
+      \boxed{
+        \mathbb P_{K,\mu_r}
+        \left(
+          \exists n,\ b_r(\omega_n)=1
+        \right)
+        =1.
+      }
+      \label{eq:feedback-phase-almost-sure-hitting}
+    \end{equation}
+
+    阶段 $r$ 以概率 1 会在某个有限时刻完成。即在有限状态 Markov kernel 中，如果每个未完成状态在每次合格机会都有统一下界 $\varepsilon$ 的概率进入完成集合，那么未完成概率按几何速度衰减，因此该阶段几乎必然完成。
+
+    \paragraph{几乎必然永久稳定}
+
+    对特殊阶段 $r_\ast$，式
+    \eqref{eq:feedback-phase-almost-sure-hitting} 首先说明轨迹几乎必然在有限时间内命中证据稳定区域 $U$。随后，由证据单调性和 $U$ 的向上闭性，命中不再只是一次暂时访问，而会成为永久保持。
+
+    定义：
+
+    \begin{equation}
+      \boxed{
+        \operatorname{EventuallyAlways}_{U}(\omega)
+        \quad\Longleftrightarrow\quad
+        \exists N\in\mathbb N,\;
+        \forall n\ge N,\;
+        \eta(\varphi(\omega_n))\in U.
+      }
+      \label{eq:feedback-eventually-always-stable}
+    \end{equation}
+
+    于是得到：
+
+    \begin{equation}
+      \boxed{
+        \mathbb P_{K,\mu_{r_\ast}}
+        \left(
+          \operatorname{EventuallyAlways}_{U}
+        \right)
+        =1.
+      }
+      \label{eq:feedback-almost-sure-stabilization}
+    \end{equation}
+
+    该结论由两个不同性质组合而成：正进展概率保证系统几乎必然在有限时间内进入 $U$，而确定性前向不变量保证系统一旦进入 $U$ 就永远不会退出。
+
+    \paragraph{有限高度期望界}
+
+    对每个阶段，将 miss probability 的尾和定义为该阶段的期望等待量。全部 $H$ 个阶段的总等待量定义为：
+
+    \begin{equation}
+      \boxed{
+        \operatorname{Wait}_{H,\varepsilon}
+        :=
+        \sum_{r=0}^{H-1}
+        \sum_{n=0}^{\infty}
+        m_r(n).
+      }
+      \label{eq:feedback-expected-wait-definition}
+    \end{equation}
+
+    由几何尾界可得：
+
+    \begin{equation}
+      \boxed{
+        \operatorname{Wait}_{H,\varepsilon}
+        \le
+        \frac{H}{\varepsilon}.
+      }
+      \label{eq:feedback-expected-epoch-bound}
+    \end{equation}
+
+    该式在一般情况下首先是合格观测机会数量的 tail-sum 界。当逐 epoch 公平性
+    \eqref{eq:feedback-epochwise-fairness} 成立时，每个窗口后 epoch 恰好提供一次机会，因此它可以进一步解释为完成全部剩余严格证据增长阶段所需的期望 epoch 数上界。
+
+    \begin{MWCallout}[MWLilac]{Almost-sure stabilization / 几乎必然稳定化}
+      在有限高度证据序、向上闭稳定区域、原生事件支撑的有限 Markov
+      kernel、稳定签名窗口、逐 epoch 公平性和统一正进展概率
+      $0<\varepsilon\le1$ 下：
+      \begin{equation}
+        \mathbb P_{K,\mu_{r_\ast}}
+        \bigl(
+          \operatorname{EventuallyAlways}_{U}
+        \bigr)
+        =1,
+        \qquad
+        \operatorname{Wait}_{H,\varepsilon}
+        \le
+        \frac{H}{\varepsilon}.
+        \label{eq:feedback-stabilization-summary}
+      \end{equation}
+      几乎每条被采样的正概率路径同时携带原生协调事件、精确 replay
+      和稳定窗口中的 epoch 对齐见证。
+    \end{MWCallout}
+
+    这里的概率 $1$ 不表示每一条数学上可能的轨迹都必然稳定，而表示不稳定轨迹集合在由 $K$ 和初始分布生成的轨迹测度下具有零测度。同样，若签名不断变化、观测机会停止出现，或者不存在统一的正进展下界 $\varepsilon$，则上述活性结论不成立。
+
+    \subsection{The Complete Core Theorem and Its Scope /
+    完整核心定理及其成立范围}
+    \label{subsec:complete-core-theorem-and-scope}
+
+    前面的各部分并不是相互独立的数学模型。协调语义提供唯一的源执行过程，四个观测域解释同一过程的不同侧面，跨 epoch 一致性保证这些解释在签名演化后仍然指向同一条协调历史，而反馈语义则在同一原生执行空间上描述该历史的长期演化。
+
+    因此，完整核心定理不再引入新的协调对象，而是将已经建立的语义与证书组合为一个共同结论。
+
+    令
+
+    \begin{equation}
+      \boxed{
+        \mathbf P
+        =
+        (P_i)_{i\in I},
+        \qquad
+        I=
+        \{
+          \mathsf{DAG},
+          \mathsf{Petri},
+          \pi,
+          \mathsf{Mor}
+        \}.
+      }
+      \label{eq:core-four-projection-family}
+    \end{equation}
+
+    对每个 $i\in I$，记
+
+    \begin{equation}
+      \boxed{
+        \begin{aligned}
+          \operatorname{CompleteProj}(P_i)
+          :={}&
+          \operatorname{WellDefined}(P_i)
+          \\
+          &{}\land
+          \operatorname{StepSound}(P_i)
+          \land
+          \operatorname{StepReflect}(P_i)
+          \\
+          &{}\land
+          \operatorname{PathSound}(P_i)
+          \land
+          \operatorname{PathReflect}(P_i)
+          \\
+          &{}\land
+          \operatorname{TermCons}(P_i)
+          \land
+          \operatorname{VersionCons}(P_i).
+        \end{aligned}
+      }
+      \label{eq:core-complete-projection-certificate}
+    \end{equation}
+
+    该条件分别保证：投影不依赖源状态的表示方式，源步骤不会在目标域中消失，目标步骤不会凭空出现，有限执行路径可以双向解释，并且终态分类与签名版本不会因投影发生改变。
+
+    考虑签名嵌入
+
+    \begin{equation}
+    \boxed{
+      \iota:\Sigma\hookrightarrow\Sigma'}
+      \label{eq:core-signature-embedding}
+    \end{equation}
+
+    以及一次原生准入事件
+
+    \begin{equation}
+    \boxed{
+      X^-\xRightarrow[a]{\mathrm{admission}}X^+.}
+      \label{eq:core-native-admission-event}
+    \end{equation}
+
+    定义 epoch 一致性前提：
+
+    \begin{equation}
+      \boxed{
+        \begin{aligned}
+          \operatorname{EpochCert}
+          (\mathbf P,\iota,a,e)
+          :={}&
+          \operatorname{ProjectionNaturality}
+          (\mathbf P,\iota)
+          \\
+          &{}\land
+          \operatorname{ReplayNaturality}(\iota)
+          \\
+          &{}\land
+          \operatorname{NativeAdmission}(a)
+          \\
+          &{}\land
+          \operatorname{OccurrencePreservation}
+          (\iota,a,e).
+        \end{aligned}
+      }
+      \label{eq:core-epoch-certificate}
+    \end{equation}
+
+    其中，投影自然性保证先重索引再投影与先投影再重索引得到相同结果；replay 自然性保证旧事件在新签名中仍然重放到重索引后的目标；原生准入保证版本变化本身是一次真实协调发生；发生身份保持则保证事件不会因为跨越 epoch 而被错误地替换为另一个 occurrence。
+
+    最后，以
+
+    \begin{equation}
+      \boxed{
+        \operatorname{FeedbackCert}
+        (Q,U,\eta,K,\mathcal W,H,\varepsilon)
+      }
+      \label{eq:core-feedback-certificate}
+    \end{equation}
+
+    表示上一节给出的完整反馈数据及其性质，包括有限高度证据序、向上闭稳定区域、原生证据单调性、有限原生 kernel、正概率事件标记、稳定公平窗口、阶段进展桥和 $0<\varepsilon\le1$。
+
+    在这些条件下，Cantilune 的完整核心定理可以表述为：
+
+    \begin{MWCallout}[MWLilac]{Complete core theorem / 完整核心定理}
+      若
+      \begin{equation}
+        \forall i\in I,\quad
+        \operatorname{CompleteProj}(P_i),
+        \label{eq:core-all-projections-complete}
+      \end{equation}
+      且
+      \begin{equation}
+        \operatorname{EpochCert}
+        (\mathbf P,\iota,a,e)
+        \land
+        \operatorname{FeedbackCert}
+        (Q,U,\eta,K,\mathcal W,H,\varepsilon)
+        \label{eq:core-epoch-feedback-assumptions}
+      \end{equation}
+      成立，则存在共同一致性见证 $W$，使得：
+      \begin{equation}
+          \begin{aligned}
+            &
+            \operatorname{FourViewAgree}
+            (\mathbf P;W)
+            \\
+            &{}\land
+            \operatorname{CrossEpochAgree}
+            (\mathbf P,\iota,a,e;W)
+            \\
+            &{}\land
+            \operatorname{ReplayAligned}
+            (K,W)
+            \\
+            &{}\land
+            \mathbb P_{K,\mu_{r_\ast}}
+            \bigl(
+              \operatorname{EventuallyAlways}_{U}
+            \bigr)
+            =1
+            \\
+            &{}\land
+            \operatorname{Wait}_{H,\varepsilon}
+            \le
+            \frac{H}{\varepsilon}.
+          \end{aligned}
+        \label{eq:cantilune-complete-core-theorem}
+      \end{equation}
+    \end{MWCallout}
+
+    其中，$\operatorname{FourViewAgree}(\mathbf P;W)$ 表示同一条源协调执行在 DAG、Petri、$\pi$ 和态射四个观测域中具有相容的状态、事件、路径和终态解释；$\operatorname{CrossEpochAgree}(\mathbf P,\iota,a,e;W)$ 表示这些解释在签名重索引、准入事件和后续业务事件之间保持 replay、投影和 occurrence identity 连续；$\operatorname{ReplayAligned}(K,W)$ 则表示随机轨迹所选择的正概率边使用的正是源协调语义中的原生事件，并且这些事件与其 replay 端点和执行 epoch 对齐。
+
+    因此，本章的完整数学推导可以概括为：
+
+    \begin{equation}
+      \boxed{
+        \begin{gathered}
+          \text{协调状态、协调事件与规则空间}
+          \\
+          \Longrightarrow
+          \text{合法、可观察且可重放的协调执行}
+          \\
+          \Longrightarrow
+          \text{DAG、Petri、$\pi$ 与态射四域中的原生解释}
+          \\
+          \Longrightarrow
+          \text{路径、终态、版本与 occurrence 的跨域一致性}
+          \\
+          \Longrightarrow
+          \text{签名演化与准入过程中的语义连续性}
+          \\
+          \Longrightarrow
+          \text{由同一原生执行支撑的反馈随机轨迹}
+          \\
+          \Longrightarrow
+          \text{几乎必然进入并永久保持在稳定证据区域}.
+        \end{gathered}
+      }
+      \label{eq:cantilune-complete-mathematical-closure}
+    \end{equation}
+
+    这条推导链形成了本章的理论闭环：协调世界给出被改变的对象，协调语义给出变化发生的条件，四观测域给出变化的多维含义，一致性定理保证这些含义仍然属于同一个协调发生，反馈稳定化则说明该执行过程在明确概率前提下最终会进入何种长期状态。
+
+    \paragraph{定理的成立范围}
+
+    完整核心定理是一个条件定理，其结论严格受以下范围限制：
+
+    \begin{enumerate}
+      \item 四域一致性以完整投影证书为前提。定理组合并检查已经给出的投影证书，但不会为任意未经认证的 Agent Orchestration 自动构造这些证书。
+
+      \item 跨 epoch 结论要求显式签名嵌入和原生准入事件。单纯对旧对象进行重索引不能代替一次真正改变签名版本的准入发生。
+
+      \item 随机稳定化以有限 kernel 状态空间和有限高度证据序为前提，不直接覆盖无限状态 kernel 或无限严格证据增长链。
+
+      \item 几乎必然命中要求签名在某个后缀中保持稳定、合格观测机会持续出现，并且每个未完成阶段具有统一正进展下界 $\varepsilon$。
+
+      \item $H/\varepsilon$ 首先是全部有限高度阶段的 tail-sum opportunity 界。只有在逐 epoch 公平性成立时，它才具有窗口后 epoch 数量的解释。
+
+      \item 概率 $1$ 允许存在零测度的不稳定轨迹，因此不能被解释为“所有轨迹无例外地在有限时间内稳定”。
+
+      \item 本节闭合的是协调执行、四观测域、跨 epoch 身份与反馈稳定化之间的核心理论。对 $\pi$ 过程与更进一步指称模型之间的精确语义缝合属于后续理论扩展，不作为本节核心闭包的前提或结论。
+    \end{enumerate}
+
+    最后，项目中的有限参考模型为上述各类证书提供了非空见证，并包含真实改变协调结构的原生事件。因此，这一理论并非仅由恒等投影或空执行满足。但是，参考模型的非空性只证明理论条件可以被真实模型满足，并不等同于所有生产环境已经自动获得相同的完备性、公平性或稳定化保证。
+
+    % =========================
