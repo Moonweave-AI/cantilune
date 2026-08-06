@@ -1,0 +1,202 @@
+@startuml 01-coordination-event-and-actor-sequence
+' 图 01 时序：协调生命周期（消息交换）
+' 对应类图 01-coordination-event-and-actor.puml
+' 贯穿案例：「请调研本体工程与 Palantir 模式并撰写一份详细的调研报告」
+
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 72
+skinparam ParticipantPadding 16
+skinparam BoxPadding 10
+
+title 图 01 时序：协调生命周期（消息交换）\n案例：Alice 请调研本体工程与 Palantir 模式并撰写详细调研报告
+
+mainframe Actor 不 emit Event；Event 无 payload；任务正文在 WorkArtifact.contentRef
+
+hide footbox
+autonumber 1 1 "<b>"
+
+box "边界" #FFFFFF
+  actor "Human\nhuman-alice" as Alice #FFF3E0
+  boundary "ExternalInput" as Ext #FFFFFF
+end box
+
+box "编排运行时" #E8F4FD
+  control "Runtime\nAdmission" as RT #E8F4FD
+  database "CollaborationStore\nSnapshot + auditTail" as Store #E8F4FD
+  database "ChangeLog" as Log #FFF8E8
+end box
+
+box "执行体" #FFF3E0
+  participant "agent-planner\nAgent" as Planner #FFF3E0
+  participant "agent-researcher\nAgent" as Researcher #FFF3E0
+  participant "tool-web-search\nTool" as Tool #FFF3E0
+end box
+
+== T0 · 会话就绪 ==
+
+note over Store
+  **snap-002** · epoch-research-v1
+  participants: alice, planner, researcher, web-search
+  artifacts · ∅  ·  auditTail · ∅
+end note
+
+== ① 外部信号落账（尚无 Event） ==
+
+Alice -> Ext : 用户消息\n「请调研本体工程与 Palantir 模式\n并撰写详细调研报告」
+Ext -> RT : 外部信号到达
+activate RT #E8F4FD
+
+RT -> Store : 追加 **ObservationEntry#1**
+note right of Store
+  seq=1 · source=human-alice
+  payloadRef=ref:msg-001
+  receivedAt=2026-08-06T13:00:00
+  --
+  auditTail ← [Obs#1]
+  **图结构未变**
+end note
+Store --> RT : ok
+
+== ② Event#1 · introduce_artifact ==
+
+RT -> RT : admission 匹配 introduce_artifact\nexternal=ref:audit#1
+RT -> Log : 追加 **evt-001-introduce**
+note right of Log
+  operation=introduce_artifact
+  initiator=agent-planner
+  beforeRef=snap-002 → afterRef=snap-003
+  targets.primary=task-T-ontology-report
+  **无 payload**
+end note
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-003**
+note right of Store
+  + WorkArtifact task-T-ontology-report
+  contentRef=ref:task-body
+  owner=agent-planner
+end note
+Store --> RT : ok
+
+RT --> Planner : 通知：任务已创建
+deactivate RT
+
+== ③ Event#2 · delegate ==
+
+Planner -> RT : 协调意图：委派 task-T
+activate RT #E8F4FD
+
+RT -> RT : admission 匹配 delegate\ninitiator=agent-planner
+RT -> Log : 追加 **evt-002-delegate**
+note right of Log
+  involved=[agent-researcher]
+  secondary=[session-planner-researcher,
+             write-lock-doc-draft]
+end note
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-004**
+note right of Store
+  task-T.owner → agent-researcher
+  + session-planner-researcher
+  + write-lock-doc-draft
+  + link: delegated-to researcher
+end note
+Store --> RT : ok
+
+RT --> Researcher : 通知：收到委派
+RT --> Planner : 通知：委派完成
+deactivate RT
+
+== ④ Event#3 · accept ==
+
+Researcher -> RT : 协调意图：接受 task-T
+activate RT #E8F4FD
+
+RT -> RT : admission 匹配 accept\ninitiator=agent-researcher
+RT -> Log : 追加 **evt-003-accept**
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-005**
+note right of Store
+  planner.status=waiting
+  researcher.status=active
+end note
+Store --> RT : ok
+deactivate RT
+
+== ⑤ Event#4 · invoke_tool ==
+
+Researcher -> RT : 协调意图：调用 web-search
+activate RT #E8F4FD
+
+RT -> RT : admission 匹配 invoke_tool\ninitiator=agent-researcher
+RT -> Log : 追加 **evt-004-invoke-tool**
+note right of Log
+  involved=[tool-web-search]
+  targets.primary=tool-web-search
+end note
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-006**
+Store --> RT : ok
+
+RT -> Tool : 派发检索请求\n「本体工程 · Palantir 模式」
+activate Tool #FFF3E0
+Tool --> RT : 检索结果回执
+deactivate Tool
+
+RT -> Store : 更新参与者 status\nresearcher=waiting · tool=active
+RT --> Researcher : 通知：工具回执已入账
+deactivate RT
+
+== ⑥ Event#5 · run_shell ==
+
+Researcher -> RT : 协调意图：运行 shell 整理资料
+activate RT #E8F4FD
+
+RT -> RT : admission 匹配 run_shell
+RT -> Log : 追加 **evt-005-run-shell**
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-007**
+Store --> RT : ok
+deactivate RT
+
+== ⑦ Event#6 · introduce_artifact（报告草稿） ==
+
+Researcher -> RT : 协调意图：提交报告草稿
+activate RT #E8F4FD
+
+RT -> RT : admission 匹配 introduce_artifact
+RT -> Log : 追加 **evt-006-introduce-doc**
+note right of Log
+  targets.primary=doc-draft-report
+end note
+Log --> RT : committed
+
+RT -> Store : 应用变更 → **snap-008**
+note right of Store
+  + WorkArtifact doc-draft-report
+  contentRef=ref:doc-body
+  owner=agent-researcher
+end note
+Store --> RT : ok
+
+RT --> Alice : 通知：调研报告草稿就绪
+deactivate RT
+
+note over Alice, Tool #F5F5F5
+  **图例**
+  实线 → 外部信号 / 协调意图 / 运行时写入
+  虚线 ← 确认 / 通知 / 回执
+  --
+  ObservationEntry 只进 auditTail，不产生 Event
+  CoordinationEvent 经 admission 后写入 ChangeLog 并应用快照
+  initiator 是归因，不是触发器；Actor 不直接 emit Event
+end note
+
+@enduml
