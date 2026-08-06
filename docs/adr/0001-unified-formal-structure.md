@@ -766,17 +766,18 @@ are separate post-FCP gates.
 witnesses). Products prove they are *actual* (via concrete instantiation). The
 first gate does not block on the second.
 
-This boundary correction does not change the architectural decision (unified
-four-projection structure) or its **Proposed** status, which remains pending FMS
-scope decision (RFC-0002 §16), independent review, and FCP acceptance.
+At this historical checkpoint, the boundary correction did not change the
+unified four-projection decision or its **Proposed** status. The FMS scope was
+then still pending; later sections record its resolution. Independent review,
+FCP disposition, and final ADR acceptance remain pending today.
 
 ## 2026-07-27 DRI Decision Record and ADR Acceptance
 
 **Decision Owner: Joker-of-Gotham**
 **Decision Date: 2026-07-27**
-**Status: Accepted (subject to completion of FCP gates identified below)**
+**Historical checkpoint: DRI implementation route ratified; final ADR status still Proposed**
 
-This ADR is now **Accepted** following DRI resolution of all critical architectural decisions (D1-D10 in `docs/DECISIONS-REQUIRED-zh.md`). The unified four-projection structure is the normative architectural choice for Cantilune P1.
+This historical checkpoint recorded DRI resolution of decisions D1–D10, now preserved in RFC-0002 §23 and the decision sections below. It did not itself complete the later independent-review and final-signature gates; the controlling ADR status remains **Proposed** as stated at the top of this document.
 
 ### Architectural Decisions Recorded
 
@@ -1072,11 +1073,10 @@ tensor freshening makes the two named blocks globally disjoint. These
 premises preserve the two-layer decision; they do not assert a raw-process
 structural wire identity.
 
-An incremental root build of the mutable tree actually completed 9,208 jobs.
-That run is diagnostic, not immutable proof evidence. The exact source
-commit, clean commit-bound CI, integrity/axiom/placeholder audit, proved
-manifest, and descendant strict gate remain pending. The maximum status after
-those technical gates and before independent human signatures is
+The final construction is now bound to source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` and the immutable QA build/audit
+record. Source integrity, placeholder/axiom audit, the proved manifest, and
+the strict proved/tree gate are recorded there. The technical status is
 `proved / review-pending`; it is not `reviewed`, FCP Passed, or ADR Accepted.
 
 The Petri decision is now implemented across a real signature boundary.

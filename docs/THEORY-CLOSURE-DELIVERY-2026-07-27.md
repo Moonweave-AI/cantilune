@@ -225,7 +225,7 @@ requires a separate Product Conformance record and review.
 | `docs/rfc/0002-projection-consistency.md` | Ratified architecture and compatibility boundary |
 | `docs/adr/0001-unified-formal-structure.md` | Proposed architecture decision |
 | `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md` | QA-L4 review packet |
-| `docs/handoffs/0001-theory-closure-to-owner-signoff-2026-07-27.md` | Owner/DRI handoff and receipt |
+| `docs/governance/reviewer-assignments.md` | Reviewer ownership, COI, and recruitment gate |
 | `docs/research/0027-final-load-bearing-seams-2026-07-27.md` | Final P1a/admission/common-trajectory seam record |
 
 Historical reports that claimed completion without an actual kernel build are
@@ -282,3 +282,7 @@ The exact handoff statement is:
 > independent QA-L4 review and human governance acceptance remain pending.
 
 No stronger status is authorised by this delivery.
+
+Owner receipt, reviewer signatures, FCP disposition, and ADR acceptance must
+be recorded in an authoritative Issue, PR, or governance record. This delivery
+document states what is ready to receive; it is not itself a human signature.

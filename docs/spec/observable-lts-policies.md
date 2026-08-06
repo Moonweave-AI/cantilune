@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **Draft** (P1 FCP gate per D9) |
+| Status | **Draft** (reference proof implemented; process-semantics review pending) |
 | Type | Normative specification (observable semantics) |
 | Risk | S2 |
 | Owner | Joker-of-Gotham (DRI) |
@@ -455,4 +455,6 @@ This specification fulfills the D9 mandatory FCP gate by providing:
 
 These definitions enable RFC-0002 Four-Projection Consistency Theorem to be meaningfully stated and proven. The consistency theorem USES these observable semantics; it does not DEFINE them.
 
-**Status**: Draft specification ready for process semantics review and Lean mechanization.
+**Status**: the reference proof is implemented and bound to the current QA
+evidence; the normative policy still requires independent process-semantics
+review and FCP disposition.

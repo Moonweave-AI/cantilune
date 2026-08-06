@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **Draft** |
+| Status | **Draft** (reference implementation proved; independent review pending) |
 | Type | Normative specification (interface definition) |
 | Risk | S2 |
 | Owner | Joker-of-Gotham (DRI) |
@@ -334,7 +334,9 @@ Each package implementing `SuccessPredicateInterface` must prove:
 
 ## 9. Reference implementation: P1c admitted operations
 
-From `docs/research/0006-theory-closure-iteration.md`:
+The current reference behavior is summarized in the
+[theory delivery](../THEORY-CLOSURE-DELIVERY-2026-07-27.md) and bound by the
+[QA evidence](../qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md):
 
 > For every concrete admitted mismatch, reconnect, or quiescent-delete occurrence, one replayable business transition reaches a control state classified as exactly one of success, external wait, genuine deadlock, or an explicit productive infinite trace of observable external holds.
 
@@ -395,7 +397,7 @@ structure ExecutionPackage (σ : Signature) where
 
 ### 10.2 Stochastic feedback integration
 
-From `docs/research/0006-theory-closure-iteration.md`:
+The same delivery and evidence record the stochastic feedback boundary:
 
 > Almost-sure stable hitting holds on this same event-path probability space.
 
@@ -488,7 +490,7 @@ example : Stuck successState := by
 
 - `docs/spec/formal-semantics.md` §4.2 (Derived properties, normal form, termination, deadlock)
 - RFC-0002 §3 (Four-Projection Consistency Theorem, clause 4)
-- `docs/research/0006-theory-closure-iteration.md` (P1c terminal classification)
+- `docs/THEORY-CLOSURE-DELIVERY-2026-07-27.md` (current terminal and stochastic proof boundary)
 - ADR-0001 (Unified formal structure, success predicates as separate concern)
 
 ## 15. Revision history

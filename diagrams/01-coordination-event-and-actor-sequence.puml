@@ -1,202 +1,150 @@
 @startuml 01-coordination-event-and-actor-sequence
-' 图 01 时序：协调生命周期（消息交换）
-' 对应类图 01-coordination-event-and-actor.puml
-' 贯穿案例：「请调研本体工程与 Palantir 模式并撰写一份详细的调研报告」
+' 图 01B：端到端运行时间线；结构细节见图 01A，状态门控见图 01C。
 
+skinparam backgroundColor #FCFAF7
 skinparam shadowing false
 skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
 skinparam sequenceMessageAlign center
 skinparam responseMessageBelowArrow true
 skinparam maxMessageSize 72
-skinparam ParticipantPadding 16
 skinparam BoxPadding 10
+skinparam ArrowColor #77716B
+skinparam ArrowFontColor #57524E
+skinparam SequenceGroupBorderColor #B8AFA6
+skinparam SequenceGroupBackgroundColor #F7F3EC
+skinparam ParticipantBorderColor #77716B
+skinparam ParticipantFontColor #3E3A39
+skinparam NoteBackgroundColor #F7F3EC
+skinparam NoteBorderColor #B8B0A7
 
-title 图 01 时序：协调生命周期（消息交换）\n案例：Alice 请调研本体工程与 Palantir 模式并撰写详细调研报告
+title 图 01B · 从外部任务输入到最终输出：一次可审计的协作运行
+caption <color:#6E6963>案例：供应商集成风险评估。读法：虚线回执是 ObservationEntry；绿色分组中的 chg-N 是 Runtime 准入后写入 ChangeLog 的状态转换。</color>
 
-mainframe Actor 不 emit Event；Event 无 payload；任务正文在 WorkArtifact.contentRef
-
+mainframe <b>写入纪律</b> · 外部信号先追加 auditTail；只有 Runtime 可提交 CoordinationChange；正文由 WorkArtifact.contentRef 持有
 hide footbox
-autonumber 1 1 "<b>"
 
-box "边界" #FFFFFF
-  actor "Human\nhuman-alice" as Alice #FFF3E0
-  boundary "ExternalInput" as Ext #FFFFFF
+box "外部边界 · 信号与回执" #F5F1EB
+  actor "任务发起人\nHuman" as User #FFFDFC
+  boundary "受控工具\nTool" as Tool #FFFDFC
+  actor "Reviewer\n人工 / 策略评审" as Reviewer #FFFDFC
 end box
 
-box "编排运行时" #E8F4FD
-  control "Runtime\nAdmission" as RT #E8F4FD
-  database "CollaborationStore\nSnapshot + auditTail" as Store #E8F4FD
-  database "ChangeLog" as Log #FFF8E8
+box "Cantilune 编排运行时" #E5ECEE
+  control "Runtime\n准入 + 提交" as Runtime #F8FBFB
+  database "CollaborationStore\nSnapshot + auditTail + ChangeLog" as Store #F8FBFB
+  control "ReplayVerifier\n独立重算" as Replay #F8FBFB
 end box
 
-box "执行体" #FFF3E0
-  participant "agent-planner\nAgent" as Planner #FFF3E0
-  participant "agent-researcher\nAgent" as Researcher #FFF3E0
-  participant "tool-web-search\nTool" as Tool #FFF3E0
+box "已注册 Actor" #E5EDE5
+  participant "Planner Agent\n分解与委派" as Planner #F9FCF8
+  participant "Research Agent\n执行与产出" as Researcher #F9FCF8
 end box
 
-== T0 · 会话就绪 ==
+== 0 · 输入先留痕：ObservationEntry ≠ CoordinationChange ==
 
-note over Store
-  **snap-002** · epoch-research-v1
-  participants: alice, planner, researcher, web-search
-  artifacts · ∅  ·  auditTail · ∅
+User -> Runtime : 任务请求 · 风险评估
+activate Runtime #E5ECEE
+Runtime -> Store : append Obs#001
+Store --> Runtime : S0′
+Runtime -> Runtime : admit introduce
+alt 不可准入
+  Runtime --> User : 请求补充 / 说明拒绝原因
+  note right of Runtime #F3E5DC
+    Observation 保留在 auditTail；
+    <b>没有 Change 被提交。</b>
+  end note
+else 准入成功
+  Runtime -> Store : chg-001 · introduce
+  Store --> Planner : 任务已创建
+end
+deactivate Runtime
+
+note right of Store #F5F1EB
+  <b>同一写入纪律贯穿全程</b>
+  commit 前：模板匹配、授权、资源与外部证据核验。
+  commit 后：记录 beforeRef / afterRef、targets、initiator 与证据引用。
 end note
 
-== ① 外部信号落账（尚无 Event） ==
+== 1 · 协调建立：归属、会话与能力显式迁移 ==
 
-Alice -> Ext : 用户消息\n「请调研本体工程与 Palantir 模式\n并撰写详细调研报告」
-Ext -> RT : 外部信号到达
-activate RT #E8F4FD
+Planner -> Runtime : intent · delegate
+activate Runtime #E5ECEE
+Runtime -> Store : chg-002 · delegate
+Store --> Researcher : 会话与写锁已移交
+Researcher -> Runtime : intent · accept
+Runtime -> Store : chg-003 · accept
+deactivate Runtime
 
-RT -> Store : 追加 **ObservationEntry#1**
-note right of Store
-  seq=1 · source=human-alice
-  payloadRef=ref:msg-001
-  receivedAt=2026-08-06T13:00:00
-  --
-  auditTail ← [Obs#1]
-  **图结构未变**
-end note
-Store --> RT : ok
+== 2 · 受控执行：调用是 Change，回执是 Observation ==
 
-== ② Event#1 · introduce_artifact ==
+Researcher -> Runtime : intent · invoke_tool
+activate Runtime #E5ECEE
+Runtime -> Store : chg-004 · invoke_tool
+Runtime -> Tool : 受控检索 / 取证
+deactivate Runtime
 
-RT -> RT : admission 匹配 introduce_artifact\nexternal=ref:audit#1
-RT -> Log : 追加 **evt-001-introduce**
-note right of Log
-  operation=introduce_artifact
-  initiator=agent-planner
-  beforeRef=snap-002 → afterRef=snap-003
-  targets.primary=task-T-ontology-report
-  **无 payload**
-end note
-Log --> RT : committed
+Tool --> Runtime : ExternalSignal · result
+activate Runtime #E5ECEE
+Runtime -> Store : append Obs#002
+Runtime --> Researcher : 证据已留痕
+Researcher -> Runtime : intent · attach_evidence
+Runtime -> Store : chg-005 · attach_evidence
+deactivate Runtime
 
-RT -> Store : 应用变更 → **snap-003**
-note right of Store
-  + WorkArtifact task-T-ontology-report
-  contentRef=ref:task-body
-  owner=agent-planner
-end note
-Store --> RT : ok
-
-RT --> Planner : 通知：任务已创建
-deactivate RT
-
-== ③ Event#2 · delegate ==
-
-Planner -> RT : 协调意图：委派 task-T
-activate RT #E8F4FD
-
-RT -> RT : admission 匹配 delegate\ninitiator=agent-planner
-RT -> Log : 追加 **evt-002-delegate**
-note right of Log
-  involved=[agent-researcher]
-  secondary=[session-planner-researcher,
-             write-lock-doc-draft]
-end note
-Log --> RT : committed
-
-RT -> Store : 应用变更 → **snap-004**
-note right of Store
-  task-T.owner → agent-researcher
-  + session-planner-researcher
-  + write-lock-doc-draft
-  + link: delegated-to researcher
-end note
-Store --> RT : ok
-
-RT --> Researcher : 通知：收到委派
-RT --> Planner : 通知：委派完成
-deactivate RT
-
-== ④ Event#3 · accept ==
-
-Researcher -> RT : 协调意图：接受 task-T
-activate RT #E8F4FD
-
-RT -> RT : admission 匹配 accept\ninitiator=agent-researcher
-RT -> Log : 追加 **evt-003-accept**
-Log --> RT : committed
-
-RT -> Store : 应用变更 → **snap-005**
-note right of Store
-  planner.status=waiting
-  researcher.status=active
-end note
-Store --> RT : ok
-deactivate RT
-
-== ⑤ Event#4 · invoke_tool ==
-
-Researcher -> RT : 协调意图：调用 web-search
-activate RT #E8F4FD
-
-RT -> RT : admission 匹配 invoke_tool\ninitiator=agent-researcher
-RT -> Log : 追加 **evt-004-invoke-tool**
-note right of Log
-  involved=[tool-web-search]
-  targets.primary=tool-web-search
-end note
-Log --> RT : committed
-
-RT -> Store : 应用变更 → **snap-006**
-Store --> RT : ok
-
-RT -> Tool : 派发检索请求\n「本体工程 · Palantir 模式」
-activate Tool #FFF3E0
-Tool --> RT : 检索结果回执
-deactivate Tool
-
-RT -> Store : 更新参与者 status\nresearcher=waiting · tool=active
-RT --> Researcher : 通知：工具回执已入账
-deactivate RT
-
-== ⑥ Event#5 · run_shell ==
-
-Researcher -> RT : 协调意图：运行 shell 整理资料
-activate RT #E8F4FD
-
-RT -> RT : admission 匹配 run_shell
-RT -> Log : 追加 **evt-005-run-shell**
-Log --> RT : committed
-
-RT -> Store : 应用变更 → **snap-007**
-Store --> RT : ok
-deactivate RT
-
-== ⑦ Event#6 · introduce_artifact（报告草稿） ==
-
-Researcher -> RT : 协调意图：提交报告草稿
-activate RT #E8F4FD
-
-RT -> RT : admission 匹配 introduce_artifact
-RT -> Log : 追加 **evt-006-introduce-doc**
-note right of Log
-  targets.primary=doc-draft-report
-end note
-Log --> RT : committed
-
-RT -> Store : 应用变更 → **snap-008**
-note right of Store
-  + WorkArtifact doc-draft-report
-  contentRef=ref:doc-body
-  owner=agent-researcher
-end note
-Store --> RT : ok
-
-RT --> Alice : 通知：调研报告草稿就绪
-deactivate RT
-
-note over Alice, Tool #F5F5F5
-  **图例**
-  实线 → 外部信号 / 协调意图 / 运行时写入
-  虚线 ← 确认 / 通知 / 回执
-  --
-  ObservationEntry 只进 auditTail，不产生 Event
-  CoordinationEvent 经 admission 后写入 ChangeLog 并应用快照
-  initiator 是归因，不是触发器；Actor 不直接 emit Event
+note right of Store #F5F1EB
+  <b>工具回执到达不改协作图。</b>
+  只有后续 attach_evidence 被准入后，
+  Obs#002 才支撑一次新的 CoordinationChange。
 end note
 
+== 3 · 产出与评审：批准 / 修订同样先成为观察 ==
+
+Researcher -> Runtime : intent · submit_artifact
+activate Runtime #E5ECEE
+Runtime -> Store : chg-006 · submit_artifact
+Runtime --> Reviewer : 草稿进入评审
+Planner -> Runtime : intent · request_approval
+Runtime -> Store : chg-007 · request_approval
+deactivate Runtime
+
+Reviewer --> Runtime : ExternalSignal · decision
+activate Runtime #E5ECEE
+Runtime -> Store : append Obs#003
+alt revise
+  Runtime --> Researcher : 返回修订范围
+  note right of Runtime #F3E5DC
+    返工创建新的 Artifact、Snapshot 与 Change；
+    <b>不覆盖既有历史。</b>
+  end note
+else approve
+  Runtime -> Runtime : admit publish_artifact
+  Runtime -> Store : chg-008 · publish_artifact
+end
+deactivate Runtime
+
+== 4 · 重放后交付：可追溯必须可验证 ==
+
+Runtime -> Replay : verifyRelease
+activate Replay #E5ECEE
+Replay -> Store : load chg-001 … chg-008
+Replay -> Replay : replay + compare S8
+Replay --> Runtime : verification result
+deactivate Replay
+
+alt 重放一致 ∧ SuccessCondition(S8)
+  Runtime --> User : 交付 final-report + provenance
+else 不一致或终态条件不满足
+  Runtime -> Store : delivery blocked / escalate
+  Runtime --> User : 暂不交付；返回可审计处置状态
+end
+
+note over User, Replay #F7F3EC
+  <b>工程边界</b>
+  · Actor 只发送信号或协调意图；Runtime 是 Change 的唯一提交者。
+  · Change 不携带正文 payload；它记录操作、目标、证据与两端快照引用。
+  · tracing 可补充运维观测，但 ChangeLog + Replay 才提供可复核的状态转换证据。
+end note
+
+footer <color:#6E6963>工程对齐：Cantilune 的 Config / DPOEvent / external observations；任务与产物生命周期参考 A2A；职责归因参考 W3C PROV。</color>
 @enduml

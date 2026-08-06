@@ -1,18 +1,22 @@
 # FMS Domain Theory Comprehensive Reference
 
-**Status:** Consolidated research reference  
+**Status:** Consolidated background reference; current proof status lives in 0021–0027
 **Date:** 2026-07-27 (consolidating research from 2026-07-26)  
 **Risk:** S2 / **Quality:** QA-L4 target / **Maturity:** Pre-FCP M1  
 **Owner/DRI:** Joker-of-Gotham  
 **Governance:** RFC-0002 (Pre-FCP), ADR-0001 (Proposed)
 
-**Supersedes:**
-- `0007-fms-lean-dependency-audit-2026-07-26.md`
-- `0009-fms-source-theorem-scope-audit-2026-07-26.md`
-- `0010-abramsky-powerdomain-construction-route-2026-07-26.md`
-- `0011-open-pi-totality-and-common-fms-seam-2026-07-26.md`
-- `0012-separated-fms-commutativity-and-terminal-closure-boundary-2026-07-26.md`
-- `0014-fms-bottom-zero-and-commutativity-scope-2026-07-26.md`
+> **Reading rule (2026-07-28):** this document consolidates the source,
+> dependency, and construction-route research performed on 2026-07-26. Its
+> “current status” and “open problems” sections are dated snapshots, not the
+> controlling implementation state. For the accepted maximum-compatible
+> boundary and immutable proof result, read records 0021–0027, the QA-L4
+> packet, and the theory delivery. The six source logs listed below were
+> removed after their durable content was merged here.
+
+**Merged scope:** retired research logs 0007, 0009–0012, and 0014 (dependency
+audit, source-theorem scope, construction route, Open-π/common-FMS seam,
+separated commutativity, and bottom/zero scope).
 
 ---
 

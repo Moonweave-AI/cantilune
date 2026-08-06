@@ -1,398 +1,100 @@
 @startuml 01-coordination-event-and-actor-state
-' 图 01 状态：字段逐步赋值
-' 缩进用 \t（普通空格会被 PlantUML 去掉）；区块间用空描述行
+' 图 01C：以受约束的工程流程表现协调状态与协调事件。
+' 单一向下主干；失败、返工与隔离均为右侧受控分支，避免跨图回线。
 
+skinparam backgroundColor #FCFAF7
 skinparam shadowing false
 skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
 skinparam linetype ortho
-skinparam ranksep 22
-skinparam nodesep 16
-skinparam state {
-  BackgroundColor #F8F8F8
-  BorderColor #666666
-  FontSize 9
+skinparam roundcorner 12
+skinparam nodesep 28
+skinparam ranksep 34
+skinparam ArrowColor #77716B
+skinparam ArrowFontColor #57524E
+skinparam ArrowThickness 1.25
+skinparam packageStyle rectangle
+skinparam packageBorderColor #AAA39C
+skinparam packageFontColor #3E3A39
+skinparam packageFontStyle bold
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+  FontColor #514C47
 }
 
-title 图 01 状态：协调生命周期（字段赋值）\n案例：Alice 请调研本体工程与 Palantir 模式并撰写详细调研报告
+title 图 01C · 协调状态与协调事件：从观察留痕到重放后交付
+caption <color:#6E6963>案例：供应商集成风险评估。绿色为已提交变更；虚线为外部观察；橙色为受控非成功分支。</color>
+
+legend top right
+  |= 颜色 / 线型 |= 工程含义 |
+  | <back:#E5EDE5>　</back> | CollaborationSnapshot：已持久化协作状态 |
+  | <back:#F3E5DC>　</back> | CoordinationChange：经 Runtime 准入并提交 |
+  | <back:#F5F1EB>　</back> | ObservationEntry：仅追加 auditTail，不改协作图 |
+  | <back:#E5ECEE>　</back> | Runtime / Policy / Replay 的判断与校验 |
+  | <color:#8E9E8A>━━</color> | 主干：一次已提交的协调变更 |
+  | <color:#9AA6A7>┄┄</color> | 外部信号 / 回执：先成为 ObservationEntry |
+endlegend
 
 top to bottom direction
-hide empty description
 
-mainframe 类图字段全覆盖；Actor 不 emit Event；Event 无 payload
+frame "一次可审计的协作运行 · CollaborationSnapshot S0′ → ChangeLog → S8" #F8F5F0 {
 
-state "案例主线" as Mainline #F5F5F5 {
+  package "① 外部输入与准入 · Observation 先行" #F5F1EB {
+    rectangle "<b>S0′ · 协作会话就绪</b>\nparticipants / policyContext / auditTail\n尚无任务产物" as S0 #E5EDE5
+    rectangle "<b>ObservationEntry#001 · Human</b>\n任务请求 → payloadRef\nauditTail += 001；<b>不产生 Change</b>" as Obs1 #FFFDFC
+    rectangle "<b>AdmissionGateway · Runtime</b>\n匹配 OperationTemplate\n核验授权、资源与外部证据" as Gate1 #E5ECEE
+    rectangle "<b>待补充 / 拒绝</b>\n保留 Observation；请求澄清或说明原因\n<b>没有 CoordinationChange</b>" as Pending #F3E5DC
+  }
 
-  [*] --> T0
+  package "② 任务建立与协调 · Snapshot 显式迁移" #E5EDE5 {
+    rectangle "<b>S1 · chg-001 introduce_artifact</b>\n+ WorkArtifact(task, contentRef)\nbeforeRef=S0′ · afterRef=S1 · initiator=planner" as S1 #FFF9F6
+    rectangle "<b>S2 · chg-002 delegate</b>\nPlanner → Researcher\n+ private session · transfer write-lock" as S2 #FFF9F6
+    rectangle "<b>S3 · chg-003 accept</b>\nResearcher=active · Planner=waiting\n归属、能力和会话均由 Snapshot 查询" as S3 #FFF9F6
+  }
 
-  state "T0 会话就绪" as T0 #E8F4FD
-  T0 : CollaborationSnapshot
-  T0 : \tepochId · epoch-research-v1
-  T0 : 
-  T0 : \tparticipants
-  T0 : \t\thuman-alice
-  T0 : \t\t\tactorId · human-alice
-  T0 : \t\t\tkind · Human
-  T0 : \t\t\tdisplayName · Alice
-  T0 : \t\t\tprovider · —
-  T0 : \t\t\tstatus · active
-  T0 : 
-  T0 : \t\tagent-planner
-  T0 : \t\t\tactorId · agent-planner
-  T0 : \t\t\tkind · Agent
-  T0 : \t\t\tdisplayName · Planner Agent
-  T0 : \t\t\tprovider · claude-sonnet
-  T0 : \t\t\tstatus · active
-  T0 : 
-  T0 : \t\tagent-researcher
-  T0 : \t\t\tactorId · agent-researcher
-  T0 : \t\t\tkind · Agent
-  T0 : \t\t\tdisplayName · Research Agent
-  T0 : \t\t\tprovider · claude-sonnet
-  T0 : \t\t\tstatus · active
-  T0 : 
-  T0 : \t\ttool-web-search
-  T0 : \t\t\tactorId · tool-web-search
-  T0 : \t\t\tkind · Tool
-  T0 : \t\t\tdisplayName · Web Search
-  T0 : \t\t\tprovider · web-search
-  T0 : \t\t\tstatus · active
-  T0 : 
-  T0 : \tartifacts · ∅
-  T0 : \tcapabilities · budget-50k-tokens
-  T0 : \tsessions · ∅
-  T0 : \tlinks · ∅
-  T0 : \tauditTail · ∅
-  T0 : \tpolicyContext · approved-introduce retry-count=0
+  package "③ 受控执行与产出 · 工具回执再次准入" #E5ECEE {
+    rectangle "<b>S4 · chg-004 invoke_tool</b>\n记录调用意图、目标与受控工具租约\nTool 不是 Change 的直接提交者" as S4 #FFF9F6
+    rectangle "<b>ObservationEntry#002 · Tool</b>\nresultRef + provenance\n工具回执到达 ≠ 协作状态改变" as Obs2 #FFFDFC
+    rectangle "<b>S5 · chg-005 attach_evidence</b>\n+ Evidence WorkArtifact / provenance link\nObs#002 成为 external evidence" as S5 #FFF9F6
+    rectangle "<b>S6 · chg-006 submit_artifact</b>\nDraft WorkArtifact(contentRef)\nlifecycle=reviewable · owner=researcher" as S6 #FFF9F6
+  }
 
-  T0 --> TaskInput : 编排会话开始
+  package "④ 评审、发布与重放 · 终态须独立验证" #F5F1EB {
+    rectangle "<b>S7 · chg-007 request_approval</b>\npolicyContext.approvalState=awaiting_review\nReviewer 收到评审窗口通知" as S7 #FFF9F6
+    rectangle "<b>ObservationEntry#003 · Reviewer</b>\napprove / revise → payloadRef\n先留痕；再触发下一次准入" as Obs3 #FFFDFC
+    rectangle "<b>返工 / 新的受控子运行</b>\n保留 Draft、Obs#003 与全部旧 Change\n修订创建新 Artifact / Snapshot，<b>不覆盖历史</b>" as Rework #F3E5DC
+    rectangle "<b>S8 · chg-008 publish_artifact</b>\nfinal-report.lifecycle=published\nafterRef=S8 · approval evidence=Obs#003" as S8 #FFF9F6
+    rectangle "<b>ReplayVerifier · release gate</b>\nreplay(S0′, chg-001 … chg-008)\n重算快照并比较 afterRef(S8)" as Replay #E5ECEE
+    rectangle "<b>隔离处置</b>\nreplay mismatch / 证据失效 / 策略冲突\ndelivery blocked；升级人工或自动处置" as Quarantine #F3E5DC
+    rectangle "<b>已交付并完成</b>\ndeliver(final WorkArtifact.contentRef, provenance)\nSuccessCondition(S8)=true" as Completed #E5EDE5
+  }
 
-  state "任务输入到达" as TaskInput #FFFFFF
-  TaskInput : ExternalInput
-  TaskInput : \tkind · 用户输入
-  TaskInput : \tpayload · 请调研本体工程与 Palantir 模式并撰写详细调研报告
-  TaskInput : 
-  TaskInput : CoordinationEvent · ∅
-  TaskInput : CollaborationSnapshot · 同 T0
+  S0 -[#9AA6A7,dashed]down-> Obs1 : Human → ExternalSignal
+  Obs1 -[#6F8790]down-> Gate1 : append auditTail
+  Gate1 -[#B57D68,dashed]right-> Pending
+  Gate1 -[#8E9E8A,thickness=2]down-> S1 : admit · chg-001
+  S1 -[#8E9E8A,thickness=2]down-> S2 : chg-002
+  S2 -[#8E9E8A,thickness=2]down-> S3 : chg-003
+  S3 -[#8E9E8A,thickness=2]down-> S4 : chg-004
+  S4 -[#9AA6A7,dashed]down-> Obs2 : Tool receipt → ExternalSignal
+  Obs2 -[#8E9E8A,thickness=2]down-> S5 : admit · chg-005
+  S5 -[#8E9E8A,thickness=2]down-> S6 : chg-006
+  S6 -[#8E9E8A,thickness=2]down-> S7 : chg-007
+  S7 -[#9AA6A7,dashed]down-> Obs3 : Reviewer → ExternalSignal
+  Obs3 -[#B57D68,dashed]right-> Rework
+  Obs3 -[#8E9E8A,thickness=2]down-> S8 : approve · chg-008
+  S8 -[#6F8790]down-> Replay : verify release
+  Replay -[#B57D68,dashed]right-> Quarantine
+  Replay -[#8E9E8A,thickness=2]down-> Completed : consistent ∧ success
 
-  TaskInput --> ObsLogged : ① 外部信号落账
-
-  state "观察已落账" as ObsLogged #FFFFFF
-  ObsLogged : ObservationEntry
-  ObsLogged : \tseq · 1
-  ObsLogged : \tsource
-  ObsLogged : \t\tactorId · human-alice
-  ObsLogged : \t\tkind · Human
-  ObsLogged : \tpayloadRef · ref:msg-001
-  ObsLogged : \treceivedAt · 2026-08-06T13:00:00+08:00
-  ObsLogged : 
-  ObsLogged : CollaborationSnapshot
-  ObsLogged : \tepochId · epoch-research-v1
-  ObsLogged : \tparticipants · 同 T0
-  ObsLogged : \tartifacts · ∅
-  ObsLogged : \tcapabilities · budget-50k-tokens
-  ObsLogged : \tsessions · ∅
-  ObsLogged : \tlinks · ∅
-  ObsLogged : \tauditTail · [ObservationEntry#1]
-  ObsLogged : \tpolicyContext · approved-introduce retry-count=0
-  ObsLogged : 
-  ObsLogged : CoordinationEvent · ∅
-
-  ObsLogged --> AdmitIntro : ② Runtime admission
-
-  state AdmitIntro <<choice>>
-
-  AdmitIntro --> HasTask : [准入通过]
-  AdmitIntro --> AdmitFail : [准入拒绝]
-
-  state "准入失败" as AdmitFail #FFF8E8
-  AdmitFail : CoordinationEvent · ∅
-  AdmitFail : CollaborationSnapshot · 同 ObsLogged
-  AdmitFail : ObservationEntry#1 · 保留
-
-  AdmitFail --> ObsLogged : 重试
-
-  state "任务已创建" as HasTask #E8F4FD
-  HasTask : CoordinationEvent
-  HasTask : \tchangeId · evt-001-introduce
-  HasTask : \tepochId · epoch-research-v1
-  HasTask : \toperation · introduce_artifact
-  HasTask : \trecordedAt · 2026-08-06T13:00:01+08:00
-  HasTask : \tvisibility · external
-  HasTask : \tbeforeRef · snap-002
-  HasTask : \tafterRef · snap-003
-  HasTask : \tinitiator
-  HasTask : \t\tactorId · agent-planner
-  HasTask : \t\tkind · Agent
-  HasTask : \tinvolved · ∅
-  HasTask : \ttargets
-  HasTask : \t\tprimary
-  HasTask : \t\t\tkind · Task
-  HasTask : \t\t\tid · task-T-ontology-report
-  HasTask : \t\tsecondary · ∅
-  HasTask : \tauthorization · authz-introduce-ok
-  HasTask : \texternal · ref:audit#1
-  HasTask : 
-  HasTask : WorkArtifact · task-T-ontology-report
-  HasTask : \tid · task-T-ontology-report
-  HasTask : \tkind · Task
-  HasTask : \tcontentRef · ref:task-body
-  HasTask : \towner
-  HasTask : \t\tactorId · agent-planner
-  HasTask : \t\tkind · Agent
-  HasTask : 
-  HasTask : CollaborationSnapshot
-  HasTask : \tepochId · epoch-research-v1
-  HasTask : \tparticipants · 同 T0
-  HasTask : \tartifacts · task-T-ontology-report
-  HasTask : \tcapabilities · budget-50k-tokens
-  HasTask : \tsessions · ∅
-  HasTask : \tlinks · ∅
-  HasTask : \tauditTail · [ObservationEntry#1]
-  HasTask : \tpolicyContext · approved-introduce retry-count=0
-
-  HasTask --> Delegated : ③ Event#2 delegate
-
-  state "任务已委派" as Delegated #E8F4FD
-  Delegated : CoordinationEvent
-  Delegated : \tchangeId · evt-002-delegate
-  Delegated : \tepochId · epoch-research-v1
-  Delegated : \toperation · delegate
-  Delegated : \trecordedAt · 2026-08-06T13:00:05+08:00
-  Delegated : \tvisibility · external
-  Delegated : \tbeforeRef · snap-003
-  Delegated : \tafterRef · snap-004
-  Delegated : \tinitiator
-  Delegated : \t\tactorId · agent-planner
-  Delegated : \t\tkind · Agent
-  Delegated : \tinvolved · [agent-researcher/Agent]
-  Delegated : \ttargets
-  Delegated : \t\tprimary
-  Delegated : \t\t\tkind · Task
-  Delegated : \t\t\tid · task-T-ontology-report
-  Delegated : \t\tsecondary
-  Delegated : \t\t\tsession-planner-researcher · Session
-  Delegated : \t\t\twrite-lock-doc-draft · Capability
-  Delegated : \tauthorization · authz-delegate-ok
-  Delegated : \texternal · ref:audit#1
-  Delegated : 
-  Delegated : WorkArtifact · task-T-ontology-report
-  Delegated : \tid · task-T-ontology-report
-  Delegated : \tkind · Task
-  Delegated : \tcontentRef · ref:task-body
-  Delegated : \towner
-  Delegated : \t\tactorId · agent-researcher
-  Delegated : \t\tkind · Agent
-  Delegated : 
-  Delegated : CollaborationSnapshot
-  Delegated : \tepochId · epoch-research-v1
-  Delegated : \tparticipants · 同 T0
-  Delegated : \tartifacts · task-T-ontology-report
-  Delegated : \tcapabilities · budget-50k-tokens write-lock-doc-draft
-  Delegated : \tsessions · session-planner-researcher
-  Delegated : \tlinks · task-T delegated-to agent-researcher
-  Delegated : \tauditTail · [ObservationEntry#1]
-  Delegated : \tpolicyContext · approved-introduce retry-count=0
-
-  Delegated --> Accepted : ④ Event#3 accept
-
-  state "执行体已接单" as Accepted #E8F4FD
-  Accepted : CoordinationEvent
-  Accepted : \tchangeId · evt-003-accept
-  Accepted : \tepochId · epoch-research-v1
-  Accepted : \toperation · accept
-  Accepted : \trecordedAt · 2026-08-06T13:00:10+08:00
-  Accepted : \tvisibility · external
-  Accepted : \tbeforeRef · snap-004
-  Accepted : \tafterRef · snap-005
-  Accepted : \tinitiator
-  Accepted : \t\tactorId · agent-researcher
-  Accepted : \t\tkind · Agent
-  Accepted : \tinvolved · [agent-planner/Agent]
-  Accepted : \ttargets
-  Accepted : \t\tprimary
-  Accepted : \t\t\tkind · Task
-  Accepted : \t\t\tid · task-T-ontology-report
-  Accepted : \t\tsecondary · ∅
-  Accepted : \tauthorization · authz-accept-ok
-  Accepted : \texternal · ref:audit#1
-  Accepted : 
-  Accepted : WorkArtifact · task-T-ontology-report
-  Accepted : \tid · task-T-ontology-report
-  Accepted : \tkind · Task
-  Accepted : \tcontentRef · ref:task-body
-  Accepted : \towner
-  Accepted : \t\tactorId · agent-researcher
-  Accepted : \t\tkind · Agent
-  Accepted : 
-  Accepted : CollaborationSnapshot
-  Accepted : \tepochId · epoch-research-v1
-  Accepted : \tparticipants · 同 T0，status 变更见下
-  Accepted : \t\tagent-planner
-  Accepted : \t\t\tstatus · waiting
-  Accepted : \t\tagent-researcher
-  Accepted : \t\t\tstatus · active
-  Accepted : \tartifacts · task-T-ontology-report
-  Accepted : \tcapabilities · budget-50k-tokens write-lock-doc-draft
-  Accepted : \tsessions · session-planner-researcher
-  Accepted : \tlinks · task-T delegated-to agent-researcher
-  Accepted : \tauditTail · [ObservationEntry#1]
-  Accepted : \tpolicyContext · approved-introduce retry-count=0
-
-  Accepted --> Researching : ⑤ Event#4 invoke_tool
-
-  state "工具检索中" as Researching #E8F4FD
-  Researching : CoordinationEvent
-  Researching : \tchangeId · evt-004-invoke-tool
-  Researching : \tepochId · epoch-research-v1
-  Researching : \toperation · invoke_tool
-  Researching : \trecordedAt · 2026-08-06T13:00:20+08:00
-  Researching : \tvisibility · external
-  Researching : \tbeforeRef · snap-005
-  Researching : \tafterRef · snap-006
-  Researching : \tinitiator
-  Researching : \t\tactorId · agent-researcher
-  Researching : \t\tkind · Agent
-  Researching : \tinvolved · [tool-web-search/Tool]
-  Researching : \ttargets
-  Researching : \t\tprimary
-  Researching : \t\t\tkind · Tool
-  Researching : \t\t\tid · tool-web-search
-  Researching : \t\tsecondary
-  Researching : \t\t\ttask-T-ontology-report · Task
-  Researching : \tauthorization · authz-invoke-tool-ok
-  Researching : \texternal · ref:audit#1
-  Researching : 
-  Researching : WorkArtifact · task-T-ontology-report
-  Researching : \tid · task-T-ontology-report
-  Researching : \tkind · Task
-  Researching : \tcontentRef · ref:task-body
-  Researching : \towner
-  Researching : \t\tactorId · agent-researcher
-  Researching : \t\tkind · Agent
-  Researching : 
-  Researching : CollaborationSnapshot
-  Researching : \tepochId · epoch-research-v1
-  Researching : \tparticipants · 同 T0，status 变更见下
-  Researching : \t\tagent-researcher
-  Researching : \t\t\tstatus · waiting
-  Researching : \t\ttool-web-search
-  Researching : \t\t\tstatus · active
-  Researching : \tartifacts · task-T-ontology-report
-  Researching : \tcapabilities · budget-50k-tokens write-lock-doc-draft
-  Researching : \tsessions · session-planner-researcher
-  Researching : \tlinks · task-T delegated-to agent-researcher
-  Researching : \tauditTail · [ObservationEntry#1]
-  Researching : \tpolicyContext · approved-introduce retry-count=0
-
-  Researching --> ShellRun : ⑥ Event#5 run_shell
-
-  state "Shell 执行中" as ShellRun #E8F4FD
-  ShellRun : CoordinationEvent
-  ShellRun : \tchangeId · evt-005-run-shell
-  ShellRun : \tepochId · epoch-research-v1
-  ShellRun : \toperation · run_shell
-  ShellRun : \trecordedAt · 2026-08-06T13:00:40+08:00
-  ShellRun : \tvisibility · external
-  ShellRun : \tbeforeRef · snap-006
-  ShellRun : \tafterRef · snap-007
-  ShellRun : \tinitiator
-  ShellRun : \t\tactorId · agent-researcher
-  ShellRun : \t\tkind · Agent
-  ShellRun : \tinvolved · ∅
-  ShellRun : \ttargets
-  ShellRun : \t\tprimary
-  ShellRun : \t\t\tkind · Task
-  ShellRun : \t\t\tid · task-T-ontology-report
-  ShellRun : \t\tsecondary · ∅
-  ShellRun : \tauthorization · authz-run-shell-ok
-  ShellRun : \texternal · ref:audit#1
-  ShellRun : 
-  ShellRun : WorkArtifact · task-T-ontology-report
-  ShellRun : \tid · task-T-ontology-report
-  ShellRun : \tkind · Task
-  ShellRun : \tcontentRef · ref:task-body
-  ShellRun : \towner
-  ShellRun : \t\tactorId · agent-researcher
-  ShellRun : \t\tkind · Agent
-  ShellRun : 
-  ShellRun : CollaborationSnapshot
-  ShellRun : \tepochId · epoch-research-v1
-  ShellRun : \tparticipants · 同 T0，status 变更见下
-  ShellRun : \t\tagent-researcher
-  ShellRun : \t\t\tstatus · active
-  ShellRun : \tartifacts · task-T-ontology-report
-  ShellRun : \tcapabilities · budget-50k-tokens write-lock-doc-draft
-  ShellRun : \tsessions · session-planner-researcher
-  ShellRun : \tlinks · task-T delegated-to agent-researcher
-  ShellRun : \tauditTail · [ObservationEntry#1]
-  ShellRun : \tpolicyContext · approved-introduce retry-count=0
-
-  ShellRun --> DraftReady : ⑦ Event#6 introduce_artifact
-
-  state "报告草稿就绪" as DraftReady #E8F4FD
-  DraftReady : CoordinationEvent
-  DraftReady : \tchangeId · evt-006-introduce-doc
-  DraftReady : \tepochId · epoch-research-v1
-  DraftReady : \toperation · introduce_artifact
-  DraftReady : \trecordedAt · 2026-08-06T13:01:00+08:00
-  DraftReady : \tvisibility · external
-  DraftReady : \tbeforeRef · snap-007
-  DraftReady : \tafterRef · snap-008
-  DraftReady : \tinitiator
-  DraftReady : \t\tactorId · agent-researcher
-  DraftReady : \t\tkind · Agent
-  DraftReady : \tinvolved · ∅
-  DraftReady : \ttargets
-  DraftReady : \t\tprimary
-  DraftReady : \t\t\tkind · Artifact
-  DraftReady : \t\t\tid · doc-draft-report
-  DraftReady : \t\tsecondary · ∅
-  DraftReady : \tauthorization · authz-introduce-doc-ok
-  DraftReady : \texternal · ref:audit#1
-  DraftReady : 
-  DraftReady : WorkArtifact · task-T-ontology-report
-  DraftReady : \tid · task-T-ontology-report
-  DraftReady : \tkind · Task
-  DraftReady : \tcontentRef · ref:task-body
-  DraftReady : \towner
-  DraftReady : \t\tactorId · agent-researcher
-  DraftReady : \t\tkind · Agent
-  DraftReady : 
-  DraftReady : WorkArtifact · doc-draft-report
-  DraftReady : \tid · doc-draft-report
-  DraftReady : \tkind · Artifact
-  DraftReady : \tcontentRef · ref:doc-draft-body
-  DraftReady : \towner
-  DraftReady : \t\tactorId · agent-researcher
-  DraftReady : \t\tkind · Agent
-  DraftReady : 
-  DraftReady : CollaborationSnapshot
-  DraftReady : \tepochId · epoch-research-v1
-  DraftReady : \tparticipants · 同 T0
-  DraftReady : \tartifacts · task-T-ontology-report doc-draft-report
-  DraftReady : \tcapabilities · budget-50k-tokens write-lock-doc-draft
-  DraftReady : \tsessions · session-planner-researcher
-  DraftReady : \tlinks · task-T delegated-to agent-researcher
-  DraftReady : \tauditTail · [ObservationEntry#1]
-  DraftReady : \tpolicyContext · approved-introduce retry-count=0
-  DraftReady : 
-  DraftReady : OperationType
-  DraftReady : \tintroduce_artifact · evt-001 evt-006
-  DraftReady : \tdelegate · evt-002
-  DraftReady : \taccept · evt-003
-  DraftReady : \tinvoke_tool · evt-004
-  DraftReady : \trun_shell · evt-005
-  DraftReady : \trequest_approval · 本案例未触发
-  DraftReady : 
-  DraftReady : ActorKind
-  DraftReady : \tAgent · agent-planner agent-researcher
-  DraftReady : \tTool · tool-web-search
-  DraftReady : \tHuman · human-alice
-  DraftReady : \tShell · 本案例未注册
-  DraftReady : \tDataSource · 本案例未注册
-  DraftReady : \tRuntime · 本案例未注册
-
-  DraftReady --> [*]
+  note bottom of Completed
+    <b>写入纪律</b>
+    · Actor 只发外部信号或协调意图；Runtime 是唯一的 Change 提交边界。
+    · 每条 Change 均保留 beforeRef / afterRef、targets 与授权/外部证据引用。
+    · 正文和工具输出留在 WorkArtifact.contentRef，不嵌入 ChangeLog。
+  end note
 }
 
+footer <color:#6E6963>形式锚点：Config σ → CollaborationSnapshot；DPOEvent σ → CoordinationChange；external observations → auditTail。正常形不自动代表成功，交付还需 SuccessCondition 与重放一致。</color>
 @enduml

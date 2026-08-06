@@ -458,11 +458,11 @@ binder 三个名字 pairwise fresh，canonical tensor freshening 使两块具名
 boundary 全局不交。该前提保留两层架构决策，并不宣称 raw-process structural
 wire identity。
 
-可变树的一次增量根构建已实际完成 9,208 jobs。该运行只是诊断，不是不可变
-proof evidence。精确 source commit、commit-bound clean CI、
-integrity/axiom/placeholder audit、proved manifest 以及后继 strict gate
-仍待完成。上述技术门通过后、独立人类签名前的最大状态为
-`proved / review-pending`，不是 `reviewed`、FCP Passed 或 ADR Accepted。
+最终构造现已绑定 source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` 与不可变 QA 构建/审计记录；
+source integrity、placeholder/axiom audit、proved manifest 与 strict
+proved/tree gate 均记录于其中。技术状态为 `proved / review-pending`，不是
+`reviewed`、FCP Passed 或 ADR Accepted。
 
 ## 参考文献
 

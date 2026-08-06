@@ -330,7 +330,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
    - Each with `package.yaml`, `rules/`, `tests/`
 
 2. **Package conformance specification:**
-   - Document: `docs/conformance/product-certificate-requirements.md`
+   - Document: planned `docs/conformance/` specification (not yet created)
    - Template: `packages/_template/rule-certificate-template.lean`
    - Tooling: `scripts/validate-package-conformance.ps1`
 

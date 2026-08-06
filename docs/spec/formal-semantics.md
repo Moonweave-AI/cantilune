@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **Draft** (load-bearing implementation present; immutable evidence and independent review pending) |
+| Status | **Draft** (Core Theory proved; independent review and governance pending) |
 | Type | Normative specification (formal semantics) |
 | Risk | S2 |
 | Owner | Joker-of-Gotham (DRI) |
@@ -20,9 +20,10 @@
 > non-separated D1-A monad/domain branches are not one model. Actual-Agent
 > full abstraction is limited to deterministic typed tau/free-output prefix
 > tries, while guarded results use native-trace/contextual-Hoare observations.
-> The eight production packages are not instantiated. No obligation is
-> `proved` until immutable source/build evidence is bound, and no build makes
-> the work reviewed, FCP Passed, or ADR Accepted.
+> The eight production packages are not instantiated. The central obligations
+> are now bound to immutable source/build evidence and are `proved`; see the
+> QA evidence linked from `docs/README.md`. No build makes the work reviewed,
+> FCP Passed, ADR Accepted, or product-conformant.
 
 ---
 
@@ -77,10 +78,10 @@ naturality from generator/copy/discard compatibility, proves that the
 resulting natural isomorphism and its inverse are monoidal, and proves
 uniqueness among monoidal comparisons with the prescribed singleton
 components. Thus the arbitrary-target universal comparison is kernel checked
-relative to the chosen generator interpretation. It is still
-`implemented_unverified`: no immutable commit-bound build or independent
-QA-L4 review has promoted it. Projection rewrite preservation is a separate
-obligation and remains open.
+relative to the chosen generator interpretation and is bound to immutable
+evidence. Its current status is `proved / review-pending`. Projection rewrite
+preservation is proved for the generic Core Theory and substantive reference
+boundary; each production package must still supply its own conformance data.
 
 ## 3. Syntactic layer (concrete forms)
 
@@ -308,16 +309,17 @@ Per the half-π (II) decision: channels are created dynamically via **request/ac
   target derivation accounted for.
 - Each projection preserves and reflects the separately supplied successful
   terminal predicate, so normal form, successful termination, and deadlock do
-  not drift. All three obligations remain open for every non-identity
-  projection; π additionally has a target/typing blocker.
+  not drift. These obligations are now proved for the generic Core Theory and
+  substantive reference package. Production-package instances remain
+  separate Product Conformance work.
 
 ### 6.3 Phased proof (per DRI decision)
 
 | Phase | Prove | Status |
 |---|---|---|
-| P1a | DAG/Petri/morphism consistency | **Reusable operational certificate family and finite fixtures kernel-build; intended static/DPO/resource/admission instances remain incomplete** |
-| P1b | π-projection consistency **for the request/accept channel-creation sublanguage** | **The unfiltered structural strong-late operational certificate is kernel-built, including exact requesting reflection, and passes the complete local CI/audit; it remains `implemented_unverified` pending immutable provenance and independent review. The separate complete FMS bridge remains incomplete** |
-| P1c (deferred) | π-projection consistency for **free conversation / unrestricted mobility** | **The finite 60-cell reference matrix is 60/60 native and has four event-indexed operational certificates inside their declared restricted target relations. This does not yet give full standard-late-LTS reflection: the current open reconnect/delete encodings have extra environmental transitions, and the general admitted-rule/static/resource layers remain incomplete** |
+| P1a | DAG/Petri/morphism consistency | **Generic certificate family and substantive reference are proved / review-pending; product rule/resource/admission instances remain per-package conformance work** |
+| P1b | π-projection consistency at the declared maximum-compatible Open-π/D1-A boundary | **Unfiltered structural strong-late certificate, exact requesting reflection, D1-A scoped semantics, and final common chain are proved / review-pending; unrestricted actual-Agent strong-bisimulation full abstraction is not claimed** |
+| P1c | Multi-state/native π reference consistency | **The 60/60 reference surface, fifteen-family commutation, metadata/admission seam, and substantive reconnect chain are proved / review-pending; production packages must instantiate the generic interfaces for their own rules** |
 
 ### 6.4 Fallback (per ADR-0001)
 
@@ -757,7 +759,10 @@ trace label alone cannot distinguish them.
    intrinsic category remains a separate obligation.
 5. Obtain independent formal-math/category/process-semantics review at QA-L4.
 
-### 13.8 Status summary for P1b
+### 13.8 Historical P1b audit summary (superseded by §21)
+
+The following table records the 2026-07-23 audit checkpoint. It is retained
+for provenance and does not override the current §21 status.
 
 | Item | Status |
 |---|---|
@@ -770,7 +775,8 @@ trace label alone cannot distinguish them.
 | Step E | **The finite P1c reference surface is 60/60 native and has four event-indexed operational certificates that are exact only inside their separately declared restricted target relations; every π witness erases to an independent standard late derivation. This is not reflection of the whole raw standard-late LTS: the current open reconnect/delete encodings have additional environmental transitions. General DPO/Petri-derived admitted-rule and five-layer certificates remain open** |
 | Overall P1b | **operational residual implemented_unverified; complete FMS route or accepted scope decision still incomplete; Pre-FCP/M1; Iterate, not Promote** |
 
-No C′, D, or E proof is claimed. The negative result is useful: it removes the wrong tensor/quotient branch and identifies the exact definitions needed before proof work can resume.
+At that checkpoint no C′, D, or E proof was claimed. The negative result
+removed the wrong tensor/quotient branch; §21 records the later proved scope.
 
 ### 13.9 Selected implementation architecture (2026-07-23)
 
@@ -1056,8 +1062,9 @@ carry a compatible rank certificate.
 The request/accept process map has unfiltered one-step standard structural
 late soundness. `P1bNominalIncidenceClosure` now performs transition
 inversion over every structurally congruent requesting representative and
-proves exact reflection; this operational result remains
-`implemented_unverified` pending immutable provenance and independent review.
+proves exact reflection. At this checkpoint the result was
+`implemented_unverified`; it is now `proved / review-pending` under §21 and
+the immutable QA evidence.
 Choice idempotence is not part of the present structural congruence; any use
 of S4 must cite the separate equational/bisimulation theory.
 
@@ -1237,13 +1244,12 @@ must existentially classify a linked endpoint and relate the actual target
 to it structurally. The nominal-incidence closure described below now
 constructs that classification for every genuine split.
 
-The pinned Lean 4.32.0 ordinary evidence gate passes on the current dirty
-working tree: 283 Lean files, root build success in 8938 jobs, and 667
+At this historical checkpoint, the pinned Lean 4.32.0 ordinary evidence gate
+passed on a dirty working tree: 283 Lean files, 8,938 build jobs, and 667
 dependency reports restricted to `propext`, `Classical.choice`, and
-`Quot.sound`. No full FMS inhabitant, production rule inhabitant, immutable
-commit-bound build, independent QA-L4 review, FCP result, or ADR acceptance
-exists. All manifest statuses therefore remain `partial_scaffold` or
-`implemented_unverified`, never `proved` or `reviewed`.
+`Quot.sound`. Its mutable-tree status and manifest counts are superseded by
+§21 and the immutable QA evidence. Independent review, FCP, ADR acceptance,
+and production-package conformance remain external.
 
 ### 16.3 Labelled P1b split and nonempty corrected product certificate
 
@@ -1280,9 +1286,8 @@ work to `RequestingSplitSupportTransfer`, and
 `syncLeft`, `syncRight`, `closeLeft`, and `closeRight`. Consequently
 `requestingPolarizedNominalIncidence`, `requestingNativeResidual`,
 `standardLateReflection`, and the unconditional `pi_ra_certificate` are all
-kernel-built. CENTRAL-13 is therefore `implemented_unverified`; complete
-local CI/axiom audit now passes, while immutable provenance and independent
-QA-L4 review are still required before any `proved` or `reviewed` status.
+kernel-built. At this checkpoint CENTRAL-13 was `implemented_unverified`; it
+is now bound to immutable evidence and is `proved / review-pending`.
 
 `HeterogeneousProductRuleAdmissionReference` now inhabits the entire corrected
 generic product certificate, not only its four-target admission subrecord.
@@ -1586,8 +1591,10 @@ theorem. CENTRAL-18 may be called complete only after one certificate also:
    trajectory, SCC/terminal/feedback evidence, and actual-Agent semantics are
    fields of one record rather than unrelated existentials.
 
-Until that inhabitant exists and is bound to immutable evidence,
-`TechnicalClosure.generic_technical_closure` is a CENTRAL-18 candidate.
+This paragraph records the checkpoint immediately before the final inhabitant
+was added. Section 21.5 supersedes it: the inhabitant now exists and is bound
+to immutable evidence, so `TechnicalClosure.generic_technical_closure` is
+`proved / review-pending` rather than merely a CENTRAL-18 candidate.
 The eight planned production packages remain outside Core Theory and must
 supply their own complete Product Conformance witnesses. The maximum
 governance state before independent human signatures is
@@ -1712,11 +1719,12 @@ the presented identity with a raw structural identity.
 
 #### Current verification boundary
 
-The integrated mutable tree completed an incremental root build; its job count
-is diagnostic and non-normative. Commit-bound clean CI, source-integrity and axiom/placeholder audits,
-the final proved manifest, and the strict descendant gate remain required
-before any central row is recorded as `proved`. Independent review and
-governance acceptance remain external.
+The central rows are bound to source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` and the QA build/audit record.
+Commit-bound build continuation, source integrity, placeholder and axiom
+audits, the proved manifest, and the strict proved/tree gate are recorded
+there. The current technical status is `proved / review-pending`; independent
+review and governance acceptance remain external.
 
 ### 21.6 Cross-epoch Petri registry closure
 

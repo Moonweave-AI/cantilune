@@ -9,7 +9,7 @@
 | Required Reviewers | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation) |
 | Created | 2026-07-23 |
 | Updated | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; phased admission; exact common-trajectory seam) |
-| Related | RFC-0001, ADR-0001, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0006-theory-closure-iteration.md`, `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
+| Related | RFC-0001, ADR-0001, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 
 > **Governance note:** This RFC is the **生死线 (project life-line)** identified in ADR-0001. It is *not* primarily a proof document — the proofs live in `docs/spec/formal-semantics.md`. Its job in the main line is to state **what cantilune's runtime gains if the four projections are consistent**, why that gain is the whole point of the unified structure, and then the theorem + phased proof that must earn it. The π projection is **not by construction**. Its current implementation scope is fixed by §§25–28 and the proof manifest; historical “待证” checkpoints below do not override that scope or constitute immutable proof evidence.
 
@@ -100,7 +100,7 @@ are not an automatic action of the SMC-functor $P_i$ on events.
 | DAG | FreeSMC equation quotient exists; generic rankable-graph projection complete | generic operational family over a supplied LTS isomorphism; reference witnesses complete | generic reflection theorem over supplied data; reference instance complete | reference fixture complete | **Theory: generic construction complete** | **Product Conformance:** Each package supplies rank functions and rank-preservation proofs for its admitted rules |
 | Petri | FreeSMC quotient and declaration-order pre-net construction exist; generic pre-net/SSMC semantics complete | generic operational family; reference firing witnesses complete | generic reflection theorem over supplied data; reference instance complete | reference fixture complete | **Theory: generic construction complete** | **Product Conformance:** Each package supplies enabling predicates, token semantics, and firing maps for its admitted rules |
 | Morphism | by construction (identity view) | by construction | by construction | by construction using the same success predicate | **按构造一致** | (identity; no additional product work) |
-| π (half-π II) | presented typed/polarised Open-π wiring SMC; proof-relevant nominal operational realization; unseparated D1-A all-object lower-ω-Scott monad and actual recursive-domain solution | P1b structural-late certificate and fifteen normative strong late-π families; sixty-operation `refinesTo` registry | exact reflection in the declared P1b/P1c calculi, total supported finite-control coalgebra, and actual-Agent commutation for the fifteen compiled families | complete for the declared reference calculi and their exact terminal predicates; not unrestricted actual-Agent strong-bisimulation full abstraction | **Theory candidate:** maximum-compatible D1-A/Open-π scope in §§26–27; immutable evidence and CENTRAL-18 common-chain closure pending | **Product Conformance:** each package supplies native π, registry/metadata, admission, payload, trajectory and FMS-alignment witnesses |
+| π (half-π II) | presented typed/polarised Open-π wiring SMC; proof-relevant nominal operational realization; unseparated D1-A all-object lower-ω-Scott monad and actual recursive-domain solution | P1b structural-late certificate and fifteen normative strong late-π families; sixty-operation `refinesTo` registry | exact reflection in the declared P1b/P1c calculi, total supported finite-control coalgebra, and actual-Agent commutation for the fifteen compiled families | complete for the declared reference calculi and their exact terminal predicates; not unrestricted actual-Agent strong-bisimulation full abstraction | **Theory proved / review-pending:** maximum-compatible D1-A/Open-π scope and CENTRAL-18 common chain are bound to immutable evidence | **Product Conformance:** each package supplies native π, registry/metadata, admission, payload, trajectory and FMS-alignment witnesses |
 
 **Note on Theory vs Product boundary:** Theory proves generic certificate interfaces are *satisfiable* via reference witnesses (60/60 P1c matrix, heterogeneous runtime). Products instantiate those interfaces with concrete operational facts (rank functions, pre-net semantics, resource policies, authorization predicates). Theory FCP does not block on product package existence.
 
@@ -188,9 +188,9 @@ Each product package (Cantilune, Libretto, Cast, Baton, Cue, Chorus, Reprise, Ca
   the internal natural transformation on the agent object. Neither route may
   stand in for the other, and no weak-step replacement is permitted without a
   new RFC decision. The checked implementation is tracked by
-  `formal/proof-obligations.json`. **Status remains Pre-FCP/M1 until all
-  certificates and the commuting theorem are proved and independently
-  reviewed.**
+  `formal/proof-obligations.json`. **At that checkpoint the status remained
+  Pre-FCP/M1. The certificates are now proved; independent review remains, as
+  recorded in §28.5.**
 - **Current finite-control support:** alpha equivalence, structural
   congruence, capture-avoiding substitution, freshness-guarded strong late
   steps, and structural closure are now mechanized. Actual nonconstant
@@ -324,8 +324,8 @@ Core Theory proves the **abstract conditions** and **generic interfaces** for pr
 **Theory FCP gates (what blocks theory):**
 - ✓ Generic SMC functors and operational family constructors (kernel-built)
 - ✓ Reference witnesses prove interfaces are satisfiable (60/60 matrix complete)
-- ⚠ P1b operational certificate (implemented_unverified; needs immutable commit + review)
-- ✗ Complete FMS or accepted scope fallback (§16 proposes finite-control boundary)
+- ✓ P1b operational certificate and final common chain (immutable evidence bound)
+- ✓ Maximum-compatible D1-A/Open-π scope selected and proved at its stated boundary
 - ✗ Independent review (category/DPO, process-semantics, Lean-assumptions reviewers)
 
 **Explicitly NOT theory gates:**
@@ -398,7 +398,7 @@ Each product package (Cantilune, Cantilune Notation, Libretto, Cast, Baton, Cue,
 
 ## 9. FCP summary (not yet entered)
 
-**Pre-FCP/M1.**
+**Pre-FCP / M2 FCP-ready candidate; technical proof complete, independent review pending.**
 
 **Core Theory FCP Entry Requirements (theory obligations only):**
 
@@ -407,10 +407,10 @@ Entering FCP requires completion of theory obligations, NOT product package inst
 1. ✓ **FreeSMC universal property** — arbitrary-target monoidal comparison (kernel-built)
 2. ✓ **Positional DPOI categorical closure** — finite well-formed essential image equivalence (kernel-built)
 3. ✓ **P1a generic operational family** — reusable certificate constructor from LTS isomorphism (kernel-built)
-4. ⚠ **P1b request/accept operational** — unfiltered structural strong-late certificate implemented; final status is controlled only by the common immutable source commit and evidence record
+4. ✓ **P1b request/accept operational** — unfiltered structural strong-late certificate and final common chain are bound to the immutable source/evidence record; independent review remains pending
 5. ✓ **P1c reference matrix** — 60/60 native cells, four event-indexed certificates (kernel-built)
 6. ✓ **Heterogeneous trajectory** — finite `EpochChain` with admission, replay, epochs (kernel-built)
-7. ⚠ **Maximum-compatible D1-A FMS** — concrete scoped construction implemented as described in §§26–27; final immutable evidence and statement-strength review pending
+7. ✓ **Maximum-compatible D1-A FMS** — concrete scoped construction in §§26–27 is bound to immutable evidence; statement-strength review remains pending
 8. ✗ **Independent review** — DRI self-review and agent review are not independent QA-L4 evidence; external category/DPO/Petri, π/domain, and Lean/provenance signatures remain pending
 
 **Explicitly REMOVED from Theory FCP gates (moved to Product Conformance):**
@@ -454,10 +454,10 @@ After Theory FCP, each product package (Cantilune, Libretto, Cast, Baton, Cue, C
 | FreeSMC / DPOI foundation | The generated FreeSMC quotient, actual mathlib category/monoidal/symmetric instances, and the arbitrary-target monoidal natural-isomorphism comparison and uniqueness theorem kernel-build. The full typed-presheaf slice is adhesive; arbitrary monic incidence matches have a complement exactly under the explicit gluing condition, witnessed complements are unique up to compatible isomorphism, fixed open boundaries lift explicitly, and standard parallel-independent derivations have general residuals and a canonical concurrency isomorphism. Active-support normalization preserves concrete morphism identity/composition and sends globally injective concrete matches to typed-slice monomorphisms. `ExactPositionalObject` independently characterizes the well-formed essential image by finite carriers, unique typed incidence descriptors, fixed ordered boundary typing, and no boundary duplicates; reconstruction proves `essImage X ↔ ExactPositionalObject X`. Original matches and both residuals transport through finite-image/preimage isomorphisms, and both DPO squares are Van Kampen in the ambient slice. A finite boundary-duplicate counterexample proves that finite + incidence-complete + fixed boundary alone is insufficient. **Theory: generic construction complete** |
 | Open π SMC | The presented quotient has actual mathlib Category/Monoidal/Symmetric instances. `OpenSMCNominalAtomBoundary` adds distinct typed name ports and exact erased free support, admits a real named output atom, and rejects it at empty named boundaries. A compositional named-interface category and native plug/hide/restriction operational adequacy remain open. **Theory: static SMC complete; compositional named-boundary category open** |
 | P1a proof | A reusable operational certificate family and nonempty finite DAG/pre-net/morphism values kernel-build. `P1cProductRuleProofBundle` now gives one substantive non-identity reconnect instance: the graph gains `(0, 1)`, four distinct wrappers carry native DAG/Petri/standard-late-pi/morphism business derivations, the four-event map is bijective, every target step reflects, and exact replay plus rank/quiescence/authorization/ε=1 scheduling evidence are present. A typed self-loop counterexample still excludes a total strict-DAG projection on unrestricted typed open hypergraphs. **Theory: generic operational family complete; reference witness complete. Product: production-rule instances absent (post-FCP per-package work)** |
-| P1b proof and FMS boundary | The finite request/accept structural-late chain implements alpha/capture avoidance, all genuine sync/close incidence cases, exact residual reflection, terminal classification, and an unconditional `pi_ra_certificate` over the unfiltered strong-late LTS. The FMS line is the deliberately unseparated D1-A construction of §§26–27, not the separated Abramsky effect. Its guarded Hoare/contextual theorems do not imply unrestricted actual-Agent strong-bisimulation full abstraction; the positive actual-Agent theorem is the deterministic typed tau/free-output prefix-trie result plus total finite-control/15-family commutation. **Candidate status:** immutable common-source evidence and independent review pending. |
+| P1b proof and FMS boundary | The finite request/accept structural-late chain implements alpha/capture avoidance, all genuine sync/close incidence cases, exact residual reflection, terminal classification, and an unconditional `pi_ra_certificate` over the unfiltered strong-late LTS. The FMS line is the deliberately unseparated D1-A construction of §§26–27, not the separated Abramsky effect. Its guarded Hoare/contextual theorems do not imply unrestricted actual-Agent strong-bisimulation full abstraction; the positive actual-Agent theorem is the deterministic typed tau/free-output prefix-trie result plus total finite-control/15-family commutation. **Current status:** proved against immutable common-source evidence; independent review pending. |
 | P1c proof | Explicit finite 60-cell reference matrix is 60/60 native. The later multi-state `P1cFullNativeRefinement` classifies every native transition for all 15 family-tagged raw source processes, preserves native terminality and signature version, and yields one full finite-reference `ProjectionCertificate`, including mismatch, reconnect, and quiescent delete. Every refined step also maps to an actual unfiltered α/structural strong-late step. Lean proves that the canonical pure-process map cannot satisfy the current complete certificate because runtime admission changes signature version while pure π states have version zero; delegation/reconnect also collide as raw transition triples. This closes the finite reference protocol only and makes the required metadata-layer decision explicit. **Theory: 60/60 reference matrix complete (non-vacuity proven). Product: product-wide admitted `Config`, static/resource/admission layers for each package's rules (post-FCP per-package work)** |
 | Stochastic feedback bridge | A genuine Markov kernel, Ionescu--Tulcea trajectory law, measurable not-hit events, and conditional almost-sure bridge kernel-build. Deterministic and seed-randomized event-path couplings both forget exactly to the state law. Every finite heterogeneous `EpochChain` now carries ordered native event identity, exact endpoints, executable `DPOEvent` or signature-admission replay, and runtime execution-epoch alignment; the marked kernel puts the dependent native mark on the sampled positive edge itself. `FiniteBranchingReplayKernel` additionally assigns probability to explicit business choices, keeps same-endpoint events as distinct stochastic successors, and almost surely returns their dependent replay witnesses. The finite-height expectation bound is derived from concrete kernel phase tails (`H/ε`). **Theory: generic stochastic framework complete; reference instantiation complete. Product: production instantiation across runtime admissions, general-presheaf-DPO replay execution, `opportunityEpoch` alignment, and derivation of stable-window/fairness/positive-$\varepsilon$ premises for each package (post-FCP per-package work)** |
-| Research/evidence logs | source audit complete; historical local build evidence is recorded under `formal/build-evidence/`; the QA-L4 gate packet is `docs/qa/0001-theory-closure-qa-l4-readiness.md`; human review is pending |
+| Research/evidence logs | source audit complete; the current QA-L4 packet is `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md` and immutable source/build evidence is in `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`; human review is pending |
 | Citation verification (spec §11) | Primary sources verified; global Petri collapse and generic F2 rejected; “Gadducci–Montanari, Functorial Semantics…” corrected to Meseguer (2005) |
 | Formal-math reviewer | To assign |
 | Formal simulator (§5 checkers) | Post-FCP |
@@ -468,13 +468,13 @@ After Theory FCP, each product package (Cantilune, Libretto, Cast, Baton, Cue, C
 | Action | Owner | Due/Review | Canonical Link |
 |---|---|---|---|
 | **CORE THEORY FCP GATES** | | | |
-| Decide that the normative graph layer is the adhesive typed-presheaf slice plus the finite well-formed positional essential image (not the refuted whole-slice equivalence) | DRI + formal-math reviewer | Pre-FCP | this RFC §4.1 |
-| Construct a genuine inhabitant of the complete pinned FMS acceptance interface OR accept §16 finite-control boundary fallback; the interface itself is now explicit and must not be replaced by the finite discrete fragment | DRI + process-semantics reviewer | Pre-FCP | spec §13.9, this RFC §16 |
-| Bind P1b and the complete Core Theory to the same immutable source commit; obtain independent process-semantics + Lean reviewer approval | DRI + process-semantics reviewer + Lean reviewer | Pre-FCP | this RFC §§4.2, 26–27 and the final QA-L4 packet |
+| Review the ratified graph layer: adhesive typed-presheaf slice plus finite well-formed positional essential image | Formal-math reviewer | Pre-FCP | this RFC §§4.1, 23 |
+| Review the maximum-compatible D1-A/Open-π boundary without widening it to the rejected separated or unrestricted claims | Process-semantics reviewer | Pre-FCP | this RFC §§26–28 and the QA-L4 packet |
+| Review the immutable P1b/common-chain source and provenance evidence | Process-semantics reviewer + Lean reviewer | Pre-FCP | this RFC §§4.2, 26–28 and the final QA-L4 packet |
 | Assign category/DPO, process-semantics, and Lean-assumptions independent reviewers | DRI | Pre-FCP | this RFC metadata / governance note |
 | Enter FCP once theory gates met (§9 criteria) | DRI | post-review | this RFC §9 |
 | **PRODUCT CONFORMANCE (POST-FCP, PER-PACKAGE)** | | | |
-| Create package boundaries and conformance specification template | DRI | Post-FCP | `packages/` structure, `docs/conformance/product-certificate-requirements.md` |
+| Create package boundaries and conformance specification template | DRI | Post-FCP | Planned `packages/` and `docs/conformance/` structures |
 | Each package: supply manifest, rule inventory, and per-rule ProductRuleProofBundle (DAG rank, Petri firing, π derivation, morphism view) | Package owners | Post-FCP, incremental | Per-package conformance gates |
 | Each package: supply runtime operational facts (resource policies, authorization predicates, deletion/quiescence, fairness/ε bounds) | Package owners | Post-FCP, incremental | Per-package conformance gates |
 | **REMOVED FROM GATES (incorrectly theory-blocking)** | | | |
@@ -1119,7 +1119,7 @@ product premises. Independent review found no endpoint renaming from either
 
 **Decision status: Decided by DRI (Joker-of-Gotham) on 2026-07-27.**
 
-This section records all architectural decisions made by the Decision Owner to advance RFC-0002 and ADR-0001 toward FCP. These decisions resolve the conflicts identified in `docs/DECISIONS-REQUIRED-zh.md` and establish the normative P1 boundary.
+This section records all architectural decisions made by the Decision Owner to advance RFC-0002 and ADR-0001 toward FCP. These decisions resolve the conflicts found during the 2026-07-27 decision pass and establish the normative P1 boundary.
 
 ### D1: FMS Architecture — Source-Compatible Route (DECIDED)
 
@@ -1290,10 +1290,10 @@ Based on decisions D1-D10, §9 FCP entry requirements are updated:
 1. ✓ FreeSMC universal property (kernel-built)
 2. ✓ Positional DPOI categorical closure (kernel-built)
 3. ✓ P1a generic operational family (kernel-built)
-4. ⚠ P1b request/accept operational (implemented candidate; common immutable evidence and independent review pending)
-5. ⚠ P1c multi-state protocol and fifteen-family commutation (implemented candidate; common immutable evidence pending)
+4. ✓ P1b request/accept operational (immutable evidence bound; independent review pending)
+5. ✓ P1c multi-state protocol and fifteen-family commutation (immutable evidence bound; independent review pending)
 6. ✓ Heterogeneous trajectory (kernel-built)
-7. ⚠ **Maximum-compatible D1-A power/domain/observation theorem** (implemented at the exact §§26–27 scope; not the separated source effect; evidence/review pending)
+7. ✓ **Maximum-compatible D1-A power/domain/observation theorem** (proved at the exact §§26–27 scope; not the separated source effect; independent review pending)
 8. ✓ Observable LTS and terminal-policy interfaces for all four projections (product predicates remain package-owned)
 9. ✗ Independent review (category/DPO, process-semantics, Lean-assumptions reviewers unassigned)
 
@@ -1955,11 +1955,11 @@ into a structural identity or erase the two-layer Open-pi boundary.
 
 ### 28.5 Verification and governance disposition
 
-An incremental root `lake build` of the mutable tree completed successfully
-with 9,208 jobs after these seams were integrated. This is useful diagnostic
-evidence only. Commit-bound clean CI, source-integrity regeneration, the
-axiom/placeholder audit, the eighteen-row proved manifest, and the descendant
-strict proved gate remain pending. Until those records exist, the technical
-state remains **implemented / immutable-evidence-pending**. After they pass,
-and before independent signatures, the maximum state is
-**`proved / review-pending`**. RFC-0002 remains **Draft / Pre-FCP**.
+The final common-chain seams are bound to source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` and the completed build/audit
+record in `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`.
+The proof-sensitive tree, source integrity, placeholder scan, axiom allowlist,
+eighteen-row proved manifest, and strict proved/tree gate were checked as
+recorded there. The technical state is therefore **`proved / review-pending`**.
+Independent QA-L4 signatures, FCP, and ADR acceptance remain pending;
+RFC-0002 remains **Draft / Pre-FCP**.

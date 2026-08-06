@@ -92,7 +92,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 | DAG | FreeSMC 等式商存在；通用 rankable-graph 投影完整 | 给定 LTS 同构的通用操作 family；参考见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 rank 函数与 rank 保持证明 |
 | Petri | FreeSMC 商与声明顺序 pre-net 构造存在；通用 pre-net/SSMC 语义完整 | 通用操作 family；参考 firing 见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 enabling 谓词、token 语义与 firing 映射 |
 | 态射 | by construction（同一性视图） | by construction | by construction | 使用同一成功谓词时 by construction | **按构造一致** | （同一性；无额外产品工作） |
-| π（half-π II） | presented typed/polarised Open-π wiring SMC、proof-relevant nominal realization、非分离 D1-A all-object lower-ω-Scott monad 与实际递归 domain 解 | P1b structural-late certificate、15 个 normative strong late-π family、60-operation `refinesTo` registry | 在声明的 P1b/P1c 演算中精确 reflection；total supported finite-control coalgebra 与 15-family actual-Agent commutation | 对声明的参考演算及其 terminal predicate 完整；不声称 unrestricted actual-Agent strong-bisimulation full abstraction | **理论候选：** 最大相容范围见 §26–§27；不可变证据和 CENTRAL-18 common-chain 待完成 | **产品符合性：** 各包提供 native π、registry/metadata、admission、payload、trajectory 与 FMS alignment |
+| π（half-π II） | presented typed/polarised Open-π wiring SMC、proof-relevant nominal realization、非分离 D1-A all-object lower-ω-Scott monad 与实际递归 domain 解 | P1b structural-late certificate、15 个 normative strong late-π family、60-operation `refinesTo` registry | 在声明的 P1b/P1c 演算中精确 reflection；total supported finite-control coalgebra 与 15-family actual-Agent commutation | 对声明的参考演算及其 terminal predicate 完整；不声称 unrestricted actual-Agent strong-bisimulation full abstraction | **理论 proved / review-pending：** 最大相容范围与 CENTRAL-18 common-chain 已绑定不可变证据 | **产品符合性：** 各包提供 native π、registry/metadata、admission、payload、trajectory 与 FMS alignment |
 
 **理论与产品边界说明：** 理论通过参考见证（60/60 P1c 矩阵，异构运行时）证明通用证书接口*可满足*。产品用具体操作事实（rank 函数、pre-net 语义、资源策略、授权谓词）实例化这些接口。理论 FCP 不阻断于产品包存在。
 
@@ -179,8 +179,8 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
   双路线。并行组合在 typed open-process 范畴中作为张量；在 FMS 路线中
   仍是 agent 对象上的内部自然变换。两条路线不得相互冒充；若要改成
   弱步替代，必须重新进入 RFC 决策。机械核验状态由
-  `formal/proof-obligations.json` 跟踪。**在全部证书、交换定理及独立
-  评审完成前，状态仍为 Pre-FCP/M1。**
+  `formal/proof-obligations.json` 跟踪。**该历史检查点的状态为
+  Pre-FCP/M1；证书现已证明，剩余独立评审见 §28.5。**
 - **当前有限控制支撑：** alpha 等价、结构同余、避免捕获替换、带
   freshness 前提的强 late 步及结构闭包已机械化。真正非恒定的协变
   `World ⥤ Type` 与 `World ⥤ ωCPO` 支撑函子、局部无名
@@ -286,8 +286,8 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 **理论 FCP 门槛（阻断理论者）：**
 - ✓ 通用 SMC 函子与操作 family 构造器（kernel-built）
 - ✓ 参考见证证明接口可满足（60/60 矩阵完整）
-- ⚠ P1b 操作证书（implemented_unverified；需不可变 commit + 评审）
-- ✗ 完整 FMS 或被接受范围回退（§16 提议有限控制边界）
+- ✓ P1b 操作证书与最终 common chain（已绑定不可变证据）
+- ✓ 最大相容 D1-A/Open-π 范围已选定并在声明边界内证明
 - ✗ 独立评审（category/DPO、进程语义、Lean 假设评审人未指派）
 
 **明确非理论门槛：**
@@ -331,7 +331,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 - 参考见证展示接口可实现
 
 **当前状态：**
-- **理论候选：** 通用构造与实质 reconnect 参考已实现至 §25–§27 的最大相容边界；不可变 source/build 证据、CENTRAL-18 common-chain 与独立评审待完成
+- **理论 proved / review-pending：** 通用构造、实质 reconnect 参考与 CENTRAL-18 common-chain 已在 §25–§28 的最大相容边界内绑定不可变 source/build 证据；独立评审待完成
 - **产品：** 八个计划包尚无源树、清单或规则清单；符合性工作始于 FCP 后
 
 ## 8. 开放问题
@@ -358,7 +358,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 
 ## 9. FCP 摘要（尚未进入）
 
-**Pre-FCP/M1。** 
+**Pre-FCP / M2 FCP-ready candidate；技术证明完成，独立评审待完成。**
 
 **核心理论 FCP 进入要求（仅理论义务）：**
 
@@ -367,10 +367,10 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 1. ✓ **FreeSMC 泛性质** — 任意目标幺半单比较（kernel-built）
 2. ✓ **位置化 DPOI 范畴闭包** — 有限良构本质像等价（kernel-built）
 3. ✓ **P1a 通用操作 family** — 从 LTS 同构可复用的证书构造器（kernel-built）
-4. ⚠ **P1b request/accept 操作** — 未过滤结构 strong-late 证书（implemented_unverified；需不可变 commit + 独立评审）
+4. ✓ **P1b request/accept 操作** — 未过滤结构 strong-late 证书与最终 common chain 已绑定不可变源码/证据；独立评审待完成
 5. ✓ **P1c 参考矩阵** — 60/60 原生格，四份按事件索引证书（kernel-built）
 6. ✓ **异构轨迹** — 有限 `EpochChain`，含 admission、replay、epoch（kernel-built）
-7. ✗ **完整 FMS 或被接受回退** — §16 提议有限控制边界；需 FCP 决策
+7. ✓ **最大相容 D1-A FMS** — §26–§27 的精确范围已绑定不可变证据；陈述强度评审待完成
 8. ✗ **独立评审** — category/DPO、进程语义、Lean 假设评审人未指派
 
 **明确从理论 FCP 门槛移除（移至产品符合性）：**
@@ -412,10 +412,10 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 | FreeSMC / DPOI 基础 | 生成 FreeSMC quotient、实际 mathlib category/monoidal/symmetric 实例及任意目标 monoidal natural-isomorphism 比较与唯一性定理已通过 kernel 构建。完整 typed-presheaf slice 是 adhesive；任意 monic incidence 匹配恰在显式 gluing 条件下有 complement，witnessed complement 兼容唯一同构，固定开放边界可显式提升，标准 parallel-independent 推导有一般 residual 与 canonical concurrency 同构。Active-support normalization 保持具体 morphism identity/composition 并把全局单射的具体 match 映为 typed-slice monomorphism。`ExactPositionalObject` 以有限 carrier、唯一 typed incidence 描述、固定有序边界 typing 与无 boundary duplicate 独立刻画良构本质像，重建证明 `essImage X ↔ ExactPositionalObject X`。原始 match 与两条 residual 经 finite-image/preimage 同构传回，两个 DPO 方形在 ambient slice 中均为 Van Kampen。有限 boundary-duplicate 反例证明"有限 + incidence-complete + 固定边界"仍不足。这不是无条件的 whole-slice 等价 |
 | Open π SMC | 所给 quotient 已有实际 mathlib Category/Monoidal/Symmetric 实例。`OpenSMCNominalAtomBoundary` 加入互异 typed name port 与精确擦除自由支撑，接纳真实具名 output atom，并在空具名边界拒绝它。组合式具名接口范畴与原生 plug/hide/restriction 操作充分性仍开放 |
 | P1a 证明 | 可复用操作证书 family 与非空有限 DAG/pre-net/morphism 值已通过 kernel 构建。`P1cProductRuleProofBundle` 现给出一个实质非同一性 reconnect 实例：图增加 `(0, 1)`，四个不同 wrapper 携带原生 DAG/Petri/standard-late-pi/morphism 业务推导，四事件映射为双射，全部目标步反射，并含精确 replay 加 rank/quiescence/authorization/ε=1 调度证据。typed self-loop 反例仍排除 unrestricted typed open hypergraph 上的总严格 DAG 投影，product-rule 实例仍开放 |
-| P1b 证明（或回退） | **有限 request/accept 操作定理为 implemented_unverified。** kernel-built 链覆盖 alpha/结构有限控制 late-π、原生单步擦除、全部四种真实 sync/close nominal-incidence 情形、精确 requesting residual reflection、complete/established 分类，以及无过滤 structural strong-late LTS 上的无条件 `pi_ra_certificate`。新一轮完整本地 CI/axiom 审计与对抗性实现复核通过；不可变 provenance 与独立评审仍为强制。独立 FMS 指称路线仍不完整：存在带连续 Kleisli 律的真实有限非空 Hoare Monad，但无 empty deadlock 或独立 divergence；exact 与 complete availability 均无 inhabitant，全 ωCPO Abramsky powerdomain、domain 解、source-identified Table-2 restriction map、all-world action bridge、adequate hiding 与 full abstraction 仍开放 |
+| P1b 证明与 FMS 边界 | 有限 request/accept structural-late 链覆盖 alpha/capture avoidance、全部真实 sync/close incidence、精确 residual reflection、terminal classification 与无过滤 strong-late LTS 上的 `pi_ra_certificate`。FMS 采用 §26–§27 的非分离 D1-A 最大相容构造，而非 separated Abramsky effect；guarded Hoare/contextual 定理不等于 unrestricted actual-Agent strong-bisimulation full abstraction，actual-Agent 正面范围为 deterministic typed tau/free-output prefix trie 加 total finite-control/15-family commutation。**现行状态：** 已绑定不可变共同源码证据，独立评审待完成 |
 | P1c 证明 | 显式有限 60 格参考矩阵为 60/60 原生。后续多状态 `P1cFullNativeRefinement` 对全部 15 个 family-tagged raw 源进程分类每个 native transition，保持原生 terminality 与签名版本，并给出一份完整有限参考 `ProjectionCertificate`，含 mismatch、reconnect 与 quiescent delete。每个 refined 步也映为实际未过滤 α/结构 strong-late 步。Lean 证明 canonical pure-process 映射不能满足当前 complete 证书，因为 runtime admission 改变签名版本而纯 π 状态版本为零；delegation/reconnect 作为 raw transition triple 也冲突。这仅闭合有限参考协议并使所需元数据层决策显式。Product-wide admitted `Config`、static/resource/admission 层与一个共享 coherent 源仍开放 |
 | 随机反馈桥 | 真正 Markov kernel、Ionescu--Tulcea trajectory law、可测 not-hit 事件与条件 almost-sure 桥已通过 kernel 构建。确定性与 seed 随机化事件路径耦合都精确遗忘至状态律。每个有限异构 `EpochChain` 现携带有序原生事件身份、精确端点、可执行 `DPOEvent` 或 signature-admission replay 与 runtime execution-epoch 对齐；marked kernel 把依赖 native mark 放在被采样的正边本身。`FiniteBranchingReplayKernel` 进一步对显式业务 choice 分配概率，使同端点事件成为不同随机后继，并几乎必然返回其依赖 replay witness。有限高度期望界由具体 kernel phase tails 推出为 `H/ε`。跨 runtime admission 的 product 实例化、general-presheaf-DPO replay 执行、`opportunityEpoch` 对齐与为每个包导出 stable-window/fairness/正-$\varepsilon$ 前提仍开放 |
-| 研究/证据日志 | 来源核验完成；历史本地构建证据记录于 `formal/build-evidence/`；QA-L4 门槛包为 `docs/qa/0001-theory-closure-qa-l4-readiness.md`；人工评审待定 |
+| 研究/证据日志 | 来源核验完成；现行 QA-L4 评审包为 `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md`，不可变源码/构建证据为 `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`；人工评审待定 |
 | 引文核验（spec §11） | 原始来源已核实；全局 Petri 坍缩与通用 F2 被拒；"Gadducci–Montanari, Functorial Semantics…"修正为 Meseguer (2005) |
 | 形式数学评审人 | 待指派 |
 | Formal simulator（§5 检查器） | FCP 后 |
@@ -426,13 +426,13 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 | 行动 | 负责人 | 到期/评审 | 权威链接 |
 |---|---|---|---|
 | **核心理论 FCP 门槛** | | | |
-| 决定规范图层采用 adhesive typed-presheaf slice 加有限良构位置化本质像（而非已反驳的 whole-slice 等价） | DRI + 形式数学评审人 | Pre-FCP | 本 RFC §4.1 |
-| 构造完整锁定 FMS 验收接口的真实 inhabitant 或接受 §16 有限控制边界回退；接口本身现已显式，不得以有限离散片段直接替代 | DRI + 进程语义评审人 | Pre-FCP | spec §13.9，本 RFC §16 |
-| 把 P1b implemented_unverified 结果绑定不可变 commit 并取得独立进程语义 + Lean 评审人批准 | DRI + 进程语义评审人 + Lean 评审人 | Pre-FCP | 本 RFC §4.2 |
+| 评审已确认的规范图层：adhesive typed-presheaf slice 加有限良构位置化本质像 | 形式数学评审人 | Pre-FCP | 本 RFC §4.1、§23 |
+| 评审最大相容 D1-A/Open-π 边界，禁止扩张为已拒绝的 separated 或 unrestricted 主张 | 进程语义评审人 | Pre-FCP | 本 RFC §26–§28、QA-L4 评审包 |
+| 评审不可变 P1b/common-chain 源码与 provenance 证据 | 进程语义评审人 + Lean 评审人 | Pre-FCP | 本 RFC §4.2、§26–§28、QA-L4 评审包 |
 | 指派 category/DPO、进程语义、Lean 假设独立评审人 | DRI | Pre-FCP | 本 RFC 元数据 / 治理说明 |
 | 理论门槛满足后进入 FCP（§9 标准） | DRI | 评审后 | 本 RFC §9 |
 | **产品符合性（FCP 后，每包）** | | | |
-| 创建包边界与符合性规约模板 | DRI | FCP 后 | `packages/` 结构，`docs/conformance/product-certificate-requirements.md` |
+| 创建包边界与符合性规约模板 | DRI | FCP 后 | 规划中的 `packages/` 与 `docs/conformance/` 结构 |
 | 各包：提供清单、规则清单及每规则 ProductRuleProofBundle（DAG rank、Petri firing、π 推导、态射视图） | 包所有者 | FCP 后，逐步 | 每包符合性门槛 |
 | 各包：提供运行时操作事实（资源策略、授权谓词、删除/静止、公平性/ε 界） | 包所有者 | FCP 后，逐步 | 每包符合性门槛 |
 | **已从门槛移除（错误地阻断理论）** | | | |
@@ -1454,10 +1454,10 @@ tombstone、相连 candidate 与选定 enabled firing。
 证明它在签名重索引后被精确保留。该结论仍是 occurrence-indexed，不声称
 整个目标 LTS 的全局 `step iff firing`。
 
-上述接缝集成后，可变树的一次增量根 `lake build` 已实际完成 9,208 jobs。
-这只是诊断证据。Commit-bound clean CI、source-integrity 重算、
-axiom/placeholder audit、十八项 `proved` manifest 以及后继提交上的 strict
-proved gate 仍待执行。在这些记录存在前，技术状态保持
-**implemented / immutable-evidence-pending**；其后且在人类独立签名前，状态
-最多为 **`proved / review-pending`**。RFC-0002 仍为
-**Draft / Pre-FCP**。
+最终 common-chain 接缝已绑定 source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` 与
+`docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` 中的完整
+构建/审计记录。该记录覆盖 proof-sensitive tree、source integrity、占位符
+扫描、axiom allowlist、十八项 proved manifest 与 strict proved/tree gate。
+因此技术状态为 **`proved / review-pending`**。独立 QA-L4 签名、FCP 与 ADR
+接受仍待人工完成；RFC-0002 仍为 **Draft / Pre-FCP**。

@@ -39,4 +39,4 @@ FCP disposition.
 
 **DRI Signature**: Joker-of-Gotham  
 **Date**: 2026-07-27  
-**Decision Reference**: DRI Decision 4 (FCP Entrance Package)
+**Decision Reference**: RFC-0002 §23 and the current [QA-L4 review packet](../qa/0002-theory-closure-proved-review-pending-2026-07-27.md)

@@ -1,13 +1,14 @@
 ---
 title: Final load-bearing P1a, admission, and common-FMS seams
 document_type: research-log
-status: implemented / immutable-evidence-pending
+status: proved / human-review-pending
 risk: S2
 quality_target: QA-L4
-maturity: Pre-FCP/M1
+maturity: M2 / FCP-ready candidate
 owner: Joker-of-Gotham
 dri: Joker-of-Gotham
 date: 2026-07-27
+updated: 2026-07-28
 related:
   - docs/rfc/0002-projection-consistency.md
   - docs/adr/0001-unified-formal-structure.md
@@ -17,8 +18,8 @@ related:
 
 # 结论
 
-第 0026 号日志列出的最后三类结构性空洞，已在当前可变 Lean 源码中形成
-互相绑定的实现：
+第 0026 号日志列出的最后三类结构性空洞，已在不可变 Lean 源码与构建证据中
+形成互相绑定的实现：
 
 1. P1a 不再允许仅凭 “DAG/Petri” 名称和任意 projected step 通过；
 2. dynamic admission 不再终止在无法连接业务行的 effect bottom，而是显式
@@ -30,12 +31,12 @@ related:
 同时，Open-π 具名 operational realization 明确要求 singleton wire 的三个
 名字 pairwise fresh，并保证 canonical tensor 两块全局不交。
 
-这些变更集成后，一次实际的**增量**根 `lake build` 完成 9,208 jobs。该结果
-只能说明当前可变树通过了本次编译；它不是 commit-bound clean CI，也没有
-替代最终 source-integrity、axiom/placeholder audit、十八项 proved manifest
-或后继 strict gate。因此本日志处置为
-**implemented / immutable-evidence-pending**，不是 `proved`、`reviewed`、
-FCP Passed 或 ADR Accepted。
+后续证据流程已把这些变更绑定到 source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc`，并在
+`docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` 中记录完整
+构建、source-integrity、placeholder/axiom audit、proved manifest 与 strict
+tree gate。因此本日志处置为 **proved / human-review-pending**，而不是
+`reviewed`、FCP Passed、ADR Accepted 或产品符合性完成。
 
 # 研究问题
 
@@ -67,8 +68,8 @@ FCP Passed 或 ADR Accepted。
 - `formal/Cantilune/Pi/OpenSMCPolarisedHomBridge.lean`
 - `formal/Cantilune/Tests/AdmissionPhaseSeamNoGo.lean`
 
-当前源码尚未冻结，因此本日志不记录 source commit 或 evidence hash；这些值
-必须由最终证据步骤写入，不得预填。
+冻结源码与证据标识以 QA evidence 为准；本研究日志不复制易漂移的完整命令
+输出或哈希清单。
 
 # 发现一：P1a 原有名称空洞
 
@@ -261,31 +262,25 @@ Admission no-go 是同一原则的局部实例：effect terminal bottom 不能�
 
 # 验证结果与剩余门
 
-已观察到的结果：
+已完成并由 QA evidence 绑定：proof-sensitive source commit、根构建与续跑、
+`formal/source-integrity.json`、零占位符扫描、axiom allowlist audit、十八项
+proved manifest，以及后继提交上的 strict proved/tree gate。
 
-- 集成当前承重接缝后，增量根构建实际完成 9,208 jobs。
+仍未完成、且本日志不得代替：
 
-尚未完成、且本日志不得代替的结果：
-
-1. 冻结精确 proof-sensitive source commit；
-2. 在该 commit 上运行 clean root build；
-3. 重算 `formal/source-integrity.json`；
-4. 执行零 `sorry`/`admit`/`axiom`/`unsafe` 扫描和 axiom allowlist audit；
-5. 将十八项 manifest 行绑定到同一 source commit 与 build evidence；
-6. 创建只含证据/manifest 的后继 commit；
-7. 运行 `formal/scripts/ci.ps1 -RequireProved`；
-8. 获得 category/DPO/Petri、π/domain、Lean/provenance 独立人类评审；
-9. 完成真实 RFC-0002 FCP，并在其后决定 ADR-0001 状态。
+1. category/DPO/Petri、π/domain、Lean/provenance 三类独立人类评审；
+2. 真实 RFC-0002 FCP；
+3. FCP 后的 ADR-0001 最终状态决定；
+4. 八个生产包各自的 Product Conformance 证据。
 
 # 处置
 
-**Promote to immutable-evidence binding.**
+**Promote to independent QA-L4 review.**
 
 当前最大诚实状态是：
 
-> 通用 Core Theory 与实质 reference 的最后承重接缝已实现并通过一次可变树
-> 增量根构建；不可变 commit-bound proof evidence 与独立 QA-L4 review
-> 仍待完成。
+> 通用 Core Theory 与实质 reference 的最后承重接缝已经绑定不可变
+> commit-bound proof evidence；独立 QA-L4 review 与治理接受仍待完成。
 
 RFC-0002 保持 **Draft / Pre-FCP**，ADR-0001 保持 **Proposed**。在人类签名
 前，即使严格技术门全部通过，聚合状态最多也只能是

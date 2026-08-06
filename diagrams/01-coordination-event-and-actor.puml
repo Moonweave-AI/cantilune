@@ -1,270 +1,179 @@
 @startuml 01-coordination-event-and-actor
-' 图 01：Agent Orchestration 结构与表示（类图）
-' 一状态 + 一变更 + 一边界
-' 贯穿案例：「请调研本体工程与 Palantir 模式并撰写一份详细的调研报告」
+' 图 01A：以紧凑的核心类型展示 Actor、快照、协调变更与运行时边界。
 
+skinparam backgroundColor #FCFAF7
 skinparam shadowing false
 skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
-skinparam nodesep 40
-skinparam ranksep 35
-skinparam padding 8
-
-title 图 01：Agent Orchestration 结构与表示
-
-top to bottom direction
-
-' ═══════════════════════════════════════
-' 边界
-' ═══════════════════════════════════════
-
-package "边界" #FFFFFF {
-
-  class ExternalInput {
-    用户输入 / 工具回执 / Webhook
-    ..
-    来自编排系统之外
-    例 用户消息「请调研本体工程与 Palantir 模式并撰写一份详细的调研报告」
-    此时尚未产生协调变更
-  }
-
-  class ObservationEntry {
-    +seq: Int
-    +source: ActorRef
-    +payloadRef: ContentRef
-    +receivedAt: Timestamp
-    ..
-    seq 观察日志顺序号
-    例 1
-    source 触发方，常为 Human
-    例 human-alice / Human
-    payloadRef 原始内容引用
-    例 ref:msg-001 → 上述调研请求全文
-    receivedAt 系统收到时间
-    例 2026-08-06T13:00:00+08:00
-  }
+skinparam roundcorner 12
+skinparam nodesep 24
+skinparam ranksep 34
+skinparam ArrowColor #77716B
+skinparam ArrowFontColor #57524E
+skinparam ArrowThickness 1.15
+skinparam packageStyle rectangle
+skinparam packageBorderColor #AAA39C
+skinparam packageFontColor #3E3A39
+skinparam packageFontStyle bold
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  FontColor #3E3A39
+  HeaderBackgroundColor #F2EEEA
+}
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+  FontColor #514C47
 }
 
-' ═══════════════════════════════════════
-' 协作快照（状态）
-' ═══════════════════════════════════════
+title 图 01A · 协作域模型：Actor、快照与协调变更
+caption <color:#6E6963>案例：供应商集成风险评估。此图保留可写入核心类型；能力、会话、链接与四个视图均从同一快照和变更日志派生。</color>
 
-package "协作快照" #E8F4FD {
+legend top right
+  |= 颜色 |= 工程语义 |
+  | <back:#E5EDE5>　</back> | CollaborationSnapshot：协作世界的持久化状态 |
+  | <back:#F3E5DC>　</back> | CoordinationChange：经准入的可审计状态转换 |
+  | <back:#E5ECEE>　</back> | Runtime：唯一提交边界、日志与重放校验 |
+  | <back:#F5F1EB>　</back> | ObservationEntry：外部输入或回执的有序留痕 |
+endlegend
 
-  class CollaborationSnapshot {
-    +epochId: EpochId
-    --
-    +participants: Set ActorRegistration
-    +artifacts: Set WorkArtifact
-    +capabilities: Set ScopedCapability
-    +sessions: Set CommunicationSession
-    +links: Set CollaborationLink
-    --
-    +auditTail: List ObservationEntry
-    +policyContext: PolicyContext
-    ..
-    epochId 编排模式世代，用于版本对齐与重放
-    例 epoch-research-v1
-    participants 协作图中已注册执行体
-    例 human-alice, agent-planner, agent-researcher, tool-web-search
-    artifacts 任务、计划、代码等工作产物
-    例 task-T-ontology-report, plan-P-outline, doc-draft-report
-    capabilities 写锁、预算、审批槽等稀缺资源
-    例 budget-50k-tokens, write-lock-doc-draft
-    sessions 私有或共享通信会话
-    例 session-planner-researcher
-    links 依赖、委派、等待、供数等关系
-    例 task-T → delegated-to → agent-researcher
-    auditTail 有序外部观察日志，新信号先落此处
-    例 [ObservationEntry#1: 调研请求]
-    policyContext 授权、投票、重试与反馈状态
-    例 approved-introduce, retry-count=0
+left to right direction
+
+frame "Cantilune 核心域模型 · Snapshot、Change 与 Runtime 的可追溯边界" #F8F5F0 {
+
+  package "协作世界 · CollaborationSnapshot" #E5EDE5 {
+    class "CollaborationSnapshot\n某一时刻的协作世界" as Snapshot #F9FCF8 {
+      +snapshotId: SnapshotRef
+      .. 不可变快照定位；beforeRef / afterRef 的解析目标 ..
+      +epochId: EpochId
+      .. 运行 epoch / 模式版本戳；用于重放版本对齐 ..
+      +participants: Set<Participant>
+      .. 当前注册 Actor 与调度状态；以 actorId 稳定定位 ..
+      +artifacts: Set<WorkArtifact>
+      .. 任务、计划、证据、草稿和最终产物的集合 ..
+      +capabilities / sessions / links
+      .. 写锁、预算、审批槽、通信会话与协作关系的当前归属 ..
+      +auditTail: List<ObservationEntry>
+      .. 只追加的外部观察序列；观察本身不改协作图 ..
+      +policyContext: PolicyContext
+      .. 当前授权、重试、反馈和发布条件 ..
+    }
+
+    class "Participant\nActor 常驻注册" as Participant #FFFDFC {
+      +actorId: ActorId
+      .. 协作世界稳定主键；生命周期内不复用 ..
+      +kind: ActorKind
+      .. Human / Agent / Tool / Reviewer / Runtime 的类别 ..
+      +status: ParticipationStatus
+      .. active / waiting / blocked / retired 等调度状态 ..
+    }
+
+    class "WorkArtifact\n可传递的工作产物" as Artifact #FFFDFC {
+      +artifactId / kind: ArtifactId
+      .. Task、Plan、Evidence、Draft 或 Deliverable 的唯一标识与业务分类 ..
+      +contentRef: ContentRef
+      .. 正文、文件或结构化数据位置；刻意不放进 Change ..
+      +owner: ActorRef
+      .. 当前负责、持有或有权提交此产物的参与者 ..
+      +lifecycle: ArtifactLifecycle
+      .. proposed / active / reviewable / published / retired ..
+    }
+
+    class "ObservationEntry\n外部观察（有序留痕）" as Observation #FFFDFC {
+      +sequenceNo: Long
+      .. auditTail 的严格顺序；保留观察发生先后 ..
+      +source: ActorRef
+      .. Human、Tool、Reviewer 或 Environment 的来源引用 ..
+      +payloadRef: ContentRef
+      .. 请求、批准、反馈或工具回执的位置；不复制进 Change ..
+      +receivedAt: Timestamp
+      .. Runtime 入账时间；支撑审计定位 ..
+    }
+
+    Snapshot *-down- Participant : 注册
+    Snapshot *-down- Artifact : 工作对象
+    Snapshot *-down- Observation : auditTail（有序）
   }
 
-  class WorkArtifact {
-    +id: ArtifactId
-    +kind: ArtifactKind
-    +contentRef: ContentRef
-    +owner: ActorRef
-    ..
-    id 产物实例 ID
-    例 task-T-ontology-report
-    kind 任务 / 计划 / 代码 / 评审意见
-    例 Task
-    contentRef 任务正文存放处，不在 CoordinationEvent
-    例 ref:task-body →「调研本体工程与 Palantir 模式，输出详细调研报告」
-    owner 当前负责该产物的执行体
-    例 agent-researcher / Agent
+  package "已提交协调变更 · CoordinationChange" #F3E5DC {
+    class "CoordinationChange\n一次已提交的协调事件" as Change #FFF9F6 {
+      +changeId / recordedAt: ChangeId, Timestamp
+      .. 每次发生的唯一、可排序身份；模板不等于事件实例 ..
+      +operationTypeId: OperationTypeId
+      .. 命中的 OperationTemplate；描述本次合法操作类型 ..
+      +beforeRef / afterRef: SnapshotRef
+      .. 重放起点和比对目标；两端快照必须可解析 ..
+      +targets: List<TargetRef>
+      .. 实际匹配的任务、参与者、能力、会话和协作关系 ..
+      +initiator / involved: ActorRef
+      .. 主责归因和关联方；Actor 不是 Change 的直接提交者 ..
+      +authorization / external: List<EvidenceRef>
+      .. 授权、批准、Observation 或工具回执的证据引用 ..
+      +createdSessionRefs: List<SessionId>
+      .. 本次新鲜分配的会话名；避免与既有会话混淆 ..
+      --
+      <b>不含 payload：</b>正文和文件仅由 WorkArtifact.contentRef 承载
+    }
+
+    class "OperationTemplate\n合法操作模板" as Operation #FFFDFC {
+      +operationTypeId: OperationTypeId
+      .. delegate、accept、invoke_tool、publish_artifact 等稳定操作名 ..
+      +requires / ensures: List<ContractRef>
+      .. 前置匹配、授权、资源与外部证据；以及提交后的可验证后置条件 ..
+    }
+
+    class "ActorRef\nActor 事件引用" as ActorRef #FFFDFC {
+      +actorId: ActorId
+      .. 解析 Participant 的主键；用于归因、筛选和路由 ..
+      +kind: ActorKind
+      .. 供事件消费方快速路由的类别冗余 ..
+    }
+
+    class "EvidenceRef\n授权 / 外部证据引用" as Evidence #FFFDFC {
+      +evidenceId / kind: String
+      .. policy、approval、observation、receipt 等可追溯证据 ..
+      +contentRef: ContentRef
+      .. 指向原始证据；支持独立复核与重放输入 ..
+    }
+
+    Change --> Operation : 命中模板
+    Change *-- ActorRef : 归因 / 涉及
+    Change *-- Evidence : 授权 / 外部
   }
+
+  package "Runtime · 提交、记录与重放" #E5ECEE {
+    class "CoordinationRuntime\n唯一的 Change 提交边界" as Runtime <<runtime>> #F8FBFB {
+      +admit(snapshot, intent): Decision
+      .. 匹配模板，核验策略、资源和外部证据；拒绝时不提交 Change ..
+      +commit(change): SnapshotRef
+      .. 原子持久化 Change 与 after 快照；返回新快照引用 ..
+      +append(change): ChangeId
+      .. 只追加 ChangeLog；为审计、恢复和时间线提供完整配方 ..
+      +replay(before, changes): Verification
+      .. 重算规则、匹配、新鲜会话与证据；比较 afterRef 后决定交付或隔离 ..
+    }
+  }
+
+  Snapshot -[hidden]right- Change
+  Change -[hidden]right- Runtime
 }
 
-' ═══════════════════════════════════════
-' 协调变更（事件记录）
-' ═══════════════════════════════════════
+' 关键类级关系：实线是组成或提交路径；虚线为引用 / 解析，不代表 Actor 直接写入 Change。
+Observation ..> Snapshot : append auditTail
+Snapshot .. Change : beforeRef / afterRef
+ActorRef ..> Participant : actorId 解析
+Artifact ..> ActorRef : owner
+Change --> Runtime : admit · commit · append · replay
 
-package "协调变更" #FFF8E8 {
-
-  class CoordinationEvent {
-    +changeId: ChangeId
-    +epochId: EpochId
-    +operation: OperationType
-    +recordedAt: Timestamp
-    +visibility: EventVisibility
-    --
-    +beforeRef: SnapshotRef
-    +afterRef: SnapshotRef
-    --
-    +initiator: ActorRef
-    +involved: List ActorRef
-    +targets: EventTargets
-    --
-    +authorization: EvidenceRef
-    +external: EvidenceRef
-    ..
-    changeId 变更日志全局唯一 ID
-    例 evt-002-delegate
-    operation 操作种类，见 OperationType
-    例 delegate
-    beforeRef / afterRef 变更前后快照，重放校验用
-    例 snap-003 → snap-004
-    initiator 主责执行体（归因，不是触发器）
-    例 agent-planner / Agent
-    involved 其他参与方
-    例 [agent-researcher]（被委派方）
-    targets 作用对象引用，不含任务正文
-    例 primary=task-T-ontology-report
-    authorization 策略授权证据
-    例 authz-delegate-ok
-    external 常指向 auditTail 中的 ObservationEntry
-    例 ref:audit#1（原始调研请求）
-    --
-    运行时准入后才写入；执行体不直接 emit
-  }
-
-  class EventTargets {
-    +primary: TargetRef
-    +secondary: List TargetRef
-    ..
-    primary 首要对象
-    例 task-T-ontology-report / Task
-    secondary 连带对象
-    例 [session-planner-researcher, write-lock-doc-draft]
-  }
-
-  class TargetRef {
-    +kind: TargetKind
-    +id: String
-    ..
-    kind 任务 / 产物 / 资源 / 会话 / 边 / 执行体
-    例 Task
-    id 实例 ID；kind=participant 时即 actorId
-    例 task-T-ontology-report
-  }
-
-  enum OperationType {
-    introduce_artifact
-    delegate
-    accept
-    invoke_tool
-    run_shell
-    request_approval
-  }
-}
-
-' ═══════════════════════════════════════
-' 执行体（双视图）
-' ═══════════════════════════════════════
-
-package "执行体" #FFF3E0 {
-
-  class ActorRegistration {
-    +actorId: ActorId
-    +kind: ActorKind
-    +displayName: String
-    +provider: String
-    +status: ActorStatus
-    ..
-    actorId 协作世界主键，生命周期内不变
-    例 agent-researcher
-    kind Agent / Shell / Tool / DataSource / Human / Runtime
-    例 Agent
-    displayName UI 与日志展示名
-    例 Research Agent
-    provider gpt-4、bash、postgresql、某 MCP
-    例 claude-sonnet
-    status 调度态：active / waiting / blocked
-    例 active（正在检索 Palantir 资料）
-  }
-
-  class ActorRef {
-    +actorId: ActorId
-    +kind: ActorKind
-    ..
-    actorId 解析键，指向 ActorRegistration
-    例 agent-planner
-    kind 类别冗余，便于过滤与路由
-    例 Agent
-  }
-
-  enum ActorKind {
-    Agent
-    Shell
-    Tool
-    DataSource
-    Human
-    Runtime
-  }
-}
-
-' ═══════════════════════════════════════
-' 布局
-' ═══════════════════════════════════════
-
-ExternalInput -[hidden]down- ObservationEntry
-ObservationEntry -[hidden]down- CollaborationSnapshot
-CollaborationSnapshot -[hidden]down- CoordinationEvent
-
-CollaborationSnapshot -[hidden]right- ActorRegistration
-ActorRegistration -[hidden]down- WorkArtifact
-CoordinationEvent -[hidden]right- ActorRef
-ActorRef -[hidden]down- EventTargets
-EventTargets -[hidden]down- TargetRef
-TargetRef -[hidden]down- OperationType
-
-' ═══════════════════════════════════════
-' 关系（少而清晰）
-' ═══════════════════════════════════════
-
-ExternalInput -down-> ObservationEntry : ① 外部信号
-ObservationEntry -down-> CollaborationSnapshot : ② 追加 auditTail
-
-CoordinationEvent -up-> CollaborationSnapshot : ③ 应用变更
-
-CollaborationSnapshot *-right- ActorRegistration
-CollaborationSnapshot *-right- WorkArtifact
-
-CoordinationEvent *-right- ActorRef : initiator / involved
-CoordinationEvent *-right- EventTargets : targets
-EventTargets *-down- TargetRef
-
-ActorRef -up-> ActorRegistration : 解析
-TargetRef -up-> WorkArtifact : 指向产物
-CoordinationEvent -left-> ObservationEntry : external
-
-CoordinationEvent -down-> OperationType : operation
-ActorRegistration -down-> ActorKind : kind
-ActorRef -down-> ActorKind : kind
-
-note bottom of CoordinationEvent
-  **案例故事线：本体工程与 Palantir 调研报告**
-  T0 有 human-alice、agent-planner、agent-researcher，尚无 task
-  ① Alice 输入调研请求 → ObservationEntry#1 → auditTail
-  ② Event#1 introduce_artifact → 创建 task-T-ontology-report
-  ③ Event#2 delegate → planner 委派给 researcher，新建 session
-  ④ Event#3 accept → researcher 接单
-  ⑤ Event#4 invoke_tool → web-search 检索本体工程 / Palantir 资料
-  ⑥ 后续 run_shell / submit_artifact → 产出 doc-draft-report
+note bottom of Change
+  <b>读图纪律</b>
+  ① Observation 只记录外部事实；无论来自 Human、Tool 还是 Reviewer，都先进入 auditTail。
+  ② Actor 提交外部信号或协调意图；只有 Runtime 才能提交 CoordinationChange。
+  ③ 依赖、能力、会话和通信视图是 Snapshot + ChangeLog 的派生读模型，而非独立写入系统。
 end note
 
+footer <color:#6E6963>形式锚点：Config σ → CollaborationSnapshot；DPOEvent σ → CoordinationChange；external observations → auditTail / ObservationEntry。重放需要完整变更配方，正常形不自动等于成功。</color>
 @enduml

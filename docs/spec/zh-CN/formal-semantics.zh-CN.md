@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |---|---|
-| 状态 | **草案**（承重实现已具备；不可变证据与独立评审待完成） |
+| 状态 | **草案**（核心理论已证明；独立评审与治理接受待完成） |
 | 类型 | 规范性规格（形式语义） |
 | 风险 | S2 |
 | 负责人 | Joker-of-Gotham（DRI） |
@@ -17,9 +17,10 @@
 > `MaximumCompatibleD1AFMSClosure`：其 separated enriched-adjunction
 > 分支与非分离 D1-A monad/domain 分支不是一个模型。actual-Agent 全抽象
 > 仅覆盖确定性的 typed tau/free-output prefix trie；guarded 结果使用
-> native-trace/contextual-Hoare 观察。八个生产包尚未实例化。任何
-> obligation 只有绑定不可变 source/build evidence 后才能标为 `proved`；
-> 任何构建均不能自行产生 reviewed、FCP Passed 或 ADR Accepted 状态。
+> native-trace/contextual-Hoare 观察。八个生产包尚未实例化。中央义务现已
+> 绑定不可变 source/build evidence 并标为 `proved`，证据入口见
+> `docs/README.md`。任何构建均不能自行产生 reviewed、FCP Passed、ADR
+> Accepted 或产品符合性状态。
 
 ---
 
@@ -69,9 +70,9 @@ triangle 与 hexagon 生成的相容等价并构造逐 hom 商。
 `Monoidal` 与 `Braided` 函子。`FreeSMCArbitraryUniversal.lean` 现从
 原子对象同构递归构造逐 word 比较，由生成元/copy/discard 相容性推出
 商态射自然性，证明所得自然同构及其逆均为幺单，并证明在给定 singleton
-分量下的唯一性。因此相对于选定生成元解释的任意目标泛比较已通过内核。
-它仍为 `implemented_unverified`：尚无绑定不可变 commit 的完整构建记录
-或独立 QA-L4 复核。投影重写保持是另一项仍开放的义务。
+分量下的唯一性。因此相对于选定生成元解释的任意目标泛比较已通过内核并
+绑定不可变证据，现行状态为 `proved / review-pending`。投影重写保持已在
+通用核心理论与实质参考边界内证明；每个生产包仍须提供自己的符合性数据。
 
 ## 3. 语法层（具体形式）
 
@@ -262,15 +263,15 @@ $P_{Mor}$ = $C$ 本身。
 
 - 每个投影都有独立指定的可观察商 LTS、事件提升关系 $\operatorname{Lift}_i$ 与前向/穷尽性证明；这些操作数据不由 SMC-函子自动推出。
 - **跨投影事件一致性**：一个源事件在四投影中都有带同一事件标签的合法目标推导，且每条相关可观察目标推导都有来源。
-- 每个投影保持并反射独立提供的成功终态谓词，使 normal form、成功终止与死锁不漂移。这三项义务对每个非同一性投影仍开放；π 另有目标/类型阻塞。
+- 每个投影保持并反射独立提供的成功终态谓词，使 normal form、成功终止与死锁不漂移。这些义务已在通用核心理论与实质参考包内证明；生产包实例仍属于独立 Product Conformance 工作。
 
 ### 6.3 分期证明（依 DRI 决策）
 
 | 阶段 | 证明 | 状态 |
 |---|---|---|
-| P1a | DAG/Petri/态射一致性 | **可复用操作证书 family 与有限 fixture 已通过 kernel；预期静态/DPO/resource/admission 实例仍不完整** |
-| P1b | π 投影对 **request/accept 通道创建子语言**的一致性 | **无过滤 structural strong-late 操作证书（含精确 requesting reflection）已通过 kernel 与本地完整 CI/审计；当前为 `implemented_unverified`，待不可变 provenance 与独立评审；独立的完整 FMS 桥仍不完整** |
-| P1c（延后） | π 投影对**自由对话 / 无限制移动性**的一致性 | **有限 60 格参考矩阵已是 60/60 native，并有四份只在各自声明的受限目标关系内成立的按事件索引操作证书；但这尚不等于完整标准 late-LTS reflection：当前开放 reconnect/delete 编码存在额外环境转移，一般 admitted-rule/static/resource 层也未完成** |
+| P1a | DAG/Petri/态射一致性 | **通用证书 family 与实质参考已 proved / review-pending；产品规则/resource/admission 实例仍是逐包符合性工作** |
+| P1b | 声明的最大相容 Open-π/D1-A 边界内的 π 投影一致性 | **无过滤 structural strong-late 证书、精确 requesting reflection、D1-A 范围语义与最终 common chain 已 proved / review-pending；不声称 unrestricted actual-Agent strong-bisimulation full abstraction** |
+| P1c | 多状态/native π 参考一致性 | **60/60 参考面、十五 family commutation、metadata/admission 接缝与实质 reconnect 链已 proved / review-pending；生产包须为自己的规则实例化通用接口** |
 
 ### 6.4 回退（依 ADR-0001）
 
@@ -655,7 +656,9 @@ d:\llbracket g\rrbracket_{\mathrm{op}}\xrightarrow{\tau}_\pi P
    M-adhesive/van-Kampen 类定理仍是独立义务。
 5. 按 QA-L4 取得独立形式数学/范畴/进程语义评审。
 
-### 13.8 P1b 状态小结
+### 13.8 P1b 历史审计小结（已由 §21 取代）
+
+下表记录 2026-07-23 的审计检查点，仅用于溯源，不覆盖 §21 的现行状态。
 
 | 项 | 状态 |
 |---|---|
@@ -668,7 +671,8 @@ d:\llbracket g\rrbracket_{\mathrm{op}}\xrightarrow{\tau}_\pi P
 | 步骤 E | **有限 P1c 参考面现为 60/60 native，并有四份按事件索引的操作证书；这些证书只在各自声明的受限目标关系内是精确的。每个 π 见证均擦除为独立标准 late 推导，但这不是整个 raw 标准 late LTS 的 reflection：当前开放 reconnect/delete 编码还有额外环境转移。一般 DPO/Petri 派生 admission 规则与五层证书仍开放** |
 | P1b 总体 | **操作 residual 已 implemented_unverified；完整 FMS 路线或经接受的范围裁决仍未完成；Pre-FCP/M1；迭代，不晋级** |
 
-不声称已证明 C′、D 或 E。该负面结果有实际价值：它排除了错误的张量/商路线，并精确列出重新开始证明前必须补齐的定义。
+在该检查点不声称已证明 C′、D 或 E。该负面结果排除了错误的张量/商路线；
+后续已证明范围见 §21。
 
 ### 13.9 已选择的实施架构（2026-07-23）
 
@@ -874,8 +878,8 @@ source ∈ inputs(e) ∧ target ∈ outputs(e)
 
 request/accept 映射已有未过滤的标准结构 strong-late 单步正向证明。
 `P1bNominalIncidenceClosure` 现已反演全部结构同余 requesting 代表并证明
-精确反射；该操作结果仍为 `implemented_unverified`，待不可变 provenance 与
-独立评审。choice 幂等不属于当前结构同余；使用 S4 时必须明确引用另设的
+精确反射。该检查点的结果为 `implemented_unverified`；现已按 §21 与不可变
+QA 证据晋级为 `proved / review-pending`。choice 幂等不属于当前结构同余；使用 S4 时必须明确引用另设的
 等式/双模拟理论。
 
 反馈存储只允许经授权 ballot，按 observer 身份去重，并把同时 approval/rejection
@@ -1011,13 +1015,11 @@ parallel-zero 反例证明不能要求原生目标语法精确属于 linked endp
 定理必须存在性地产生 linked endpoint，并以结构同余关联实际目标。下述
 nominal-incidence closure 现已对每个真实 split 构造该分类。
 
-固定 Lean 4.32.0 普通 evidence gate 已在当前 dirty worktree 上通过：
-283 个 Lean 文件、root build 8938 jobs 成功，以及 667 份只含
-`propext`、`Classical.choice` 与 `Quot.sound` 的依赖报告。当前仍不存在
-完整 FMS inhabitant、生产规则 inhabitant、不可变 commit-bound 构建、
-独立 QA-L4 评审、FCP 结论或 ADR 接受。因此 manifest 中所有状态仍为
-`partial_scaffold` 或 `implemented_unverified`，没有任何 `proved` 或
-`reviewed`。
+在该历史检查点，固定 Lean 4.32.0 普通 evidence gate 在 dirty worktree 上
+通过：283 个 Lean 文件、root build 8,938 jobs，以及 667 份只含
+`propext`、`Classical.choice` 与 `Quot.sound` 的依赖报告。该可变树状态与
+manifest 计数已由 §21 和不可变 QA 证据取代；独立评审、FCP、ADR 接受及
+生产包符合性仍是外部事项。
 
 ### 16.3 P1b 标记化 split 与非空的修正产品证书
 
@@ -1048,8 +1050,8 @@ linked-endpoint classifier，并能从该 classifier 构造最终投影证书；
 `syncLeft`、`syncRight`、`closeLeft` 与 `closeRight` 构造该 transfer。
 因此 `requestingPolarizedNominalIncidence`、`requestingNativeResidual`、
 `standardLateReflection` 及无条件 `pi_ra_certificate` 均已 kernel-build。
-CENTRAL-13 现为 `implemented_unverified`；本地完整 CI/公理审计已经通过，
-仍须不可变 provenance 与独立 QA-L4 评审，才可标记 `proved` 或 `reviewed`。
+该检查点的 CENTRAL-13 为 `implemented_unverified`；现已绑定不可变证据，
+状态为 `proved / review-pending`。
 
 `HeterogeneousProductRuleAdmissionReference` 现已实例化整个修正后的通用
 产品证书，而不只是 four-target admission 子记录。该见证含严格异构
@@ -1335,7 +1337,8 @@ incidence，并证明该精确 incidence 在重索引后仍被保留。这是参
 本节不声称整个目标 LTS 上的全局 `step iff firing`；结论始终以选定、
 可 replay 的 occurrence 为索引。
 
-集成后的可变树完成了一次增量根构建；其 job 数只是诊断信息，不具规范性。任何 central row 标为
-`proved` 前，仍必须执行 commit-bound clean CI、source-integrity 与
-axiom/placeholder audit、最终 proved manifest 及后继提交 strict gate。独立
-评审与治理接受仍是外部行为。
+中央义务已绑定 source commit
+`59a1a6885ef6a2774b2731f487f83228e67d15dc` 与 QA 构建/审计记录。该记录覆盖
+commit-bound 构建续跑、source integrity、placeholder/axiom audit、proved
+manifest 与 strict proved/tree gate。现行技术状态为 `proved / review-pending`；
+独立评审与治理接受仍是外部行为。

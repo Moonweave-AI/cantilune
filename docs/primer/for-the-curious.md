@@ -6,7 +6,7 @@
 | Audience | Readers who want to understand *what* cantilune is and *why* before any formal notation |
 | Paired with | the formal spec `docs/spec/formal-semantics.md` and RFC-0001 |
 
-> **A note on rigor.** This primer is deliberately notation-light. But "easy to read" is not the same as "loose with the truth." Every claim here has a precise version in the spec, and the same honesty rules apply: the static presentation and identity view are definitional, while all four runtime projections require complete certificates. The current finite witnesses do not yet prove the whole framework, which remains **unverified** until the central proofs and independent review are complete.
+> **A note on rigor.** This primer is deliberately notation-light. But "easy to read" is not the same as "loose with the truth." Every claim here has a precise version in the spec, and the same honesty rules apply: the static presentation and identity view are definitional, while all four runtime projections require complete certificates. The generic Core Theory and one substantive reference execution now have immutable kernel evidence and are **proved / independent-review-pending**. That does not pass FCP, accept the ADR, or instantiate any production package.
 
 ---
 
