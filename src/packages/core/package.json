@@ -1,0 +1,35 @@
+{
+  "name": "@cantilune/core",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Cantilune semantic kernel: nodes, coordination, and agent composition algebra",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./nodes": {
+      "types": "./dist/nodes/index.d.ts",
+      "import": "./dist/nodes/index.js"
+    },
+    "./coordination": {
+      "types": "./dist/coordination/index.d.ts",
+      "import": "./dist/coordination/index.js"
+    },
+    "./structure": {
+      "types": "./dist/structure/index.d.ts",
+      "import": "./dist/structure/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:contract": "vitest run tests/contract",
+    "test:system": "vitest run tests/system",
+    "test:types": "vitest run tests/types"
+  }
+}
