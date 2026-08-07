@@ -1,0 +1,142 @@
+@startuml 01d-fields
+' 图 01D：字段设计逻辑。兼容本地预览与 PlantUML Server。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+
+title 图 01D · 字段设计逻辑（Snapshot / Change / Observation / Runtime）
+
+top to bottom direction
+
+package "写入纪律" #F7F3EC {
+  class WriteDiscipline {
+    +observation_first: rule
+    .. 外部信号先 append auditTail，不直接改协作图 ..
+    +actor_not_committer: rule
+    .. Actor 只发 intent；只有 Runtime 提交 Change ..
+    +payload_outside_change: rule
+    .. 正文在 WorkArtifact.contentRef；Change 不含 payload ..
+  }
+}
+
+package "字段规则" #F7F3EC {
+  class FieldRules {
+    +no_payload_in_change: rule
+    .. Change 只记录操作、目标、证据与快照引用 ..
+    +before_after_required: rule
+    .. 每条 Change 须可解析 beforeRef 与 afterRef ..
+    +template_vs_instance: rule
+    .. OperationTemplate 可多次实例化为独立 changeId ..
+  }
+}
+
+package "CollaborationSnapshot" #E5EDE5 {
+  class CollaborationSnapshot {
+    +snapshotId: SnapshotRef
+    .. beforeRef / afterRef 解析目标 ..
+    +epochId: EpochId
+    +participants: Set<Participant>
+    +artifacts: Set<WorkArtifact>
+    +auditTail: List<ObservationEntry>
+    +policyContext: PolicyContext
+  }
+  class Participant {
+    +actorId: ActorId
+    +kind: ActorKind
+    +status: ParticipationStatus
+  }
+  class WorkArtifact {
+    +artifactId: ArtifactId
+    +contentRef: ContentRef
+    +owner: ActorRef
+    +lifecycle: ArtifactLifecycle
+  }
+  CollaborationSnapshot *-- Participant
+  CollaborationSnapshot *-- WorkArtifact
+}
+
+package "ObservationEntry" #F5F1EB {
+  class ObservationEntry {
+    +sequenceNo: Long
+    +source: ActorRef
+    +payloadRef: ContentRef
+    +receivedAt: Timestamp
+    --
+    not_a_change: append auditTail only
+    admission_gate: Runtime admit 后才产生 Change
+  }
+}
+
+package "CoordinationChange" #F3E5DC {
+  class CoordinationChange {
+    +changeId: ChangeId
+    +recordedAt: Timestamp
+    +operationTypeId: OperationTypeId
+    +beforeRef: SnapshotRef
+    +afterRef: SnapshotRef
+    +targets: List<TargetRef>
+    +initiator: ActorRef
+    +involved: List<ActorRef>
+    +authorization: List<EvidenceRef>
+    +external: List<EvidenceRef>
+    +createdSessionRefs: List<SessionId>
+  }
+  class OperationTemplate {
+    +operationTypeId: OperationTypeId
+    +requires: List<ContractRef>
+    +ensures: List<ContractRef>
+  }
+  class ActorRef {
+    +actorId: ActorId
+    +kind: ActorKind
+  }
+  class EvidenceRef {
+    +evidenceId: String
+    +contentRef: ContentRef
+  }
+  CoordinationChange --> OperationTemplate
+  CoordinationChange *-- ActorRef
+  CoordinationChange *-- EvidenceRef
+}
+
+package "CoordinationRuntime" #E5ECEE {
+  class CoordinationRuntime {
+    +admit(snapshot, intent): Decision
+    +commit(change): SnapshotRef
+    +append(change): ChangeId
+    +replay(before, changes): Verification
+  }
+}
+
+package "runtime_flow" #F7F3EC {
+  class RuntimeFlow {
+    +phase_0: 外部输入与准入
+    +phase_1: 任务建立与协调
+    +phase_2: 受控执行与产出
+    +phase_3: 评审与发布
+    +phase_4: 重放后交付
+  }
+}
+
+WriteDiscipline --> FieldRules
+FieldRules --> CollaborationSnapshot
+CollaborationSnapshot --> ObservationEntry
+ObservationEntry --> CoordinationChange
+CoordinationChange --> CoordinationRuntime
+CoordinationRuntime --> RuntimeFlow
+
+ObservationEntry ..> CollaborationSnapshot : append auditTail
+CollaborationSnapshot .. CoordinationChange : beforeRef / afterRef
+ActorRef ..> Participant : actorId
+WorkArtifact ..> ActorRef : owner
+CoordinationChange --> CoordinationRuntime : admit / commit / replay
+
+@enduml

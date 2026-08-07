@@ -1,4 +1,4 @@
-@startuml 01-coordination-event-and-actor
+@startuml 01a-class
 ' 图 01A：以紧凑的核心类型展示 Actor、快照、协调变更与运行时边界。
 
 skinparam backgroundColor #FCFAF7

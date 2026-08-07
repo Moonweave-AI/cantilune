@@ -6,7 +6,7 @@
 | 类型 | 工程设计 / 命名规范 |
 | 受众 | 运行时、SDK、控制面、可观测性工程师 |
 | 更新日期 | 2026-08-06 |
-| 关联图表 | `01-coordination-event-and-actor.puml`（PlantUML 类图） |
+| 关联图表 | `diagrams/01-core/01a-class.puml`（PlantUML 类图）；同目录 `01b-seq` · `01c-state` · `01d-fields` |
 | 形式化对照 | 附录 A（Lean / 数学符号，供实现层映射） |
 
 > **定位：** 本文档定义**编排工程语言**——开发者、运维和系统设计者在讨论 Cantilune 时应使用的名字。

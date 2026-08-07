@@ -1,4 +1,4 @@
-@startuml 01-coordination-event-and-actor-sequence
+@startuml 01b-seq
 ' 图 01B：端到端运行时间线；结构细节见图 01A，状态门控见图 01C。
 
 skinparam backgroundColor #FCFAF7

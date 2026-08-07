@@ -1,4 +1,4 @@
-@startuml 01-coordination-event-and-actor-state
+@startuml 01c-state
 ' 图 01C：以受约束的工程流程表现协调状态与协调事件。
 ' 单一向下主干；失败、返工与隔离均为右侧受控分支，避免跨图回线。
 
