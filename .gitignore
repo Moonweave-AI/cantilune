@@ -9,6 +9,9 @@ formal/build/
 *.obj
 *.exe
 tmp/
+tools/plantuml.jar
+node_modules/
+dist/
 
 # Local agent/runtime state must never enter source-control deliveries.
 .agents/
