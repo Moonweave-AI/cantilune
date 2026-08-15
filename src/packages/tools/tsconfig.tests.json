@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Spans two packages because `paths` below resolves @cantilune/syscall to
+    // its sources rather than its build output.
+    "rootDir": "../..",
+    "noEmit": true,
+    "paths": {
+      "@cantilune/syscall": ["../syscall/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}
