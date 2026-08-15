@@ -1,0 +1,68 @@
+{
+  "name": "@cantilune/comms",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cantilune comms — typed late-π communication facet with durable delivery and admission-bound reconnect",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ports": {
+      "types": "./dist/ports/index.d.ts",
+      "import": "./dist/ports/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/index.d.ts",
+      "import": "./dist/memory/index.js"
+    },
+    "./a2a": {
+      "types": "./dist/transports/a2a/index.d.ts",
+      "import": "./dist/transports/a2a/index.js"
+    },
+    "./file": {
+      "types": "./dist/file/index.d.ts",
+      "import": "./dist/file/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/integration/index.d.ts",
+      "import": "./dist/integration/index.js"
+    },
+    "./conformance": {
+      "types": "./dist/conformance/index.d.ts",
+      "import": "./dist/conformance/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@cantilune/runtime": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@cantilune/runtime": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:fuzz": "vitest run tests/fuzz",
+    "test:mutation": "vitest run tests/mutation",
+    "test:pack": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@cantilune/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cantilune/conformance": "workspace:*",
+    "@cantilune/runtime": "workspace:*",
+    "@cantilune/test-fixtures": "workspace:*",
+    "@types/node": "^22.13.4",
+    "@vitest/coverage-v8": "^3.2.7"
+  }
+}
