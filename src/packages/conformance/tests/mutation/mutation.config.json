@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "pnpm exec vitest run tests/unit/inventoryVerifier.test.ts tests/unit/engineeringAdmissionEvidence.test.ts tests/unit/sealedAdmissionGate.test.ts tests/contract/tamper-corpus.test.ts tests/unit/conformanceEngineVerifiers.test.ts"
+  },
+  "mutate": [
+    "src/verifier/inventoryVerifier.ts",
+    "src/verifier/engineeringAdmissionVerifier.ts",
+    "src/engine/sealedAdmissionGate.ts",
+    "src/policy/verificationPolicy.ts",
+    "src/verifier/envelopeVerifier.ts"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  },
+  "ignorePatterns": ["dist/**", "tests/**", "artifacts/**", "stryker-tmp/**"]
+}

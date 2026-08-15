@@ -1,0 +1,28 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:8eb877de2a965caf108b680eb7af62f9",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-11T09:27:52.494Z",
+    "component": {
+      "type": "application",
+      "name": "@cantilune/conformance",
+      "version": "0.0.1"
+    },
+    "properties": [
+      {
+        "name": "pnpm-lock-digest",
+        "value": "2518c2caaf1419f8671e7deb164e942c5f31640595ea17d56ba38304448da42d"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "@cantilune/core",
+      "version": "0.0.1*",
+      "purl": "pkg:npm/%40cantilune/core@0.0.1*"
+    }
+  ]
+}

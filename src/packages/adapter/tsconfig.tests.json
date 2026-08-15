@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Spans two packages because `paths` below resolves @cantilune/boot to its
+    // sources rather than its build output.
+    "rootDir": "../..",
+    "noEmit": true,
+    "paths": {
+      "@cantilune/boot": ["../boot/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}

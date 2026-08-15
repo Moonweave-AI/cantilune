@@ -1,0 +1,93 @@
+{
+  "name": "@cantilune/conformance",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cantilune conformance — product evidence verification, formal proof binding, and release gates",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./evidence": {
+      "types": "./dist/evidence/index.d.ts",
+      "import": "./dist/evidence/index.js"
+    },
+    "./profiles": {
+      "types": "./dist/profiles/index.d.ts",
+      "import": "./dist/profiles/index.js"
+    },
+    "./ports": {
+      "types": "./dist/ports/index.d.ts",
+      "import": "./dist/ports/index.js"
+    },
+    "./memory": {
+      "types": "./dist/adapters/memory/index.d.ts",
+      "import": "./dist/adapters/memory/index.js"
+    },
+    "./file": {
+      "types": "./dist/adapters/file/index.d.ts",
+      "import": "./dist/adapters/file/index.js"
+    },
+    "./admission": {
+      "types": "./dist/admission/index.d.ts",
+      "import": "./dist/admission/index.js"
+    },
+    "./release": {
+      "types": "./dist/engine/releaseConformanceGate.d.ts",
+      "import": "./dist/engine/releaseConformanceGate.js"
+    },
+    "./lifecycle": {
+      "types": "./dist/lifecycle/index.d.ts",
+      "import": "./dist/lifecycle/index.js"
+    },
+    "./canonical": {
+      "types": "./dist/canonical/index.d.ts",
+      "import": "./dist/canonical/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/adapters/runtime/runtimeDpoReplayPort.d.ts",
+      "import": "./dist/adapters/runtime/runtimeDpoReplayPort.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@cantilune/runtime": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@cantilune/runtime": {
+      "optional": true
+    }
+  },
+  "bin": {
+    "conformance-cli": "./dist/cli/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:mutation": "node scripts/mutation-gate.mjs",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "provenance": "node scripts/generate-provenance.mjs",
+    "verify:trust-rotation": "node scripts/verify-trust-rotation.mjs",
+    "verify:formal-manifest": "node scripts/verify-formal-manifest.mjs",
+    "verify:release-gate": "node scripts/verify-release-gate.mjs"
+  },
+  "dependencies": {
+    "@cantilune/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cantilune/runtime": "workspace:*",
+    "@cantilune/test-fixtures": "workspace:*",
+    "@types/node": "^22.13.4",
+    "@vitest/coverage-v8": "^3.2.7"
+  }
+}

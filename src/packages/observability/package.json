@@ -1,0 +1,32 @@
+{
+  "name": "@cantilune/observability",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cantilune observability — EventSpine read-models (diagrams/03-observability/)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:pack": "node scripts/pack-consumer-smoke.mjs"
+  },
+  "dependencies": {
+    "@cantilune/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cantilune/runtime": "workspace:*",
+    "@cantilune/test-fixtures": "workspace:*",
+    "@vitest/coverage-v8": "^3.2.7"
+  }
+}
