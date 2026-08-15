@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    // Component tests render into happy-dom, so the suite touches DOM globals
+    // that the production `lib` deliberately omits.
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"]
+}

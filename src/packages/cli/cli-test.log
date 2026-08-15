@@ -1,0 +1,178 @@
+﻿
+ RUN  v3.2.7 D:/moonweave-ai/cantilune/src/packages/cli
+
+node.exe :  DEPRECATED  'basic' reporter is deprecated and will be removed in Vitest v3.
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( DEPRECATED  'b...d in Vitest v3.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Remove 'basic' from 'reporters' option. To match 'basic' reporter 100%, use configuration:
+{
+  "test": {
+    "reporters": [
+      [
+        "default",
+        {
+          "summary": false
+        }
+      ]
+    ]
+  }
+}
+ 鉁?tests/unit/commandRegistry.test.ts (4 tests) 3ms
+ 鉁?tests/unit/headlessExit.test.ts (1 test) 2ms
+ 鉁?tests/unit/asciiTimeline.test.ts (2 tests) 3ms
+ 鉁?tests/unit/renderExporters.test.ts (5 tests) 2ms
+ 鉁?tests/unit/commands.test.ts (5 tests) 3ms
+ 鉁?tests/unit/asciiTable.test.ts (4 tests) 2ms
+ 鉁?tests/unit/asciiGraph.test.ts (3 tests) 2ms
+ 鉁?tests/unit/store.test.ts (2 tests) 2ms
+ 鉁?tests/unit/slashRouter.test.ts (3 tests) 2ms
+stderr | tests/unit/storeContext.test.tsx > storeContext > returns context store when wrapped in StoreProvider
+The above error occurred in the <StoreReader> component:
+
+    at StoreReader (D:\moonweave-ai\cantilune\src\packages\cli\tests\unit\storeContext.test.tsx:13:24)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+ 鉂?tests/unit/storeContext.test.tsx (2 tests | 1 failed) 17ms
+   脳 storeContext > returns context store when wrapped in StoreProvider 14ms
+     鈫?store?.getVersion is not a function
+   鉁?storeContext > creates fallback store when no provider is present 2ms
+ 鉁?tests/unit/inputBarViewContainer.test.tsx (6 tests) 50ms
+ 鉂?tests/unit/hooks.test.ts (10 tests | 6 failed) 206ms
+   脳 tui hooks > useSlashCommands registers builtins and executes 22ms
+     鈫?Cannot read properties of undefined (reading 'get')
+   脳 tui hooks > useKeyboard handles mode and abort shortcuts 2ms
+     鈫?store.get is not a function
+   鉁?tui hooks > useKeyboard respects disabled flag 1ms
+   鉁?tui hooks > usePerception polls and ignores failures 7ms
+   鉁?tui hooks > useSession loads, saves, and clears 86ms
+   脳 tui hooks > useAgentLoop runs, aborts, and stops 2ms
+     鈫?Cannot read properties of undefined (reading 'set')
+   脳 tui hooks > useAgentLoop ignores concurrent start while running 2ms
+     鈫?resolveRun is not a function
+   脳 tui hooks > useAgentLoop records errors and progress 1ms
+     鈫?Cannot read properties of undefined (reading 'set')
+   鉁?tui hooks > useSession loads persisted session file 77ms
+   脳 tui hooks > useSession ignores load result after unmount 7ms
+     鈫?expected "spy" to be called at least once
+Usage: cantilune run "instruction" [--headless] [--provider X] [--model Y] [--base-url URL] [--json]
+ 鉁?tests/unit/headlessRunnerExtended.test.ts (2 tests) 3ms
+ 鉁?tests/unit/headlessRunner.test.ts (3 tests) 4ms
+ 鉁?tests/unit/headlessBranches.test.ts (5 tests) 9ms
+ 鉁?tests/unit/inspectRunner.test.ts (6 tests) 15ms
+ 鉁?tests/unit/runtimeSync.test.ts (11 tests) 19ms
+ 鉁?tests/unit/graphView.test.ts (6 tests) 3ms
+ 鉁?tests/unit/petriView.test.ts (4 tests) 2ms
+ 鉁?tests/unit/viewBranches.test.ts (3 tests) 3ms
+ 鉁?tests/unit/viewOutputsExtended.test.ts (9 tests) 3ms
+ 鉁?tests/unit/viewOutputs.test.ts (8 tests) 5ms
+ 鉁?tests/unit/exportHelpViews.test.ts (13 tests) 13ms
+stderr | tests/unit/viewComponentsRuntime.test.tsx > view components with runtime data > renders export and help view c
+ontainers
+The above error occurred in the <ExportViewContainer> component:
+
+    at ExportViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\ExportView.tsx:231:21)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <HelpViewContainer> component:
+
+    at HelpViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\HelpView.tsx:84:21)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+stderr | tests/unit/viewComponentsRuntime.test.tsx > view components with runtime data > renders default view container
+s through useAppStore provider
+The above error occurred in the <ContentViewContainer> component:
+
+    at ContentViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\ContentView.tsx:179:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <EvalViewContainer> component:
+
+    at EvalViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\EvalView.tsx:219:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <TraceViewContainer> component:
+
+    at TraceViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\TraceView.tsx:181:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <ObserveViewContainer> component:
+
+    at ObserveViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\ObserveView.tsx:191:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <SchemaViewContainer> component:
+
+    at SchemaViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\SchemaView.tsx:203:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <ReplayViewContainer> component:
+
+    at ReplayViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\ReplayView.tsx:151:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <PetriViewContainer> component:
+
+    at PetriViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\PetriView.tsx:249:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+The above error occurred in the <WorldViewContainer> component:
+
+    at WorldViewContainer (D:\moonweave-ai\cantilune\src\packages\cli\src\views\WorldView.tsx:221:23)
+    at StoreProvider (D:\moonweave-ai\cantilune\src\packages\cli\src\storeContext.tsx:12:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+ 鉂?tests/unit/viewComponentsRuntime.test.tsx (12 tests | 2 failed) 52ms
+   鉁?view components with runtime data > renders content view branches with populated runtime 12ms
+   鉁?view components with runtime data > renders eval compare and report branches 3ms
+   鉁?view components with runtime data > renders trace search and validate branches 2ms
+   鉁?view components with runtime data > renders observe diagnostic and titled lens branches 1ms
+   鉁?view components with runtime data > renders schema diff and validate branches 2ms
+   鉁?view components with runtime data > renders replay recipe branch with change id 1ms
+   鉁?view components with runtime data > renders petri fire and invariants branches 3ms
+   鉁?view components with runtime data > renders world diff branch 4ms
+   鉁?view components with runtime data > renders eval report with empty suites and replay unknown change id 4ms
+   鉁?view components with runtime data > renders graph stats and empty graph message via output 2ms
+   脳 view components with runtime data > renders export and help view containers 14ms
+     鈫?store?.getVersion is not a function
+   脳 view components with runtime data > renders default view containers through useAppStore provider 4ms
+     鈫?store?.getVersion is not a function
+ 鉂?tests/unit/tuiComponents.test.tsx (10 tests | 1 failed) 175ms
+   鉁?ink view and tui components > renders diff with matching and differing lines 10ms
+   鉁?ink view and tui components > renders report and search views 2ms
+   脳 ink view and tui components > renders domain views across branches 15ms
+     鈫?expected '鉅?run ' to contain 'denied'
+   鉁?ink view and tui components > renders view default containers 4ms
+   鉁?ink view and tui components > renders simple tui widgets 4ms
+   鉁?ink view and tui components > renders chat panel empty and populated 4ms
+   鉁?ink view and tui components > wires command palette and picker input handlers 5ms
+   鉁?ink view and tui components > handles confirm dialog cancel paths 2ms
+   鉁?ink view and tui components > handles input bar history navigation 4ms
+   鉁?ink view and tui components > shows loading then fallback when dynamic import unavailable 125ms

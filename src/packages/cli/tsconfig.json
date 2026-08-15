@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    // Declared explicitly rather than left to @types auto-discovery: the CLI
+    // relies on Node globals (process, setInterval, crypto, AbortController)
+    // that `lib: ES2022` alone does not provide, and auto-discovery silently
+    // resolves to nothing when the editor's project root differs from this one.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

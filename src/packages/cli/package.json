@@ -1,0 +1,64 @@
+{
+  "name": "@cantilune/cli",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Full-screen Ink TUI interactive agent coordination console for Cantilune OS",
+  "bin": {
+    "cantilune": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint .",
+    "pretest": "pnpm --filter @cantilune/cli... build",
+    "test": "vitest run",
+    "pretest:coverage": "pnpm --filter @cantilune/cli... build",
+    "test:coverage": "vitest run --coverage",
+    "preview": "tsx scripts/previewTui.tsx",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\"",
+    "test:static": "pnpm lint && pnpm format:check && pnpm typecheck"
+  },
+  "dependencies": {
+    "@cantilune/adapter": "workspace:*",
+    "@cantilune/boot": "workspace:*",
+    "@cantilune/content": "workspace:*",
+    "@cantilune/conformance": "workspace:*",
+    "@cantilune/control-plane": "workspace:*",
+    "@cantilune/core": "workspace:*",
+    "@cantilune/evaluation": "workspace:*",
+    "@cantilune/petri": "workspace:*",
+    "@cantilune/runtime": "workspace:*",
+    "@cantilune/syscall": "workspace:*",
+    "@cantilune/tools": "workspace:*",
+    "ink": "^5.2.1",
+    "react": "^18.3.1"
+  },
+  "peerDependencies": {
+    "@cantilune/observability": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@cantilune/observability": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@vitest/coverage-v8": "^3.2.7",
+    "happy-dom": "^20.11.2",
+    "ink-testing-library": "^4.0.0",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.23.12"
+  }
+}
