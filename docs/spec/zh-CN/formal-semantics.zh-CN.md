@@ -1,15 +1,15 @@
 # CantiluneGraph v0.1 —— 形式语义规范
 
-| 字段 | 值 |
-|---|---|
-| 状态 | **草案**（核心理论已证明；独立评审与治理接受待完成） |
-| 类型 | 规范性规格（形式语义） |
-| 风险 | S2 |
-| 负责人 | Joker-of-Gotham（DRI） |
-| 评审人 | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审待签署；DRI/Agent 自审不构成独立 QA-L4 证据 |
-| 创建日期 | 2026-07-23 |
-| 更新日期 | 2026-07-28（最大相容 D1-A/Open-π/P1a/admission/common-trajectory 最终边界） |
-| 相关 | RFC-0001、ADR-0001、RFC-0002、`docs/research/zh-CN/0001-p1b-pi-bridge-audit.zh-CN.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
+| 字段     | 值                                                                                                                                                              |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 状态     | **草案**（核心理论已证明；独立评审与治理接受待完成）                                                                                                            |
+| 类型     | 规范性规格（形式语义）                                                                                                                                          |
+| 风险     | S2                                                                                                                                                              |
+| 负责人   | Joker-of-Gotham（DRI）                                                                                                                                          |
+| 评审人   | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审待签署；DRI/Agent 自审不构成独立 QA-L4 证据                                                                        |
+| 创建日期 | 2026-07-23                                                                                                                                                      |
+| 更新日期 | 2026-07-28（最大相容 D1-A/Open-π/P1a/admission/common-trajectory 最终边界）                                                                                     |
+| 相关     | RFC-0001、ADR-0001、RFC-0002、`docs/research/zh-CN/0001-p1b-pi-bridge-audit.zh-CN.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 
 > **治理说明：** 本规范定义 RFC-0002 必须证明其一致性的形式对象。历史
 > **待证 / 未经验证**与局部构建记录只保留为时间线；当前实现边界由 §21、
@@ -40,6 +40,7 @@
 $$\text{CantiluneGraph} := (C, R)$$
 
 其中：
+
 - **$C$** —— 一个**对称幺单范畴（SMC）**，由一个类型化图作为 presentation 生成。$C$ 是*静态结构*：何为合法的串行复合（$\circ$）与并行复合（$\otimes$）。
 - **$R$** —— $C$ 上的一组**弦图重写规则**。$R$ 是*动力学*：执行即重写；一步即一次具体规则应用；trace 记录这些应用事件；重放重新应用所记录的事件。Normal form 由 $R$ 决定，但成功终止与死锁的区分另需独立提供的成功谓词。
 
@@ -54,6 +55,7 @@ $$\text{CantiluneGraph} := (C, R)$$
 ### 2.2 由类型化图作为 presentation
 
 $C$ 由类型化图 $G_0 = (N, E, \tau)$ **presentation** 生成：
+
 - $N$ —— 节点（生成元）：每个是带声明 `in`/`out` 类型的类型化态射。
 - $E$ —— 类型化契约边（见 §3.2）：类型化数据依赖，非无类型箭头。
 - $\tau$ —— 类型指派。
@@ -83,11 +85,11 @@ triangle 与 hexagon 生成的相容等价并构造逐 hom 商。
 ```yaml
 node:
   id: planner
-  type: AgentOperation          # Agent | Tool | Human | Environment | ...
-  in:  [Goal]
+  type: AgentOperation # Agent | Tool | Human | Environment | ...
+  in: [Goal]
   out: [TaskPlan]
   contract:
-    pre:  [goal.exists]
+    pre: [goal.exists]
     post: [plan.valid]
 ```
 
@@ -100,7 +102,7 @@ edge:
   source: planner
   target: executor
   artifact: TaskPlan
-  schema:   TaskPlan/v1
+  schema: TaskPlan/v1
   guarantees: [complete, validated]
 ```
 
@@ -166,14 +168,14 @@ $$e=(\rho,m,\delta)$$
 
 令 $\equiv_R$ 为选定的重写状态等式/同余，并令 $\mathcal T_{\mathrm{ok}}$ 为对 $\equiv_R$ 饱和、独立提供的成功谓词。二者都不能由 $(C,R)$ 单独确定；在 §8 固定前仍属开放操作配置。下表的状态空间取 $\equiv_R$ 商，故“无出事件”与代表元无关。
 
-| 性质 | 形式表达 |
-|---|---|
-| Trace | 具体事件序列 $g_0 \xrightarrow{e_1} g_1 \xrightarrow{e_2}\cdots\xrightarrow{e_n}g_n$ |
-| 重放 | 给定 $g_0$ 与完整事件/推导序列，在明确选定的等式/同构意义下重新导出 $g_n$；仅有规则名不足够 |
-| 终止 | 无无穷归约（一个**需检查**的性质，非自动） |
-| Normal form / 卡住 | 等价类 $[g]_{\equiv_R}$ 没有出向具体事件 |
-| 成功终止 | $[g]_{\equiv_R}$ 是 normal form 且 $\mathcal T_{\mathrm{ok}}([g])$ |
-| 死锁 | $[g]_{\equiv_R}$ 是 normal form 且 $\neg\mathcal T_{\mathrm{ok}}([g])$ |
+| 性质               | 形式表达                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| Trace              | 具体事件序列 $g_0 \xrightarrow{e_1} g_1 \xrightarrow{e_2}\cdots\xrightarrow{e_n}g_n$        |
+| 重放               | 给定 $g_0$ 与完整事件/推导序列，在明确选定的等式/同构意义下重新导出 $g_n$；仅有规则名不足够 |
+| 终止               | 无无穷归约（一个**需检查**的性质，非自动）                                                  |
+| Normal form / 卡住 | 等价类 $[g]_{\equiv_R}$ 没有出向具体事件                                                    |
+| 成功终止           | $[g]_{\equiv_R}$ 是 normal form 且 $\mathcal T_{\mathrm{ok}}([g])$                          |
+| 死锁               | $[g]_{\equiv_R}$ 是 normal form 且 $\neg\mathcal T_{\mathrm{ok}}([g])$                      |
 
 ### 4.3 重写**不给**的东西
 
@@ -216,6 +218,7 @@ $P_{Petri}$ = 库所/变迁读法。cantilune 为保留有序接口与个体 tok
 源文献核验修正了早前理由。Meseguer–Montanari 的集体 token 语义是对称幺单范畴语义，其中态射是触发计算，复合为计算串接、张量为并行。所引来源**不**支持全局 Eckmann–Hilton 坍缩 $\circ=\otimes$。该坍缩需要额外的单对象/共享单位等假设，不能作为集体 Petri 语义的一般反例。
 
 **pre-net** 构造（Bruni–Meseguer–Montanari–Sassone，《Functorial Models for Petri Nets》）仍是有效设计选择，但理由不同：
+
 - pre-net 以自由字幺半群替代自由交换幺半群，给每个变迁的输入/输出配备一个序；
 - 伴随 **PreNet ⇄ SSMC** 生成**自由严格对称幺单范畴**；置换由非平凡 symmetry morphisms 表示，而不是对象的严格相等（个体 token 哲学）；
 - 对称在第二步加（将 PreNet⇄SMC 伴随与"自由加对称"伴随复合），恢复 token 置换而不坍缩 $\circ$ 与 $\otimes$；
@@ -267,11 +270,11 @@ $P_{Mor}$ = $C$ 本身。
 
 ### 6.3 分期证明（依 DRI 决策）
 
-| 阶段 | 证明 | 状态 |
-|---|---|---|
-| P1a | DAG/Petri/态射一致性 | **通用证书 family 与实质参考已 proved / review-pending；产品规则/resource/admission 实例仍是逐包符合性工作** |
-| P1b | 声明的最大相容 Open-π/D1-A 边界内的 π 投影一致性 | **无过滤 structural strong-late 证书、精确 requesting reflection、D1-A 范围语义与最终 common chain 已 proved / review-pending；不声称 unrestricted actual-Agent strong-bisimulation full abstraction** |
-| P1c | 多状态/native π 参考一致性 | **60/60 参考面、十五 family commutation、metadata/admission 接缝与实质 reconnect 链已 proved / review-pending；生产包须为自己的规则实例化通用接口** |
+| 阶段 | 证明                                             | 状态                                                                                                                                                                                                   |
+| ---- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P1a  | DAG/Petri/态射一致性                             | **通用证书 family 与实质参考已 proved / review-pending；产品规则/resource/admission 实例仍是逐包符合性工作**                                                                                           |
+| P1b  | 声明的最大相容 Open-π/D1-A 边界内的 π 投影一致性 | **无过滤 structural strong-late 证书、精确 requesting reflection、D1-A 范围语义与最终 common chain 已 proved / review-pending；不声称 unrestricted actual-Agent strong-bisimulation full abstraction** |
+| P1c  | 多状态/native π 参考一致性                       | **60/60 参考面、十五 family commutation、metadata/admission 接缝与实质 reconnect 链已 proved / review-pending；生产包须为自己的规则实例化通用接口**                                                    |
 
 ### 6.4 回退（依 ADR-0001）
 
@@ -279,17 +282,17 @@ $P_{Mor}$ = $C$ 本身。
 
 ## 7. 本规范保证与不保证之物
 
-| 保证 | 来源 | 范围 |
-|---|---|---|
-| 合法复合 / 并行 | SMC $C$ | 静态，按构造 |
-| 统一执行步 = 重写 | $R$ | 按定义 |
-| trace / normal-form 定义（离散） | $R$ + 状态同余 $\equiv_R$ | 以两者均固定为条件 |
-| 成功终止 / 死锁分类 | 独立提供且对同余饱和的 $\mathcal T_{\mathrm{ok}}$ | **有条件/开放** |
-| 确定性重放 | 完整事件/推导记录 + 规范化策略 | **有条件；不能由规则名推出** |
-| 跨投影一致性（3 投影） | SMC-函子 + 独立可观察 LTS + 事件提升/穷尽性 + 终态谓词 | **除同一性视图外未经验证** |
-| 跨投影一致性（π） | 类型正确的静态目标 + 独立指定的操作/终态桥定理 | **待证** |
-| 有界性 / 活性 | Petri 网级检查器 | **检查而非给定** |
-| 时间界 | —— | **不提供**（仅步数有界） |
+| 保证                             | 来源                                                   | 范围                         |
+| -------------------------------- | ------------------------------------------------------ | ---------------------------- |
+| 合法复合 / 并行                  | SMC $C$                                                | 静态，按构造                 |
+| 统一执行步 = 重写                | $R$                                                    | 按定义                       |
+| trace / normal-form 定义（离散） | $R$ + 状态同余 $\equiv_R$                              | 以两者均固定为条件           |
+| 成功终止 / 死锁分类              | 独立提供且对同余饱和的 $\mathcal T_{\mathrm{ok}}$      | **有条件/开放**              |
+| 确定性重放                       | 完整事件/推导记录 + 规范化策略                         | **有条件；不能由规则名推出** |
+| 跨投影一致性（3 投影）           | SMC-函子 + 独立可观察 LTS + 事件提升/穷尽性 + 终态谓词 | **除同一性视图外未经验证**   |
+| 跨投影一致性（π）                | 类型正确的静态目标 + 独立指定的操作/终态桥定理         | **待证**                     |
+| 有界性 / 活性                    | Petri 网级检查器                                       | **检查而非给定**             |
+| 时间界                           | ——                                                     | **不提供**（仅步数有界）     |
 
 ## 8. v0.1 开放问题
 
@@ -332,6 +335,7 @@ $P_{Mor}$ = $C$ 本身。
 ### 10.1 幺单范畴
 
 **幺单范畴** $(\mathcal{C}, \otimes, I, \alpha, \lambda, \rho)$ 是一个范畴 $\mathcal{C}$，配备：
+
 - **张量积**函子 $\otimes : \mathcal{C} \times \mathcal{C} \to \mathcal{C}$；
 - **单位对象** $I \in \mathcal{C}$（张量单位）；
 - **结合子**自然同构 $\alpha_{x,y,z} : (x \otimes y) \otimes z \xrightarrow{\sim} x \otimes (y \otimes z)$；
@@ -339,7 +343,7 @@ $P_{Mor}$ = $C$ 本身。
 
 满足**三角形**与**五边形**协调公理（保证结合子与单位子彼此协调）。若 $\alpha, \lambda, \rho$ 均为恒等，则称**严格幺单范畴**。依 Mac Lane 协调定理，每个幺单范畴都幺单等价于某个严格幺单范畴。
 
-参考：nLab，*monoidal category*（[ncatlab.org/nlab/show/monoidal+category](https://ncatlab.org/nlab/show/monoidal+category)）。
+参考：nLab，_monoidal category_（[ncatlab.org/nlab/show/monoidal+category](https://ncatlab.org/nlab/show/monoidal+category)）。
 
 ### 10.2 对称幺单范畴（SMC）
 
@@ -349,7 +353,7 @@ $$\sigma_{x,y} : x \otimes y \xrightarrow{\sim} y \otimes x$$
 
 满足**六边形**公理（对称与结合子协调）与对称公理 $\sigma_{y,x} \circ \sigma_{x,y} = \mathrm{id}_{x \otimes y}$。在 `cantilune` 中，$\sigma$ 建模并行资源/通道的重排（token 互换、通道改路）。
 
-参考：nLab，*symmetric monoidal category*（[ncatlab.org/nlab/show/symmetric+monoidal+category](https://ncatlab.org/nlab/show/symmetric+monoidal+category)）。
+参考：nLab，_symmetric monoidal category_（[ncatlab.org/nlab/show/symmetric+monoidal+category](https://ncatlab.org/nlab/show/symmetric+monoidal+category)）。
 
 ### 10.3 自由对称幺单范畴
 
@@ -357,7 +361,7 @@ $$\sigma_{x,y} : x \otimes y \xrightarrow{\sim} y \otimes x$$
 
 以 PRO/PROP 术语：签名上的**自由对称**幺单范畴即对应的 **PROP**（一个严格的 SMC，其对象在张量下由单一对象生成）。此处所用 SMC presentation（类型化多种类）是多种类 PROP 推广。
 
-参考：nLab，*PRO* 与 *PROP*（[ncatlab.org/nlab/show/PRO](https://ncatlab.org/nlab/show/PRO), [ncatlab.org/nlab/show/PROP](https://ncatlab.org/nlab/show/PROP)）。
+参考：nLab，_PRO_ 与 _PROP_（[ncatlab.org/nlab/show/PRO](https://ncatlab.org/nlab/show/PRO), [ncatlab.org/nlab/show/PROP](https://ncatlab.org/nlab/show/PROP)）。
 
 ### 10.4 幺单积（$\otimes$）
 
@@ -367,9 +371,9 @@ $$\sigma_{x,y} : x \otimes y \xrightarrow{\sim} y \otimes x$$
 
 **弦图**是幺单范畴中态射的图形语法：**线**表示对象（类型）；**盒子**表示态射（操作）；**并置**线表示 $\otimes$（并行复合）；将一盒的输出线**接入**另一盒的输入线表示 $\circ$（串行复合）；**交叉**线表示对称 $\sigma$；**无线**表示 $I$。
 
-依协调定理（Joyal–Street，《The geometry of tensor calculus I》），图形演算是**可靠且完备**的：两张弦图表示同一态射，当且仅当其一可经平面/拓扑同伦（在尊重对称的前提下）形变为另一。这正是弦图作为 `CantiluneGraph` 规范 *presentation*、且允许四种读法（DAG/Petri/π/态射）的原因：每种读法是同一图形语法的不同解释。
+依协调定理（Joyal–Street，《The geometry of tensor calculus I》），图形演算是**可靠且完备**的：两张弦图表示同一态射，当且仅当其一可经平面/拓扑同伦（在尊重对称的前提下）形变为另一。这正是弦图作为 `CantiluneGraph` 规范 _presentation_、且允许四种读法（DAG/Petri/π/态射）的原因：每种读法是同一图形语法的不同解释。
 
-参考：nLab，*string diagram*（[ncatlab.org/nlab/show/string+diagram](https://ncatlab.org/nlab/show/string+diagram)）；Selinger，《A survey of graphical languages for monoidal categories》(2009)；Joyal–Street，《The geometry of tensor calculus I》(1991)。
+参考：nLab，_string diagram_（[ncatlab.org/nlab/show/string+diagram](https://ncatlab.org/nlab/show/string+diagram)）；Selinger，《A survey of graphical languages for monoidal categories》(2009)；Joyal–Street，《The geometry of tensor calculus I》(1991)。
 
 ### 10.6 动力学 $R$ —— 弦图重写
 
@@ -378,19 +382,20 @@ $$\sigma_{x,y} : x \otimes y \xrightarrow{\sim} y \otimes x$$
 $$L \xleftarrow{l} K \xrightarrow{r} R$$
 
 其中 $L$ 为**左部**（待匹配模式），$K$ 为**不变接口**（保留的子图），$R$ 为**右部**（替换）。一个具体**重写事件** $e=(\rho,m,\delta)$ 及步骤 $g\xrightarrow{e}h$ 通过：
+
 1. **匹配**：经匹配 $f : L \to g$，将 $L$ 作为 $g$ 的子图定位；
 2. **删除**：删除所匹配的 $L \setminus K$（构造推出补）；
 3. **添加**：沿 $r$ 取推出，加入 $R \setminus K$，
 
 得到导出图 $h$。其中 $m$ 记录具体匹配，$\delta$ 记录所选重写体系要求的其他见证/选择数据。执行即重写；**trace** 为事件序列 $g_0\xrightarrow{e_1}g_1\xrightarrow{e_2}\cdots\xrightarrow{e_n}g_n$；**重放**先从完整事件记录中去掉已存端点，再以声明的源状态为输入，用确定性内核重新执行所得 recipe；已验证记录必须证明该计算恢复其记录目标，直接读取已存目标不算重放。Normal form 在所选商 LTS 上定义：$[g]_{\equiv_R}$ 无出向具体事件；**成功终止**另满足独立提供、对 $\equiv_R$ 饱和的 $\mathcal T_{\mathrm{ok}}$，**死锁**则不满足。后二者并非由 $(C,R)$ 单独推出。当一条规则有多个匹配时，只有规则名的序列不是确定性重放日志。
 
-参考：nLab，*graph rewriting* / DPO（[ncatlab.org/nlab/show/graph+rewriting](https://ncatlab.org/nlab/show/graph+rewriting)）；Ehrig–Pfender–Schneider (1973)；Lack–Sobociński，《Adhesive Categories》(2004)；nLab，*labelled transition system*（[ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)）。**修正：**早前 “Gadducci–Montanari, functorial semantics of rewriting” 属误述；见 §10.10/§11。
+参考：nLab，_graph rewriting_ / DPO（[ncatlab.org/nlab/show/graph+rewriting](https://ncatlab.org/nlab/show/graph+rewriting)）；Ehrig–Pfender–Schneider (1973)；Lack–Sobociński，《Adhesive Categories》(2004)；nLab，_labelled transition system_（[ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)）。**修正：**早前 “Gadducci–Montanari, functorial semantics of rewriting” 属误述；见 §10.10/§11。
 
 ### 10.7 标号转移系统（LTS）
 
 **LTS** 是一个结构 $T = (S, i, E, \mathrm{Tran})$，含状态集 $S$、初始状态 $i \in S$、事件（标号）集 $E$、与**转移关系** $\mathrm{Tran} \subseteq S \times E \times S$；$s \to_a s'$ 表示 $(s, a, s') \in \mathrm{Tran}$。重写体系固定后，`cantilune` 的动力学 $R$ 诱导一个 LTS，其中 $S=$ 弦图，$E=\operatorname{App}(R)$ 为完整规则应用/推导记录 $e=(\rho,m,\delta)$。把 $e$ 投影为规则名 $\rho$ 可得更粗的 trace，但会丢失重放身份。
 
-参考：nLab，*labelled transition system*（[ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)）。
+参考：nLab，_labelled transition system_（[ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)）。
 
 ### 10.8 Petri 投影 —— 集体与个体 token 语义
 
@@ -404,7 +409,7 @@ Pre-net 用有序列表替代变迁边界上的多重集，并生成自由严格
 
 Fiore–Moggi–Sangiorgi 使用**协变**函子范畴
 
-$$\mathrm{Mod}=\mathbf{Set}^{\mathbb I}=[\mathbb I,\mathbf{Set}]
+$$ \mathrm{Mod}=\mathbf{Set}^{\mathbb I}=[\mathbb I,\mathbf{Set}]
 \quad\text{或}\quad
 \mathbf{Cpo}^{\mathbb I}.$$
 
@@ -566,15 +571,18 @@ FMS 的 LTS 还排除三种捷径：单独输出前缀是可见输出转移，�
 下列两条规则展示可行粒度，但只是**候选见证**，并非已完成的 $R$ 定义：
 
 $$
+
 (\nu s)(\operatorname{req}_a(s).P\mid\operatorname{acc}_a(x).Q)
 \to_{\mathrm{hs}}
 (\nu s)(P\mid Q\{s/x\}),
-$$
 
 $$
+$$
+
 \operatorname{out}_s(v).P\mid\operatorname{in}_s(x).Q
 \to_{\mathrm{msg}}
 P\mid Q\{v/x\}.
+
 $$
 
 其中 $s$ 对接收方及外围上下文必须新鲜，替换须避免捕获。标准无类型 π 只传名字，因此源 sort `Value` 要么须单射地编码为名字，要么须改用明确的类型化/值传递 π 变体；仓库当前尚未选择该层。
@@ -582,30 +590,36 @@ $$
 直接展开为 π 宏后，分别有合法 $\tau$ 见证：
 
 $$
+
 (\nu s)(\overline a\,s.\llbracket P\rrbracket\mid
 a(x).\llbracket Q\rrbracket)
 \xrightarrow{\tau}_{\mathrm{res}\circ\mathrm{com}}
 (\nu s)(\llbracket P\rrbracket\mid
 \llbracket Q\rrbracket\{s/x\}),
+
 $$
 
 对上面展示的作用域，直接的 FMS 推导先由 `com` 同步 free-output 与 input
 前提，再由 `res` 把该 $\tau$ 提升到外层 restriction。若选定的结构同余包含
 scope extrusion，且 $s$ 对接收方新鲜，则源项还同余于
 $$
+
 ((\nu s)\overline a\,s.\llbracket P\rrbracket)\mid
 a(x).\llbracket Q\rrbracket.
+
 $$
 后一形状改由 `open` 给出 bound-output 前提，再由 `close` 得出结论。这是同一条
 合法 $\tau$ 的两种推导形状，不是两个运行步骤；项目必须先固定作用域/结构同余
 策略，才能把其中一种声明为规范形状。
 
 $$
+
 \overline s\,v.\llbracket P\rrbracket\mid
 s(x).\llbracket Q\rrbracket
 \xrightarrow{\tau}_{com}
 \llbracket P\rrbracket\mid
 \llbracket Q\rrbracket\{v/x\}.
+
 $$
 
 除非目标定理明确允许零步结构同余，否则 `compose` 不应列为原子源规则。静态映射与操作映射应分开：
@@ -1342,3 +1356,4 @@ incidence，并证明该精确 incidence 在重索引后仍被保留。这是参
 commit-bound 构建续跑、source integrity、placeholder/axiom audit、proved
 manifest 与 strict proved/tree gate。现行技术状态为 `proved / review-pending`；
 独立评审与治理接受仍是外部行为。
+$$

@@ -65,17 +65,17 @@ stage ("C0") before attempting coherence or rule-by-rule proofs.
 
 ## Classification and governance routing
 
-| Field | Decision | Rationale |
-|---|---|---|
-| Work object | Research task / formal-semantics audit | Independent review of a load-bearing proof attempt |
-| Risk | S2 | No production execution or sensitive data, but a false result would invalidate an architectural acceptance gate |
-| Quality | QA-L4 | Requires explicit typing, counterexamples, primary-source checks, and independent formal-math review |
-| Maturity | Pre-FCP/M1 | RFC-0002 explicitly remains before Four-Consistency Proof acceptance |
-| Owner / DRI | Joker-of-Gotham | Supplied handoff metadata |
-| Required reviewer | Formal math, category theory, and process semantics; TBD | The current log is independent agent work, not human approval |
-| Required authoritative write-back | This Research Log, then RFC-0002/spec/ADR corrections after review | Chat is not a source of truth |
-| Security/privacy/AI-eval gates | Not triggered | No secrets, personal data, model training, deployment, or physical action |
-| Stop-Ship | No security Stop-Ship found | The mathematical FCP/ADR acceptance gate nevertheless remains blocked |
+| Field                             | Decision                                                           | Rationale                                                                                                       |
+| --------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Work object                       | Research task / formal-semantics audit                             | Independent review of a load-bearing proof attempt                                                              |
+| Risk                              | S2                                                                 | No production execution or sensitive data, but a false result would invalidate an architectural acceptance gate |
+| Quality                           | QA-L4                                                              | Requires explicit typing, counterexamples, primary-source checks, and independent formal-math review            |
+| Maturity                          | Pre-FCP/M1                                                         | RFC-0002 explicitly remains before Four-Consistency Proof acceptance                                            |
+| Owner / DRI                       | Joker-of-Gotham                                                    | Supplied handoff metadata                                                                                       |
+| Required reviewer                 | Formal math, category theory, and process semantics; TBD           | The current log is independent agent work, not human approval                                                   |
+| Required authoritative write-back | This Research Log, then RFC-0002/spec/ADR corrections after review | Chat is not a source of truth                                                                                   |
+| Security/privacy/AI-eval gates    | Not triggered                                                      | No secrets, personal data, model training, deployment, or physical action                                       |
+| Stop-Ship                         | No security Stop-Ship found                                        | The mathematical FCP/ADR acceptance gate nevertheless remains blocked                                           |
 
 ## Research question and success criteria
 
@@ -197,7 +197,7 @@ Provenance and permitted use:
 Primary/author and publisher records:
 
 - M. P. Fiore, E. Moggi, and D. Sangiorgi, "A Fully Abstract Model for the
-  pi-calculus," *Information and Computation* 179(1), 76-117 (2002),
+  pi-calculus," _Information and Computation_ 179(1), 76-117 (2002),
   DOI [10.1006/inco.2002.2968](https://doi.org/10.1006/inco.2002.2968).
 - Author-hosted extended paper:
   [lics96.pdf](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf).
@@ -802,7 +802,7 @@ colimit preservation, but strong monoidality does not.
 **Verified bibliographic identity and relevant source claims.**
 
 M. P. Fiore, E. Moggi, and D. Sangiorgi, "A Fully Abstract Model for the
-pi-calculus," *Information and Computation* 179(1), 76-117 (2002),
+pi-calculus," _Information and Computation_ 179(1), 76-117 (2002),
 DOI [10.1006/inco.2002.2968](https://doi.org/10.1006/inco.2002.2968).
 
 Supports the covariant functor category, name and agent objects, free
@@ -815,9 +815,9 @@ Does **not** supply a cantilune SMC functor or DPO/rewrite-step bridge.
 **Verified bibliographic identity; use a narrower claim.**
 
 J. Meseguer and U. Montanari, "Petri Nets Are Monoids,"
-*Information and Computation* 88(2), 105-155 (1990),
+_Information and Computation_ 88(2), 105-155 (1990),
 DOI
-[10.1016/0890-5401(90)90013-8](https://doi.org/10.1016/0890-5401(90)90013-8).
+[10.1016/0890-5401(90)90013-8](<https://doi.org/10.1016/0890-5401(90)90013-8>).
 
 The paper supports an algebraic/categorical treatment of P/T nets and a
 symmetric-monoidal-closed category of nets. It should not be cited as proving
@@ -832,7 +832,7 @@ unit; it is not a blanket equation between every well-typed `g o f` and
 **Verified from the author/public final paper.**
 
 R. Bruni, J. Meseguer, U. Montanari, and V. Sassone, "Functorial Models for
-Petri Nets," *Information and Computation* 170(2), 207-236 (2001),
+Petri Nets," _Information and Computation_ 170(2), 207-236 (2001),
 DOI [10.1006/inco.2001.3050](https://doi.org/10.1006/inco.2001.3050);
 [author/public final PDF](https://eprints.soton.ac.uk/264742/1/prenetsIandCOff.pdf).
 
@@ -860,7 +860,7 @@ paper.
   DOI
   [10.1007/978-3-540-24727-2_20](https://doi.org/10.1007/978-3-540-24727-2_20).
 - S. Lack and P. Sobocinski, "Adhesive and Quasiadhesive Categories,"
-  *RAIRO - Theoretical Informatics and Applications* 39(3), 511-545 (2005),
+  _RAIRO - Theoretical Informatics and Applications_ 39(3), 511-545 (2005),
   DOI [10.1051/ita:2005028](https://doi.org/10.1051/ita:2005028).
 
 These works support adhesive-category conditions under which DPO graph
@@ -872,7 +872,7 @@ automatically preserves the pushouts or pushout complements of a DPO step.
 The exact 2005 item is:
 
 J. Meseguer, **"Functorial Semantics of Rewrite Theories,"** in
-*Formal Methods in Software and Systems Modeling*, LNCS 3393, 220-235 (2005),
+_Formal Methods in Software and Systems Modeling_, LNCS 3393, 220-235 (2005),
 DOI
 [10.1007/978-3-540-31847-7_13](https://doi.org/10.1007/978-3-540-31847-7_13).
 
@@ -886,13 +886,13 @@ No publication by Fabio Gadducci and Ugo Montanari with the title
 "Functorial Semantics of Rewriting" was confirmed. Relevant, but different,
 verified titles include:
 
-- F. Gadducci and U. Montanari, **"The Tile Model,"** in *Proof, Language,
-  and Interaction: Essays in Honour of Robin Milner*, 133-166; and
+- F. Gadducci and U. Montanari, **"The Tile Model,"** in _Proof, Language,
+  and Interaction: Essays in Honour of Robin Milner_, 133-166; and
 - F. Gadducci and U. Montanari, **"Comparing Logics for Rewriting:
-  Rewriting Logic, Action Calculi and Tile Logic,"** *Theoretical Computer
-  Science* 285(2), 319-358 (2002),
+  Rewriting Logic, Action Calculi and Tile Logic,"** _Theoretical Computer
+  Science_ 285(2), 319-358 (2002),
   DOI
-  [10.1016/S0304-3975(01)00362-0](https://doi.org/10.1016/S0304-3975(01)00362-0).
+  [10.1016/S0304-3975(01)00362-0](<https://doi.org/10.1016/S0304-3975(01)00362-0>).
 
 These tile/rewrite works must not be silently substituted for a DPO functor
 lift theorem. The current "Gadducci-Montanari, functorial semantics of
@@ -951,17 +951,17 @@ positive proof claim.
 
 ## Minimum compliant iteration path
 
-| Order | Action | Owner | Review/gate |
-|---|---|---|---|
-| 1 | Correct variance, FMS operation types, and citation identities | DRI | Formal reviewer |
-| 2 | Freeze the P1b BNF, sorts, and exact `R = {hs,msg}` or document a different finite set | DRI | Process-semantics reviewer |
-| 3 | Decide the categorical target and strength of the functor | DRI | Category reviewer; ADR/RFC update if theorem changes |
-| 4 | Supply object and generator-arrow assignments | DRI | Type-check review |
-| 5 | Apply free-SMC factorisation only after Step 4 | DRI | Step C/D proof |
-| 6 | Independently define observable derivations, administrative steps, `Lift_pi`, and terminal predicates; prove forward preservation/exhaustiveness with freshness | DRI | Step E and terminal-observation proof |
-| 7 | Repair F2 or remove it from claims not using DPO preservation | DRI | Graph-rewriting reviewer |
-| 8 | Update English and Chinese spec/RFC/ADR in lockstep | DRI | Documentation and formal review |
-| 9 | Re-run the audit on a clean commit | Independent reviewer | FCP gate |
+| Order | Action                                                                                                                                                          | Owner                | Review/gate                                          |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------------------------------------- |
+| 1     | Correct variance, FMS operation types, and citation identities                                                                                                  | DRI                  | Formal reviewer                                      |
+| 2     | Freeze the P1b BNF, sorts, and exact `R = {hs,msg}` or document a different finite set                                                                          | DRI                  | Process-semantics reviewer                           |
+| 3     | Decide the categorical target and strength of the functor                                                                                                       | DRI                  | Category reviewer; ADR/RFC update if theorem changes |
+| 4     | Supply object and generator-arrow assignments                                                                                                                   | DRI                  | Type-check review                                    |
+| 5     | Apply free-SMC factorisation only after Step 4                                                                                                                  | DRI                  | Step C/D proof                                       |
+| 6     | Independently define observable derivations, administrative steps, `Lift_pi`, and terminal predicates; prove forward preservation/exhaustiveness with freshness | DRI                  | Step E and terminal-observation proof                |
+| 7     | Repair F2 or remove it from claims not using DPO preservation                                                                                                   | DRI                  | Graph-rewriting reviewer                             |
+| 8     | Update English and Chinese spec/RFC/ADR in lockstep                                                                                                             | DRI                  | Documentation and formal review                      |
+| 9     | Re-run the audit on a clean commit                                                                                                                              | Independent reviewer | FCP gate                                             |
 
 ## Reproducibility checklist
 

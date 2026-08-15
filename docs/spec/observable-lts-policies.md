@@ -1,15 +1,15 @@
 # Observable LTS Granularity Policies — Per-Projection Specifications
 
-| Field | Value |
-|---|---|
-| Status | **Draft** (reference proof implemented; process-semantics review pending) |
-| Type | Normative specification (observable semantics) |
-| Risk | S2 |
-| Owner | Joker-of-Gotham (DRI) |
-| Reviewers | TBD (process semantics reviewer required) |
-| Created | 2026-07-27 |
-| Updated | 2026-07-27 |
-| Related | RFC-0002 (D9, §3 clauses 2-3), ADR-0001, `docs/spec/formal-semantics.md` |
+| Field     | Value                                                                     |
+| --------- | ------------------------------------------------------------------------- |
+| Status    | **Draft** (reference proof implemented; process-semantics review pending) |
+| Type      | Normative specification (observable semantics)                            |
+| Risk      | S2                                                                        |
+| Owner     | Joker-of-Gotham (DRI)                                                     |
+| Reviewers | TBD (process semantics reviewer required)                                 |
+| Created   | 2026-07-27                                                                |
+| Updated   | 2026-07-27                                                                |
+| Related   | RFC-0002 (D9, §3 clauses 2-3), ADR-0001, `docs/spec/formal-semantics.md`  |
 
 > **Governance note:** This specification fulfills D9 decision requirements for RFC-0002 FCP entry. Each projection must define its observable quotient LTS independently to ensure non-circularity and enable consistency proof statements. This is a **mandatory P1 gate**, not optional.
 
@@ -35,6 +35,7 @@ For each projection $i \in \{\mathrm{DAG}, \mathrm{Petri}, \pi, \mathrm{Mor}\}$,
 $$\mathrm{ObsLTS}_i = (\mathcal{S}_i / {\equiv_i}, \mathcal{L}_i^{\mathrm{obs}}, \xrightarrow{}_i^{\mathrm{obs}})$$
 
 where:
+
 - $\mathcal{S}_i / {\equiv_i}$ — observable states (quotient of fine-grained states by congruence)
 - $\mathcal{L}_i^{\mathrm{obs}}$ — observable labels (business events, excluding administrative steps)
 - $\xrightarrow{}_i^{\mathrm{obs}}$ — observable transition relation
@@ -68,6 +69,7 @@ that maps $(C,R)$ rewriting derivations to observable transitions, satisfying:
 $$[g]_{\mathrm{DAG}} := g / {\equiv_{\mathrm{DAG}}}$$
 
 **State congruence** $\equiv_{\mathrm{DAG}}$:
+
 - Graphs are congruent if they have the same control-flow dependencies and node completion status
 - Administrative differences (wire labels, monoidal structure witnesses) are hidden
 
@@ -81,6 +83,7 @@ $$\mathcal{L}_{\mathrm{DAG}}^{\mathrm{obs}} = \{ \mathrm{exec}(n, \rho) \mid n \
 **Observable events**: Node execution (applying productive rewrite rule $\rho$ at node $n$)
 
 **Hidden administrative steps**:
+
 - Structural rules: $\sigma$ (symmetry), $\alpha$ (associator), $\lambda, \rho$ (unitors)
 - Wire routing changes that don't affect control flow
 - Monoidal identity insertions/removals
@@ -90,13 +93,14 @@ $$\mathcal{L}_{\mathrm{DAG}}^{\mathrm{obs}} = \{ \mathrm{exec}(n, \rho) \mid n \
 $$[g_1]_{\mathrm{DAG}} \xrightarrow{\mathrm{exec}(n,\rho)}_{\mathrm{DAG}}^{\mathrm{obs}} [g_2]_{\mathrm{DAG}}$$
 
 **Semantics**: Executing node $n$ with rule $\rho$ transforms the DAG from state $g_1$ to $g_2$, where:
+
 - Node $n$ is ready (all predecessors completed)
 - Rule $\rho$ is a productive computation (not structural)
 - Resulting state $g_2$ reflects updated control dependencies
 
 ### 3.4 Lift from $(C,R)$
 
-$$\operatorname{Lift}_{\mathrm{DAG}}(g_1 \xrightarrow{\rho} g_2) = \begin{cases}
+$$ \operatorname{Lift}_{\mathrm{DAG}}(g_1 \xrightarrow{\rho} g_2) = \begin{cases}
 \mathrm{exec}(n, \rho) & \text{if } \rho \in R_{\mathrm{productive}} \\
 \epsilon \text{ (silent)} & \text{if } \rho \in R_{\mathrm{structural}}
 \end{cases}$$
@@ -458,3 +462,4 @@ These definitions enable RFC-0002 Four-Projection Consistency Theorem to be mean
 **Status**: the reference proof is implemented and bound to the current QA
 evidence; the normative policy still requires independent process-semantics
 review and FCP disposition.
+$$

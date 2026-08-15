@@ -1,14 +1,14 @@
 # ADR-0001：Cantilune 的统一形式结构
 
-| 字段 | 值 |
-|---|---|
-| Status | **Proposed**（实现路线已由 DRI 确认；独立评审和最终人类签署待完成） |
-| Date | 2026-07-23 |
-| Last reconciled | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、admission/common-trajectory 最终接缝） |
-| Decision Owner | Joker-of-Gotham (DRI) |
-| Reviewers | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立证据 |
-| Related | RFC-0001、RFC-0002、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
-| Risk | S2 |
+| 字段            | 值                                                                                                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status          | **Proposed**（实现路线已由 DRI 确认；独立评审和最终人类签署待完成）                                                                                                                                                                                  |
+| Date            | 2026-07-23                                                                                                                                                                                                                                           |
+| Last reconciled | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、admission/common-trajectory 最终接缝）                                                                                                                                                             |
+| Decision Owner  | Joker-of-Gotham (DRI)                                                                                                                                                                                                                                |
+| Reviewers       | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立证据                                                                                                                                                     |
+| Related         | RFC-0001、RFC-0002、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
+| Risk            | S2                                                                                                                                                                                                                                                   |
 
 > **现行范围与状态校正（2026-07-28）：**后续内核结果取代了历史附录中
 > 更宽泛的“完整 FMS”措辞。中央命题是
@@ -33,12 +33,12 @@ RFC-0001 将 `cantilune` 确立为一个 agent-orchestration 框架，其核心�
 
 2026-07-23 的分诊决策明确选择了这种统一而非单形式体系方案，理由是每种形式体系各掌握编排的一个独立侧面，而每个侧面各自对应一种基线失败模式：
 
-| Formalism | Facet | 所针对的基线失败模式 |
-|---|---|---|
-| DAG | 表示 / 数据流清晰性 | Cursor（固定形状 $\Rightarrow$ 表达能力受限） |
-| Petri net | 并发 / 资源本质 | Codex（缺少显式终止与资源有界证据 $\Rightarrow$ 不可控） |
-| π-calculus | 通信本质 | Codex/A2A（非形式化的通信 $\Rightarrow$ 流程不可预测） |
-| Morphisms (category theory) | 组合 / 映射本质 | OpenClaw（无精简核心 $\Rightarrow$ 膨胀） |
+| Formalism                   | Facet               | 所针对的基线失败模式                                     |
+| --------------------------- | ------------------- | -------------------------------------------------------- |
+| DAG                         | 表示 / 数据流清晰性 | Cursor（固定形状 $\Rightarrow$ 表达能力受限）            |
+| Petri net                   | 并发 / 资源本质     | Codex（缺少显式终止与资源有界证据 $\Rightarrow$ 不可控） |
+| π-calculus                  | 通信本质            | Codex/A2A（非形式化的通信 $\Rightarrow$ 流程不可预测）   |
+| Morphisms (category theory) | 组合 / 映射本质     | OpenClaw（无精简核心 $\Rightarrow$ 膨胀）                |
 
 ## 决策
 
@@ -59,22 +59,24 @@ RFC-0001 将 `cantilune` 确立为一个 agent-orchestration 框架，其核心�
 
 ## 考虑过的备选方案
 
-| Alternative | 被否决的原因 |
-|---|---|
-| 仅 DAG | 无形式化的并发/终止（对 Codex 偏弱）；无通信本质；重现"just DAG"（等价于 LangGraph） |
-| 单一形式体系（Petri / π / morphism） | 丢失其他侧面；每个侧面各对应一种 DRI 希望针对的失败模式 |
-| 以 category theory 为唯一基础 | 最为通用但抽象，难以对接具体的 eval 成果；对目标生态系统不可及 |
-| 四个互不相连的模型由代码粘合 | 重现 OpenClaw 式膨胀；无形式一致性；observability-as-structure 失败 |
+| Alternative                          | 被否决的原因                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| 仅 DAG                               | 无形式化的并发/终止（对 Codex 偏弱）；无通信本质；重现"just DAG"（等价于 LangGraph） |
+| 单一形式体系（Petri / π / morphism） | 丢失其他侧面；每个侧面各对应一种 DRI 希望针对的失败模式                              |
+| 以 category theory 为唯一基础        | 最为通用但抽象，难以对接具体的 eval 成果；对目标生态系统不可及                       |
+| 四个互不相连的模型由代码粘合         | 重现 OpenClaw 式膨胀；无形式一致性；observability-as-structure 失败                  |
 
 ## 后果
 
 **正面（以接受门槛为条件）：**
+
 - 一旦相应的投影定理确实得证，即可针对全部四种基线失败模式。
 - 对 LangGraph 具备可辩护性（组合性切入点：类型化边 + 资源语义 + 模型解耦的路由 + observability-as-structure）。
 - 可观察商 LTS、event-lift/穷尽性关系、共享事件同一性、粒度策略与终止谓词被独立定义并证明一致之后，可观察性、重放与死锁分类才随之而来。
 - 分阶段扩展自然（逐步添加投影）。
 
 **负面 / 风险：**
+
 - 规约复杂性：函子一致性要求非平凡，是主要技术风险。**Mitigation：** 将一致性证明设为 P1 门槛；若无法对全部四者证成，则缩减至一致子集并记录该缩减。**状态更新（2026-07-27）：** 通用一致性接口与参考见证完整。产品特定实例化（rank 函数、firing 映射、资源策略）是包符合性义务，不阻断核心理论 FCP。
 - 若投影无节制累加则有范围/膨胀风险。**Mitigation：** 分阶段计划（RFC §13）；每个投影必须通过其 eval 声称。
 - 评审人缺口：尚无第二位评审人。**Mitigation：** ADR-0001 的接受以评审人签字为门槛。
@@ -98,15 +100,15 @@ RFC-0001 将 `cantilune` 确立为一个 agent-orchestration 框架，其核心�
 
 本附录更正证明状态与来源使用；它 **不** 选择替代性的 π 目标，也不改变统一结构决策。
 
-| 字段 | 结果 |
-|---|---|
-| Classification | 形式架构审计；S2；QA-L4；Pre-FCP/M1 |
-| P1a | 静态构造部分完成；态射单位情形完成；DAG/Petri 规则映射开放 |
-| P1b A–B | 已验证；目标 variance 已更正为协变 $\mathbf{Set}^{\mathbb I}/\mathbf{Cpo}^{\mathbb I}$ |
-| P1b C | 交接的非标准 π-并行张量被作为 ill-typed 否决 |
-| P1b D | 已识别 pointwise-cartesian 条件定理；缺失实际的对象/生成元映射 |
-| P1b E | 在 request/accept BNF 与 $R_{\mathrm{RA}}$ 定义之前不良形 |
-| Disposition | **Iterate, not Promote**；ADR 仍为 Proposed |
+| 字段           | 结果                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------- |
+| Classification | 形式架构审计；S2；QA-L4；Pre-FCP/M1                                                    |
+| P1a            | 静态构造部分完成；态射单位情形完成；DAG/Petri 规则映射开放                             |
+| P1b A–B        | 已验证；目标 variance 已更正为协变 $\mathbf{Set}^{\mathbb I}/\mathbf{Cpo}^{\mathbb I}$ |
+| P1b C          | 交接的非标准 π-并行张量被作为 ill-typed 否决                                           |
+| P1b D          | 已识别 pointwise-cartesian 条件定理；缺失实际的对象/生成元映射                         |
+| P1b E          | 在 request/accept BNF 与 $R_{\mathrm{RA}}$ 定义之前不良形                              |
+| Disposition    | **Iterate, not Promote**；ADR 仍为 Proposed                                            |
 
 审计还否决了两条承重捷径：强 monoidality 不蕴含保持 DPO pushout，且 bisimulation 商既非必要也非充分，不足以将 π 进程元素变为所需的目标 SMC。
 

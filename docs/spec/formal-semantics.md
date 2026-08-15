@@ -1,15 +1,15 @@
 # CantiluneGraph v0.1 — Formal Semantics Specification
 
-| Field | Value |
-|---|---|
-| Status | **Draft** (Core Theory proved; independent review and governance pending) |
-| Type | Normative specification (formal semantics) |
-| Risk | S2 |
-| Owner | Joker-of-Gotham (DRI) |
-| Reviewers | Independent category/DPO/Petri, π/domain, and Lean/provenance reviewers pending; DRI/Agent review is not independent QA-L4 evidence |
-| Created | 2026-07-23 |
-| Updated | 2026-07-28 (authoritative maximum-compatible D1-A/Open-π/P1a/admission/common-trajectory boundary) |
-| Related | RFC-0001, ADR-0001, RFC-0002, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
+| Field     | Value                                                                                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status    | **Draft** (Core Theory proved; independent review and governance pending)                                                                                                                                     |
+| Type      | Normative specification (formal semantics)                                                                                                                                                                    |
+| Risk      | S2                                                                                                                                                                                                            |
+| Owner     | Joker-of-Gotham (DRI)                                                                                                                                                                                         |
+| Reviewers | Independent category/DPO/Petri, π/domain, and Lean/provenance reviewers pending; DRI/Agent review is not independent QA-L4 evidence                                                                           |
+| Created   | 2026-07-23                                                                                                                                                                                                    |
+| Updated   | 2026-07-28 (authoritative maximum-compatible D1-A/Open-π/P1a/admission/common-trajectory boundary)                                                                                                            |
+| Related   | RFC-0001, ADR-0001, RFC-0002, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 
 > **Governance note:** This spec defines the formal object that RFC-0002 must
 > prove consistent. Historical **待证 / unverified** and local build
@@ -43,8 +43,9 @@ This document defines `CantiluneGraph` v0.1: the **single formal object** that i
 $$\text{CantiluneGraph} := (C, R)$$
 
 where:
-- **$C$** — a **symmetric monoidal category (SMC)**, presented by a typed graph. $C$ is the *static structure*: what counts as a legal composition (sequential $\circ$) and parallel ($\otimes$) combination of operations.
-- **$R$** — a set of **string-diagram rewriting rules** over $C$. $R$ is the *dynamics*: execution is rewriting; a step is one concrete rule application; a trace records those application events; replay re-applies the recorded events. Normal forms follow from $R$, but successful termination versus deadlock additionally requires a separately supplied success predicate.
+
+- **$C$** — a **symmetric monoidal category (SMC)**, presented by a typed graph. $C$ is the _static structure_: what counts as a legal composition (sequential $\circ$) and parallel ($\otimes$) combination of operations.
+- **$R$** — a set of **string-diagram rewriting rules** over $C$. $R$ is the _dynamics_: execution is rewriting; a step is one concrete rule application; a trace records those application events; replay re-applies the recorded events. Normal forms follow from $R$, but successful termination versus deadlock additionally requires a separately supplied success predicate.
 
 ### 2.1 Objects and morphisms of $C$
 
@@ -57,6 +58,7 @@ where:
 ### 2.2 Presentation by a typed graph
 
 $C$ is **presented** by a typed graph $G_0 = (N, E, \tau)$:
+
 - $N$ — nodes (generators): each is a typed morphism with declared `in`/`out` types.
 - $E$ — typed contract edges (see §3.2): typed data dependencies, not untyped arrows.
 - $\tau$ — type assignment.
@@ -92,11 +94,11 @@ A node is not "a node in a graph"; it is a typed generator:
 ```yaml
 node:
   id: planner
-  type: AgentOperation          # Agent | Tool | Human | Environment | ...
-  in:  [Goal]
+  type: AgentOperation # Agent | Tool | Human | Environment | ...
+  in: [Goal]
   out: [TaskPlan]
   contract:
-    pre:  [goal.exists]
+    pre: [goal.exists]
     post: [plan.valid]
 ```
 
@@ -109,7 +111,7 @@ edge:
   source: planner
   target: executor
   artifact: TaskPlan
-  schema:   TaskPlan/v1
+  schema: TaskPlan/v1
   guarantees: [complete, validated]
 ```
 
@@ -201,18 +203,18 @@ remain open operational configuration until §8 fixes them. The state space
 below is the quotient by $\equiv_R$; “no outgoing event” is therefore
 representative-independent.
 
-| Property | Formal expression |
-|---|---|
-| Trace | concrete event sequence $g_0 \xrightarrow{e_1} g_1 \xrightarrow{e_2}\cdots\xrightarrow{e_n}g_n$ |
-| Replay | given $g_0$ and the complete event/derivation sequence, re-derive $g_n$ up to the explicitly selected equality/isomorphism; rule names alone are insufficient |
-| Termination | no infinite reduction (a property to be **checked**, not automatic) |
-| Normal form / stuck | the class $[g]_{\equiv_R}$ has no outgoing concrete event |
-| Successful termination | $[g]_{\equiv_R}$ is a normal form and $\mathcal T_{\mathrm{ok}}([g])$ |
-| Deadlock | $[g]_{\equiv_R}$ is a normal form and $\neg\mathcal T_{\mathrm{ok}}([g])$ |
+| Property               | Formal expression                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Trace                  | concrete event sequence $g_0 \xrightarrow{e_1} g_1 \xrightarrow{e_2}\cdots\xrightarrow{e_n}g_n$                                                               |
+| Replay                 | given $g_0$ and the complete event/derivation sequence, re-derive $g_n$ up to the explicitly selected equality/isomorphism; rule names alone are insufficient |
+| Termination            | no infinite reduction (a property to be **checked**, not automatic)                                                                                           |
+| Normal form / stuck    | the class $[g]_{\equiv_R}$ has no outgoing concrete event                                                                                                     |
+| Successful termination | $[g]_{\equiv_R}$ is a normal form and $\mathcal T_{\mathrm{ok}}([g])$                                                                                         |
+| Deadlock               | $[g]_{\equiv_R}$ is a normal form and $\neg\mathcal T_{\mathrm{ok}}([g])$                                                                                     |
 
 ### 4.3 What rewriting does **not** give
 
-- **Wall-clock time bounds**: rewriting is discrete; time bounds require *cost-annotated* rewriting or a timed extension (out of scope for v0.1).
+- **Wall-clock time bounds**: rewriting is discrete; time bounds require _cost-annotated_ rewriting or a timed extension (out of scope for v0.1).
 - **Numerical resource caps**: $\text{token} \le 3$ is a **marking invariant** on the Petri projection (§6.2), not a bare-category property.
 
 These limits are declared explicitly so RFC-0001 §8's C2 (predictability) is stated as **step-bounded**, not time-bounded.
@@ -252,7 +254,8 @@ $P_{Petri}$ = the place/transition reading, using the **pre-net / free-SSMC sema
 
 The source audit corrects an earlier rationale. Meseguer–Montanari's collective-token semantics is a symmetric monoidal categorical semantics in which arrows are firing computations; sequential composition is concatenation and tensor is parallel composition. The cited sources do **not** establish a global Eckmann–Hilton collapse $\circ=\otimes$. Such a collapse only follows under additional one-object/shared-unit hypotheses and cannot be used here as a general objection to collective Petri semantics.
 
-The **pre-net** construction (Bruni–Meseguer–Montanari–Sassone, *Functorial Models for Petri Nets*) remains a valid design choice for a different reason:
+The **pre-net** construction (Bruni–Meseguer–Montanari–Sassone, _Functorial Models for Petri Nets_) remains a valid design choice for a different reason:
+
 - a pre-net replaces the free commutative monoid of places with the free word monoid, equipping each transition's input/output with an ordering;
 - the adjunction **PreNet ⇄ SSMC** generates a **free strict symmetric monoidal category** in which permutations are represented by non-trivial symmetry morphisms rather than strict object equality (individual-token philosophy);
 - symmetries are added in a second step (compose the PreNet⇄SMC adjunction with the "freely add symmetries" adjunction), recovering token permutation without collapsing $\circ$ and $\otimes$;
@@ -315,11 +318,11 @@ Per the half-π (II) decision: channels are created dynamically via **request/ac
 
 ### 6.3 Phased proof (per DRI decision)
 
-| Phase | Prove | Status |
-|---|---|---|
-| P1a | DAG/Petri/morphism consistency | **Generic certificate family and substantive reference are proved / review-pending; product rule/resource/admission instances remain per-package conformance work** |
-| P1b | π-projection consistency at the declared maximum-compatible Open-π/D1-A boundary | **Unfiltered structural strong-late certificate, exact requesting reflection, D1-A scoped semantics, and final common chain are proved / review-pending; unrestricted actual-Agent strong-bisimulation full abstraction is not claimed** |
-| P1c | Multi-state/native π reference consistency | **The 60/60 reference surface, fifteen-family commutation, metadata/admission seam, and substantive reconnect chain are proved / review-pending; production packages must instantiate the generic interfaces for their own rules** |
+| Phase | Prove                                                                            | Status                                                                                                                                                                                                                                   |
+| ----- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1a   | DAG/Petri/morphism consistency                                                   | **Generic certificate family and substantive reference are proved / review-pending; product rule/resource/admission instances remain per-package conformance work**                                                                      |
+| P1b   | π-projection consistency at the declared maximum-compatible Open-π/D1-A boundary | **Unfiltered structural strong-late certificate, exact requesting reflection, D1-A scoped semantics, and final common chain are proved / review-pending; unrestricted actual-Agent strong-bisimulation full abstraction is not claimed** |
+| P1c   | Multi-state/native π reference consistency                                       | **The 60/60 reference surface, fifteen-family commutation, metadata/admission seam, and substantive reconnect chain are proved / review-pending; production packages must instantiate the generic interfaces for their own rules**       |
 
 ### 6.4 Fallback (per ADR-0001)
 
@@ -327,17 +330,17 @@ If P1b/P1c cannot be proven, fall back to the largest consistent sublanguage of 
 
 ## 7. What this spec guarantees and does not
 
-| Guarantee | Source | Scope |
-|---|---|---|
-| Legal composition / parallelism | SMC $C$ | static, by construction |
-| Unified execution step = rewrite | $R$ | by definition |
-| Trace / normal-form definitions (discrete) | $R$ + state congruence $\equiv_R$ | conditional on both being fixed |
-| Successful termination / deadlock classification | separately supplied, congruence-saturated $\mathcal T_{\mathrm{ok}}$ | **conditional/open** |
-| Deterministic replay | complete event/derivation records + canonicalization policy | **conditional; not implied by rule names** |
-| Cross-projection consistency (3 projections) | SMC-functors + independent observable LTSs + event lifts/exhaustiveness + terminal predicates | **unverified except the identity view** |
-| Cross-projection consistency (π) | typed static target + independently specified operational/terminal bridge theorems | **待证** |
-| Boundedness / liveness | Petri net-level checkers | **checked, not given** |
-| Time bounds | — | **not provided** (step-bounded only) |
+| Guarantee                                        | Source                                                                                        | Scope                                      |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Legal composition / parallelism                  | SMC $C$                                                                                       | static, by construction                    |
+| Unified execution step = rewrite                 | $R$                                                                                           | by definition                              |
+| Trace / normal-form definitions (discrete)       | $R$ + state congruence $\equiv_R$                                                             | conditional on both being fixed            |
+| Successful termination / deadlock classification | separately supplied, congruence-saturated $\mathcal T_{\mathrm{ok}}$                          | **conditional/open**                       |
+| Deterministic replay                             | complete event/derivation records + canonicalization policy                                   | **conditional; not implied by rule names** |
+| Cross-projection consistency (3 projections)     | SMC-functors + independent observable LTSs + event lifts/exhaustiveness + terminal predicates | **unverified except the identity view**    |
+| Cross-projection consistency (π)                 | typed static target + independently specified operational/terminal bridge theorems            | **待证**                                   |
+| Boundedness / liveness                           | Petri net-level checkers                                                                      | **checked, not given**                     |
+| Time bounds                                      | —                                                                                             | **not provided** (step-bounded only)       |
 
 ## 8. Open questions for v0.1
 
@@ -371,11 +374,11 @@ If P1b/P1c cannot be proven, fall back to the largest consistent sublanguage of 
 - RFC-0001 (`docs/rfc/0001-cantilune-architecture.md`)
 - ADR-0001 (`docs/adr/0001-unified-formal-structure.md`)
 - RFC-0002 (`docs/rfc/0002-projection-consistency.md`) — maintained in lockstep with this spec
-- Meseguer–Montanari, *Petri Nets Are Monoids* (1990), doi:10.1016/0890-5401(90)90013-8
-- Bruni–Meseguer–Montanari–Sassone, *Functorial Models for Petri Nets* (2001), doi:10.1006/inco.2001.3050
-- Fiore–Moggi–Sangiorgi, *A Fully Abstract Model for the π-calculus* (2002), doi:10.1006/inco.2002.2968
-- Lack–Sobociński, *Adhesive Categories* (2004), doi:10.1007/978-3-540-24727-2_20
-- Meseguer, *Functorial Semantics of Rewrite Theories* (2005), doi:10.1007/978-3-540-31847-7_13
+- Meseguer–Montanari, _Petri Nets Are Monoids_ (1990), doi:10.1016/0890-5401(90)90013-8
+- Bruni–Meseguer–Montanari–Sassone, _Functorial Models for Petri Nets_ (2001), doi:10.1006/inco.2001.3050
+- Fiore–Moggi–Sangiorgi, _A Fully Abstract Model for the π-calculus_ (2002), doi:10.1006/inco.2002.2968
+- Lack–Sobociński, _Adhesive Categories_ (2004), doi:10.1007/978-3-540-24727-2_20
+- Meseguer, _Functorial Semantics of Rewrite Theories_ (2005), doi:10.1007/978-3-540-31847-7_13
 - Selinger (survey of string diagrams for SMCs)
 
 ## 10. Concept glossary (normative definitions, with citations)
@@ -385,6 +388,7 @@ This section gives rigorous definitions for the core concepts used above, with a
 ### 10.1 Monoidal category
 
 A **monoidal category** $(\mathcal{C}, \otimes, I, \alpha, \lambda, \rho)$ is a category $\mathcal{C}$ equipped with:
+
 - a **tensor product** functor $\otimes : \mathcal{C} \times \mathcal{C} \to \mathcal{C}$;
 - a **unit object** $I \in \mathcal{C}$ (the tensor unit);
 - an **associator** natural isomorphism $\alpha_{x,y,z} : (x \otimes y) \otimes z \xrightarrow{\sim} x \otimes (y \otimes z)$;
@@ -392,7 +396,7 @@ A **monoidal category** $(\mathcal{C}, \otimes, I, \alpha, \lambda, \rho)$ is a 
 
 satisfying the **triangle** and **pentagon** coherence axioms (which ensure the associator and unitors are mutually coherent). A monoidal category is **strict** when $\alpha, \lambda, \rho$ are identities. By Mac Lane's coherence theorem, every monoidal category is monoidally equivalent to a strict one.
 
-Ref: nLab, *monoidal category* ([ncatlab.org/nlab/show/monoidal+category](https://ncatlab.org/nlab/show/monoidal+category)).
+Ref: nLab, _monoidal category_ ([ncatlab.org/nlab/show/monoidal+category](https://ncatlab.org/nlab/show/monoidal+category)).
 
 ### 10.2 Symmetric monoidal category (SMC)
 
@@ -402,15 +406,15 @@ $$\sigma_{x,y} : x \otimes y \xrightarrow{\sim} y \otimes x$$
 
 satisfying the **hexagon** axioms (coherence of the symmetry with the associator) and the symmetry axiom $\sigma_{y,x} \circ \sigma_{x,y} = \mathrm{id}_{x \otimes y}$. In `cantilune`, $\sigma$ models reordering of parallel resources/channels (token interchangeability, channel rerouting).
 
-Ref: nLab, *symmetric monoidal category* ([ncatlab.org/nlab/show/symmetric+monoidal+category](https://ncatlab.org/nlab/show/symmetric+monoidal+category)).
+Ref: nLab, _symmetric monoidal category_ ([ncatlab.org/nlab/show/symmetric+monoidal+category](https://ncatlab.org/nlab/show/symmetric+monoidal+category)).
 
 ### 10.3 Free symmetric monoidal category
 
-The **free symmetric monoidal category** on a typed graph $G_0 = (N, E, \tau)$ is the SMC obtained by taking the nodes (generators) of $G_0$ as generating morphisms and freely closing under $\otimes$ (juxtaposition), $\circ$ (composition along matching types), $\sigma$ (permutation), and $I$ (empty tensor), quotienting only by the SMC axioms (associativity, unitality, symmetry, functoriality) — i.e. *no* equations beyond the SMC axioms and the declared input/output types of generators.
+The **free symmetric monoidal category** on a typed graph $G_0 = (N, E, \tau)$ is the SMC obtained by taking the nodes (generators) of $G_0$ as generating morphisms and freely closing under $\otimes$ (juxtaposition), $\circ$ (composition along matching types), $\sigma$ (permutation), and $I$ (empty tensor), quotienting only by the SMC axioms (associativity, unitality, symmetry, functoriality) — i.e. _no_ equations beyond the SMC axioms and the declared input/output types of generators.
 
 In PRO/PROP terminology: the free **symmetric** monoidal category on a signature is the corresponding **PROP** (a strict SMC whose objects are generated under tensor from a single object). The SMC presentation used here (typed many-sorted) is the many-sorted PROP generalization.
 
-Ref: nLab, *PRO* and *PROP* ([ncatlab.org/nlab/show/PRO](https://ncatlab.org/nlab/show/PRO), [ncatlab.org/nlab/show/PROP](https://ncatlab.org/nlab/show/PROP)).
+Ref: nLab, _PRO_ and _PROP_ ([ncatlab.org/nlab/show/PRO](https://ncatlab.org/nlab/show/PRO), [ncatlab.org/nlab/show/PROP](https://ncatlab.org/nlab/show/PROP)).
 
 ### 10.4 Monoidal product ($\otimes$)
 
@@ -420,9 +424,9 @@ The **monoidal product** (tensor) $\otimes$ is the bifunctor of a monoidal categ
 
 A **string diagram** is the graphical syntax for morphisms in a monoidal category: **wires** represent objects (types); **boxes** represent morphisms (operations); **juxtaposition** of wires denotes $\otimes$ (parallel composition); **plugging** the output wire of one box into the input wire of another denotes $\circ$ (sequential composition); **crossing wires** denotes the symmetry $\sigma$; **no wire** denotes $I$.
 
-By the coherence theorem (Joyal–Street, "The geometry of tensor calculus I"), the graphical calculus is **sound and complete**: two string diagrams denote the same morphism iff one can be deformed into the other up to planar/topological isotopy (respecting the symmetry). This is why a string diagram is the canonical *presentation* of a `CantiluneGraph` and admits four readings (DAG/Petri/π/morphism): each reading is a different interpretation of the same graphical syntax.
+By the coherence theorem (Joyal–Street, "The geometry of tensor calculus I"), the graphical calculus is **sound and complete**: two string diagrams denote the same morphism iff one can be deformed into the other up to planar/topological isotopy (respecting the symmetry). This is why a string diagram is the canonical _presentation_ of a `CantiluneGraph` and admits four readings (DAG/Petri/π/morphism): each reading is a different interpretation of the same graphical syntax.
 
-Ref: nLab, *string diagram* ([ncatlab.org/nlab/show/string+diagram](https://ncatlab.org/nlab/show/string+diagram)); Selinger, *A survey of graphical languages for monoidal categories* (2009); Joyal–Street, *The geometry of tensor calculus I* (1991).
+Ref: nLab, _string diagram_ ([ncatlab.org/nlab/show/string+diagram](https://ncatlab.org/nlab/show/string+diagram)); Selinger, _A survey of graphical languages for monoidal categories_ (2009); Joyal–Street, _The geometry of tensor calculus I_ (1991).
 
 ### 10.6 Dynamics $R$ — string-diagram rewriting
 
@@ -431,6 +435,7 @@ Ref: nLab, *string diagram* ([ncatlab.org/nlab/show/string+diagram](https://ncat
 $$L \xleftarrow{l} K \xrightarrow{r} R$$
 
 where $L$ is the **left-hand side** (pattern to match), $K$ is the **invariant interface** (preserved sub-diagram), and $R$ is the **right-hand side** (replacement). A concrete **rewrite event** $e=(\rho,m,\delta)$ and step $g\xrightarrow{e}h$ are given by:
+
 1. **matching** $L$ as a sub-diagram of $g$ via a match $f : L \to g$;
 2. **deleting** the matched $L \setminus K$ (constructing a pushout complement);
 3. **adding** $R \setminus K$ (taking the pushout along $r$),
@@ -451,13 +456,13 @@ not. These classifications do not follow from $(C,R)$ alone. A sequence of
 rule names alone is not a deterministic replay log when a rule has multiple
 matches.
 
-Ref: nLab, *graph rewriting* / DPO ([ncatlab.org/nlab/show/graph+rewriting](https://ncatlab.org/nlab/show/graph+rewriting)); Ehrig–Pfender–Schneider (1973); Lack–Sobociński, *Adhesive Categories* (2004); nLab, *labelled transition system* ([ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)). **Correction:** the earlier “Gadducci–Montanari, functorial semantics of rewriting” attribution is mis-stated; see §10.10/§11.
+Ref: nLab, _graph rewriting_ / DPO ([ncatlab.org/nlab/show/graph+rewriting](https://ncatlab.org/nlab/show/graph+rewriting)); Ehrig–Pfender–Schneider (1973); Lack–Sobociński, _Adhesive Categories_ (2004); nLab, _labelled transition system_ ([ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)). **Correction:** the earlier “Gadducci–Montanari, functorial semantics of rewriting” attribution is mis-stated; see §10.10/§11.
 
 ### 10.7 Labelled transition system (LTS)
 
 An **LTS** is a structure $T = (S, i, E, \mathrm{Tran})$ with a set $S$ of **states**, initial state $i \in S$, a set $E$ of **events** (labels), and a **transition relation** $\mathrm{Tran} \subseteq S \times E \times S$; $s \to_a s'$ denotes $(s, a, s') \in \mathrm{Tran}$. Once the rule formalism is fixed, the dynamics $R$ of `cantilune` induces an LTS with $S=$ string diagrams and $E=\operatorname{App}(R)$, the complete rule-application/derivation records $e=(\rho,m,\delta)$. Projecting $e$ to its rule name $\rho$ gives a coarser trace but loses replay identity.
 
-Ref: nLab, *labelled transition system* ([ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)).
+Ref: nLab, _labelled transition system_ ([ncatlab.org/nlab/show/labelled+transition+system](https://ncatlab.org/nlab/show/labelled+transition+system)).
 
 ### 10.8 Petri projection — collective and individual-token semantics
 
@@ -465,13 +470,13 @@ Meseguer–Montanari model Petri-net computations categorically; Bruni–Mesegue
 
 Pre-nets replace multisets at transition boundaries with ordered lists and generate free strict symmetric monoidal categories. cantilune selects this semantics to retain declaration order, token histories, and causal provenance. This is a design choice, not a consequence of Eckmann–Hilton and not a proof that source rewrites become Petri firings.
 
-Refs: Meseguer–Montanari, *Petri Nets Are Monoids*, Information and Computation 88(2):105–155 (1990), doi:10.1016/0890-5401(90)90013-8; Bruni–Meseguer–Montanari–Sassone, *Functorial Models for Petri Nets*, Information and Computation 170(2):207–236 (2001), doi:10.1006/inco.2001.3050.
+Refs: Meseguer–Montanari, _Petri Nets Are Monoids_, Information and Computation 88(2):105–155 (1990), doi:10.1016/0890-5401(90)90013-8; Bruni–Meseguer–Montanari–Sassone, _Functorial Models for Petri Nets_, Information and Computation 170(2):207–236 (2001), doi:10.1006/inco.2001.3050.
 
 ### 10.9 π projection — functor-category semantics (source-verified 2026-07-23)
 
 Fiore–Moggi–Sangiorgi use the **covariant** functor categories
 
-$$\mathrm{Mod}=\mathbf{Set}^{\mathbb I}=[\mathbb I,\mathbf{Set}]
+$$ \mathrm{Mod}=\mathbf{Set}^{\mathbb I}=[\mathbb I,\mathbf{Set}]
 \quad\text{or}\quad
 \mathbf{Cpo}^{\mathbb I}.$$
 
@@ -653,15 +658,18 @@ The FMS LTS also rules out three shortcuts: an output prefix alone is a visible 
 The following two rules demonstrate a viable granularity, but they are **proposed witnesses**, not a completed definition of $R$:
 
 $$
+
 (\nu s)(\operatorname{req}_a(s).P\mid\operatorname{acc}_a(x).Q)
 \to_{\mathrm{hs}}
 (\nu s)(P\mid Q\{s/x\}),
-$$
 
 $$
+$$
+
 \operatorname{out}_s(v).P\mid\operatorname{in}_s(x).Q
 \to_{\mathrm{msg}}
 P\mid Q\{v/x\}.
+
 $$
 
 Here $s$ must be fresh for the receiver and surrounding context, and substitution is capture-avoiding. Standard untyped π transmits names, so the source sort `Value` must either be encoded injectively as names or moved to an explicitly typed/value-passing π variant; the current repository has not chosen that layer.
@@ -669,11 +677,13 @@ Here $s$ must be fresh for the receiver and surrounding context, and substitutio
 Under the direct π macros, they have legitimate $\tau$ witnesses:
 
 $$
+
 (\nu s)(\overline a\,s.\llbracket P\rrbracket\mid
 a(x).\llbracket Q\rrbracket)
 \xrightarrow{\tau}_{\mathrm{res}\circ\mathrm{com}}
 (\nu s)(\llbracket P\rrbracket\mid
 \llbracket Q\rrbracket\{s/x\}),
+
 $$
 
 For the displayed scope, the direct FMS derivation synchronises a free-output
@@ -681,8 +691,10 @@ and input premise by `com`, then lifts that $\tau$ through the outer
 restriction by `res`. If the selected structural congruence includes scope
 extrusion and $s$ is fresh for the receiver, the source is also congruent to
 $$
+
 ((\nu s)\overline a\,s.\llbracket P\rrbracket)\mid
 a(x).\llbracket Q\rrbracket.
+
 $$
 That shape instead uses an `open` bound-output premise and a `close`
 conclusion. These are two derivation shapes for one legal $\tau$ transition,
@@ -690,11 +702,13 @@ not two runtime steps; the project must fix its scope/congruence policy before
 claiming either shape as canonical.
 
 $$
+
 \overline s\,v.\llbracket P\rrbracket\mid
 s(x).\llbracket Q\rrbracket
 \xrightarrow{\tau}_{com}
 \llbracket P\rrbracket\mid
 \llbracket Q\rrbracket\{v/x\}.
+
 $$
 
 `compose` should be excluded from the atomic source rules unless the target theorem explicitly allows zero-step structural congruence. The static and operational maps should be separated:
@@ -1748,3 +1762,4 @@ not an invalid global assumption that every initial registry is nonempty.
 No theorem in this section claims a global equivalence between every target
 LTS step and Petri firing; the result is indexed by the selected replayable
 occurrence.
+$$

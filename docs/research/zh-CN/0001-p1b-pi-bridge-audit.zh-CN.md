@@ -36,17 +36,17 @@ Step E 目前也不可证。仓库既未定义 P1b 文法，也未定义具象�
 
 ## 分类与治理路由
 
-| 字段 | 决策 | 理由 |
-|---|---|---|
-| 工作对象 | 研究任务 / 形式语义审计 | 对一个承重证明尝试的独立评审 |
-| 风险 | S2 | 无生产执行或敏感数据，但一个错误结果会使一个架构验收门失效 |
-| 质量 | QA-L4 | 需要显式类型、反例、一手来源核查与独立形式数学评审 |
-| 成熟度 | Pre-FCP/M1 | RFC-0002 明确仍处于四一致性证明接受之前 |
-| Owner / DRI | Joker-of-Gotham | 提供了交接元数据 |
-| 要求的评审人 | 形式数学、范畴论与进程语义；待定 | 当前日志是独立 agent 工作，非人工批准 |
-| 要求的权威写回 | 本研究日志，然后是评审后的 RFC-0002/spec/ADR 更正 | 聊天不是真理来源 |
-| 安全/隐私/AI 评估门 | 未触发 | 无秘密、个人数据、模型训练、部署或物理动作 |
-| Stop-Ship | 未发现安全 Stop-Ship | 但数学 FCP/ADR 验收门仍然阻塞 |
+| 字段                | 决策                                              | 理由                                                       |
+| ------------------- | ------------------------------------------------- | ---------------------------------------------------------- |
+| 工作对象            | 研究任务 / 形式语义审计                           | 对一个承重证明尝试的独立评审                               |
+| 风险                | S2                                                | 无生产执行或敏感数据，但一个错误结果会使一个架构验收门失效 |
+| 质量                | QA-L4                                             | 需要显式类型、反例、一手来源核查与独立形式数学评审         |
+| 成熟度              | Pre-FCP/M1                                        | RFC-0002 明确仍处于四一致性证明接受之前                    |
+| Owner / DRI         | Joker-of-Gotham                                   | 提供了交接元数据                                           |
+| 要求的评审人        | 形式数学、范畴论与进程语义；待定                  | 当前日志是独立 agent 工作，非人工批准                      |
+| 要求的权威写回      | 本研究日志，然后是评审后的 RFC-0002/spec/ADR 更正 | 聊天不是真理来源                                           |
+| 安全/隐私/AI 评估门 | 未触发                                            | 无秘密、个人数据、模型训练、部署或物理动作                 |
+| Stop-Ship           | 未发现安全 Stop-Ship                              | 但数学 FCP/ADR 验收门仍然阻塞                              |
 
 ## 研究问题与成功标准
 
@@ -147,7 +147,7 @@ docs(proof): Petri pre-net
 一手/作者与出版商记录：
 
 - M. P. Fiore, E. Moggi, and D. Sangiorgi, "A Fully Abstract Model for the
-  pi-calculus," *Information and Computation* 179(1), 76-117 (2002),
+  pi-calculus," _Information and Computation_ 179(1), 76-117 (2002),
   DOI [10.1006/inco.2002.2968](https://doi.org/10.1006/inco.2002.2968)。
 - 作者托管的扩展论文：
   [lics96.pdf](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf)。
@@ -621,7 +621,7 @@ $$
 **已核实文献身份与相关来源主张。**
 
 M. P. Fiore, E. Moggi, and D. Sangiorgi, "A Fully Abstract Model for the
-pi-calculus," *Information and Computation* 179(1), 76-117 (2002),
+pi-calculus," _Information and Computation_ 179(1), 76-117 (2002),
 DOI [10.1006/inco.2002.2968](https://doi.org/10.1006/inco.2002.2968)。
 
 支持协变函子范畴、名字与 agent 对象、自由半格/幂域（powerdomain）非确定性、动态分配、内部进程运算，以及对强迟双模拟/同余的完全抽象。**不**提供 cantilune SMC 函子或 DPO/重写步骤桥。
@@ -631,9 +631,9 @@ DOI [10.1006/inco.2002.2968](https://doi.org/10.1006/inco.2002.2968)。
 **已核实文献身份；应使用更窄的主张。**
 
 J. Meseguer and U. Montanari, "Petri Nets Are Monoids,"
-*Information and Computation* 88(2), 105-155 (1990),
+_Information and Computation_ 88(2), 105-155 (1990),
 DOI
-[10.1016/0890-5401(90)90013-8](https://doi.org/10.1016/0890-5401(90)90013-8)。
+[10.1016/0890-5401(90)90013-8](<https://doi.org/10.1016/0890-5401(90)90013-8>)。
 
 该论文支持 P/T 网的代数/范畴处理，以及一个网的对称幺半闭范畴。不应被引证为证明在每个交换幺半范畴中复合与张量全局坍缩。Eckmann-Hilton 在两个兼容的幺半运算作用于同一载体且同一单位（经典地是幺半单位的自同态）时适用；它不是每个良类型的 `g o f` 与 `g tensor f` 之间的全称等式。
 
@@ -642,7 +642,7 @@ DOI
 **已从作者/公开最终论文核实。**
 
 R. Bruni, J. Meseguer, U. Montanari, and V. Sassone, "Functorial Models for
-Petri Nets," *Information and Computation* 170(2), 207-236 (2001),
+Petri Nets," _Information and Computation_ 170(2), 207-236 (2001),
 DOI [10.1006/inco.2001.3050](https://doi.org/10.1006/inco.2001.3050)；
 [author/public final PDF](https://eprints.soton.ac.uk/264742/1/prenetsIandCOff.pdf)。
 
@@ -665,7 +665,7 @@ DOI [10.1006/inco.2001.3050](https://doi.org/10.1006/inco.2001.3050)；
   DOI
   [10.1007/978-3-540-24727-2_20](https://doi.org/10.1007/978-3-540-24727-2_20)。
 - S. Lack and P. Sobocinski, "Adhesive and Quasiadhesive Categories,"
-  *RAIRO - Theoretical Informatics and Applications* 39(3), 511-545 (2005),
+  _RAIRO - Theoretical Informatics and Applications_ 39(3), 511-545 (2005),
   DOI [10.1051/ita:2005028](https://doi.org/10.1051/ita:2005028)。
 
 这些工作支持使 DPO 图重写行为良好的粘合范畴条件。它们不陈述每个强幺半函子自动保持 DPO 步骤的推出或推出补。
@@ -675,7 +675,7 @@ DOI [10.1006/inco.2001.3050](https://doi.org/10.1006/inco.2001.3050)；
 确切的 2005 条目是：
 
 J. Meseguer, **"Functorial Semantics of Rewrite Theories,"** in
-*Formal Methods in Software and Systems Modeling*, LNCS 3393, 220-235 (2005),
+_Formal Methods in Software and Systems Modeling_, LNCS 3393, 220-235 (2005),
 DOI
 [10.1007/978-3-540-31847-7_13](https://doi.org/10.1007/978-3-540-31847-7_13)。
 
@@ -683,13 +683,13 @@ DOI
 
 未确认有 Fabio Gadducci 与 Ugo Montanari 题为 "Functorial Semantics of Rewriting" 的出版物。相关的、但不同的、已核实标题包括：
 
-- F. Gadducci and U. Montanari, **"The Tile Model,"** in *Proof, Language,
-  and Interaction: Essays in Honour of Robin Milner*, 133-166；以及
+- F. Gadducci and U. Montanari, **"The Tile Model,"** in _Proof, Language,
+  and Interaction: Essays in Honour of Robin Milner_, 133-166；以及
 - F. Gadducci and U. Montanari, **"Comparing Logics for Rewriting:
-  Rewriting Logic, Action Calculi and Tile Logic,"** *Theoretical Computer
-  Science* 285(2), 319-358 (2002),
+  Rewriting Logic, Action Calculi and Tile Logic,"** _Theoretical Computer
+  Science_ 285(2), 319-358 (2002),
   DOI
-  [10.1016/S0304-3975(01)00362-0](https://doi.org/10.1016/S0304-3975(01)00362-0)。
+  [10.1016/S0304-3975(01)00362-0](<https://doi.org/10.1016/S0304-3975(01)00362-0>)。
 
 这些 tile/重写工作不得被默默替换为一个 DPO 函子提升定理。当前的 "Gadducci-Montanari, functorial semantics of rewriting" 归属应被移除，除非产生一个确切的来源与匹配的定理。
 
@@ -733,17 +733,17 @@ DOI
 
 ## 最小合规迭代路径
 
-| 顺序 | 行动 | Owner | 评审/门 |
-|---|---|---|---|
-| 1 | 更正变方向、FMS 运算类型与引用身份 | DRI | 形式评审人 |
-| 2 | 冻结 P1b BNF、种类与确切 `R = {hs,msg}` 或记录一个不同的有限集 | DRI | 进程语义评审人 |
-| 3 | 决定范畴目标与函子的强度 | DRI | 范畴评审人；若定理改变则 ADR/RFC 更新 |
-| 4 | 提供对象与生成元箭射指派 | DRI | 类型检查评审 |
-| 5 | 仅在步骤 4 之后应用自由 SMC 分解 | DRI | Step C/D 证明 |
-| 6 | 独立定义可观测推导、管理步骤、`Lift_pi` 与终态谓词；带新鲜性证明前进保持/穷尽性 | DRI | Step E 与终态观测证明 |
-| 7 | 修复 F2 或从不使用 DPO 保持的主张中移除它 | DRI | 图重写评审人 |
-| 8 | 同步更新中英文 spec/RFC/ADR | DRI | 文档与形式评审 |
-| 9 | 在干净 commit 上重跑审计 | 独立评审人 | FCP 门 |
+| 顺序 | 行动                                                                            | Owner      | 评审/门                               |
+| ---- | ------------------------------------------------------------------------------- | ---------- | ------------------------------------- |
+| 1    | 更正变方向、FMS 运算类型与引用身份                                              | DRI        | 形式评审人                            |
+| 2    | 冻结 P1b BNF、种类与确切 `R = {hs,msg}` 或记录一个不同的有限集                  | DRI        | 进程语义评审人                        |
+| 3    | 决定范畴目标与函子的强度                                                        | DRI        | 范畴评审人；若定理改变则 ADR/RFC 更新 |
+| 4    | 提供对象与生成元箭射指派                                                        | DRI        | 类型检查评审                          |
+| 5    | 仅在步骤 4 之后应用自由 SMC 分解                                                | DRI        | Step C/D 证明                         |
+| 6    | 独立定义可观测推导、管理步骤、`Lift_pi` 与终态谓词；带新鲜性证明前进保持/穷尽性 | DRI        | Step E 与终态观测证明                 |
+| 7    | 修复 F2 或从不使用 DPO 保持的主张中移除它                                       | DRI        | 图重写评审人                          |
+| 8    | 同步更新中英文 spec/RFC/ADR                                                     | DRI        | 文档与形式评审                        |
+| 9    | 在干净 commit 上重跑审计                                                        | 独立评审人 | FCP 门                                |
 
 ## 可复现性核查清单
 

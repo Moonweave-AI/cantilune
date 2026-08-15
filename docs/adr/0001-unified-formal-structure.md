@@ -1,14 +1,14 @@
 # ADR-0001: Unified Formal Structure for Cantilune
 
-| Field | Value |
-|---|---|
-| Status | **Proposed** (implementation decisions ratified 2026-07-27; human review and final DRI signature pending) |
-| Date | 2026-07-23 |
-| Last reconciled | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; final admission/common-trajectory seams) |
-| Decision Owner | Joker-of-Gotham (DRI) |
-| Reviewers | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation) |
-| Related | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
-| Risk | S2 |
+| Field           | Value                                                                                                                                                                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status          | **Proposed** (implementation decisions ratified 2026-07-27; human review and final DRI signature pending)                                                                                                                                |
+| Date            | 2026-07-23                                                                                                                                                                                                                               |
+| Last reconciled | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; final admission/common-trajectory seams)                                                                                                                        |
+| Decision Owner  | Joker-of-Gotham (DRI)                                                                                                                                                                                                                    |
+| Reviewers       | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation)                                                                        |
+| Related         | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
+| Risk            | S2                                                                                                                                                                                                                                       |
 
 > **Controlling scope and status correction (2026-07-28).** Later kernel
 > results supersede broader “complete FMS” wording in the historical
@@ -38,12 +38,12 @@ RFC-0001 establishes `cantilune` as an agent-orchestration framework whose core 
 
 The triage decision (2026-07-23) explicitly chose this unification over single-formalism alternatives, on the reasoning that each formalism owns a distinct facet of orchestration and each facet maps to a distinct baseline failure mode:
 
-| Formalism | Facet | Baseline failure mode addressed |
-|---|---|---|
-| DAG | Presentation / data-flow clarity | Cursor (fixed shape $\Rightarrow$ limited expressiveness) |
-| Petri net | Concurrency / resource essence | Codex (missing explicit termination and resource-bound evidence $\Rightarrow$ uncontrollable) |
-| π-calculus | Communication essence | Codex/A2A (informal comms $\Rightarrow$ unpredictable flow) |
-| Morphisms (category theory) | Composition / mapping essence | OpenClaw (no parsimonious core $\Rightarrow$ bloat) |
+| Formalism                   | Facet                            | Baseline failure mode addressed                                                               |
+| --------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
+| DAG                         | Presentation / data-flow clarity | Cursor (fixed shape $\Rightarrow$ limited expressiveness)                                     |
+| Petri net                   | Concurrency / resource essence   | Codex (missing explicit termination and resource-bound evidence $\Rightarrow$ uncontrollable) |
+| π-calculus                  | Communication essence            | Codex/A2A (informal comms $\Rightarrow$ unpredictable flow)                                   |
+| Morphisms (category theory) | Composition / mapping essence    | OpenClaw (no parsimonious core $\Rightarrow$ bloat)                                           |
 
 ## Decision
 
@@ -64,16 +64,17 @@ The framework **must** define functorial mappings between projections such that 
 
 ## Alternatives considered
 
-| Alternative | Rejected because |
-|---|---|
-| DAG only | No formal concurrency/termination (weak vs Codex); no comms essence; reproduces "just DAG" (LangGraph-equivalent) |
-| Single formalism (Petri / π / morphism) | Loses the other facets; each facet maps to a distinct failure mode the DRI wants addressed |
-| Category theory as the sole foundation | Maximally general but abstract and hard to tie to concrete eval wins; inaccessible to the target ecosystem |
-| Four disconnected models glued by code | Reproduces OpenClaw bloat; no formal consistency; observability-as-structure fails |
+| Alternative                             | Rejected because                                                                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| DAG only                                | No formal concurrency/termination (weak vs Codex); no comms essence; reproduces "just DAG" (LangGraph-equivalent) |
+| Single formalism (Petri / π / morphism) | Loses the other facets; each facet maps to a distinct failure mode the DRI wants addressed                        |
+| Category theory as the sole foundation  | Maximally general but abstract and hard to tie to concrete eval wins; inaccessible to the target ecosystem        |
+| Four disconnected models glued by code  | Reproduces OpenClaw bloat; no formal consistency; observability-as-structure fails                                |
 
 ## Consequences
 
 **Positive (conditional on the acceptance gate):**
+
 - Would address all four baseline failure modes once the corresponding projection theorems are actually proven.
 - Defensible vs LangGraph (combinatorial wedge: typed edges + resource semantics + model-decoupled routing + observability-as-structure).
 - Observability, replay, and deadlock classification follow only after the
@@ -83,6 +84,7 @@ The framework **must** define functorial mappings between projections such that 
 - Phased extension is natural (add projections incrementally).
 
 **Negative / risks:**
+
 - Specification complexity: the functorial-consistency requirement is non-trivial and is the main technical risk. **Mitigation:** make the consistency proof a P1 gate; if it cannot be shown for all four, reduce to the subset that is consistent and document the reduction. **Status update (2026-07-27):** Generic consistency interfaces and reference witnesses are complete. Product-specific instantiation (rank functions, firing maps, resource policies) are Package Conformance obligations that do not block Core Theory FCP.
 - Scope/bloat risk if projections accrete without parsimony. **Mitigation:** phased plan (RFC §13); each projection must clear its eval claim.
 - Reviewer gap: no second reviewer yet. **Mitigation:** gate ADR-0001 acceptance on reviewer sign-off.
@@ -109,15 +111,15 @@ The framework **must** define functorial mappings between projections such that 
 
 This addendum corrects proof status and source usage; it does **not** select a replacement π target or alter the unified-structure decision.
 
-| Field | Result |
-|---|---|
-| Classification | Formal architecture audit; S2; QA-L4; Pre-FCP/M1 |
-| P1a | Static construction partial; morphism identity complete; DAG/Petri rule maps open |
-| P1b A–B | Verified; target variance corrected to covariant $\mathbf{Set}^{\mathbb I}/\mathbf{Cpo}^{\mathbb I}$ |
-| P1b C | Handed-off non-standard π-parallel tensor rejected as ill-typed |
-| P1b D | Pointwise-cartesian conditional theorem identified; actual object/generator map absent |
-| P1b E | Not well-formed until request/accept BNF and $R_{\mathrm{RA}}$ are defined |
-| Disposition | **Iterate, not Promote**; ADR remains Proposed |
+| Field          | Result                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| Classification | Formal architecture audit; S2; QA-L4; Pre-FCP/M1                                                     |
+| P1a            | Static construction partial; morphism identity complete; DAG/Petri rule maps open                    |
+| P1b A–B        | Verified; target variance corrected to covariant $\mathbf{Set}^{\mathbb I}/\mathbf{Cpo}^{\mathbb I}$ |
+| P1b C          | Handed-off non-standard π-parallel tensor rejected as ill-typed                                      |
+| P1b D          | Pointwise-cartesian conditional theorem identified; actual object/generator map absent               |
+| P1b E          | Not well-formed until request/accept BNF and $R_{\mathrm{RA}}$ are defined                           |
+| Disposition    | **Iterate, not Promote**; ADR remains Proposed                                                       |
 
 The audit also rejects two load-bearing shortcuts: strong monoidality does not imply preservation of DPO pushouts, and a bisimulation quotient is neither necessary nor sufficient to turn π process elements into the required target SMC.
 
@@ -762,8 +764,8 @@ block theory.
 interfaces and reference witnesses are complete. Product instantiation obligations
 are separate post-FCP gates.
 
-**Key insight:** Theory proves the certificates are *possible* (via reference
-witnesses). Products prove they are *actual* (via concrete instantiation). The
+**Key insight:** Theory proves the certificates are _possible_ (via reference
+witnesses). Products prove they are _actual_ (via concrete instantiation). The
 first gate does not block on the second.
 
 At this historical checkpoint, the boundary correction did not change the
@@ -828,12 +830,14 @@ Each of the eight product packages independently supplies:
 ### Consequences Update
 
 **Historical projected benefits (not an acceptance record):**
+
 - Architectural choice is final; implementation can proceed with confidence
 - Four-projection consistency is the normative claim for P1
 - Each projection buys specific capabilities (§2 capability table)
 - Theory/product split enables parallel work streams
 
 **Risks and Mitigations**:
+
 - **Risk**: Full FMS requirement (D2) increases P1 timeline significantly
   - **Mitigation**: Theory work can proceed in parallel; phased delivery per RFC-0002 §4
 - **Risk**: Multi-state P1c protocol (D7) requires 60-cell matrix re-proof

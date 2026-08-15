@@ -13,7 +13,7 @@ DRI: Joker-of-Gotham
 
 **Root cause:** The current RFC-0002 and ADR-0001 acceptance criteria mix abstract theory completion with concrete product instantiation, creating a false dependency where theory cannot close until all eight product packages exist with their runtime evidence.
 
-**Correct boundary:** Theory proves the generic certificate interfaces are *satisfiable* (via reference witnesses). Products later instantiate those interfaces with concrete operational facts. Theory FCP should not block on product existence.
+**Correct boundary:** Theory proves the generic certificate interfaces are _satisfiable_ (via reference witnesses). Products later instantiate those interfaces with concrete operational facts. Theory FCP should not block on product existence.
 
 ## Current State Analysis
 
@@ -21,18 +21,18 @@ DRI: Joker-of-Gotham
 
 From RFC-0002 §11 tracking table and research audit 0008:
 
-| Blocking item | Current status | Nature |
-|---|---|---|
-| P1a DAG/Petri rule maps | Generic operational family exists; no production rule inventory | **Product-specific** |
-| P1b FMS complete inhabitant | Finite fragments exist; full Abramsky powerdomain absent | **Theory gap** |
-| P1c general admitted rules | 60/60 reference matrix complete; no product `Config` rules | **Product-specific** |
-| Eight package certificates | No package trees, manifests, or rule inventories exist | **Product-specific** |
-| DAG rank preservation | Generic rankable-DAG theorem exists; no product rank functions | **Product-specific** |
-| Petri pre-net semantics | Generic pre-net construction exists; no product firing maps | **Product-specific** |
-| Resource/session policies | Generic resource layer exists; no product policies | **Product-specific** |
-| Authorization predicates | Generic authorization gate exists; no product predicates | **Product-specific** |
-| Fairness/stable windows | Generic scheduler theorem exists; no product windows | **Product-specific** |
-| Positive-ε progress | Generic kernel bound exists; no product ε values | **Product-specific** |
+| Blocking item               | Current status                                                  | Nature               |
+| --------------------------- | --------------------------------------------------------------- | -------------------- |
+| P1a DAG/Petri rule maps     | Generic operational family exists; no production rule inventory | **Product-specific** |
+| P1b FMS complete inhabitant | Finite fragments exist; full Abramsky powerdomain absent        | **Theory gap**       |
+| P1c general admitted rules  | 60/60 reference matrix complete; no product `Config` rules      | **Product-specific** |
+| Eight package certificates  | No package trees, manifests, or rule inventories exist          | **Product-specific** |
+| DAG rank preservation       | Generic rankable-DAG theorem exists; no product rank functions  | **Product-specific** |
+| Petri pre-net semantics     | Generic pre-net construction exists; no product firing maps     | **Product-specific** |
+| Resource/session policies   | Generic resource layer exists; no product policies              | **Product-specific** |
+| Authorization predicates    | Generic authorization gate exists; no product predicates        | **Product-specific** |
+| Fairness/stable windows     | Generic scheduler theorem exists; no product windows            | **Product-specific** |
+| Positive-ε progress         | Generic kernel bound exists; no product ε values                | **Product-specific** |
 
 **Analysis:** 8 out of 10 blockers are product-specific instantiation gaps, not theory gaps. The only genuine theory gap is the complete FMS powerdomain/full-abstraction package.
 
@@ -44,6 +44,7 @@ From RFC-0002 §11 tracking table and research audit 0008:
 > "Petri: [...] intended static target incomplete [...] general rule-to-firing map absent"
 
 This language conflates:
+
 - **Generic theorem**: "Every rankable graph has a strict DAG view" (theory, complete)
 - **Product fact**: "Rule R₇ in package Libretto preserves rank" (product, absent)
 
@@ -52,6 +53,7 @@ This language conflates:
 > "Lift the closed finite multi-state P1c reference protocol to all 15 admitted non-fixture `Config` occurrences, with the product resource, quiescence, admission, and static layers"
 
 This mixes:
+
 - **Reference witness**: Mismatch/reconnect/delete have four-view certificates (theory, complete)
 - **Product rules**: Packages Baton, Cue, etc. supply their rule inventories (product, absent)
 
@@ -90,24 +92,28 @@ Core Theory proves the **abstract conditions** and **generic interfaces** for pr
 ### What belongs in Core Theory (abstract)
 
 **Static layer:**
+
 - FreeSMC quotient and arbitrary-target universal property ✓ (kernel-built)
 - Typed positional DPOI equivalence with exact essential image ✓ (kernel-built)
 - Generic pre-net/free-SSMC declaration-order construction ✓ (kernel-built)
 - Typed open-process SMC presentation ✓ (kernel-built)
 
 **Operational layer:**
+
 - Generic `ProjectionFamily` indexed over finite signatures ✓ (kernel-built)
 - Reusable operational certificate constructor from supplied LTS isomorphism ✓ (kernel-built)
 - P1c 60/60 reference matrix with four independent native derivations ✓ (kernel-built)
 - P1b request/accept unfiltered structural strong-late certificate ✓ (implemented_unverified)
 
 **Stochastic layer:**
+
 - Generic Ionescu–Tulcea trajectory constructor ✓ (kernel-built)
 - Event-labelled coupling with DPO replay ✓ (kernel-built)
 - Finite heterogeneous `EpochChain` with admission boundaries ✓ (kernel-built)
 - Expected-hitting bound from supplied fairness/ε ✓ (kernel-built)
 
 **Denotational layer (genuine gap):**
+
 - Complete FMS powerdomain on all ωCPO ✗ (absent; finite fragments only)
 - Recursive agent domain solution A ≅ P(H A) ✗ (unseparated fixed point exists; full package absent)
 - Agent restriction/hiding with coherence ✗ (support-level retraction exists; agent operation absent)
@@ -148,38 +154,47 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 ### From RFC-0002 §3.1 "Proof status by projection"
 
 **Current (incorrect):**
+
 > "DAG: [...] arbitrary typed-DPO map absent"
 
 **Corrected:**
+
 > "DAG: Generic rankable-graph projection complete. Product rule maps (ranks, derivations) are Package Conformance obligations."
 
 ---
 
 **Current (incorrect):**
+
 > "Petri: [...] general rule-to-firing map absent"
 
 **Corrected:**
+
 > "Petri: Generic pre-net/SSMC construction complete. Product firing maps (enabling, token semantics) are Package Conformance obligations."
 
 ### From RFC-0002 §4.3 "P1c work"
 
 **Current (incorrect):**
+
 > "Lift the closed finite multi-state P1c reference protocol to all 15 admitted non-fixture `Config` occurrences, with the product resource, quiescence, admission, and static layers"
 
 **Corrected:**
+
 > "P1c reference matrix (60/60 cells) complete. Product packages instantiate `ProductRuleProofBundle` using theory's reference witnesses as templates. Resource/quiescence policies are Package Conformance inputs."
 
 ### From RFC-0002 §11 Tracking table
 
 **Current (incorrect):**
+
 > "Lift the closed finite multi-state P1c reference protocol to all 15 admitted non-fixture `Config` occurrences, with the product resource, quiescence, admission, and static layers and no weak steps | DRI + process-semantics reviewer | Pre-FCP"
 
 **Corrected (split into two gates):**
 
 **Theory FCP gate:**
+
 > "P1c reference operational certificates (60/60 native cells, four event-indexed restricted-relation certificates) | DRI + process-semantics reviewer | Pre-FCP"
 
 **Product Conformance gate (post-FCP):**
+
 > "Each package supplies ProductRuleProofBundle for its admitted rules, using theory's reference construction as template | Package owners | Product-release"
 
 ### From ADR-0001 acceptance criteria
@@ -187,6 +202,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 **Current (incorrect, line 161-174):**
 
 > Required evidence before acceptance:
+>
 > 1. define exact source syntax, configurations, rules, freshness, and granularity;
 > 2. construct and independently check an inhabitant of the now-explicit complete FMS [...]
 > 3. extend the implemented SMC/reference certificates to the full admitted rule set;
@@ -200,6 +216,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 **Corrected:**
 
 **Theory FCP gates:**
+
 1. Define exact source syntax, configurations, rules, freshness, granularity ✓ (complete)
 2. Complete FMS powerdomain/domain/full-abstraction or accepted scope fallback ✗ (genuine blocker)
 3. Define observable target derivations, congruences, admin policies ✓ (complete)
@@ -207,6 +224,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 5. Obtain independent formal-math/category/process-semantics review ✗ (governance blocker)
 
 **Product Conformance gates (post-FCP):**
+
 1. Each package extends reference certificates to its admitted rule set
 2. Each package provides DAG rank functions and Petri firing maps for its rules
 
@@ -226,6 +244,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 8. ✗ **Independent review** — category/DPO, process-semantics, Lean-assumptions reviewers unassigned
 
 **Product-specific items removed from FCP gates:**
+
 - ❌ "arbitrary typed-DPO map" (product rule inventories)
 - ❌ "general rule-to-firing map" (product pre-net semantics)
 - ❌ "product resource, quiescence, admission layers" (product runtime facts)
@@ -244,6 +263,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 7. ✗ **Independent review + RFC-0002 FCP** — (governance)
 
 **Product-specific items removed from acceptance gates:**
+
 - ❌ "extend to full admitted rule set" (each package instantiates for its rules)
 - ❌ "complete DAG/Petri direct rule-map proofs" (per-package certificates)
 
@@ -254,6 +274,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 > "All eight package names are planned distributions, while their package source trees, manifests, product rules, and package-owned proof inputs do not yet exist here."
 
 **Packages blocking theory FCP:**
+
 1. Cantilune — Missing
 2. Cantilune Notation — Missing
 3. Cantilune Libretto — Missing
@@ -268,16 +289,19 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 ### Correct framing (Theory vs Product separation)
 
 **Core Theory FCP** proves:
+
 - "There exists a generic `ProductRuleProofBundle` interface"
 - "The 60-cell reference matrix satisfies this interface"
 - "Any package supplying (rank, pre-net, resource, authorization, ε) can instantiate it"
 
 **Product Conformance** (each package, independently, post-FCP):
+
 - Package Cantilune supplies its rule inventory and certificates
 - Package Libretto supplies its rule inventory and certificates
 - ...etc.
 
 **Why separation matters:**
+
 - Theory can close and be reviewed while packages are in development
 - Package teams can instantiate certificates in parallel
 - New packages can be added without re-opening theory FCP
@@ -348,6 +372,7 @@ Each product package (Cantilune, Libretto, Cast, etc.) supplies:
 From research log 0015:
 
 > "The remaining gap is not one undifferentiated implementation task. It consists of:
+>
 > 1. exact mathematical inhabitants still absent from the Lean tree;
 > 2. public semantic choices reserved for RFC/FCP; and
 > 3. production facts and kernels absent from the repository.
@@ -355,6 +380,7 @@ From research log 0015:
 > No theorem, package name, or generic interface can manufacture items in groups 2 or 3."
 
 **What exists today (theory fragments):**
+
 - Finite `Finset` free-semilattice monad ✓
 - Equality-ordered discrete-CPO finite strict power ✓
 - Unseparated omega-Scott fixed point A ≅ P(H A) ✓
@@ -362,6 +388,7 @@ From research log 0015:
 - Recursive alpha/substitution congruence ✓
 
 **What remains absent (foundational mathematics):**
+
 - All-ωCPO Abramsky/omega-ideal powerdomain ✗
 - Separated divergence/deadlock with commutative Fubini ✗
 - Algebraic compactness or checked bilimit for `World ⥤ ωCPO` ✗
@@ -370,9 +397,11 @@ From research log 0015:
 - Strong-late full abstraction for finite-control π ✗
 
 **RFC-0002 §16 proposes resolution:**
+
 > "P1's normative π projection is the typed, finite-control open-process presentation together with the native standard structural late-π LTS. [...] `FMSGatedFourProjection` remains a separate optional conformance gate."
 
 This would:
+
 - ✓ Unblock theory FCP (operational π is complete)
 - ✓ Preserve honesty (no false FMS claim)
 - ✓ Enable future extension (FMS becomes optional conformance)
@@ -409,7 +438,7 @@ This would:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Key insight:** Theory proves the certificates are *possible* (via reference witnesses). Products prove they are *actual* (via concrete instantiation). The first gate does not block on the second.
+**Key insight:** Theory proves the certificates are _possible_ (via reference witnesses). Products prove they are _actual_ (via concrete instantiation). The first gate does not block on the second.
 
 ## References
 

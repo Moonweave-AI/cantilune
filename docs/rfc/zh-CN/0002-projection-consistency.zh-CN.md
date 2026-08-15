@@ -1,15 +1,15 @@
 # RFC-0002：投影一致性 —— 证明买到什么，以及四投影一致性定理
 
-| 字段 | 值 |
-|---|---|
-| 状态 | **Draft**（pre-FCP） |
-| 类型 | 架构 / 形式 |
-| 风险 | S2 |
-| 提案人 / 决策负责人 | Joker-of-Gotham（DRI） |
-| 必需评审人 | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立 QA-L4 证据 |
-| 创建日期 | 2026-07-23 |
-| 更新日期 | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、分阶段 admission、精确 common-trajectory 接缝） |
-| 相关 | RFC-0001、ADR-0001、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
+| 字段                | 值                                                                                                                                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 状态                | **Draft**（pre-FCP）                                                                                                                                                                                                                                 |
+| 类型                | 架构 / 形式                                                                                                                                                                                                                                          |
+| 风险                | S2                                                                                                                                                                                                                                                   |
+| 提案人 / 决策负责人 | Joker-of-Gotham（DRI）                                                                                                                                                                                                                               |
+| 必需评审人          | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立 QA-L4 证据                                                                                                                                              |
+| 创建日期            | 2026-07-23                                                                                                                                                                                                                                           |
+| 更新日期            | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、分阶段 admission、精确 common-trajectory 接缝）                                                                                                                                                    |
+| 相关                | RFC-0001、ADR-0001、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 
 > **治理说明：** 本 RFC 是 ADR-0001 所指的**生死线（project life-line）**。它*主要不是*一份证明文档 —— 证明在 `docs/spec/formal-semantics.md`。π 投影一致性**非按构造**；其当前实现范围由下文 §25–§28 与 proof manifest 共同限定。此前各历史检查点中的“待证”或局部 job 数均不覆盖该最终边界，也不构成不可变证明证据。
 
@@ -54,12 +54,12 @@ RFC-0001 的统一结构说：`CantiluneGraph` 是一个对象 $(C, R)$，DAG / 
 
 证明按投影拆分、且此拆分对*项目*（不只对数学）重要的原因，是每条线买不同能力、且各有不同失败方式：
 
-| 投影 | 若一致，cantilune 获得…… | 状态 | 若失败…… |
-|---|---|---|---|
-| DAG | 数据依赖视角 $=$ 执行视角；可追踪工作流 | 静态读法有条件；重写映射 unverified | 定义目标并映射每条源规则 |
+| 投影  | 若一致，cantilune 获得……                                                       | 状态                                                   | 若失败……                                           |
+| ----- | ------------------------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------------------------- |
+| DAG   | 数据依赖视角 $=$ 执行视角；可追踪工作流                                        | 静态读法有条件；重写映射 unverified                    | 定义目标并映射每条源规则                           |
 | Petri | 并发/资源视角 $=$ 执行视角；有界运行，以及相对于已固定成功谓词的死锁分类（C2） | 静态 pre-net 读法有条件；重写映射与成功谓词 unverified | 定义使能/标记、成功谓词，并把每条源规则映为 firing |
-| 态射 | 复合/重构视角 $=$ 执行视角；可复用、可换的件 | by construction | （不会失败） |
-| π | 通信视角 $=$ 执行视角；agent 间运行可跨通信镜头重放（邻近 C3） | **待证** | 缩减 π 至已证子语言；自由对话延后 |
+| 态射  | 复合/重构视角 $=$ 执行视角；可复用、可换的件                                   | by construction                                        | （不会失败）                                       |
+| π     | 通信视角 $=$ 执行视角；agent 间运行可跨通信镜头重放（邻近 C3）                 | **待证**                                               | 缩减 π 至已证子语言；自由对话延后                  |
 
 这样读此表：**数学不是产品之外的另一回事——每一行数学买一行具体能力，每一种失败花一行具体能力。** 这就是本 RFC 存在于主线、而非仅存于 spec 的原因：能力表*就是*"证明为 cantilune 做了什么"的答案。
 
@@ -87,11 +87,11 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 
 ### 3.1 各投影证明状态
 
-| 投影 | 条款 (1) SMC-函子 | 条款 (2) 事件映射 | 条款 (3) provenance/穷尽性 | 条款 (4) 终态观察 | 理论状态 | 产品义务 |
-|---|---|---|---|---|---|---|
-| DAG | FreeSMC 等式商存在；通用 rankable-graph 投影完整 | 给定 LTS 同构的通用操作 family；参考见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 rank 函数与 rank 保持证明 |
-| Petri | FreeSMC 商与声明顺序 pre-net 构造存在；通用 pre-net/SSMC 语义完整 | 通用操作 family；参考 firing 见证完整 | 对给定数据有通用反射定理；参考实例完整 | 参考 fixture 完整 | **理论：通用构造完整** | **产品符合性：** 各包为其允许规则提供 enabling 谓词、token 语义与 firing 映射 |
-| 态射 | by construction（同一性视图） | by construction | by construction | 使用同一成功谓词时 by construction | **按构造一致** | （同一性；无额外产品工作） |
+| 投影           | 条款 (1) SMC-函子                                                                                                                                | 条款 (2) 事件映射                                                                                        | 条款 (3) provenance/穷尽性                                                                                             | 条款 (4) 终态观察                                                                                                   | 理论状态                                                                                   | 产品义务                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| DAG            | FreeSMC 等式商存在；通用 rankable-graph 投影完整                                                                                                 | 给定 LTS 同构的通用操作 family；参考见证完整                                                             | 对给定数据有通用反射定理；参考实例完整                                                                                 | 参考 fixture 完整                                                                                                   | **理论：通用构造完整**                                                                     | **产品符合性：** 各包为其允许规则提供 rank 函数与 rank 保持证明                                        |
+| Petri          | FreeSMC 商与声明顺序 pre-net 构造存在；通用 pre-net/SSMC 语义完整                                                                                | 通用操作 family；参考 firing 见证完整                                                                    | 对给定数据有通用反射定理；参考实例完整                                                                                 | 参考 fixture 完整                                                                                                   | **理论：通用构造完整**                                                                     | **产品符合性：** 各包为其允许规则提供 enabling 谓词、token 语义与 firing 映射                          |
+| 态射           | by construction（同一性视图）                                                                                                                    | by construction                                                                                          | by construction                                                                                                        | 使用同一成功谓词时 by construction                                                                                  | **按构造一致**                                                                             | （同一性；无额外产品工作）                                                                             |
 | π（half-π II） | presented typed/polarised Open-π wiring SMC、proof-relevant nominal realization、非分离 D1-A all-object lower-ω-Scott monad 与实际递归 domain 解 | P1b structural-late certificate、15 个 normative strong late-π family、60-operation `refinesTo` registry | 在声明的 P1b/P1c 演算中精确 reflection；total supported finite-control coalgebra 与 15-family actual-Agent commutation | 对声明的参考演算及其 terminal predicate 完整；不声称 unrestricted actual-Agent strong-bisimulation full abstraction | **理论 proved / review-pending：** 最大相容范围与 CENTRAL-18 common-chain 已绑定不可变证据 | **产品符合性：** 各包提供 native π、registry/metadata、admission、payload、trajectory 与 FMS alignment |
 
 **理论与产品边界说明：** 理论通过参考见证（60/60 P1c 矩阵，异构运行时）证明通用证书接口*可满足*。产品用具体操作事实（rank 函数、pre-net 语义、资源策略、授权谓词）实例化这些接口。理论 FCP 不阻断于产品包存在。
@@ -138,6 +138,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 **产品义务（包符合性门槛，FCP 后）：**
 
 各产品包（Cantilune、Libretto、Cast、Baton、Cue、Chorus、Reprise、Cantilune Notation）提供：
+
 - 包清单（`package.yaml`）与可枚举规则清单
 - 每条规则的 `ProductRuleProofBundle` 实例化通用接口：
   - **DAG：** 每条规则的 rank 函数与 rank 保持证明
@@ -209,6 +210,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 **产品义务（包符合性门槛，FCP 后）：**
 
 各产品包把参考证书扩展到其允许规则集：
+
 - **每规则实例化：** 以理论 P1c 参考矩阵为模板，为每条包特定规则构造 `ProductRuleProofBundle`。
 - **运行时事实（包提供，不能推出）：**
   - 资源/静止谓词（如"context 空时删除"）
@@ -217,11 +219,13 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 - **与理论分离：** 理论证明接口可满足（通过参考）。产品证明其对特定规则已满足。
 
 **剩余理论工作（仍为 Pre-FCP）：**
+
 - 超越受限关系的完整 standard-late reflection
 - 完整 FMS powerdomain/domain/full-abstraction 或被接受范围回退（§16）
 - 独立进程语义评审
 
 **说明：** "推广到每个 admitted 源规则"已拆分：
+
 - **理论门槛：** 参考矩阵证明 60 个格 → 通用接口可满足 ✓
 - **产品门槛：** 包为其规则实例化 → 具体证书（FCP 后，每包）
 
@@ -284,6 +288,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
    - 两态协议 ≠ 完整 late reflection（环境转移存在）
 
 **理论 FCP 门槛（阻断理论者）：**
+
 - ✓ 通用 SMC 函子与操作 family 构造器（kernel-built）
 - ✓ 参考见证证明接口可满足（60/60 矩阵完整）
 - ✓ P1b 操作证书与最终 common chain（已绑定不可变证据）
@@ -291,6 +296,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 - ✗ 独立评审（category/DPO、进程语义、Lean 假设评审人未指派）
 
 **明确非理论门槛：**
+
 - ❌ 产品包存在（八个计划包尚不存在）
 - ❌ 产品特定 rank 函数、pre-net 语义、资源策略
 - ❌ 产品授权谓词、公平性定义、ε 界
@@ -325,12 +331,14 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
    - 生产 Markov kernel 构造
 
 **分离的意义：**
+
 - 理论可在包开发时关闭并评审
 - 包团队可并行实例化证书
 - 可加入新包而不重开理论 FCP
 - 参考见证展示接口可实现
 
 **当前状态：**
+
 - **理论 proved / review-pending：** 通用构造、实质 reconnect 参考与 CENTRAL-18 common-chain 已在 §25–§28 的最大相容边界内绑定不可变 source/build 证据；独立评审待完成
 - **产品：** 八个计划包尚无源树、清单或规则清单；符合性工作始于 FCP 后
 
@@ -374,6 +382,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 8. ✗ **独立评审** — category/DPO、进程语义、Lean 假设评审人未指派
 
 **明确从理论 FCP 门槛移除（移至产品符合性）：**
+
 - ❌ "任意 typed-DPO 映射" → 产品：各包为其规则提供 rank 函数
 - ❌ "一般规则→firing 映射" → 产品：各包为其规则提供 pre-net 语义
 - ❌ "产品资源、静止、admission 层" → 产品：包提供运行时事实
@@ -384,6 +393,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 **产品符合性门槛（独立，FCP 后，每包）：**
 
 理论 FCP 后，各产品包（Cantilune、Libretto、Cast、Baton、Cue、Chorus、Reprise、Cantilune Notation）独立提供：
+
 1. 包清单与规则清单
 2. 每规则证书，实例化通用接口（DAG rank、Petri firing、π 推导、态射视图）
 3. 运行时操作事实（资源策略、授权谓词、公平性/ε 证据）
@@ -406,39 +416,39 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 
 ## 11. 跟踪
 
-| 产物 | 状态 |
-|---|---|
-| `docs/spec/formal-semantics.md`（定义 + 证明） | Draft 经独立核验修正；§12 与 §13 不再过度声称 |
-| FreeSMC / DPOI 基础 | 生成 FreeSMC quotient、实际 mathlib category/monoidal/symmetric 实例及任意目标 monoidal natural-isomorphism 比较与唯一性定理已通过 kernel 构建。完整 typed-presheaf slice 是 adhesive；任意 monic incidence 匹配恰在显式 gluing 条件下有 complement，witnessed complement 兼容唯一同构，固定开放边界可显式提升，标准 parallel-independent 推导有一般 residual 与 canonical concurrency 同构。Active-support normalization 保持具体 morphism identity/composition 并把全局单射的具体 match 映为 typed-slice monomorphism。`ExactPositionalObject` 以有限 carrier、唯一 typed incidence 描述、固定有序边界 typing 与无 boundary duplicate 独立刻画良构本质像，重建证明 `essImage X ↔ ExactPositionalObject X`。原始 match 与两条 residual 经 finite-image/preimage 同构传回，两个 DPO 方形在 ambient slice 中均为 Van Kampen。有限 boundary-duplicate 反例证明"有限 + incidence-complete + 固定边界"仍不足。这不是无条件的 whole-slice 等价 |
-| Open π SMC | 所给 quotient 已有实际 mathlib Category/Monoidal/Symmetric 实例。`OpenSMCNominalAtomBoundary` 加入互异 typed name port 与精确擦除自由支撑，接纳真实具名 output atom，并在空具名边界拒绝它。组合式具名接口范畴与原生 plug/hide/restriction 操作充分性仍开放 |
-| P1a 证明 | 可复用操作证书 family 与非空有限 DAG/pre-net/morphism 值已通过 kernel 构建。`P1cProductRuleProofBundle` 现给出一个实质非同一性 reconnect 实例：图增加 `(0, 1)`，四个不同 wrapper 携带原生 DAG/Petri/standard-late-pi/morphism 业务推导，四事件映射为双射，全部目标步反射，并含精确 replay 加 rank/quiescence/authorization/ε=1 调度证据。typed self-loop 反例仍排除 unrestricted typed open hypergraph 上的总严格 DAG 投影，product-rule 实例仍开放 |
-| P1b 证明与 FMS 边界 | 有限 request/accept structural-late 链覆盖 alpha/capture avoidance、全部真实 sync/close incidence、精确 residual reflection、terminal classification 与无过滤 strong-late LTS 上的 `pi_ra_certificate`。FMS 采用 §26–§27 的非分离 D1-A 最大相容构造，而非 separated Abramsky effect；guarded Hoare/contextual 定理不等于 unrestricted actual-Agent strong-bisimulation full abstraction，actual-Agent 正面范围为 deterministic typed tau/free-output prefix trie 加 total finite-control/15-family commutation。**现行状态：** 已绑定不可变共同源码证据，独立评审待完成 |
-| P1c 证明 | 显式有限 60 格参考矩阵为 60/60 原生。后续多状态 `P1cFullNativeRefinement` 对全部 15 个 family-tagged raw 源进程分类每个 native transition，保持原生 terminality 与签名版本，并给出一份完整有限参考 `ProjectionCertificate`，含 mismatch、reconnect 与 quiescent delete。每个 refined 步也映为实际未过滤 α/结构 strong-late 步。Lean 证明 canonical pure-process 映射不能满足当前 complete 证书，因为 runtime admission 改变签名版本而纯 π 状态版本为零；delegation/reconnect 作为 raw transition triple 也冲突。这仅闭合有限参考协议并使所需元数据层决策显式。Product-wide admitted `Config`、static/resource/admission 层与一个共享 coherent 源仍开放 |
-| 随机反馈桥 | 真正 Markov kernel、Ionescu--Tulcea trajectory law、可测 not-hit 事件与条件 almost-sure 桥已通过 kernel 构建。确定性与 seed 随机化事件路径耦合都精确遗忘至状态律。每个有限异构 `EpochChain` 现携带有序原生事件身份、精确端点、可执行 `DPOEvent` 或 signature-admission replay 与 runtime execution-epoch 对齐；marked kernel 把依赖 native mark 放在被采样的正边本身。`FiniteBranchingReplayKernel` 进一步对显式业务 choice 分配概率，使同端点事件成为不同随机后继，并几乎必然返回其依赖 replay witness。有限高度期望界由具体 kernel phase tails 推出为 `H/ε`。跨 runtime admission 的 product 实例化、general-presheaf-DPO replay 执行、`opportunityEpoch` 对齐与为每个包导出 stable-window/fairness/正-$\varepsilon$ 前提仍开放 |
-| 研究/证据日志 | 来源核验完成；现行 QA-L4 评审包为 `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md`，不可变源码/构建证据为 `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`；人工评审待定 |
-| 引文核验（spec §11） | 原始来源已核实；全局 Petri 坍缩与通用 F2 被拒；"Gadducci–Montanari, Functorial Semantics…"修正为 Meseguer (2005) |
-| 形式数学评审人 | 待指派 |
-| Formal simulator（§5 检查器） | FCP 后 |
-| **八个产品包** | **Cantilune、Cantilune Notation、Libretto、Cast、Baton、Cue、Chorus、Reprise：尚无包源树、清单或规则清单存在。产品符合性是 FCP 后工作；包在准备好时独立实例化证书。包缺席不阻断核心理论 FCP。** |
+| 产物                                           | 状态                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/spec/formal-semantics.md`（定义 + 证明） | Draft 经独立核验修正；§12 与 §13 不再过度声称                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| FreeSMC / DPOI 基础                            | 生成 FreeSMC quotient、实际 mathlib category/monoidal/symmetric 实例及任意目标 monoidal natural-isomorphism 比较与唯一性定理已通过 kernel 构建。完整 typed-presheaf slice 是 adhesive；任意 monic incidence 匹配恰在显式 gluing 条件下有 complement，witnessed complement 兼容唯一同构，固定开放边界可显式提升，标准 parallel-independent 推导有一般 residual 与 canonical concurrency 同构。Active-support normalization 保持具体 morphism identity/composition 并把全局单射的具体 match 映为 typed-slice monomorphism。`ExactPositionalObject` 以有限 carrier、唯一 typed incidence 描述、固定有序边界 typing 与无 boundary duplicate 独立刻画良构本质像，重建证明 `essImage X ↔ ExactPositionalObject X`。原始 match 与两条 residual 经 finite-image/preimage 同构传回，两个 DPO 方形在 ambient slice 中均为 Van Kampen。有限 boundary-duplicate 反例证明"有限 + incidence-complete + 固定边界"仍不足。这不是无条件的 whole-slice 等价 |
+| Open π SMC                                     | 所给 quotient 已有实际 mathlib Category/Monoidal/Symmetric 实例。`OpenSMCNominalAtomBoundary` 加入互异 typed name port 与精确擦除自由支撑，接纳真实具名 output atom，并在空具名边界拒绝它。组合式具名接口范畴与原生 plug/hide/restriction 操作充分性仍开放                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| P1a 证明                                       | 可复用操作证书 family 与非空有限 DAG/pre-net/morphism 值已通过 kernel 构建。`P1cProductRuleProofBundle` 现给出一个实质非同一性 reconnect 实例：图增加 `(0, 1)`，四个不同 wrapper 携带原生 DAG/Petri/standard-late-pi/morphism 业务推导，四事件映射为双射，全部目标步反射，并含精确 replay 加 rank/quiescence/authorization/ε=1 调度证据。typed self-loop 反例仍排除 unrestricted typed open hypergraph 上的总严格 DAG 投影，product-rule 实例仍开放                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| P1b 证明与 FMS 边界                            | 有限 request/accept structural-late 链覆盖 alpha/capture avoidance、全部真实 sync/close incidence、精确 residual reflection、terminal classification 与无过滤 strong-late LTS 上的 `pi_ra_certificate`。FMS 采用 §26–§27 的非分离 D1-A 最大相容构造，而非 separated Abramsky effect；guarded Hoare/contextual 定理不等于 unrestricted actual-Agent strong-bisimulation full abstraction，actual-Agent 正面范围为 deterministic typed tau/free-output prefix trie 加 total finite-control/15-family commutation。**现行状态：** 已绑定不可变共同源码证据，独立评审待完成                                                                                                                                                                                                                                                                                                                                                                   |
+| P1c 证明                                       | 显式有限 60 格参考矩阵为 60/60 原生。后续多状态 `P1cFullNativeRefinement` 对全部 15 个 family-tagged raw 源进程分类每个 native transition，保持原生 terminality 与签名版本，并给出一份完整有限参考 `ProjectionCertificate`，含 mismatch、reconnect 与 quiescent delete。每个 refined 步也映为实际未过滤 α/结构 strong-late 步。Lean 证明 canonical pure-process 映射不能满足当前 complete 证书，因为 runtime admission 改变签名版本而纯 π 状态版本为零；delegation/reconnect 作为 raw transition triple 也冲突。这仅闭合有限参考协议并使所需元数据层决策显式。Product-wide admitted `Config`、static/resource/admission 层与一个共享 coherent 源仍开放                                                                                                                                                                                                                                                                                    |
+| 随机反馈桥                                     | 真正 Markov kernel、Ionescu--Tulcea trajectory law、可测 not-hit 事件与条件 almost-sure 桥已通过 kernel 构建。确定性与 seed 随机化事件路径耦合都精确遗忘至状态律。每个有限异构 `EpochChain` 现携带有序原生事件身份、精确端点、可执行 `DPOEvent` 或 signature-admission replay 与 runtime execution-epoch 对齐；marked kernel 把依赖 native mark 放在被采样的正边本身。`FiniteBranchingReplayKernel` 进一步对显式业务 choice 分配概率，使同端点事件成为不同随机后继，并几乎必然返回其依赖 replay witness。有限高度期望界由具体 kernel phase tails 推出为 `H/ε`。跨 runtime admission 的 product 实例化、general-presheaf-DPO replay 执行、`opportunityEpoch` 对齐与为每个包导出 stable-window/fairness/正-$\varepsilon$ 前提仍开放                                                                                                                                                                                                         |
+| 研究/证据日志                                  | 来源核验完成；现行 QA-L4 评审包为 `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md`，不可变源码/构建证据为 `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`；人工评审待定                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 引文核验（spec §11）                           | 原始来源已核实；全局 Petri 坍缩与通用 F2 被拒；"Gadducci–Montanari, Functorial Semantics…"修正为 Meseguer (2005)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 形式数学评审人                                 | 待指派                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Formal simulator（§5 检查器）                  | FCP 后                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **八个产品包**                                 | **Cantilune、Cantilune Notation、Libretto、Cast、Baton、Cue、Chorus、Reprise：尚无包源树、清单或规则清单存在。产品符合性是 FCP 后工作；包在准备好时独立实例化证书。包缺席不阻断核心理论 FCP。**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ## 下一步
 
-| 行动 | 负责人 | 到期/评审 | 权威链接 |
-|---|---|---|---|
-| **核心理论 FCP 门槛** | | | |
-| 评审已确认的规范图层：adhesive typed-presheaf slice 加有限良构位置化本质像 | 形式数学评审人 | Pre-FCP | 本 RFC §4.1、§23 |
-| 评审最大相容 D1-A/Open-π 边界，禁止扩张为已拒绝的 separated 或 unrestricted 主张 | 进程语义评审人 | Pre-FCP | 本 RFC §26–§28、QA-L4 评审包 |
-| 评审不可变 P1b/common-chain 源码与 provenance 证据 | 进程语义评审人 + Lean 评审人 | Pre-FCP | 本 RFC §4.2、§26–§28、QA-L4 评审包 |
-| 指派 category/DPO、进程语义、Lean 假设独立评审人 | DRI | Pre-FCP | 本 RFC 元数据 / 治理说明 |
-| 理论门槛满足后进入 FCP（§9 标准） | DRI | 评审后 | 本 RFC §9 |
-| **产品符合性（FCP 后，每包）** | | | |
-| 创建包边界与符合性规约模板 | DRI | FCP 后 | 规划中的 `packages/` 与 `docs/conformance/` 结构 |
-| 各包：提供清单、规则清单及每规则 ProductRuleProofBundle（DAG rank、Petri firing、π 推导、态射视图） | 包所有者 | FCP 后，逐步 | 每包符合性门槛 |
-| 各包：提供运行时操作事实（资源策略、授权谓词、删除/静止、公平性/ε 界） | 包所有者 | FCP 后，逐步 | 每包符合性门槛 |
-| **已从门槛移除（错误地阻断理论）** | | | |
-| ~~把封闭有限多状态 P1c 参考协议提升到全部 15 个 admitted 非 fixture `Config` occurrence~~ | ~~DRI~~ | ~~Pre-FCP~~ | **已拆分：** 理论有 60/60 参考（✓）。产品包为其规则实例化（FCP 后每包） |
-| ~~把通用分支事件 kernel 实例化到 certified 异构 runtime admission，跨全部包~~ | ~~DRI~~ | ~~Pre-FCP~~ | **移至产品：** 通用框架完整（✓）。各包提供公平性/ε/稳定窗口前提（FCP 后每包） |
-| ~~完成 DAG/Petri 直接规则映射证明~~ | ~~DRI~~ | ~~Pre-FCP~~ | **移至产品：** 通用 rankable-DAG 与 pre-net 构造完整（✓）。各包为其规则提供 rank/firing 映射（FCP 后每包） |
+| 行动                                                                                                | 负责人                       | 到期/评审    | 权威链接                                                                                                   |
+| --------------------------------------------------------------------------------------------------- | ---------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| **核心理论 FCP 门槛**                                                                               |                              |              |                                                                                                            |
+| 评审已确认的规范图层：adhesive typed-presheaf slice 加有限良构位置化本质像                          | 形式数学评审人               | Pre-FCP      | 本 RFC §4.1、§23                                                                                           |
+| 评审最大相容 D1-A/Open-π 边界，禁止扩张为已拒绝的 separated 或 unrestricted 主张                    | 进程语义评审人               | Pre-FCP      | 本 RFC §26–§28、QA-L4 评审包                                                                               |
+| 评审不可变 P1b/common-chain 源码与 provenance 证据                                                  | 进程语义评审人 + Lean 评审人 | Pre-FCP      | 本 RFC §4.2、§26–§28、QA-L4 评审包                                                                         |
+| 指派 category/DPO、进程语义、Lean 假设独立评审人                                                    | DRI                          | Pre-FCP      | 本 RFC 元数据 / 治理说明                                                                                   |
+| 理论门槛满足后进入 FCP（§9 标准）                                                                   | DRI                          | 评审后       | 本 RFC §9                                                                                                  |
+| **产品符合性（FCP 后，每包）**                                                                      |                              |              |                                                                                                            |
+| 创建包边界与符合性规约模板                                                                          | DRI                          | FCP 后       | 规划中的 `packages/` 与 `docs/conformance/` 结构                                                           |
+| 各包：提供清单、规则清单及每规则 ProductRuleProofBundle（DAG rank、Petri firing、π 推导、态射视图） | 包所有者                     | FCP 后，逐步 | 每包符合性门槛                                                                                             |
+| 各包：提供运行时操作事实（资源策略、授权谓词、删除/静止、公平性/ε 界）                              | 包所有者                     | FCP 后，逐步 | 每包符合性门槛                                                                                             |
+| **已从门槛移除（错误地阻断理论）**                                                                  |                              |              |                                                                                                            |
+| ~~把封闭有限多状态 P1c 参考协议提升到全部 15 个 admitted 非 fixture `Config` occurrence~~           | ~~DRI~~                      | ~~Pre-FCP~~  | **已拆分：** 理论有 60/60 参考（✓）。产品包为其规则实例化（FCP 后每包）                                    |
+| ~~把通用分支事件 kernel 实例化到 certified 异构 runtime admission，跨全部包~~                       | ~~DRI~~                      | ~~Pre-FCP~~  | **移至产品：** 通用框架完整（✓）。各包提供公平性/ε/稳定窗口前提（FCP 后每包）                              |
+| ~~完成 DAG/Petri 直接规则映射证明~~                                                                 | ~~DRI~~                      | ~~Pre-FCP~~  | **移至产品：** 通用 rankable-DAG 与 pre-net 构造完整（✓）。各包为其规则提供 rank/firing 映射（FCP 后每包） |
 
 ## 12. 2026-07-24 证明范围校正
 
@@ -645,7 +655,7 @@ stable-window/正-epsilon 前提的推导、不可变 commit 证据，以及
 1. **P1b reflection 分解。** `P1bStructuralLateBridge.step_decompose`
    现 kernel-checked：每个
    `Late.structuralLateLTS.ObservableStep (mapState state) action
-   target` 分解为结构同余 `Struct (mapState state) source'`、原生步
+target` 分解为结构同余 `Struct (mapState state) source'`、原生步
    `NativeStep source' action target'` 与目标同余
    `Struct target' target`。这正是 `Step.congr` 构造子的形状，其中
    `Step.native` 同一性情形被折叠，且它是完整

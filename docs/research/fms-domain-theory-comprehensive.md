@@ -39,30 +39,32 @@ This document consolidates six FMS domain-theory research logs into a single com
 
 The semantic foundation draws from:
 
-1. **Fiore, Moggi, and Sangiorgi** — [*A Fully Abstract Model for the π-calculus*, LICS 1996](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf) and [journal version](https://person.dibris.unige.it/moggi-eugenio/ftp/ic00.pdf)
-2. **Abramsky** — *A Domain Equation for Bisimulation*, Information and Computation 92(2), 1991
-3. **Abramsky & Jung** — [*Domain Theory* handbook chapter](https://www.cs.ox.ac.uk/people/samson.abramsky/handbook.pdf)
+1. **Fiore, Moggi, and Sangiorgi** — [_A Fully Abstract Model for the π-calculus_, LICS 1996](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf) and [journal version](https://person.dibris.unige.it/moggi-eugenio/ftp/ic00.pdf)
+2. **Abramsky** — _A Domain Equation for Bisimulation_, Information and Computation 92(2), 1991
+3. **Abramsky & Jung** — [_Domain Theory_ handbook chapter](https://www.cs.ox.ac.uk/people/samson.abramsky/handbook.pdf)
 
 ### 1.2 Source-Backed Theorem Matrix (from 0009)
 
-| Topic | Source Statement | Cantilune Interface | Current Status |
-|-------|------------------|---------------------|----------------|
-| Base category | `Cpo`: posets with omega-chain suprema, continuous maps; base objects may be unpointed | `ωCPO`, `ContinuousHom` | **Foundation exists** |
-| Nondeterminism | `ND(Cpo)` objects carry least `⊥`, semilattice identity `0`, idempotent choice; arrows are strict semilattice homomorphisms | `NondeterministicComputation`, `CpoPowerdomainPackage` | Interface only |
-| Powerdomain | Forgetful functor has `Cpo`-enriched left adjoint, inducing Abramsky's commutative powerdomain monad | `CpoPowerdomainPackage` with coherence records | **Ordinary adjunction kernel-built**; symmetric Fubini blocked |
-| Functor worlds | Pointwise lift to `Cpo^I` | `FMSPointwiseCpoMonad` | Conditional on base powerdomain |
-| Domain equation | `A = μX.P(HX)` initial solution | `AgentDomainSolution` | Interface only; no recursive solution |
-| Allocation/restriction | Name allocation, action-defined restriction with coherence | `CoherentHiding`, `AdequateHiding` | Interface and fragments; no FMS inhabitant |
-| Full abstraction | Denotational equality ⟺ strong late bisimilarity (Theorems 3.2, 3.3) | `StrongLateFullAbstraction` | Theorem fields only |
+| Topic                  | Source Statement                                                                                                            | Cantilune Interface                                    | Current Status                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| Base category          | `Cpo`: posets with omega-chain suprema, continuous maps; base objects may be unpointed                                      | `ωCPO`, `ContinuousHom`                                | **Foundation exists**                                          |
+| Nondeterminism         | `ND(Cpo)` objects carry least `⊥`, semilattice identity `0`, idempotent choice; arrows are strict semilattice homomorphisms | `NondeterministicComputation`, `CpoPowerdomainPackage` | Interface only                                                 |
+| Powerdomain            | Forgetful functor has `Cpo`-enriched left adjoint, inducing Abramsky's commutative powerdomain monad                        | `CpoPowerdomainPackage` with coherence records         | **Ordinary adjunction kernel-built**; symmetric Fubini blocked |
+| Functor worlds         | Pointwise lift to `Cpo^I`                                                                                                   | `FMSPointwiseCpoMonad`                                 | Conditional on base powerdomain                                |
+| Domain equation        | `A = μX.P(HX)` initial solution                                                                                             | `AgentDomainSolution`                                  | Interface only; no recursive solution                          |
+| Allocation/restriction | Name allocation, action-defined restriction with coherence                                                                  | `CoherentHiding`, `AdequateHiding`                     | Interface and fragments; no FMS inhabitant                     |
+| Full abstraction       | Denotational equality ⟺ strong late bisimilarity (Theorems 3.2, 3.3)                                                        | `StrongLateFullAbstraction`                            | Theorem fields only                                            |
 
 ### 1.3 Source Scope Clarifications (from 0009)
 
 **What FMS requires:**
+
 - Initial solution `A = μX.P(HX)` using "standard recursive-domain equation techniques"
 - Process-pair full abstraction: two processes are bisimilar ⟺ their denotations are equal
 - Commutative monad laws for the powerdomain
 
 **What FMS does NOT require (additional Cantilune conditions):**
+
 - Explicit `⊥ ≠ 0` stated in source (Cantilune adds this)
 - General "algebraic compactness" as a named theorem (construction method flexibility exists)
 - All-domain-element definability (source proves process-pair equivalence, not exhaustive definability)
@@ -76,16 +78,19 @@ The semantic foundation draws from:
 ### 2.1 Pinned Local Baseline (from 0007)
 
 **Current foundation:**
+
 - Lean: `leanprover/lean4:v4.32.0`
 - mathlib: commit `81a5d257c8e410db227a6665ed08f64fea08e997` (v4.32.0)
 - License: Apache-2.0
 
 **Mathlib provides:**
+
 - `OmegaCompletePartialOrder`, `ωScottContinuous`, `ContinuousHom`
 - Category `ωCPO` with products, equalizers, ordinary limits
 - Lawful fixed-point foundations
 
 **Mathlib does NOT provide:**
+
 - Abramsky/Plotkin/Hoare/Smyth powerdomains
 - Egli–Milner order
 - Domain-theoretic bilimits or algebraic compactness for general endofunctors
@@ -93,13 +98,13 @@ The semantic foundation draws from:
 
 ### 2.2 External Candidate Assessment (from 0007)
 
-| Candidate | Version | Declarations | Cantilune Status | FMS Coverage |
-|-----------|---------|--------------|------------------|--------------|
-| **Pinned mathlib** | Lean 4.32.0 | omega-CPOs, continuous maps, limits | **Already imported** | Foundation only |
-| **iris-lean** | v4.32.0 | `COFE`, `COFESolver.Fix`, step-indexed equivalence | Version-compatible; import unverified | Different semantics (guarded/step-indexed, not FMS CPO) |
-| **scott1972** | Lean 4.30.0 | Inverse limits, `theorem_4_4` for `D∞ ≅ [D∞ → D∞]` | Conditional source-port only | Useful for one inverse-limit construction; not general |
-| **zilberstein/domain-theory** | Lean 4.31.0 | DCPO, Scott continuity, way-below/compactness | Conditional port | Basic DCPO only; no powerdomain |
-| **jonsterling/lean4-sgdt** | Lean nightly 2021 | Guarded synthetic domain theory (axiomatic) | Not admissible | Wrong semantics, no license, axioms |
+| Candidate                     | Version           | Declarations                                       | Cantilune Status                      | FMS Coverage                                            |
+| ----------------------------- | ----------------- | -------------------------------------------------- | ------------------------------------- | ------------------------------------------------------- |
+| **Pinned mathlib**            | Lean 4.32.0       | omega-CPOs, continuous maps, limits                | **Already imported**                  | Foundation only                                         |
+| **iris-lean**                 | v4.32.0           | `COFE`, `COFESolver.Fix`, step-indexed equivalence | Version-compatible; import unverified | Different semantics (guarded/step-indexed, not FMS CPO) |
+| **scott1972**                 | Lean 4.30.0       | Inverse limits, `theorem_4_4` for `D∞ ≅ [D∞ → D∞]` | Conditional source-port only          | Useful for one inverse-limit construction; not general  |
+| **zilberstein/domain-theory** | Lean 4.31.0       | DCPO, Scott continuity, way-below/compactness      | Conditional port                      | Basic DCPO only; no powerdomain                         |
+| **jonsterling/lean4-sgdt**    | Lean nightly 2021 | Guarded synthetic domain theory (axiomatic)        | Not admissible                        | Wrong semantics, no license, axioms                     |
 
 ### 2.3 Dependency Decision (from 0007)
 
@@ -120,6 +125,7 @@ The semantic foundation draws from:
 **A. NDωCPO Category — IMPLEMENTED**
 
 `FMSCpoNondeterministicCategory` defines objects with:
+
 - `carrier : ωCPO`
 - `divergence : carrier` (least element)
 - `deadlock : carrier`
@@ -139,6 +145,7 @@ Morphisms: continuous maps preserving all three constants.
 **C. All-Source Solution Set — IMPLEMENTED (from 0012)**
 
 `FMSCpoNondeterministicGlobalSolutionSet` proves genuine `SolutionSetCondition.{0}` for every source `X : ωCPO`, with:
+
 - Generated omega-closed subalgebra factorization
 - Well-founded syntax for cardinal bound
 - Small presentation reindexing into fixed `Type 0`
@@ -148,6 +155,7 @@ This is no longer a caller premise or empty-source special case.
 **D. Ordinary Adjunction and Monad — IMPLEMENTED**
 
 From the solution set:
+
 - `freeAdjunctionOfSolutionSet` constructs `F ⊣ U`
 - `ordinaryMonadOfSolutionSet` derives monad on `ωCPO`
 - `ordinaryFreeLift` provides free-extension universal property
@@ -155,6 +163,7 @@ From the solution set:
 **E. Sequential Fubini — IMPLEMENTED (from 0012)**
 
 The canonical sequential Fubini map is:
+
 - Jointly continuous
 - Satisfies pure-unit law
 - Preserves divergence, deadlock, choice in first argument
@@ -163,6 +172,7 @@ The canonical sequential Fubini map is:
 **F. Recursive Domain Fixed Point — IMPLEMENTED (from 0010 §2026-07-27)**
 
 `FMSCpoConcreteBilimitExhaustivity` proves:
+
 - Monotonicity of finite-stage approximants
 - Pointwise omega-exhaustion of identity
 - Unfold monotonicity
@@ -174,6 +184,7 @@ This unconditionally inhabits `ConcreteBilimitExhaustivity` and constructs `conc
 **G. Monadic Hiding — IMPLEMENTED (from 0010 §2026-07-27, 0014 §2026-07-27)**
 
 The unseparated omega-Scott world monad now has `powerHiding` with:
+
 - Allocation/hiding, unit, multiplication, chosen Fubini commute
 - Effectful allocate/denote/hide retraction in support denotation
 
@@ -196,6 +207,7 @@ This is real monadic hiding coherence, but NOT agent restriction (no recursive a
 `no_commutative_first_strict_pairing` (general algebraic theorem) proves:
 
 > If a pairing is:
+>
 > 1. Available on every pair
 > 2. Symmetric
 > 3. Strict at order bottom in first argument
@@ -204,6 +216,7 @@ This is real monadic hiding coherence, but NOT agent restriction (no recursive a
 > Then bottom = zero.
 
 The current Cantilune combination cannot be completed:
+
 - `divergence_ne_empty` (kernel-proved separation)
 - Strict preservation of both constants by free extension
 - Canonical commutative Fubini
@@ -213,6 +226,7 @@ The current Cantilune combination cannot be completed:
 #### 3.2.2 Source Reconciliation (from 0012, 0014)
 
 The FMS source states:
+
 - Commutative monad interchange law
 - Absorbing law `let(f, 0) = 0`
 - Arrows are strict semilattice homomorphisms
@@ -267,6 +281,7 @@ Theory closure requires ALL kernel-checked:
 #### 4.1.1 Concrete-Name Representation No-Go
 
 `OpenSMCTotalNamedBoundary` proves:
+
 - `no_totalOccurrenceTensor_of_nonempty`: no total tensor can preserve all concrete port occurrences up to permutation and return valid `NamedInterface` when nonempty boundary exists (self-tensoring duplicates concrete names, violating `Nodup`)
 - `no_totalExactNamePlug_of_nonempty`: exact-name `PlugCertificate` cannot be total at nonempty identities
 
@@ -281,6 +296,7 @@ Theory closure requires ALL kernel-checked:
 #### 4.1.3 Missing for Total Open-Pi SMC (from 0011)
 
 A future construction must add:
+
 1. Infinite fresh-name supply for every sort
 2. Coherent sort-preserving public-boundary renaming
 3. Polarized linear alias/wire processes for nonempty identities
@@ -296,6 +312,7 @@ A future construction must add:
 #### 4.2.1 What IS Proven
 
 `FMSCommonTwoRowCrossEpochChain` constructs:
+
 - Non-erasing two-row cross-epoch chain with four exact native FMS edges (two admissions, two rules)
 - Exact denotational path: `admission₁ ; rule₁ ; admission₂ ; rule₂`
 - Couples operational chain to event-labelled stochastic trajectory
@@ -304,6 +321,7 @@ A future construction must add:
 #### 4.2.2 What IS Required (from 0011)
 
 The theorem deliberately requires:
+
 - Concrete `ExactFMSAcceptancePackage`
 - Both complete product rows
 - Equality of adjacent operational source endpoints
@@ -323,12 +341,14 @@ The theorem deliberately requires:
 ### 4.3 Recursive Agent Alpha Substitution (from 0010 §2026-07-27)
 
 `LateGuardedReplicationAlphaSubstitutionCongruence` proves:
+
 - Common-fresh normalization for `recv`, `new`, `repRecv`
 - Combined depth/alpha induction
 - Unconditionally inhabits `RecursiveAlpha.SubstitutionCongruent`
 - Every recursive native-step constructor permutation-equivariant up to alpha-related target
 
 **This is genuine one-step alpha congruence, but NOT:**
+
 - Recursive agent domain solution
 - Operational adequacy
 - Full abstraction
@@ -336,6 +356,7 @@ The theorem deliberately requires:
 ### 4.4 Operational Divergence vs. Deadlock (from 0014)
 
 `LateGuardedReplicationDivergence` separately proves:
+
 - Replicated tau has genuine infinite native run
 - Raw zero is deadlocked
 
@@ -350,18 +371,21 @@ The theorem deliberately requires:
 RFC-0002 and ADR-0001 must select ONE coherent route:
 
 #### Option 1: Unseparated Commutative FMS (Source-Aligned)
+
 - Retain commutative powerdomain law
 - Do NOT require effect-layer proof that `⊥ ≠ 0`
 - Prove process-level distinction through recursive agent and source-pinned full-abstraction theorem
 - **Status:** Ordinary adjunction and sequential operations kernel-built; lacks symmetric Fubini and separated constants
 
 #### Option 2: Separated Ordered/Noncommutative Effects
+
 - Retain separated constants `⊥ ≠ 0`
 - Use ordered/noncommutative effect whose sequencing records evaluation order
 - Accept that effect composition is not commutative
 - **Status:** Requires new semantic theorems; current sequential Fubini is not symmetric
 
 #### Option 3: Support-Separated Tensor
+
 - Change algebra/morphism category
 - Replace all-pairs cartesian pairing with support-separated tensor
 - Prove new support-indexed semantic theorems
@@ -372,6 +396,7 @@ RFC-0002 and ADR-0001 must select ONE coherent route:
 ### 5.2 Open-Pi SMC Representation (from 0011)
 
 RFC decision required for total Open-Pi SMC among:
+
 1. Guarded replication/recursion (crosses RFC stop condition)
 2. Separate wire semantics with proved operational quotient
 3. Deliberately linear one-shot interface
@@ -382,11 +407,13 @@ RFC decision required for total Open-Pi SMC among:
 ### 5.3 Dependency Admission Policy (from 0007)
 
 If `scott1972` is used:
+
 - Pin to exact audited commit `36bf01f99f00fcb78b999052212372ba026521ba`
 - Either: port upstream to Lean/mathlib 4.32 with release, OR vendor with RFC decision
 - Port acceptance test must: build in Cantilune, enumerate kernel assumptions, map theorems to FMS obligations, reproduce license/revision
 
 **Stop conditions (from 0007):**
+
 - Treating `ωCPO.HasLimits` as algebraic compactness
 - Treating `scott1972.theorem_4_4` as solution of `A ≅ P(H A)`
 - Treating `iris-lean` OFE equivalence as continuous natural isomorphism in `Cpo^I`
@@ -398,6 +425,7 @@ If `scott1972` is used:
 FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw.Proc` deliberately excludes replication/recursion.
 
 **Decision required:**
+
 - Current finite-control theorem is valid fragment, NOT implementation of arbitrary-process FMS Theorem 3.3
 - Adding full FMS replication/recursion crosses RFC stop condition
 - Requires explicit scope decision, not hidden proof assumption
@@ -409,6 +437,7 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 ### 6.1 What IS Kernel-Built
 
 **Foundation (from 0007, 0010):**
+
 - `ωCPO` category with products, equalizers, limits from mathlib
 - `NDωCPO` nondeterministic-computation category
 - Componentwise limits and preservation
@@ -416,6 +445,7 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 - Nullary initial two-point algebra
 
 **Free Construction (from 0010, 0012):**
+
 - All-source `SolutionSetCondition.{0}` with genuine small presentations
 - Ordinary free/forgetful adjunction `F ⊣ U`
 - Induced monad with unit, multiplication, universal `freeLift`
@@ -423,24 +453,28 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 - Canonical sequential Fubini (continuous, pure-unit coherent, first-argument strict)
 
 **Recursive Domain (from 0010 §2026-07-27):**
+
 - Concrete bilimit exhaustivity for unseparated omega-Scott functor
 - Continuous natural isomorphism `A ≅ P(H A)` (fixed point, not initial algebra)
 - Monadic `powerHiding` with allocation, unit, multiplication, chosen Fubini coherence
 - Effectful allocate/denote/hide retraction in support model
 
 **Alpha and Substitution (from 0010 §2026-07-27):**
+
 - Action-label alpha quotient with native transports
 - Recursive alpha substitution congruence for `recv`, `new`, `repRecv`
 - Combined depth/alpha induction
 - `RecursiveAlpha.SubstitutionCongruent` inhabited
 
 **Open-Pi Fragments (from 0011):**
+
 - Concrete-name representation no-go theorems
 - Object-level tensor with explicit fresh supply
 - Native transitions preserved through finite hiding
 - Plug/hide sync/close native lemmas
 
 **Cross-Epoch Composition (from 0011):**
+
 - Two-row common-FMS cross-epoch chain (conditional on supplied package and rows)
 - Four-event exact native path with denotational seam
 - Canonical marked replay with positioned action agreement
@@ -448,16 +482,19 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 ### 6.2 What IS Missing
 
 **Base Powerdomain:**
+
 - Symmetric commutative Fubini for separated constants (blocked by incompatibility)
 - Complete `CpoPowerdomainPackage` with all coherence records
 - Separated Abramsky construction with `⊥ ≠ 0`
 
 **Recursive Domain:**
+
 - Initial algebra / terminal coalgebra universal properties
 - Algebraic compactness for general locally continuous endofunctors
 - Recursive agent with operational semantics
 
 **Operational Semantics:**
+
 - Agent-level restriction (`AgentDomainSolution.res`)
 - Operational denotation for recursive agents
 - Adequacy (syntax soundness/completeness)
@@ -465,11 +502,13 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 - Full abstraction (Theorems 3.2, 3.3)
 
 **Open-Pi SMC:**
+
 - Total tensor on morphisms with full categorical coherence
 - Identity wires and structural quotient
 - Operational plug/hide adequacy for total SMC
 
 **Production Packages:**
+
 - Real rule inventories for eight planned packages
 - Rank, declaration-order pre-net
 - Resource/session policy, authorization
@@ -492,8 +531,8 @@ FMS source includes guarded replication `!α.P`. Cantilune's finite-control `Raw
 ### 7.1 Primary Sources
 
 1. Fiore, M., Moggi, E., & Sangiorgi, D. (1996). [A Fully-Abstract Model for the π-calculus](https://person.dibris.unige.it/moggi-eugenio/ftp/lics96.pdf). LICS 1996.
-2. Fiore, M., Moggi, E., & Sangiorgi, D. (2002). A fully abstract model for the π-calculus. *Information and Computation*, 179(1). [Author manuscript](https://person.dibris.unige.it/moggi-eugenio/ftp/ic00.pdf).
-3. Abramsky, S. (1991). A Domain Equation for Bisimulation. *Information and Computation*, 92(2). [Author PostScript](https://www.cs.ox.ac.uk/people/samson.abramsky/bisim.ps.gz).
+2. Fiore, M., Moggi, E., & Sangiorgi, D. (2002). A fully abstract model for the π-calculus. _Information and Computation_, 179(1). [Author manuscript](https://person.dibris.unige.it/moggi-eugenio/ftp/ic00.pdf).
+3. Abramsky, S. (1991). A Domain Equation for Bisimulation. _Information and Computation_, 92(2). [Author PostScript](https://www.cs.ox.ac.uk/people/samson.abramsky/bisim.ps.gz).
 4. Abramsky, S., & Jung, A. [Domain Theory](https://www.cs.ox.ac.uk/people/samson.abramsky/handbook.pdf). Handbook chapter.
 5. Abramsky, S. [Domain Theory and the Logic of Observable Properties](https://www.cs.ox.ac.uk/people/samson.abramsky/thesis.pdf). PhD thesis, Chapter 5 §3.
 

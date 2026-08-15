@@ -39,17 +39,17 @@ ADR-0001 Accepted.
 
 ## Classification and authority
 
-| Field | Value |
-|---|---|
-| Work object | Load-bearing formal theory, reference semantics, and proof provenance |
-| Risk | S2 |
-| Quality target | QA-L4: kernel verification plus independent specialist review |
-| Maturity | M2 / FCP-ready candidate |
-| Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
-| Ownership transfer | None |
-| Decision authority | RFC-0002 section 25 and its kernel-backed compatibility amendments |
-| Proof authority | The exact Lean source commit, pinned toolchain and dependency lock, strict CI, axiom audit, and proof-obligation manifest |
-| Review authority | Independent human reviewers bound to the same source commit and theorem inventory |
+| Field              | Value                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Work object        | Load-bearing formal theory, reference semantics, and proof provenance                                                     |
+| Risk               | S2                                                                                                                        |
+| Quality target     | QA-L4: kernel verification plus independent specialist review                                                             |
+| Maturity           | M2 / FCP-ready candidate                                                                                                  |
+| Owner / DRI        | Joker-of-Gotham / Joker-of-Gotham                                                                                         |
+| Ownership transfer | None                                                                                                                      |
+| Decision authority | RFC-0002 section 25 and its kernel-backed compatibility amendments                                                        |
+| Proof authority    | The exact Lean source commit, pinned toolchain and dependency lock, strict CI, axiom audit, and proof-obligation manifest |
+| Review authority   | Independent human reviewers bound to the same source commit and theorem inventory                                         |
 
 The Owner and DRI being the same person is explicit. Agent implementation and
 kernel checking do not count as independent human review.
@@ -140,23 +140,23 @@ elements or reverse semantic-image definability.
 The final reviewer must bind every row to the verified commit and build record
 above.
 
-| Area | Required evidence | Candidate proof surface | Gate state |
-|---|---|---|---|
-| Free SMC | Equality quotient, category/SMC coherence, universal comparison and uniqueness | `formal/Cantilune/Core/FreeSMCArbitraryUniversal.lean` and manifest symbol for CENTRAL-01 | Proved at S; review pending |
-| Open hypergraph and DPOI | Exact finite positional equivalence, arbitrary legal monic occurrence in that scope, complement/result uniqueness, Van Kampen and concurrency | Core DPOI modules and CENTRAL-02/03 | Proved at S; review pending |
-| Signature and replay | Extension coherence, representative-independent rewrite, exact `DPOEvent` replay, path lift/reflection | CENTRAL-04 through CENTRAL-07 | Proved at S; review pending |
-| P1a | Product-supplied whole-LTS DAG/Petri/morphism certificates with path and terminal coverage; selected canonical SCC-DAG and provenance-Petri sidecars; separate fourteen-event fixed-signature three-carrier replay reference | `CompleteProductP1aProjectionScope`, `P1aSemanticCertificate`, `FixedSignatureReferenceP1aScope`, CENTRAL-08/09 | Proved at S; sidecars and reference remain distinct; review pending |
-| Open-pi | Typed polarised algebraic SMC, fresh nominal realization, pairwise-fresh singleton wire names, globally disjoint canonical tensor blocks, joint derivative-alpha, native plug/hide/restriction representatives and exact compatibility boundary | `OpenSMCCanonicalPositional`, `OpenSMCPolarisedHomBridge` | Proved at S; review pending |
-| P1b | Exact structural late residual, alpha/capture avoidance, `res(com)`, `open+close`, ordinary `com`, reflection and terminal classification | P1b structural-late bridge and CENTRAL-13 | Proved at S; review pending |
-| P1c | Fifteen native families, sixty-operation total registry, enriched metadata, strong one-step refinement/replay, and explicit visible-admission then native-tau reconnect phase | `P1cOperationRegistry`, `P1cFullNativeRefinement`, CENTRAL-14 | Proved at S; review pending |
-| D1-A FMS | Distinct separated and D1-A branches; all-object lower omega-Scott effect, Monad/Fubini coherence, actual recursive agent-domain solution, restriction/hiding, finite and `RecursiveProc` guarded/contextual Hoare theorems, deterministic-prefix actual-Agent theorem, total finite-control coalgebra and fifteen-family commutation | `MaximumCompatibleD1AFMSClosure`, `FMSConcreteD1AAcceptance`, actual-Agent prefix/total-coalgebra/bridge modules | Proved at S; review pending |
-| Feedback/probability | Finite-height hard closure, no internal oscillation, conditional almost-sure hitting, expected bound, event/replay/epoch alignment | `CompleteFiniteHeightClosure`, CENTRAL-15/16 | Proved at S; review pending |
-| Terminal semantics | Success, external wait, deadlock and productive infinity do not drift across the admitted reference occurrence | terminal theorem and CENTRAL-17 | Proved at S; review pending |
-| Total composition | Generic four-projection theorem plus one substantive reconnect conformance witness, with one operation/`refinesTo`/metadata/payload/admission/selected-trajectory/actual-Agent chain | `CompleteProductCommonTrajectoryCertificate`, Core/Technical Closure theorem and CENTRAL-18 | Proved at S; review pending |
-| Static assurance | Complete root imports, zero whole-word `sorry`/`admit`/`axiom`/`unsafe`, clean build | Strict CI record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
-| Kernel assumptions | Every maintained declaration found exactly once and restricted to the documented Lean foundations | Axiom-audit output | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
-| Provenance | Toolchain, dependency lock, source aggregate, proof manifest and exact commit agree | Integrity record and build evidence | Bound at S/E/P; review pending |
-| Independent review | Category/DPO/Petri, pi/domain, and Lean/provenance review bound to the exact commit | Signed review records | Pending human reviewers |
+| Area                     | Required evidence                                                                                                                                                                                                                                                                                                                     | Candidate proof surface                                                                                          | Gate state                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Free SMC                 | Equality quotient, category/SMC coherence, universal comparison and uniqueness                                                                                                                                                                                                                                                        | `formal/Cantilune/Core/FreeSMCArbitraryUniversal.lean` and manifest symbol for CENTRAL-01                        | Proved at S; review pending                                         |
+| Open hypergraph and DPOI | Exact finite positional equivalence, arbitrary legal monic occurrence in that scope, complement/result uniqueness, Van Kampen and concurrency                                                                                                                                                                                         | Core DPOI modules and CENTRAL-02/03                                                                              | Proved at S; review pending                                         |
+| Signature and replay     | Extension coherence, representative-independent rewrite, exact `DPOEvent` replay, path lift/reflection                                                                                                                                                                                                                                | CENTRAL-04 through CENTRAL-07                                                                                    | Proved at S; review pending                                         |
+| P1a                      | Product-supplied whole-LTS DAG/Petri/morphism certificates with path and terminal coverage; selected canonical SCC-DAG and provenance-Petri sidecars; separate fourteen-event fixed-signature three-carrier replay reference                                                                                                          | `CompleteProductP1aProjectionScope`, `P1aSemanticCertificate`, `FixedSignatureReferenceP1aScope`, CENTRAL-08/09  | Proved at S; sidecars and reference remain distinct; review pending |
+| Open-pi                  | Typed polarised algebraic SMC, fresh nominal realization, pairwise-fresh singleton wire names, globally disjoint canonical tensor blocks, joint derivative-alpha, native plug/hide/restriction representatives and exact compatibility boundary                                                                                       | `OpenSMCCanonicalPositional`, `OpenSMCPolarisedHomBridge`                                                        | Proved at S; review pending                                         |
+| P1b                      | Exact structural late residual, alpha/capture avoidance, `res(com)`, `open+close`, ordinary `com`, reflection and terminal classification                                                                                                                                                                                             | P1b structural-late bridge and CENTRAL-13                                                                        | Proved at S; review pending                                         |
+| P1c                      | Fifteen native families, sixty-operation total registry, enriched metadata, strong one-step refinement/replay, and explicit visible-admission then native-tau reconnect phase                                                                                                                                                         | `P1cOperationRegistry`, `P1cFullNativeRefinement`, CENTRAL-14                                                    | Proved at S; review pending                                         |
+| D1-A FMS                 | Distinct separated and D1-A branches; all-object lower omega-Scott effect, Monad/Fubini coherence, actual recursive agent-domain solution, restriction/hiding, finite and `RecursiveProc` guarded/contextual Hoare theorems, deterministic-prefix actual-Agent theorem, total finite-control coalgebra and fifteen-family commutation | `MaximumCompatibleD1AFMSClosure`, `FMSConcreteD1AAcceptance`, actual-Agent prefix/total-coalgebra/bridge modules | Proved at S; review pending                                         |
+| Feedback/probability     | Finite-height hard closure, no internal oscillation, conditional almost-sure hitting, expected bound, event/replay/epoch alignment                                                                                                                                                                                                    | `CompleteFiniteHeightClosure`, CENTRAL-15/16                                                                     | Proved at S; review pending                                         |
+| Terminal semantics       | Success, external wait, deadlock and productive infinity do not drift across the admitted reference occurrence                                                                                                                                                                                                                        | terminal theorem and CENTRAL-17                                                                                  | Proved at S; review pending                                         |
+| Total composition        | Generic four-projection theorem plus one substantive reconnect conformance witness, with one operation/`refinesTo`/metadata/payload/admission/selected-trajectory/actual-Agent chain                                                                                                                                                  | `CompleteProductCommonTrajectoryCertificate`, Core/Technical Closure theorem and CENTRAL-18                      | Proved at S; review pending                                         |
+| Static assurance         | Complete root imports, zero whole-word `sorry`/`admit`/`axiom`/`unsafe`, clean build                                                                                                                                                                                                                                                  | Strict CI record                                                                                                 | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`   |
+| Kernel assumptions       | Every maintained declaration found exactly once and restricted to the documented Lean foundations                                                                                                                                                                                                                                     | Axiom-audit output                                                                                               | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`   |
+| Provenance               | Toolchain, dependency lock, source aggregate, proof manifest and exact commit agree                                                                                                                                                                                                                                                   | Integrity record and build evidence                                                                              | Bound at S/E/P; review pending                                      |
+| Independent review       | Category/DPO/Petri, pi/domain, and Lean/provenance review bound to the exact commit                                                                                                                                                                                                                                                   | Signed review records                                                                                            | Pending human reviewers                                             |
 
 # QA-L4 gates
 
@@ -263,25 +263,25 @@ Each reviewer should record:
 - conflict-of-interest declaration;
 - decision: accept, accept with tracked conditions, or reject.
 
-| Review perspective | Reviewer | Commit | Decision | Evidence link |
-|---|---|---|---|---|
-| Category / DPO / Petri | Pending | Pending | Pending | Pending |
-| Pi / domain theory | Pending | Pending | Pending | Pending |
-| Lean / provenance | Pending | Pending | Pending | Pending |
+| Review perspective     | Reviewer | Commit  | Decision | Evidence link |
+| ---------------------- | -------- | ------- | -------- | ------------- |
+| Category / DPO / Petri | Pending  | Pending | Pending  | Pending       |
+| Pi / domain theory     | Pending  | Pending | Pending  | Pending       |
+| Lean / provenance      | Pending  | Pending | Pending  | Pending       |
 
 Owner/DRI final signature: **Pending**.
 
 # Open quality debt and exclusions
 
-| Item | Disposition | Owner |
-|---|---|---|
-| Eight production packages | Deferred Product Conformance; each package must supply its own rule inventory, rank, pre-net, resources, authorization, fairness, stable window, positive epsilon, admission and replay witnesses | Future package owners |
-| Separated Abramsky effect | Not claimed by D1-A; retained as a literature/reference distinction | Domain-theory reviewer |
-| Strong-bisimulation FMS full abstraction | Kernel-refuted for D1-A; native strong-step theorems remain separate | Pi/domain reviewer |
-| All-elements/all-omega-CPO definability | Kernel-refuted; only realization of explicitly supplied finite Hoare generated trace sets and syntax-defined `CompactPrefixPoint`s is claimed; no theorem identifies these with every order-theoretic compact Agent element, and contextual source interpretation is not reverse definability | Pi/domain reviewer |
-| Raw structural-quotient SMC identity | Not claimed; algebraic wiring plus native commutation is the accepted route | Category/pi reviewers |
-| Human independent review | Required before reviewed/QA-L4 complete | Owner/DRI |
-| FCP and ADR disposition | Pending explicit human governance action | Owner/DRI |
+| Item                                     | Disposition                                                                                                                                                                                                                                                                                   | Owner                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| Eight production packages                | Deferred Product Conformance; each package must supply its own rule inventory, rank, pre-net, resources, authorization, fairness, stable window, positive epsilon, admission and replay witnesses                                                                                             | Future package owners  |
+| Separated Abramsky effect                | Not claimed by D1-A; retained as a literature/reference distinction                                                                                                                                                                                                                           | Domain-theory reviewer |
+| Strong-bisimulation FMS full abstraction | Kernel-refuted for D1-A; native strong-step theorems remain separate                                                                                                                                                                                                                          | Pi/domain reviewer     |
+| All-elements/all-omega-CPO definability  | Kernel-refuted; only realization of explicitly supplied finite Hoare generated trace sets and syntax-defined `CompactPrefixPoint`s is claimed; no theorem identifies these with every order-theoretic compact Agent element, and contextual source interpretation is not reverse definability | Pi/domain reviewer     |
+| Raw structural-quotient SMC identity     | Not claimed; algebraic wiring plus native commutation is the accepted route                                                                                                                                                                                                                   | Category/pi reviewers  |
+| Human independent review                 | Required before reviewed/QA-L4 complete                                                                                                                                                                                                                                                       | Owner/DRI              |
+| FCP and ADR disposition                  | Pending explicit human governance action                                                                                                                                                                                                                                                      | Owner/DRI              |
 
 # Release-quality disposition
 

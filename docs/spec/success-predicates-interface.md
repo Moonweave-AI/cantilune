@@ -1,15 +1,15 @@
 # Success Predicates Interface — Package-Level Terminal Classification
 
-| Field | Value |
-|---|---|
-| Status | **Draft** (reference implementation proved; independent review pending) |
-| Type | Normative specification (interface definition) |
-| Risk | S2 |
-| Owner | Joker-of-Gotham (DRI) |
-| Reviewers | TBD (architecture reviewer) |
-| Created | 2026-07-27 |
-| Updated | 2026-07-27 |
-| Related | `docs/spec/formal-semantics.md` §4.2, RFC-0002 clause (4), ADR-0001 |
+| Field     | Value                                                                   |
+| --------- | ----------------------------------------------------------------------- |
+| Status    | **Draft** (reference implementation proved; independent review pending) |
+| Type      | Normative specification (interface definition)                          |
+| Risk      | S2                                                                      |
+| Owner     | Joker-of-Gotham (DRI)                                                   |
+| Reviewers | TBD (architecture reviewer)                                             |
+| Created   | 2026-07-27                                                              |
+| Updated   | 2026-07-27                                                              |
+| Related   | `docs/spec/formal-semantics.md` §4.2, RFC-0002 clause (4), ADR-0001     |
 
 ---
 
@@ -36,11 +36,11 @@ This specification defines the **generic success predicate interface** that allo
 
 Given a rewriting system $(C,R)$ with state congruence $\equiv_R$, every equivalence class $[g]_{\equiv_R}$ falls into exactly one of three categories:
 
-| Classification | Definition | Formal Expression |
-|---|---|---|
-| **Non-terminal** | Can take at least one rewrite step | $\exists e, h.\ g \xrightarrow{e} h$ |
-| **Successful termination** | Stuck and satisfies success predicate | $\text{Stuck}([g]) \land \mathcal{T}_{\mathrm{ok}}([g])$ |
-| **Deadlock** | Stuck and fails success predicate | $\text{Stuck}([g]) \land \neg\mathcal{T}_{\mathrm{ok}}([g])$ |
+| Classification             | Definition                            | Formal Expression                                            |
+| -------------------------- | ------------------------------------- | ------------------------------------------------------------ |
+| **Non-terminal**           | Can take at least one rewrite step    | $\exists e, h.\ g \xrightarrow{e} h$                         |
+| **Successful termination** | Stuck and satisfies success predicate | $\text{Stuck}([g]) \land \mathcal{T}_{\mathrm{ok}}([g])$     |
+| **Deadlock**               | Stuck and fails success predicate     | $\text{Stuck}([g]) \land \neg\mathcal{T}_{\mathrm{ok}}([g])$ |
 
 where $\text{Stuck}([g]) := \nexists e, h.\ g \xrightarrow{e} h$ (no outgoing concrete event from the equivalence class).
 
@@ -64,24 +64,24 @@ From `formal-semantics.md` §4.2:
 structure SuccessPredicateInterface (Package : Type) where
   -- The package's state type (typically Config or a refinement)
   State : Type
-  
+
   -- State congruence for the package's rewriting system
   stateCongruence : State → State → Prop
   stateCongruence_equiv : Equivalence stateCongruence
-  
+
   -- The success predicate on equivalence classes
   isSuccessTerminal : State → Prop
-  
+
   -- Proof obligations:
-  congruence_saturated : 
-    ∀ g g', stateCongruence g g' → 
+  congruence_saturated :
+    ∀ g g', stateCongruence g g' →
     (isSuccessTerminal g ↔ isSuccessTerminal g')
-  
-  decidable_success : 
+
+  decidable_success :
     ∀ g, Decidable (isSuccessTerminal g)
-  
+
   -- The predicate is only meaningful for stuck states
-  stuck_only : 
+  stuck_only :
     ∀ g, isSuccessTerminal g → ¬∃ e h, g ⟶[e] h
 ```
 
@@ -90,7 +90,7 @@ structure SuccessPredicateInterface (Package : Type) where
 Each package must provide:
 
 ```lean
-def MyPackage.successPredicateInterface : 
+def MyPackage.successPredicateInterface :
   SuccessPredicateInterface MyPackage where
   State := MyPackage.Config
   stateCongruence := MyPackage.configEquiv
@@ -107,13 +107,13 @@ def MyPackage.successPredicateInterface :
 
 Each package defines what counts as "successful termination" based on its domain:
 
-| Package Type | Example Success Criteria | Rationale |
-|---|---|---|
-| **Workflow orchestration** | All tasks completed, no pending edges | Work is done |
-| **Agent conversation** | Explicit goal achieved or graceful exit | Intentional conclusion |
-| **Resource management** | All resources released, no leaks | Clean shutdown |
-| **Request/response** | Response delivered, connection closed | Protocol complete |
-| **Event processing** | Event queue empty, handlers idle | Quiescent state |
+| Package Type               | Example Success Criteria                | Rationale              |
+| -------------------------- | --------------------------------------- | ---------------------- |
+| **Workflow orchestration** | All tasks completed, no pending edges   | Work is done           |
+| **Agent conversation**     | Explicit goal achieved or graceful exit | Intentional conclusion |
+| **Resource management**    | All resources released, no leaks        | Clean shutdown         |
+| **Request/response**       | Response delivered, connection closed   | Protocol complete      |
+| **Event processing**       | Event queue empty, handlers idle        | Quiescent state        |
 
 ### 4.2 Common patterns
 
@@ -146,7 +146,7 @@ def isSuccess (g : Config) : Prop :=
 
 ```lean
 def isSuccess (g : Config) : Prop :=
-  ∃ goal ∈ g.declaredGoals, 
+  ∃ goal ∈ g.declaredGoals,
     goal.satisfied ∧ goal.priority = Priority.PRIMARY
 ```
 
@@ -229,12 +229,12 @@ def AgentPackage.isSuccess (g : Config) : Prop :=
 
 A critical distinction:
 
-| State | Stuck? | Success? | Classification | Explanation |
-|---|---|---|---|---|
-| Waiting for human approval | Yes | No | **External wait** (deadlock) | Cannot proceed without external input |
-| Waiting for network response | Yes | No | **External wait** (deadlock) | Cannot proceed without external event |
-| Work complete, idle | Yes | Yes | **Success** | Intentionally quiescent |
-| Work incomplete, no rules apply | Yes | No | **Genuine deadlock** | Cannot proceed, work unfinished |
+| State                           | Stuck? | Success? | Classification               | Explanation                           |
+| ------------------------------- | ------ | -------- | ---------------------------- | ------------------------------------- |
+| Waiting for human approval      | Yes    | No       | **External wait** (deadlock) | Cannot proceed without external input |
+| Waiting for network response    | Yes    | No       | **External wait** (deadlock) | Cannot proceed without external event |
+| Work complete, idle             | Yes    | Yes      | **Success**                  | Intentionally quiescent               |
+| Work incomplete, no rules apply | Yes    | No       | **Genuine deadlock**         | Cannot proceed, work unfinished       |
 
 **Design guidance:** If a stuck state requires external intervention to proceed, classify it as deadlock (not success), even if the wait is "expected." Success means the package has achieved its goal, not just reached a stable state.
 
@@ -250,23 +250,23 @@ From RFC-0002 §3:
 
 Each projection must define its own success predicate that agrees with the source:
 
-| Projection | Success Predicate $\mathcal{T}_{i,\mathrm{ok}}$ | Typical Definition |
-|---|---|---|
-| **DAG** | $\mathcal{T}_{\mathrm{DAG},\mathrm{ok}}$ | No pending edges, sink nodes satisfied |
-| **Petri** | $\mathcal{T}_{\mathrm{Petri},\mathrm{ok}}$ | Marking is in a designated success place |
-| **π** | $\mathcal{T}_{\pi,\mathrm{ok}}$ | Process is structurally equivalent to success marker |
-| **Morphism** | $\mathcal{T}_{\mathrm{Mor},\mathrm{ok}}$ | Identity with source (by construction) |
+| Projection   | Success Predicate $\mathcal{T}_{i,\mathrm{ok}}$ | Typical Definition                                   |
+| ------------ | ----------------------------------------------- | ---------------------------------------------------- |
+| **DAG**      | $\mathcal{T}_{\mathrm{DAG},\mathrm{ok}}$        | No pending edges, sink nodes satisfied               |
+| **Petri**    | $\mathcal{T}_{\mathrm{Petri},\mathrm{ok}}$      | Marking is in a designated success place             |
+| **π**        | $\mathcal{T}_{\pi,\mathrm{ok}}$                 | Process is structurally equivalent to success marker |
+| **Morphism** | $\mathcal{T}_{\mathrm{Mor},\mathrm{ok}}$        | Identity with source (by construction)               |
 
 ### 6.3 Consistency proof obligation
 
 For each package implementing `SuccessPredicateInterface`, the projection certificates must prove:
 
 ```lean
-theorem terminal_consistency 
+theorem terminal_consistency
   (pkg : SuccessPredicateInterface Package)
   (cert : ProjectionCertificate pkg) :
   ∀ g : pkg.State,
-    pkg.isSuccessTerminal g ↔ 
+    pkg.isSuccessTerminal g ↔
     cert.target.isSuccessTerminal (cert.project g) := by
   -- Package must prove this for each projection
 ```
@@ -275,7 +275,7 @@ theorem terminal_consistency
 
 - **Morphism:** by construction (identity view)
 - **DAG:** reference fixture complete; production packages supply per-rule proofs
-- **Petri:** reference fixture complete; production packages supply per-rule proofs  
+- **Petri:** reference fixture complete; production packages supply per-rule proofs
 - **π:** reference fixture complete for restricted relations; full reflection open
 
 ## 7. Decidability requirements
@@ -310,7 +310,7 @@ While not formally required, success predicates should be **efficiently decidabl
 To prove decidability, show that the success predicate decomposes into decidable primitives:
 
 ```lean
-theorem success_decidable (g : Config) : 
+theorem success_decidable (g : Config) :
   Decidable (isSuccessTerminal g) := by
   -- Decompose into decidable components
   have h1 : Decidable (g.workQueue.isEmpty) := inferInstance
@@ -324,13 +324,13 @@ theorem success_decidable (g : Config) :
 
 Each package implementing `SuccessPredicateInterface` must prove:
 
-| Obligation | Formal Statement | Difficulty |
-|---|---|---|
-| **Congruence saturation** | $g \equiv_R g' \to (\mathcal{T}_{\mathrm{ok}}([g]) \iff \mathcal{T}_{\mathrm{ok}}([g']))$ | Low–Medium |
-| **Decidability** | `Decidable (isSuccessTerminal g)` | Low |
-| **Stuck-only** | $\mathcal{T}_{\mathrm{ok}}([g]) \to \neg\exists e,h.\ g \xrightarrow{e} h$ | Medium |
-| **Projection consistency (×4)** | $\mathcal{T}_{\mathrm{ok}}([g]) \iff \mathcal{T}_{i,\mathrm{ok}}([P_i(g)])$ per projection | Medium–High |
-| **Stability** | Success predicate does not change during execution | Low (by construction) |
+| Obligation                      | Formal Statement                                                                           | Difficulty            |
+| ------------------------------- | ------------------------------------------------------------------------------------------ | --------------------- |
+| **Congruence saturation**       | $g \equiv_R g' \to (\mathcal{T}_{\mathrm{ok}}([g]) \iff \mathcal{T}_{\mathrm{ok}}([g']))$  | Low–Medium            |
+| **Decidability**                | `Decidable (isSuccessTerminal g)`                                                          | Low                   |
+| **Stuck-only**                  | $\mathcal{T}_{\mathrm{ok}}([g]) \to \neg\exists e,h.\ g \xrightarrow{e} h$                 | Medium                |
+| **Projection consistency (×4)** | $\mathcal{T}_{\mathrm{ok}}([g]) \iff \mathcal{T}_{i,\mathrm{ok}}([P_i(g)])$ per projection | Medium–High           |
+| **Stability**                   | Success predicate does not change during execution                                         | Low (by construction) |
 
 ## 9. Reference implementation: P1c admitted operations
 
@@ -351,7 +351,7 @@ inductive P1cTerminalClass
 
 def P1cPackage.classifyTerminal (g : Config) : P1cTerminalClass :=
   match g.controlState with
-  | ControlState.COMPLETE => 
+  | ControlState.COMPLETE =>
       if g.pendingWork.isEmpty then
         P1cTerminalClass.success
       else
@@ -382,16 +382,16 @@ From the research log:
 structure ExecutionPackage (σ : Signature) where
   State : Type
   Event : Type
-  
+
   -- ... native steps, replay, etc.
-  
+
   -- Success predicate integration
   successPredicate : SuccessPredicateInterface Package
-  
+
   -- Terminal states must respect the predicate
   terminal_classification :
     ∀ s : State, Stuck s →
-      Xor (successPredicate.isSuccessTerminal s) 
+      Xor (successPredicate.isSuccessTerminal s)
           (¬successPredicate.isSuccessTerminal s)
 ```
 
@@ -407,10 +407,10 @@ The success predicate defines the **target set** for hitting-time analysis:
 def hitSuccessTime (ω : SamplePath) : ℕ⊤ :=
   inf { n | pkg.isSuccessTerminal (ω n) }
 
-theorem almost_sure_success_or_deadlock 
+theorem almost_sure_success_or_deadlock
   (fairScheduler : ExecutionPackage pkg) :
   ℙ[∃ n, Stuck (ω n)] = 1 →
-  ℙ[∃ n, pkg.isSuccessTerminal (ω n) ∨ 
+  ℙ[∃ n, pkg.isSuccessTerminal (ω n) ∨
          ¬pkg.isSuccessTerminal (ω n)] = 1 := by
   -- Every stuck state is classified
 ```
@@ -441,7 +441,7 @@ def safetyProperty (trace : List Event) : Prop :=
   ∀ i, let g := executeTrace trace.take i in
     Stuck g → pkg.isSuccessTerminal g
 
--- Liveness: "something good eventually happens"  
+-- Liveness: "something good eventually happens"
 def livenessProperty (trace : List Event) : Prop :=
   ∃ i, let g := executeTrace trace.take i in
     pkg.isSuccessTerminal g
@@ -495,8 +495,8 @@ example : Stuck successState := by
 
 ## 15. Revision history
 
-| Date | Change | Author |
-|---|---|---|
+| Date       | Change        | Author          |
+| ---------- | ------------- | --------------- |
 | 2026-07-27 | Initial draft | Joker-of-Gotham |
 
 ---

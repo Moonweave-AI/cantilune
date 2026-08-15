@@ -18,18 +18,19 @@ For a Chinese project overview, see [README.zh-CN.md](README.zh-CN.md).
 
 ## Read by purpose
 
-| Need | Canonical document |
-|---|---|
-| Understand the project without mathematics | [Primer](primer/for-the-curious.md) · [简体中文](primer/zh-CN/for-the-curious.zh-CN.md) |
-| Understand the orchestration architecture | [RFC-0001](rfc/0001-cantilune-architecture.md) · [简体中文](rfc/zh-CN/0001-cantilune-architecture.zh-CN.md) |
-| Understand what four-projection consistency promises and requires | [RFC-0002](rfc/0002-projection-consistency.md) · [简体中文](rfc/zh-CN/0002-projection-consistency.zh-CN.md) |
-| Read the normative mathematical model | [Formal semantics](spec/formal-semantics.md) · [简体中文](spec/zh-CN/formal-semantics.zh-CN.md) |
-| Read projection-level observable policies | [Observable LTS policies](spec/observable-lts-policies.md) |
-| Implement package terminal classification | [Success predicates interface](spec/success-predicates-interface.md) |
-| Review the architecture decision | [ADR-0001](adr/0001-unified-formal-structure.md) · [简体中文](adr/zh-CN/0001-unified-formal-structure.zh-CN.md) |
-| Verify exactly what was proved | [Theory delivery](THEORY-CLOSURE-DELIVERY-2026-07-27.md) → [QA-L4 packet](qa/0002-theory-closure-proved-review-pending-2026-07-27.md) → [source/build evidence](qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md) |
-| Review source boundaries and no-go results | [Research map](research/README.md) |
-| Assign independent reviewers | [Reviewer assignments](governance/reviewer-assignments.md) |
+| Need                                                              | Canonical document                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Understand the project without mathematics                        | [Primer](primer/for-the-curious.md) · [简体中文](primer/zh-CN/for-the-curious.zh-CN.md)                                                                                                                                                                                   |
+| Understand the orchestration architecture                         | [RFC-0001](rfc/0001-cantilune-architecture.md) · [简体中文](rfc/zh-CN/0001-cantilune-architecture.zh-CN.md)                                                                                                                                                               |
+| Understand what four-projection consistency promises and requires | [RFC-0002](rfc/0002-projection-consistency.md) · [简体中文](rfc/zh-CN/0002-projection-consistency.zh-CN.md)                                                                                                                                                               |
+| Read the normative mathematical model                             | [Formal semantics](spec/formal-semantics.md) · [简体中文](spec/zh-CN/formal-semantics.zh-CN.md)                                                                                                                                                                           |
+| Read projection-level observable policies                         | [Observable LTS policies](spec/observable-lts-policies.md)                                                                                                                                                                                                                |
+| Implement package terminal classification                         | [Success predicates interface](spec/success-predicates-interface.md)                                                                                                                                                                                                      |
+| Review the architecture decision                                  | [ADR-0001](adr/0001-unified-formal-structure.md) · [简体中文](adr/zh-CN/0001-unified-formal-structure.zh-CN.md)                                                                                                                                                           |
+| Product Conformance (evidence, certificates, release gates)       | [RFC-0003](rfc/0003-product-conformance.md) · [简体中文](rfc/zh-CN/0003-product-conformance.zh-CN.md) · [ADR-0009](adr/0009-conformance-trust-lifecycle.md) · [ADR-0010](adr/0010-conformance-threat-model.md) · [QA-L5 checklist](qa/conformance-l5-review-checklist.md) |
+| Verify exactly what was proved                                    | [Theory delivery](THEORY-CLOSURE-DELIVERY-2026-07-27.md) → [QA-L4 packet](qa/0002-theory-closure-proved-review-pending-2026-07-27.md) → [source/build evidence](qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md)                                               |
+| Review source boundaries and no-go results                        | [Research map](research/README.md)                                                                                                                                                                                                                                        |
+| Assign independent reviewers                                      | [Reviewer assignments](governance/reviewer-assignments.md)                                                                                                                                                                                                                |
 
 ## Authority and document types
 
@@ -50,15 +51,15 @@ changes.
 
 ## Directory layout
 
-| Path | Contents |
-|---|---|
-| `adr/` | Architecture decisions and their Chinese translations |
-| `governance/` | Reviewer ownership and conflict-of-interest records |
-| `primer/` | Non-normative introductions |
-| `qa/` | Current review packet and immutable evidence |
-| `research/` | Source audits, no-go boundaries, and final proof records |
-| `rfc/` | Architecture and formal-consistency proposals |
-| `spec/` | Normative semantics and package-facing interfaces |
+| Path          | Contents                                                 |
+| ------------- | -------------------------------------------------------- |
+| `adr/`        | Architecture decisions and their Chinese translations    |
+| `governance/` | Reviewer ownership and conflict-of-interest records      |
+| `primer/`     | Non-normative introductions                              |
+| `qa/`         | Current review packet and immutable evidence             |
+| `research/`   | Source audits, no-go boundaries, and final proof records |
+| `rfc/`        | Architecture and formal-consistency proposals            |
+| `spec/`       | Normative semantics and package-facing interfaces        |
 
 ## Maintenance rules
 

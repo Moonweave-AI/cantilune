@@ -18,20 +18,20 @@ binding and independent QA-L4 review.
 
 Evidence binding:
 
-| Field | Value |
-|---|---|
-| Verified source commit | `59a1a6885ef6a2774b2731f487f83228e67d15dc` |
-| Evidence commit | `ed26cb74c4425b0d3025521f939695fd3fb8dee5` |
-| Pointer / manifest commit | This document's committed revision; reported externally |
-| Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` |
-| Build-evidence SHA-256 | `36f1335e148a0d458f1bdfbd3d7eacf27cfd45bcd0ea2fb60a6b404b5ddc51b8` |
-| Branch | `codex/theory-foundation` |
-| Published cleanup head | `9375a2edafd5a7d7574a6a3d527f806122292051` |
-| Review vehicle | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) |
-| Owner / DRI | Joker-of-Gotham / Joker-of-Gotham |
-| Human review | Pending |
-| FCP result | Pending |
-| ADR status | Proposed |
+| Field                       | Value                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| Verified source commit      | `59a1a6885ef6a2774b2731f487f83228e67d15dc`                         |
+| Evidence commit             | `ed26cb74c4425b0d3025521f939695fd3fb8dee5`                         |
+| Pointer / manifest commit   | This document's committed revision; reported externally            |
+| Complete build/audit record | `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`  |
+| Build-evidence SHA-256      | `36f1335e148a0d458f1bdfbd3d7eacf27cfd45bcd0ea2fb60a6b404b5ddc51b8` |
+| Branch                      | `codex/theory-foundation`                                          |
+| Published cleanup head      | `9375a2edafd5a7d7574a6a3d527f806122292051`                         |
+| Review vehicle              | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1)          |
+| Owner / DRI                 | Joker-of-Gotham / Joker-of-Gotham                                  |
+| Human review                | Pending                                                            |
+| FCP result                  | Pending                                                            |
+| ADR status                  | Proposed                                                           |
 
 The technical evidence values are now real and consistent: the source commit,
 single-parent evidence commit, evidence record and hash are bound; CENTRAL-18
@@ -213,20 +213,20 @@ requires a separate Product Conformance record and review.
 
 # Canonical artifact map
 
-| Artifact | Purpose |
-|---|---|
-| `formal/Cantilune.lean` | Root proof import |
-| `formal/Cantilune/Tests/All.lean` | Root regression import |
-| `formal/proof-obligations.json` | Central theorem inventory and evidence status |
-| `formal/source-integrity.json` | Source and pinned-input hashes |
-| `formal/axiom-audit-targets.txt` | Maintained kernel-assumption surface |
-| `formal/scripts/ci.ps1` | Development and proved/review-pending gate |
-| `formal/scripts/recompute-integrity.ps1` | Integrity regeneration |
-| `docs/rfc/0002-projection-consistency.md` | Ratified architecture and compatibility boundary |
-| `docs/adr/0001-unified-formal-structure.md` | Proposed architecture decision |
-| `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md` | QA-L4 review packet |
-| `docs/governance/reviewer-assignments.md` | Reviewer ownership, COI, and recruitment gate |
-| `docs/research/0027-final-load-bearing-seams-2026-07-27.md` | Final P1a/admission/common-trajectory seam record |
+| Artifact                                                          | Purpose                                           |
+| ----------------------------------------------------------------- | ------------------------------------------------- |
+| `formal/Cantilune.lean`                                           | Root proof import                                 |
+| `formal/Cantilune/Tests/All.lean`                                 | Root regression import                            |
+| `formal/proof-obligations.json`                                   | Central theorem inventory and evidence status     |
+| `formal/source-integrity.json`                                    | Source and pinned-input hashes                    |
+| `formal/axiom-audit-targets.txt`                                  | Maintained kernel-assumption surface              |
+| `formal/scripts/ci.ps1`                                           | Development and proved/review-pending gate        |
+| `formal/scripts/recompute-integrity.ps1`                          | Integrity regeneration                            |
+| `docs/rfc/0002-projection-consistency.md`                         | Ratified architecture and compatibility boundary  |
+| `docs/adr/0001-unified-formal-structure.md`                       | Proposed architecture decision                    |
+| `docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md` | QA-L4 review packet                               |
+| `docs/governance/reviewer-assignments.md`                         | Reviewer ownership, COI, and recruitment gate     |
+| `docs/research/0027-final-load-bearing-seams-2026-07-27.md`       | Final P1a/admission/common-trajectory seam record |
 
 Historical reports that claimed completion without an actual kernel build are
 not controlling evidence.
@@ -264,16 +264,16 @@ substitute for actually running the commands.
 
 # Review and governance disposition
 
-| Gate | Current disposition |
-|---|---|
-| Kernel proof and reproducibility | Proved; independent review pending |
-| Category/DPO/Petri independent review | Pending |
-| Pi/domain independent review | Pending |
-| Lean/provenance independent review | Pending |
-| Owner/DRI receipt | Pending |
-| RFC-0002 FCP | Not passed / pending real process |
-| ADR-0001 | Proposed |
-| Eight production packages | Deferred Product Conformance |
+| Gate                                  | Current disposition                |
+| ------------------------------------- | ---------------------------------- |
+| Kernel proof and reproducibility      | Proved; independent review pending |
+| Category/DPO/Petri independent review | Pending                            |
+| Pi/domain independent review          | Pending                            |
+| Lean/provenance independent review    | Pending                            |
+| Owner/DRI receipt                     | Pending                            |
+| RFC-0002 FCP                          | Not passed / pending real process  |
+| ADR-0001                              | Proposed                           |
+| Eight production packages             | Deferred Product Conformance       |
 
 The exact handoff statement is:
 
