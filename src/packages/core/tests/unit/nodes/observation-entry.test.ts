@@ -3,10 +3,7 @@ import { actorId } from "../../../src/primitives/ids.js";
 import { contentRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
 import { actorRef } from "../../../src/nodes/participant.js";
-import {
-  formatObservationLabel,
-  observationEntry,
-} from "../../../src/nodes/observationEntry.js";
+import { formatObservationLabel, observationEntry } from "../../../src/nodes/observationEntry.js";
 
 describe("observationEntry", () => {
   it("records a single external observation", () => {

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  emptyPolicyContext,
-  withApprovalState,
-} from "../../../src/nodes/policyContext.js";
+import { emptyPolicyContext, withApprovalState } from "../../../src/nodes/policyContext.js";
 
 describe("policyContext", () => {
   it("starts with no approval and idle retry", () => {

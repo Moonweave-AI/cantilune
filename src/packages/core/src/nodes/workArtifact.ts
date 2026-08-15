@@ -1,14 +1,17 @@
-import type { ActorId, ArtifactId } from "../primitives/ids.js";
+import type { ArtifactId } from "../primitives/ids.js";
 import type { ContentRef } from "../primitives/refs.js";
 import type { ActorRef } from "./participant.js";
 
 /** Lifecycle stage of a work artifact in the coordination flow. */
-export type ArtifactLifecycle =
-  | "proposed"
-  | "active"
-  | "reviewable"
-  | "published"
-  | "retired";
+export const ARTIFACT_LIFECYCLES = [
+  "proposed",
+  "active",
+  "reviewable",
+  "published",
+  "retired",
+] as const;
+
+export type ArtifactLifecycle = (typeof ARTIFACT_LIFECYCLES)[number];
 
 /**
  * Passable work object (task, plan, draft, deliverable, evidence).

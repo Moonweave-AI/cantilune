@@ -1,8 +1,17 @@
-import type { ActorId, LinkId } from "../primitives/ids.js";
-import type { ArtifactId } from "../primitives/ids.js";
+import type { ActorId, ArtifactId, LinkId } from "../primitives/ids.js";
 
 /** Semantic kind of directed collaboration relationship. */
-export type LinkKind = "depends_on" | "waits_for" | "supplies" | "reviews" | "delegates_to";
+export const LINK_KINDS = [
+  "depends_on",
+  "waits_for",
+  "supplies",
+  "reviews",
+  "delegates_to",
+  "parallel_with",
+  "nested_in",
+] as const;
+
+export type LinkKind = (typeof LINK_KINDS)[number];
 
 /** Endpoint of a collaboration link — either an actor or an artifact. */
 export type LinkEndpoint =

@@ -2,6 +2,7 @@ import type { TargetRef } from "../primitives/refs.js";
 import type { Footprint } from "./boundary.js";
 import { footprintFromTargets } from "./isolation.js";
 import type { CompositionIntent } from "./operators.js";
+import { coreViolation, throwCore } from "../primitives/violation.js";
 
 /** True when `outer` includes every id present in `inner` across all footprint dimensions. */
 export function footprintCovers(outer: Footprint, inner: Footprint): boolean {
@@ -15,20 +16,24 @@ export function footprintCovers(outer: Footprint, inner: Footprint): boolean {
 }
 
 /** True when the declared footprint includes all entities referenced by targets. */
-export function footprintCoversTargets(footprintValue: Footprint, targets: readonly TargetRef[]): boolean {
+export function footprintCoversTargets(
+  footprintValue: Footprint,
+  targets: readonly TargetRef[],
+): boolean {
   return footprintCovers(footprintValue, footprintFromTargets(targets));
 }
 
 /**
  * Ensures agent-declared footprint is wide enough for stated targets.
- *
- * OPEN DESIGN NOTE (see tests/DESIGN-CLOSURE.md § footprint):
- * This does NOT forbid extra ids in footprint beyond targets — only under-coverage.
+ * ADR-0002 C-prime: under-coverage is rejected; extra ids in footprint are allowed (conservative lock).
  */
 export function validateCompositionIntentFootprint(intent: CompositionIntent): void {
   if (!footprintCoversTargets(intent.footprint, intent.targets)) {
-    throw new Error(
-      "CompositionIntent footprint does not cover all targets; concurrent isolation and admission may diverge",
+    throwCore(
+      coreViolation(
+        "footprint_undercovers_targets",
+        "CompositionIntent footprint does not cover all targets; concurrent isolation and admission may diverge",
+      ),
     );
   }
 }

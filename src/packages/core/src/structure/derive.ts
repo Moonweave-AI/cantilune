@@ -1,53 +1,104 @@
 import type { ActorId, ArtifactId } from "../primitives/ids.js";
 import type { CollaborationSnapshot } from "../coordination/collaborationSnapshot.js";
+import type { CoordinationChange } from "../coordination/coordinationChange.js";
 import type { RunHistory } from "./trace.js";
 import { rewriteSegments } from "./trace.js";
 
 /**
- * Read-model node describing emergent structure (derive only — agents do not author this).
+ * Diagnostic read-model node — not authoritative for scheduling or concurrency.
+ * Use only for observability summaries until structure projection ADR closes.
  */
-export type DerivedCompositionView =
-  | { readonly kind: "serial"; readonly parts: readonly DerivedCompositionView[] }
-  | { readonly kind: "parallel"; readonly parts: readonly DerivedCompositionView[] }
-  | { readonly kind: "nest"; readonly inner: DerivedCompositionView; readonly label: string }
+export type DerivedDiagnosticView =
+  | { readonly kind: "serial"; readonly parts: readonly DerivedDiagnosticView[] }
+  | { readonly kind: "parallel"; readonly parts: readonly DerivedDiagnosticView[] }
+  | { readonly kind: "nest"; readonly inner: DerivedDiagnosticView; readonly label: string }
   | { readonly kind: "box"; readonly participantId?: ActorId; readonly artifactId?: ArtifactId };
 
+/** @deprecated Renamed to {@link DerivedDiagnosticView}. */
+export type DerivedCompositionView = DerivedDiagnosticView;
+
 /**
- * Derive a coarse structural view from committed facts.
- * This is observability / documentation — not the write model for agents.
+ * Derive a coarse diagnostic summary from committed facts.
+ * Not a trustworthy structure projection — do not use for scheduling decisions.
  */
-export function deriveCompositionView(
+export function deriveDiagnosticSummary(
   snapshot: CollaborationSnapshot,
   history: RunHistory,
-): DerivedCompositionView {
+): DerivedDiagnosticView {
   const changes = rewriteSegments(history);
   if (changes.length === 0) {
     return deriveFromSnapshotOnly(snapshot);
   }
 
-  const boxes: DerivedCompositionView[] = changes.map((change) => {
-    const artifactTarget = change.targets.find((t) => t.kind === "artifact");
-    const participantTarget = change.targets.find((t) => t.kind === "participant");
-    return {
-      kind: "box" as const,
-      ...(participantTarget !== undefined
-        ? { participantId: participantTarget.id as ActorId }
-        : {}),
-      ...(artifactTarget !== undefined ? { artifactId: artifactTarget.id as ArtifactId } : {}),
-    };
-  });
+  const views = changes.map((change) => diagnosticStepFromChange(change));
 
-  if (boxes.length === 1) {
-    const single = boxes[0];
+  if (views.length === 1) {
+    const single = views[0];
     if (single !== undefined) {
       return single;
     }
   }
 
-  return { kind: "serial", parts: boxes };
+  return { kind: "serial", parts: views };
 }
 
-function deriveFromSnapshotOnly(snapshot: CollaborationSnapshot): DerivedCompositionView {
+/** Single-step diagnostic view for one committed change — shared with observability structure lens. */
+export function diagnosticStepFromChange(change: CoordinationChange): DerivedDiagnosticView {
+  if (change.operationTypeId === "create_session") {
+    const sessionRef = change.createdSessionRefs[0];
+    const participantTargets = change.targets.filter((target) => target.kind === "participant");
+    const inner =
+      participantTargets.length <= 1
+        ? {
+            kind: "box" as const,
+            ...(participantTargets[0] !== undefined
+              ? { participantId: participantTargets[0].id as ActorId }
+              : { participantId: change.initiator.actorId }),
+          }
+        : {
+            kind: "parallel" as const,
+            parts: participantTargets.map((target) => ({
+              kind: "box" as const,
+              participantId: target.id as ActorId,
+            })),
+          };
+    return {
+      kind: "nest",
+      inner,
+      label: sessionRef ?? "session",
+    };
+  }
+
+  if (change.operationTypeId === "fork_branch") {
+    const participantTargets = change.targets.filter((target) => target.kind === "participant");
+    const branchIds =
+      participantTargets.length > 0
+        ? participantTargets.map((target) => target.id as ActorId)
+        : [change.initiator.actorId];
+    return {
+      kind: "parallel",
+      parts: branchIds.map((participantId) => ({ kind: "box" as const, participantId })),
+    };
+  }
+
+  const artifactTarget = change.targets.find((target) => target.kind === "artifact");
+  const participantTarget = change.targets.find((target) => target.kind === "participant");
+  return {
+    kind: "box" as const,
+    ...(participantTarget !== undefined ? { participantId: participantTarget.id as ActorId } : {}),
+    ...(artifactTarget !== undefined ? { artifactId: artifactTarget.id as ArtifactId } : {}),
+  };
+}
+
+/** @deprecated Use {@link deriveDiagnosticSummary}. */
+export function deriveCompositionView(
+  snapshot: CollaborationSnapshot,
+  history: RunHistory,
+): DerivedDiagnosticView {
+  return deriveDiagnosticSummary(snapshot, history);
+}
+
+function deriveFromSnapshotOnly(snapshot: CollaborationSnapshot): DerivedDiagnosticView {
   const participants = [...snapshot.participants.values()];
   if (participants.length === 0) {
     return { kind: "box" };

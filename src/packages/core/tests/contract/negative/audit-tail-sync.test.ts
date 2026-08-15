@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { collaborationSnapshot } from "../../../src/coordination/collaborationSnapshot.js";
-import { validateAuditTailMatchesHistory } from "../../../src/coordination/validation.js";
+import { validateAuditTailMatchesHistory } from "../../../src/consistency/index.js";
 import { epochId } from "../../../src/primitives/ids.js";
 import { contentRef, snapshotRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
 import { actorRef } from "../../../src/nodes/participant.js";
 import { actorId } from "../../../src/primitives/ids.js";
-import {
-  appendObservationSegment,
-  emptyRunHistory,
-} from "../../../src/structure/trace.js";
+import { appendObservationSegment, emptyRunHistory } from "../../../src/structure/trace.js";
 
 describe("N4 auditTail and RunHistory must stay aligned", () => {
   it("rejects when snapshot auditTail and history observation segments diverge", () => {

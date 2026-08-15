@@ -24,9 +24,7 @@ describe("footprintCovers", () => {
 describe("footprintCoversTargets", () => {
   it("derives minimum coverage from targets", () => {
     const fp = footprint({ participantIds: [actorId("coder-c")] });
-    expect(
-      footprintCoversTargets(fp, [targetRef("participant", "coder-c")]),
-    ).toBe(true);
+    expect(footprintCoversTargets(fp, [targetRef("participant", "coder-c")])).toBe(true);
     expect(
       footprintCoversTargets(fp, [
         targetRef("participant", "coder-c"),

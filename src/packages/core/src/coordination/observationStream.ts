@@ -1,4 +1,5 @@
 import type { ObservationEntry } from "../nodes/observationEntry.js";
+import { coreViolation, throwCore } from "../primitives/violation.js";
 import type { SequenceNo } from "../primitives/time.js";
 
 /**
@@ -23,7 +24,7 @@ export function nextSequenceNo(stream: ObservationStream): SequenceNo {
   if (stream.length === 0) {
     return 1;
   }
-  const last = stream[stream.length - 1];
+  const last = stream.at(-1);
   if (last === undefined) {
     return 1;
   }
@@ -33,8 +34,16 @@ export function nextSequenceNo(stream: ObservationStream): SequenceNo {
 function assertAppendOnlyOrder(stream: ObservationStream, entry: ObservationEntry): void {
   const expected = nextSequenceNo(stream);
   if (entry.sequenceNo !== expected) {
-    throw new Error(
-      `Observation sequence mismatch: expected ${expected}, got ${entry.sequenceNo}`,
+    throwCore(
+      coreViolation(
+        "observation_sequence_invalid",
+        `Observation sequence mismatch: expected ${expected}, got ${entry.sequenceNo}`,
+        {
+          path: "auditTail.sequenceNo",
+          expected: String(expected),
+          actual: String(entry.sequenceNo),
+        },
+      ),
     );
   }
 }

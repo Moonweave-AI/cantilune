@@ -1,10 +1,4 @@
-import type {
-  ActorId,
-  ArtifactId,
-  CapabilityId,
-  LinkId,
-  SessionId,
-} from "../primitives/ids.js";
+import type { ActorId, ArtifactId, CapabilityId, LinkId, SessionId } from "../primitives/ids.js";
 import type { TargetRef } from "../primitives/refs.js";
 import type { CoordinationChange, CoordinationIntent } from "../coordination/coordinationChange.js";
 import type { CompositionIntent } from "./operators.js";
@@ -73,14 +67,25 @@ export function footprintOfCoordinationIntent(intent: CoordinationIntent): Footp
   return footprintFromTargets(intent.targets);
 }
 
-export function footprintOfCompositionIntent(intent: CompositionIntent): Footprint {
+/** Agent-declared isolation scope (may be conservative / wider than targets). */
+export function requestedIsolationScope(intent: CompositionIntent): Footprint {
   return intent.footprint;
 }
 
-function mergeSessionFootprint(
-  fp: Footprint,
-  sessionRefs: readonly SessionId[],
-): Footprint {
+/**
+ * Authoritative touch set for admission and concurrency.
+ * Derived from named targets — agent footprint is not trusted as the sole basis.
+ */
+export function effectiveFootprintOfCompositionIntent(intent: CompositionIntent): Footprint {
+  return footprintFromTargets(intent.targets);
+}
+
+/** @deprecated Use {@link requestedIsolationScope} or {@link effectiveFootprintOfCompositionIntent}. */
+export function footprintOfCompositionIntent(intent: CompositionIntent): Footprint {
+  return requestedIsolationScope(intent);
+}
+
+function mergeSessionFootprint(fp: Footprint, sessionRefs: readonly SessionId[]): Footprint {
   if (sessionRefs.length === 0) {
     return fp;
   }
@@ -93,7 +98,13 @@ function mergeSessionFootprint(
   });
 }
 
-/** Two composition intents may proceed concurrently when their footprints are disjoint. */
+/**
+ * Two composition intents may proceed concurrently when their authoritative
+ * effective footprints (from targets) are disjoint.
+ */
 export function compatibleConcurrently(a: CompositionIntent, b: CompositionIntent): boolean {
-  return disjoint(a.footprint, b.footprint);
+  return disjoint(
+    effectiveFootprintOfCompositionIntent(a),
+    effectiveFootprintOfCompositionIntent(b),
+  );
 }

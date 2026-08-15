@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coordinationChange } from "../../src/coordination/coordinationChange.js";
+import { testCoordinationChange } from "../support/fixtures/change-fixture.js";
 import {
   actorId,
   artifactId,
@@ -15,7 +15,7 @@ import { footprintOfChange } from "../../src/structure/isolation.js";
 
 describe("footprintOfChange delegate case", () => {
   it("includes targets from naming contract §5 delegate", () => {
-    const change = coordinationChange({
+    const change = testCoordinationChange({
       changeId: changeId("chg-7f3a"),
       recordedAt: timestamp("2026-08-07T11:00:00Z"),
       epochId: epochId("42"),

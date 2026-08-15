@@ -40,12 +40,10 @@ describe("workArtifact", () => {
   });
 
   it("remains distinct from scoped capabilities", () => {
-    const cap = scopedCapability(
-      capabilityId("write-lock-w"),
-      "write_lock",
-      actorId("planner-p"),
-      { kind: "artifact", artifactId: artifactId("task-T") },
-    );
+    const cap = scopedCapability(capabilityId("write-lock-w"), "write_lock", actorId("planner-p"), {
+      kind: "artifact",
+      artifactId: artifactId("task-T"),
+    });
     const artifact = workArtifact(
       artifactId("task-T"),
       "Task",

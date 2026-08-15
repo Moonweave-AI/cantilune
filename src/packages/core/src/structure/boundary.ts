@@ -1,10 +1,4 @@
-import type {
-  ActorId,
-  ArtifactId,
-  CapabilityId,
-  LinkId,
-  SessionId,
-} from "../primitives/ids.js";
+import type { ActorId, ArtifactId, CapabilityId, LinkId, SessionId } from "../primitives/ids.js";
 
 /** Typed port on an open composition boundary. */
 export interface Port {
@@ -44,13 +38,15 @@ export function emptyFootprint(): Footprint {
   };
 }
 
-export function footprint(init: Partial<{
-  artifactIds: Iterable<ArtifactId>;
-  participantIds: Iterable<ActorId>;
-  sessionIds: Iterable<SessionId>;
-  capabilityIds: Iterable<CapabilityId>;
-  linkIds: Iterable<LinkId>;
-}>): Footprint {
+export function footprint(
+  init: Partial<{
+    artifactIds: Iterable<ArtifactId>;
+    participantIds: Iterable<ActorId>;
+    sessionIds: Iterable<SessionId>;
+    capabilityIds: Iterable<CapabilityId>;
+    linkIds: Iterable<LinkId>;
+  }>,
+): Footprint {
   return {
     artifactIds: new Set(init.artifactIds ?? []),
     participantIds: new Set(init.participantIds ?? []),
@@ -72,11 +68,13 @@ export function mergeFootprints(a: Footprint, b: Footprint): Footprint {
 
 /** Input-side boundary binding for an open composition. */
 export interface Goal {
+  readonly kind: "goal";
   readonly bindings: readonly PortBinding[];
 }
 
 /** Output-side boundary binding for an open composition. */
 export interface Outcome {
+  readonly kind: "outcome";
   readonly bindings: readonly PortBinding[];
 }
 
@@ -90,9 +88,9 @@ export function portBinding(portValue: Port, ref: string): PortBinding {
 }
 
 export function goal(bindings: readonly PortBinding[]): Goal {
-  return { bindings };
+  return { kind: "goal", bindings };
 }
 
 export function outcome(bindings: readonly PortBinding[]): Outcome {
-  return { bindings };
+  return { kind: "outcome", bindings };
 }

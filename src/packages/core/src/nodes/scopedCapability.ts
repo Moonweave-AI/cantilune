@@ -1,7 +1,14 @@
 import type { ActorId, ArtifactId, CapabilityId, SessionId } from "../primitives/ids.js";
 
 /** Kind of linear or scarce scoped resource. */
-export type CapabilityKind = "write_lock" | "budget_slot" | "approval_slot" | "tool_lease";
+export const CAPABILITY_KINDS = [
+  "write_lock",
+  "budget_slot",
+  "approval_slot",
+  "tool_lease",
+] as const;
+
+export type CapabilityKind = (typeof CAPABILITY_KINDS)[number];
 
 /** What entity a capability is scoped to. */
 export type CapabilityScope =

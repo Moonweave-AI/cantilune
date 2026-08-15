@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { actorId, artifactId } from "../../../src/primitives/ids.js";
-import { footprint, mergeFootprints, emptyFootprint, port, interfacePorts, goal, portBinding } from "../../../src/structure/boundary.js";
+import {
+  footprint,
+  mergeFootprints,
+  emptyFootprint,
+  port,
+  interfacePorts,
+  goal,
+  portBinding,
+} from "../../../src/structure/boundary.js";
 
 describe("mergeFootprints", () => {
   it("unions all id sets", () => {

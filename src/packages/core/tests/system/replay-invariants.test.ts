@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { deriveCompositionView } from "../../src/structure/derive.js";
 import {
   appendObservationSegment,
-  appendRewriteSegment,
   emptyRunHistory,
   sliceRunHistory,
 } from "../../src/structure/trace.js";
@@ -16,15 +15,14 @@ import {
   assertNoPayload,
   assertObservationSeparation,
 } from "../support/assertions/invariants.js";
-import { appendObservation, withArtifact, withCapability, withSnapshotRef } from "../../src/coordination/collaborationSnapshot.js";
-import { coordinationChange } from "../../src/coordination/coordinationChange.js";
 import {
-  actorId,
-  artifactId,
-  changeId,
-  epochId,
-  operationTypeId,
-} from "../../src/primitives/ids.js";
+  appendObservation,
+  withArtifact,
+  withCapability,
+  withSnapshotRef,
+} from "../../src/coordination/collaborationSnapshot.js";
+import { testCoordinationChange } from "../support/fixtures/change-fixture.js";
+import { artifactId, changeId, epochId, operationTypeId } from "../../src/primitives/ids.js";
 import { contentRef, snapshotRef, targetRef } from "../../src/primitives/refs.js";
 import { timestamp } from "../../src/primitives/time.js";
 import { actorRef } from "../../src/nodes/participant.js";
@@ -34,7 +32,7 @@ import { storyEntityIds } from "../support/fixtures/standard-story/delegate-chan
 import { simulateCommit } from "../support/harness/simulate-commit.js";
 
 function buildIntroduceChange() {
-  return coordinationChange({
+  return testCoordinationChange({
     changeId: changeId("chg-001"),
     recordedAt: timestamp("2026-08-07T10:05:00Z"),
     epochId: epochId("42"),
@@ -72,12 +70,10 @@ describe("replay invariants", () => {
               actorRef(storyActorIds.planner, "agent"),
             ),
           ),
-          scopedCapability(
-            storyEntityIds.writeLock,
-            "write_lock",
-            storyActorIds.planner,
-            { kind: "artifact", artifactId: storyEntityIds.task },
-          ),
+          scopedCapability(storyEntityIds.writeLock, "write_lock", storyActorIds.planner, {
+            kind: "artifact",
+            artifactId: storyEntityIds.task,
+          }),
         ),
         change.afterRef,
       ),

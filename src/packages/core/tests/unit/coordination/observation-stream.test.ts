@@ -10,6 +10,7 @@ import {
   observationStreamEntries,
 } from "../../../src/coordination/observationStream.js";
 import { actorId } from "../../../src/primitives/ids.js";
+import { CoreError } from "../../../src/primitives/violation.js";
 
 describe("observationStream", () => {
   it("starts empty with sequence number 1", () => {
@@ -30,15 +31,19 @@ describe("observationStream", () => {
     expect(nextSequenceNo(stream)).toBe(2);
   });
 
-  it("throws when sequence number is out of order", () => {
+  it("throws CoreError when sequence number is out of order", () => {
     const bad = observationEntry(
       2,
       actorRef(actorId("human-1"), "human"),
       contentRef("content://obs-2"),
       timestamp("2026-08-07T09:01:00Z"),
     );
-    expect(() => appendToObservationStream(emptyObservationStream(), bad)).toThrow(
-      /sequence mismatch/,
-    );
+    expect(() => appendToObservationStream(emptyObservationStream(), bad)).toThrow(CoreError);
+    try {
+      appendToObservationStream(emptyObservationStream(), bad);
+    } catch (error) {
+      expect(error).toBeInstanceOf(CoreError);
+      expect((error as CoreError).violation.code).toBe("observation_sequence_invalid");
+    }
   });
 });

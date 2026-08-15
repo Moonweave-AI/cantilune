@@ -4,11 +4,10 @@ import { communicationSession } from "../../../src/nodes/communicationSession.js
 
 describe("communicationSession", () => {
   it("creates a private session by default", () => {
-    const session = communicationSession(
-      sessionId("session-s"),
+    const session = communicationSession(sessionId("session-s"), actorId("coder-c"), [
       actorId("coder-c"),
-      [actorId("coder-c"), actorId("planner-p")],
-    );
+      actorId("planner-p"),
+    ]);
     expect(session.visibility).toBe("private");
     expect(session.controller).toBe("coder-c");
     expect(session.participants).toHaveLength(2);

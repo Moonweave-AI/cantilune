@@ -2,49 +2,49 @@
 
 `src/` 仅含生产代码；全部可执行测试在本目录。
 
-## 七层落位
+## 七层落位（诚实声明）
 
-| 层 | 目录 | 说明 |
-|---|---|---|
-| L2 | `types/` | 编译期 brand / export 契约 |
-| L3 | `unit/` | 单元测试，镜像 `src/` 四目录 |
-| L4 | `integration/` | 跨三柱数据流 |
-| L5 | `contract/` | 对照 naming-contract；含 `contract/negative/` 负向 |
-| L6 | `system/` | 包内 E2E、重放不变量 |
-| L7 | `system/complex/` | 并行/嵌套、多 scope history |
-| — | `support/` | fixture / assert / harness（非用例） |
+| 层  | 目录                        | 当前状态                                                      |
+| --- | --------------------------- | ------------------------------------------------------------- |
+| L2  | `types/` + `pnpm typecheck` | typecheck 含 `tsc`；Vitest types 为补充                       |
+| L3  | `unit/`                     | **成立**                                                      |
+| L4  | `integration/`              | **部分** — 窄跨柱流                                           |
+| L5  | `contract/` + `negative/`   | **成立**                                                      |
+| L6  | `system/`                   | **成立** — 语义核 `simulateCommit` + 大规模 history/derive    |
+| L7  | `system/complex/`           | **成立** — 30~50 规模隔离矩阵、nest/fork 树、循环编排 harness |
 
-L1（Lint / Format）在仓库根工具链，不在此目录。
+L7 复杂场景（core）：
+
+| 文件                             | 规模                      | 验证点                                    |
+| -------------------------------- | ------------------------- | ----------------------------------------- |
+| `isolation-matrix`               | 10 / 30 fork 分支         | 两两 `compatibleConcurrently`             |
+| `nest-fork-tree`                 | 30 分支 + 15 nest 对      | 并行 fork 与不相交 nest 层                |
+| `large-history-slicing`          | 10 / 50 task              | `sliceRunHistory` 每 scope 一段           |
+| `loop-orchestration`             | 10×8 / 20×12 轮           | introduce→delegate 循环 + 链/epoch/derive |
+| `large-derive-serial`            | 50 change                 | 大图 serial diagnostic                    |
+| `composition-intent-scale`       | 30+ intent                | `toCoordinationIntent` 映射               |
+| `composition-operators-boundary` | 7×30 operators            | interface+goal+footprint                  |
+| `engineering-three-pillars`      | 100×50                    | 三柱 + consistency 闭包                   |
+| **STRESS**                       |                           |                                           |
+| `stress-isolation-matrix`        | **100** fork (4950 pairs) |                                           |
+| `stress-history-validation`      | **200** mixed trace       |                                           |
+| `stress-loop-orchestration`      | **50×100**                |                                           |
+
+工程设计覆盖矩阵：[`ENGINEERING-COVERAGE.md`](./ENGINEERING-COVERAGE.md)
 
 ## 命令
 
 ```bash
-pnpm --filter @cantilune/core test              # L2–L7 全量
-pnpm --filter @cantilune/core test:types        # L2
-pnpm --filter @cantilune/core test:unit         # L3
-pnpm --filter @cantilune/core test:integration  # L4
-pnpm --filter @cantilune/core test:contract     # L5（含 negative）
-pnpm --filter @cantilune/core test:system       # L6–L7
+pnpm --filter @cantilune/core typecheck   # tsc 生产 + 测试
+pnpm --filter @cantilune/core test        # L2–L7 Vitest
+pnpm --filter @cantilune/core test:coverage
+pnpm --filter @cantilune/core build
 ```
 
-设计闭包与 OPEN 项见 [`DESIGN-CLOSURE.md`](./DESIGN-CLOSURE.md)。
+设计闭包见 [`DESIGN-CLOSURE.md`](./DESIGN-CLOSURE.md) 与 [`docs/adr/0002-core-engineering-boundaries.md`](../../../../docs/adr/0002-core-engineering-boundaries.md)。
 
 ## import 约定
 
-- `unit/`：`../../../src/...` 精确定位
-- `integration/` / `contract/` / `system/`：`../../src/...` 或 `@cantilune/core`
-- `support/`：相对路径指向 `src/`（注意目录深度）
-
-## 文件分布
-
-| 目录 | 文件数 |
-|---|---|
-| `types/` | 2 |
-| `unit/primitives/` | 4 |
-| `unit/nodes/` | 8 |
-| `unit/coordination/` | 4 |
-| `unit/structure/` | 6 |
-| `integration/` | 3 |
-| `contract/` | 2 + `negative/` 5 |
-| `system/` | 2 |
-| `system/complex/` | 3 |
+- 生产校验：`validateAuditTailMatchesHistory` 从 `src/consistency/index.js` 导入
+- 测试 Change 构造：优先 `support/fixtures/change-fixture.ts`（提供默认 visibility）
+- Canonical delegate：`support/fixtures/standard-story/delegate-change.ts`（含 authorization + matchBindings）

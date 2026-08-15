@@ -4,21 +4,13 @@ import {
   validateAuditTailMatchesHistory,
   validateBeforeRefChain,
   validateEpochConsistent,
-} from "../../../src/coordination/validation.js";
-import { coordinationChange } from "../../../src/coordination/coordinationChange.js";
-import {
-  actorId,
-  changeId,
-  epochId,
-  operationTypeId,
-} from "../../../src/primitives/ids.js";
+} from "../../../src/consistency/index.js";
+import { testCoordinationChange } from "../../support/fixtures/change-fixture.js";
+import { actorId, changeId, epochId, operationTypeId } from "../../../src/primitives/ids.js";
 import { contentRef, snapshotRef, targetRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
 import { actorRef } from "../../../src/nodes/participant.js";
-import {
-  appendObservationSegment,
-  emptyRunHistory,
-} from "../../../src/structure/trace.js";
+import { appendObservationSegment, emptyRunHistory } from "../../../src/structure/trace.js";
 
 describe("validateAuditTailMatchesHistory", () => {
   it("accepts matching snapshot and history observations", () => {
@@ -42,7 +34,7 @@ describe("validateAuditTailMatchesHistory", () => {
 describe("validateBeforeRefChain", () => {
   it("accepts a continuous chain", () => {
     const changes = [
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-001"),
         recordedAt: timestamp("2026-08-07T10:05:00Z"),
         epochId: epochId("42"),
@@ -52,7 +44,7 @@ describe("validateBeforeRefChain", () => {
         targets: [targetRef("artifact", "task-T")],
         initiator: actorRef(actorId("planner-p"), "agent"),
       }),
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-002"),
         recordedAt: timestamp("2026-08-07T10:10:00Z"),
         epochId: epochId("42"),

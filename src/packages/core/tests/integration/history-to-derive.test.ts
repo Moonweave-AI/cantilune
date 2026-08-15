@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coordinationChange } from "../../src/coordination/coordinationChange.js";
+import { testCoordinationChange } from "../support/fixtures/change-fixture.js";
 import {
   actorId,
   artifactId,
@@ -29,7 +29,7 @@ describe("trace slice", () => {
     });
     history = appendRewriteSegment(
       history,
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-001"),
         recordedAt: timestamp("2026-08-07T09:01:00Z"),
         epochId: epochId("42"),

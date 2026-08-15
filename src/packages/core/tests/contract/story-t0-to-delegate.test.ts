@@ -7,31 +7,16 @@ import {
   withSession,
   withSnapshotRef,
 } from "../../src/coordination/collaborationSnapshot.js";
-import { coordinationChange } from "../../src/coordination/coordinationChange.js";
-import {
-  actorId,
-  artifactId,
-  capabilityId,
-  changeId,
-  epochId,
-  linkId,
-  operationTypeId,
-  sessionId,
-} from "../../src/primitives/ids.js";
+import { testCoordinationChange } from "../support/fixtures/change-fixture.js";
+import { actorId, changeId, epochId, linkId, operationTypeId } from "../../src/primitives/ids.js";
 import { contentRef, snapshotRef, targetRef } from "../../src/primitives/refs.js";
 import { timestamp } from "../../src/primitives/time.js";
 import { collaborationLink } from "../../src/nodes/collaborationLink.js";
 import { communicationSession } from "../../src/nodes/communicationSession.js";
 import { actorRef } from "../../src/nodes/participant.js";
 import { scopedCapability, withCapabilityHolder } from "../../src/nodes/scopedCapability.js";
-import {
-  withArtifactOwner,
-  workArtifact,
-} from "../../src/nodes/workArtifact.js";
-import {
-  appendObservationSegment,
-  emptyRunHistory,
-} from "../../src/structure/trace.js";
+import { withArtifactOwner, workArtifact } from "../../src/nodes/workArtifact.js";
+import { appendObservationSegment, emptyRunHistory } from "../../src/structure/trace.js";
 import { buildConfigT0, storyActorIds } from "../support/fixtures/standard-story/config-t0.js";
 import {
   buildDelegateChange,
@@ -43,8 +28,10 @@ import {
   assertNoPayload,
   assertObservationSeparation,
 } from "../support/assertions/invariants.js";
-import { validateAuditTailMatchesHistory } from "../../src/coordination/validation.js";
+import { validateAuditTailMatchesHistory } from "../../src/consistency/index.js";
 import { simulateCommit } from "../support/harness/simulate-commit.js";
+
+/** @deprecated Canonical E2E lives in @cantilune/runtime integration/story-t0-to-delegate.test.ts */
 
 describe("story T0 to delegate", () => {
   it("follows naming contract §2.4 and §5", () => {
@@ -64,7 +51,7 @@ describe("story T0 to delegate", () => {
     expect(obsEntry).toBeDefined();
     history = appendObservationSegment(history, obsEntry!);
 
-    const introduceChange = coordinationChange({
+    const introduceChange = testCoordinationChange({
       changeId: changeId("chg-001"),
       recordedAt: timestamp("2026-08-07T10:05:00Z"),
       epochId: epochId("42"),
@@ -73,6 +60,7 @@ describe("story T0 to delegate", () => {
       afterRef: snapshotRef("snap-S1"),
       targets: [targetRef("artifact", "task-T")],
       initiator: actorRef(storyActorIds.planner, "agent"),
+      visibility: "external",
     });
     assertNoPayload(introduceChange);
 
@@ -109,6 +97,9 @@ describe("story T0 to delegate", () => {
 
     const delegateChange = buildDelegateChange();
     assertNoPayload(delegateChange);
+    expect(delegateChange.authorization.length).toBeGreaterThan(0);
+    expect(delegateChange.matchBindings.some((b) => b.role === "from")).toBe(true);
+    expect(delegateChange.matchBindings.some((b) => b.role === "to")).toBe(true);
 
     const delegateCommit = simulateCommit(snapshot, history, delegateChange, (current, change) => {
       const task = current.artifacts.get(storyEntityIds.task);
@@ -123,11 +114,10 @@ describe("story T0 to delegate", () => {
       next = withCapability(next, withCapabilityHolder(writeLock, storyActorIds.coder));
       next = withSession(
         next,
-        communicationSession(
-          storyEntityIds.session,
+        communicationSession(storyEntityIds.session, storyActorIds.coder, [
           storyActorIds.coder,
-          [storyActorIds.coder, storyActorIds.planner],
-        ),
+          storyActorIds.planner,
+        ]),
       );
       next = withLink(
         next,

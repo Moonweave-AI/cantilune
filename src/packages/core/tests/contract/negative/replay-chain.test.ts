@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { coordinationChange } from "../../../src/coordination/coordinationChange.js";
+import { testCoordinationChange } from "../../support/fixtures/change-fixture.js";
 import {
   validateBeforeRefChain,
   validateEpochConsistent,
 } from "../../../src/coordination/validation.js";
-import {
-  actorId,
-  changeId,
-  epochId,
-  operationTypeId,
-} from "../../../src/primitives/ids.js";
+import { actorId, changeId, epochId, operationTypeId } from "../../../src/primitives/ids.js";
 import { snapshotRef, targetRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
 import { actorRef } from "../../../src/nodes/participant.js";
@@ -19,8 +14,8 @@ function introduceChange(
   before: string,
   after: string,
   epoch: string,
-): ReturnType<typeof coordinationChange> {
-  return coordinationChange({
+): ReturnType<typeof testCoordinationChange> {
+  return testCoordinationChange({
     changeId: changeId(id),
     recordedAt: timestamp("2026-08-07T10:05:00Z"),
     epochId: epochId(epoch),

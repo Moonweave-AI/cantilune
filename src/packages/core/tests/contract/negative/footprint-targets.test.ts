@@ -12,10 +12,7 @@ describe("N2 footprint must cover targets", () => {
       "delegate",
       actorRef(actorId("planner-p"), "agent"),
       footprint({ participantIds: [actorId("planner-p")] }),
-      [
-        targetRef("artifact", "task-T"),
-        targetRef("participant", "coder-c"),
-      ],
+      [targetRef("artifact", "task-T"), targetRef("participant", "coder-c")],
     );
 
     expect(() => validateCompositionIntentFootprint(intent)).toThrow(/does not cover all targets/);
@@ -29,10 +26,7 @@ describe("N2 footprint must cover targets", () => {
         participantIds: [actorId("planner-p"), actorId("coder-c")],
         artifactIds: [artifactId("task-T")],
       }),
-      [
-        targetRef("artifact", "task-T"),
-        targetRef("participant", "coder-c"),
-      ],
+      [targetRef("artifact", "task-T"), targetRef("participant", "coder-c")],
     );
 
     expect(() => validateCompositionIntentFootprint(intent)).not.toThrow();

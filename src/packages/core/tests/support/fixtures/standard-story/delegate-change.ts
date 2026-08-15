@@ -5,10 +5,16 @@ import {
   capabilityId,
   changeId,
   epochId,
+  evidenceId,
   operationTypeId,
   sessionId,
 } from "../../../../src/primitives/ids.js";
-import { snapshotRef, targetRef } from "../../../../src/primitives/refs.js";
+import {
+  contentRef,
+  evidenceRef,
+  matchBinding,
+  snapshotRef,
+} from "../../../../src/primitives/refs.js";
 import { timestamp } from "../../../../src/primitives/time.js";
 import { actorRef } from "../../../../src/nodes/participant.js";
 
@@ -21,13 +27,20 @@ export function buildDelegateChange() {
     operationTypeId: operationTypeId("delegate"),
     beforeRef: snapshotRef("snap-S1"),
     afterRef: snapshotRef("snap-S2"),
-    targets: [
-      targetRef("artifact", "task-T"),
-      targetRef("participant", "planner-p"),
-      targetRef("participant", "coder-c"),
-      targetRef("capability", "write-lock-w"),
+    matchBindings: [
+      matchBinding("task", "task-T"),
+      matchBinding("from", "planner-p"),
+      matchBinding("to", "coder-c"),
+      matchBinding("capability", "write-lock-w"),
     ],
     initiator: actorRef(actorId("planner-p"), "agent"),
+    authorization: [
+      evidenceRef(
+        evidenceId("planner-authorized-delegation"),
+        "policy",
+        contentRef("content://auth/delegate-planner"),
+      ),
+    ],
     createdSessionRefs: [sessionId("session-s")],
     visibility: "external",
   });

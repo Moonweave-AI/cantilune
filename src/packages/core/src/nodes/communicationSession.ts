@@ -1,7 +1,9 @@
 import type { ActorId, SessionId } from "../primitives/ids.js";
 
 /** Whether a communication session is private to its members or shared more broadly. */
-export type SessionVisibility = "private" | "shared";
+export const SESSION_VISIBILITIES = ["private", "shared"] as const;
+
+export type SessionVisibility = (typeof SESSION_VISIBILITIES)[number];
 
 /** Scoped communication channel (π-calculus session analogue). */
 export interface CommunicationSession {

@@ -4,7 +4,10 @@ import { observationEntry } from "../../../src/nodes/observationEntry.js";
 import { actorId } from "../../../src/primitives/ids.js";
 import { contentRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
-import { appendToObservationStream, emptyObservationStream } from "../../../src/coordination/observationStream.js";
+import {
+  appendToObservationStream,
+  emptyObservationStream,
+} from "../../../src/coordination/observationStream.js";
 
 describe("N1 observation sequence violations", () => {
   it("rejects the first entry when sequenceNo is not 1", () => {

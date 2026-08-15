@@ -1,14 +1,26 @@
 import type { ObservationEntry } from "../nodes/observationEntry.js";
 import type { CoordinationChange } from "../coordination/coordinationChange.js";
 import type { Footprint } from "./boundary.js";
-import { footprintFromTargets } from "./isolation.js";
+import { footprintFromTargets, footprintOfChange } from "./isolation.js";
+import { coreViolation, throwCore } from "../primitives/violation.js";
+import { validateBeforeRefChain, validateEpochConsistent } from "../coordination/validation.js";
 
 /** One segment of a run history — external observation or committed rewrite. */
 export type TraceSegment =
   | { readonly kind: "observation"; readonly entry: ObservationEntry }
   | { readonly kind: "rewrite"; readonly change: CoordinationChange };
 
-export type RunHistory = readonly TraceSegment[];
+/** Unvalidated append-only trace; may contain gaps until validated. */
+export type UnvalidatedTrace = readonly TraceSegment[];
+
+/** @deprecated Alias for {@link UnvalidatedTrace}. Prefer explicit validation before replay. */
+export type RunHistory = UnvalidatedTrace;
+
+/** Trace that passed structural validation (chain, epoch, observation order). */
+export interface ValidatedRunHistory {
+  readonly kind: "validated";
+  readonly segments: readonly TraceSegment[];
+}
 
 export function emptyRunHistory(): RunHistory {
   return [];
@@ -18,17 +30,11 @@ export function appendTraceSegment(history: RunHistory, segment: TraceSegment): 
   return [...history, segment];
 }
 
-export function appendObservationSegment(
-  history: RunHistory,
-  entry: ObservationEntry,
-): RunHistory {
+export function appendObservationSegment(history: RunHistory, entry: ObservationEntry): RunHistory {
   return appendTraceSegment(history, { kind: "observation", entry });
 }
 
-export function appendRewriteSegment(
-  history: RunHistory,
-  change: CoordinationChange,
-): RunHistory {
+export function appendRewriteSegment(history: RunHistory, change: CoordinationChange): RunHistory {
   return appendTraceSegment(history, { kind: "rewrite", change });
 }
 
@@ -42,7 +48,7 @@ function segmentFootprint(segment: TraceSegment): Footprint {
       { kind: "participant", id: segment.entry.source.actorId as string },
     ]);
   }
-  return footprintFromTargets(segment.change.targets);
+  return footprintOfChange(segment.change);
 }
 
 /** Extract history segments whose footprint overlaps the given scope. */
@@ -79,4 +85,38 @@ export function observationSegments(history: RunHistory): readonly ObservationEn
   return history
     .filter((s): s is Extract<TraceSegment, { kind: "observation" }> => s.kind === "observation")
     .map((s) => s.entry);
+}
+
+/** Validate observation monotonic sequence inside a trace slice. */
+export function validateObservationSequence(history: RunHistory): void {
+  let expected = 1;
+  for (const segment of history) {
+    if (segment.kind !== "observation") {
+      continue;
+    }
+    if (segment.entry.sequenceNo !== expected) {
+      throwCore(
+        coreViolation(
+          "observation_sequence_invalid",
+          `expected observation sequence ${expected}, got ${segment.entry.sequenceNo}`,
+          { expected: String(expected), actual: String(segment.entry.sequenceNo) },
+        ),
+      );
+    }
+    expected += 1;
+  }
+}
+
+/**
+ * Promote an unvalidated trace after rewrite chain and observation order checks.
+ * Does not validate snapshot integrity — call {@link validateCollaborationWorld} separately.
+ */
+export function validateRunHistory(history: RunHistory): ValidatedRunHistory {
+  validateObservationSequence(history);
+  const changes = rewriteSegments(history);
+  if (changes.length > 0) {
+    validateBeforeRefChain(changes);
+    validateEpochConsistent(changes);
+  }
+  return { kind: "validated", segments: history };
 }

@@ -49,12 +49,10 @@ describe("snapshot mutations", () => {
       { kind: "artifact", artifactId: artifact.artifactId },
     );
     const session = communicationSession(sessionId("session-s"), p.actorId, [p.actorId]);
-    const capability = scopedCapability(
-      capabilityId("write-lock-w"),
-      "write_lock",
-      p.actorId,
-      { kind: "artifact", artifactId: artifact.artifactId },
-    );
+    const capability = scopedCapability(capabilityId("write-lock-w"), "write_lock", p.actorId, {
+      kind: "artifact",
+      artifactId: artifact.artifactId,
+    });
     const tombstone = entityTombstone("old-link", "link", timestamp("2026-08-07T12:00:00Z"));
 
     let snap = base;

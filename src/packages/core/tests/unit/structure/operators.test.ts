@@ -1,12 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { actorId } from "../../../src/primitives/ids.js";
-import { targetRef } from "../../../src/primitives/refs.js";
+import { contentRef, targetRef } from "../../../src/primitives/refs.js";
 import { actorRef } from "../../../src/nodes/participant.js";
 import { footprint } from "../../../src/structure/boundary.js";
-import {
-  compatibleConcurrently,
-  footprintFromTargets,
-} from "../../../src/structure/isolation.js";
+import { compatibleConcurrently, footprintFromTargets } from "../../../src/structure/isolation.js";
 import {
   compositionIntent,
   operationTypeForOperator,
@@ -17,7 +14,7 @@ import {
 const OPERATOR_MAPPINGS: Array<[CompositionOperatorKind, string]> = [
   ["attach", "introduce_artifact"],
   ["delegate", "delegate"],
-  ["fork", "introduce_artifact"],
+  ["fork", "fork_branch"],
   ["nest", "create_session"],
   ["rewire", "transfer_session"],
   ["isolate", "introduce_artifact"],
@@ -37,6 +34,21 @@ describe("operators", () => {
     );
     const coordination = toCoordinationIntent(intent);
     expect(coordination.operationTypeId).toBe("delegate");
+  });
+
+  it("preserves content inputs separately from composition targets", () => {
+    const ref = contentRef(
+      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    const intent = compositionIntent(
+      "attach",
+      actorRef(actorId("planner-p"), "agent"),
+      footprintFromTargets([targetRef("artifact", "task-T")]),
+      [targetRef("artifact", "task-T"), targetRef("participant", "planner-p")],
+      { inputContentRefs: [ref] },
+    );
+
+    expect(toCoordinationIntent(intent).inputContentRefs).toEqual([ref]);
   });
 
   it("allows concurrent composition when footprints disjoint", () => {

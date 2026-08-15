@@ -5,12 +5,8 @@ import {
   withCapability,
   withSnapshotRef,
 } from "../../src/coordination/collaborationSnapshot.js";
-import { coordinationChange } from "../../src/coordination/coordinationChange.js";
-import {
-  changeId,
-  epochId,
-  operationTypeId,
-} from "../../src/primitives/ids.js";
+import { testCoordinationChange } from "../support/fixtures/change-fixture.js";
+import { changeId, epochId, operationTypeId } from "../../src/primitives/ids.js";
 import { contentRef, snapshotRef, targetRef } from "../../src/primitives/refs.js";
 import { timestamp } from "../../src/primitives/time.js";
 import { actorRef } from "../../src/nodes/participant.js";
@@ -35,7 +31,7 @@ describe("multi-event chain", () => {
     const introduce = simulateCommit(
       snapshot,
       emptyRunHistory(),
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-001"),
         recordedAt: timestamp("2026-08-07T10:05:00Z"),
         epochId: epochId("42"),
@@ -57,12 +53,10 @@ describe("multi-event chain", () => {
                 actorRef(storyActorIds.planner, "agent"),
               ),
             ),
-            scopedCapability(
-              storyEntityIds.writeLock,
-              "write_lock",
-              storyActorIds.planner,
-              { kind: "artifact", artifactId: storyEntityIds.task },
-            ),
+            scopedCapability(storyEntityIds.writeLock, "write_lock", storyActorIds.planner, {
+              kind: "artifact",
+              artifactId: storyEntityIds.task,
+            }),
           ),
           change.afterRef,
         ),
@@ -77,10 +71,7 @@ describe("multi-event chain", () => {
         const writeLock = current.capabilities.get(storyEntityIds.writeLock)!;
         return withSnapshotRef(
           withCapability(
-            withArtifact(
-              current,
-              withArtifactOwner(task, actorRef(storyActorIds.coder, "agent")),
-            ),
+            withArtifact(current, withArtifactOwner(task, actorRef(storyActorIds.coder, "agent"))),
             withCapabilityHolder(writeLock, storyActorIds.coder),
           ),
           change.afterRef,

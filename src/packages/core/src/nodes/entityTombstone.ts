@@ -1,7 +1,15 @@
 import type { Timestamp } from "../primitives/time.js";
 
 /** Auditable record of a removed participant, session, capability, or link. */
-export type RetiredEntityKind = "participant" | "session" | "capability" | "link" | "artifact";
+export const RETIRED_ENTITY_KINDS = [
+  "participant",
+  "session",
+  "capability",
+  "link",
+  "artifact",
+] as const;
+
+export type RetiredEntityKind = (typeof RETIRED_ENTITY_KINDS)[number];
 
 export interface EntityTombstone {
   readonly entityId: string;

@@ -16,7 +16,7 @@ import {
 import { contentRef, snapshotRef, targetRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
 import { actorRef } from "../../../src/nodes/participant.js";
-import { coordinationChange } from "../../../src/coordination/coordinationChange.js";
+import { testCoordinationChange } from "../../support/fixtures/change-fixture.js";
 
 describe("multi-scope history slicing", () => {
   it("returns only segments overlapping each artifact scope", () => {
@@ -29,7 +29,7 @@ describe("multi-scope history slicing", () => {
     });
     history = appendRewriteSegment(
       history,
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-task-t"),
         recordedAt: timestamp("2026-08-07T09:01:00Z"),
         epochId: epochId("42"),
@@ -42,7 +42,7 @@ describe("multi-scope history slicing", () => {
     );
     history = appendRewriteSegment(
       history,
-      coordinationChange({
+      testCoordinationChange({
         changeId: changeId("chg-task-u"),
         recordedAt: timestamp("2026-08-07T09:02:00Z"),
         epochId: epochId("42"),
