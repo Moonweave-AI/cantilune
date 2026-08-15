@@ -1,0 +1,41 @@
+{
+  "name": "@cantilune/runtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cantilune coordination runtime: admission, apply, commit, replay",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/index.d.ts",
+      "import": "./dist/memory/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:types": "vitest run tests/types",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:contract": "vitest run tests/contract",
+    "test:system": "vitest run tests/system",
+    "test:pack": "node scripts/pack-consumer-smoke.mjs",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@cantilune/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cantilune/test-fixtures": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^3.2.7"
+  }
+}
