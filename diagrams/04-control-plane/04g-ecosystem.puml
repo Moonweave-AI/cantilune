@@ -1,0 +1,75 @@
+@startuml 04g-ecosystem
+' 图 04G：Cantilune 产品分层 — control-plane 邻接 core/runtime/conformance/comms。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 04G · 产品分层：@cantilune/control-plane 邻接模块
+caption <color:#6E6963>control-plane 治理 schema epoch；不替代 runtime 单步 execute。runtime 侧见 02G · observability 见 03G。</color>
+
+left to right direction
+
+package "@cantilune/core" #E5EDE5 {
+  class "SchemaEpochBinding\nSchemaAdmissionReceipt\nbranded governance IDs" as Core
+}
+
+package "@cantilune/control-plane" #F3E5DC {
+  class "FullControlPlaneService" as CP {
+    G1: registerSchemaRevision
+    G3: submit · approve
+    G4: prepare · commit
+    G5: activatePolicyRevision
+    G6: fleet rollout
+  }
+  class "ControlPlaneStore\nmemory · file" as Store
+}
+
+package "@cantilune/runtime" #E5ECEE {
+  class "RuntimeEpochAdministration" as Epoch
+  class "CoordinationRuntime\nL3-L5 execute" as RT
+  class "OrchestrationSchema\n注入自 binding" as Schema
+}
+
+package "@cantilune/conformance" #EDE8F0 {
+  class "ConformanceEvidenceVerifier\nFourViewEvidenceBundle" as Conf
+}
+
+package "@cantilune/comms\n（测试/dev）" #E5ECEE {
+  class "admissionReconnect\nhandoff 测试" as Comms
+}
+
+package "@cantilune/observability" #EDE8F0 {
+  class "四投影 derive\n（只读）" as Obs
+}
+
+Core <-- CP
+CP --> Store
+CP --> Conf : G4 prepare
+CP --> Epoch : G4 prepare/commit
+Epoch --> RT : epoch 切换 · head 更新
+CP ..> Schema : binding.schemaRef 生效
+RT --> Schema : 运行时读取
+Comms ..> CP : reconnect 测试 harness
+Obs ..> Conf : 证据 digest 来源（可选）
+CP ..> RT : 不直接 admit/commit Change
+
+note bottom of CP
+  <b>边界</b>
+  治理：schema 修订 · epoch 绑定 · 舰队 reconc
+  执行：runtime CoordinationRuntime
+  只读：observability 四投影
+end note
+
+note bottom of Epoch
+  memoryEpochAdministration / file durable
+  quiescence · prepare/commit 两阶段
+end note
+
+footer 抽象 04H · 目录 04E · 时序 04B
+
+@enduml

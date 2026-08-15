@@ -1,0 +1,224 @@
+@startuml 04a-class
+' 图 04A：@cantilune/control-plane 类型 — 六层治理 + ControlPlaneService 门面。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam nodesep 22
+skinparam ranksep 30
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+}
+
+title 图 04A · @cantilune/control-plane：六层治理 + 门面
+caption <color:#6E6963>已落地 src/packages/control-plane/。案例：genesis rev-001 → archive_artifact 扩展 rev-002 · adm-full-001。04H · 04E。</color>
+
+legend top right
+  |= 层 |= 模块 |
+  | <back:#EDE8F0>　</back> | G1 schema/ |
+  | <back:#E8EEF5>　</back> | G2 activation/ · ports/ binding |
+  | <back:#F3E5DC>　</back> | G3 admission/ |
+  | <back:#E5EDE5>　</back> | G4 engine/ worker |
+  | <back:#F5F1EB>　</back> | G5 policy/ · manifest/ |
+  | <back:#E5ECEE>　</back> | G6 rollout/ |
+  | <back:#F0EDE8>　</back> | 横切 errors · events · memory/file |
+endlegend
+
+left to right direction
+
+frame "@cantilune/control-plane · schema epoch 治理" #F8F5F0 {
+
+  package "G1 · schema/" #EDE8F0 {
+    class "SchemaRevision\n已注册 schema 快照" as SRev #FFFDFC {
+      +schemaRef: SchemaRef
+      .. 例：default-v1@rev-002@digest ..
+      +schema: OrchestrationSchema
+      +canonicalDigest: SchemaDigest
+      +parentRef: SchemaRef
+      .. 例：rev-001 ..
+      +createdBy: string
+      +createdAt: string
+    }
+    class "SchemaExtensionPlan\n单调扩展计划" as SPlan #FFFDFC {
+      +fromSchemaRef: SchemaRef
+      +toSchemaRef: SchemaRef
+      +addedOperationTypeIds: OperationTypeId[]
+      .. 例：[archive_artifact] ..
+      +addedObjectTypeIds: ObjectTypeId[]
+      +operationEmbedding: Map
+    }
+  }
+
+  package "G2 · ports/ activation/" #E8EEF5 {
+    class "SchemaEpochBinding\n域内生效绑定" as Bind #F9FCF8 {
+      +activationDomainId: ActivationDomainId
+      .. 例：default ..
+      +bindingGeneration: BindingGeneration
+      .. 例：1 → commit 后 2 ..
+      +epochId: EpochId
+      .. 例：42 → 43 ..
+      +epochOrdinal: EpochOrdinal
+      +schemaRef: SchemaRef
+      +policyRef: PolicyRef
+      +handlerManifestRef: HandlerManifestRef
+      +runtimeHead: SnapshotRef
+      .. 例：snap-S2；须与 runtime head 对齐 ..
+      +admissionId: SchemaAdmissionId
+    }
+    class "ControlPlaneStore\n治理状态端口" as IStore #FFFDFC {
+      +registerRevision · getRevision
+      +casActiveBinding(cas): boolean
+      +putAdmission · getAdmission
+      +appendEvent · readEvents
+      +claimIdempotency · isFrozen
+    }
+  }
+
+  package "G3 · admission/" #F3E5DC {
+    class "SchemaAdmissionRequest\n准入请求" as AReq #FFF9F6 {
+      +admissionId: SchemaAdmissionId
+      .. 例：adm-full-001 ..
+      +activationDomainId: ActivationDomainId
+      +expectedBindingGeneration: BindingGeneration
+      +expectedRuntimeHead: SnapshotRef
+      +candidateSchemaRef: SchemaRef
+      .. 例：rev-002 ..
+      +idempotencyKey: IdempotencyKey
+      +requestedBy: string
+    }
+    class "SchemaAdmissionRecord\n工作流记录" as ARec #FFF9F6 {
+      +request: SchemaAdmissionRequest
+      +state: SchemaAdmissionState
+      .. qualified → authorized → prepared → committed ..
+      +extensionPlan: SchemaExtensionPlan
+      +targetEpochId: EpochId
+      +updatedAt: string
+    }
+    class "PreparedSchemaAdmission\nprepare 产物" as APrep #FFFDFC {
+      +preparedId: PreparedAdmissionId
+      +planDigest: string
+      +expiresAt: string
+      .. opaque；仅 worker 构造 ..
+    }
+  }
+
+  package "G4 · engine/" #E5EDE5 {
+    class "ControlPlaneService\n基础门面" as Svc #F8FBFB {
+      +registerSchemaRevision()
+      +submitSchemaAdmission()
+      +approveSchemaAdmission()
+      +getActiveBinding()
+      +readEvents()
+    }
+    class "FullControlPlaneService\n完整门面" as FSvc #F8FBFB {
+      +prepareSchemaAdmission()
+      +commitSchemaAdmission()
+      +activatePolicyRevision()
+      +setFleetRollout()
+      +acknowledgeRuntimeInstance()
+      +rolloutReport()
+    }
+    class "SchemaAdmissionReceipt\ncommit 收据" as Receipt #FFFDFC {
+      +fromBinding · toBinding
+      +beforeSnapshotRef · afterSnapshotRef
+      +admissionTombstoneId: string
+      +correlationId · occurrenceId
+    }
+  }
+
+  package "G5 · policy/ manifest/" #F5F1EB {
+    class "PolicyRevision\n策略修订" as Pol #FFFDFC {
+      +policyRef: PolicyRef
+      +compatibleSchemaRefs: SchemaRef[]
+      +rules: PolicyRule[]
+      +defaultDecision: deny
+    }
+    class "HandlerManifest\nhandler 绑定清单" as Man #FFFDFC {
+      +manifestRef: HandlerManifestRef
+      +bindings: HandlerBinding[]
+      .. operationTypeId → artifactRef ..
+      +canonicalDigest: ContentDigest
+    }
+  }
+
+  package "G6 · rollout/" #E5ECEE {
+    class "RuntimeBinding\n实例观测" as RB #FFFDFC {
+      +runtimeInstanceId: RuntimeInstanceId
+      +desiredBinding: SchemaEpochBinding
+      +observedBinding: SchemaEpochBinding
+      +status: pending | acknowledged | drift
+    }
+    class "ReconciliationService" as Recon #E5ECEE {
+      +setDesired(plan)
+      +acknowledge(instance, binding)
+      +report(): ReconciliationReport
+    }
+  }
+
+  package "横切 · events/ foundation/" #F0EDE8 {
+    class "ControlPlaneOutbox" as Out #FFFDFC {
+      +enqueue · pending · replayPending
+    }
+    class "ControlPlaneViolation" as Viol #FFFDFC {
+      +code: ControlPlaneViolationCode
+      +phase: register|validate|authorize|prepare|commit
+    }
+  }
+
+  FSvc --|> Svc
+  Svc --> IStore
+  FSvc --> ARec
+  ARec *-- AReq
+  ARec ..> SPlan
+  FSvc --> APrep
+  FSvc --> Receipt
+  FSvc --> Recon
+  Recon *-- RB
+  Bind <-- IStore
+  FSvc --> Out
+}
+
+package "@cantilune/runtime" #E5ECEE {
+  interface "RuntimeEpochAdministration" as Epoch {
+    +prepareEpochTransition()
+    +commitEpochTransition()
+  }
+}
+
+package "@cantilune/conformance" #EDE8F0 {
+  class "FourViewEvidenceBundle" as FView {
+    +dependencyDigest · resourceDigest
+    +communicationDigest · structureDigest
+  }
+  class "ConformanceEvidenceVerifier" as Ver {
+    +verifyFourViewEvidence()
+  }
+}
+
+FSvc ..> Epoch : G4 prepare/commit
+FSvc ..> Ver : G4 prepare
+FSvc ..> FView : 输入证据
+FSvc ..> Man : prepare 校验
+
+note bottom of FSvc
+  <b>治理纪律</b>
+  ① 单调 schema 扩展；② binding/head CAS
+  ③ proposer ≠ approver；④ prepare 须四视图证据
+  ⑤ runtime epoch 切换在 commit 路径委托
+end note
+
+footer Lean SignatureAdmission · FourViewAdmission · 产品 04G
+
+@enduml

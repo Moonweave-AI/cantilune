@@ -1,0 +1,76 @@
+@startuml 05f-theory
+' 图 05F：evaluation 理论映射 — RFC-0001 C1–C5 声明 vs Lean 定理 vs 产品评估。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title 图 05F · 评估理论：RFC-0001 C1–C5 · Lean 定理 · 可证伪实验
+caption <color:#6E6963>Lean 定理 ≠ 产品声明；产品 superiority 须 preregistered paired experiments。</color>
+
+top to bottom direction
+
+rectangle "RFC-0001 声明（§8 Falsifiable Claims）" #EDE8F0 {
+  card "C1 Expressiveness\nvs DAG-only (LangGraph)" as C1
+  card "C2 Controllability\nfinite-epoch step rank" as C2
+  card "C3 Control-plane slimness\nvs thick model-decision (Claude Code)" as C3
+  card "C4 Observability\nstructural trace = execution" as C4
+  card "C5 End-to-end\ncombined claims" as C5
+}
+
+rectangle "Lean 定理（formal/）" #F7F3EC {
+  card "event_replay_unique\nReplayKernel determinism" as L1
+  card "internal_path_length_le\nfinite epoch bounded" as L2
+  card "projection_paths_lift_and_reflect\nfour projection sound+reflect" as L3
+  card "four_view_admission_complete\n4 Extends ∧ epoch<" as L4
+  card "probability_row_sum_one · expected_opportunity_epoch_bound" as L5
+}
+
+rectangle "@cantilune/evaluation\nclaimCode 空间" #E5EDE5 {
+  card "evaluation.c1\nexpressiveness benchmarks" as EC1
+  card "evaluation.c2\ncontrollability benchmarks" as EC2
+  card "evaluation.c3\nstructural-vs-model ratio" as EC3
+  card "evaluation.c4\nobservability fidelity" as EC4
+  card "evaluation.c5\nend-to-end composite" as EC5
+}
+
+rectangle "评估管道" #E5ECEE {
+  card "TheoryOracleEvidence\npremiseMissing ≠ pass" as Oracle
+  card "CertifiedTraceEvidence\n四投影独立 digest" as Trace
+  card "ClaimDecision\nsupported / notSupported / inconclusive" as Decision
+  card "Preregistered Paired Experiment\n唯一合法 superiority 路径" as Paired
+}
+
+C1 --> EC1
+C2 --> EC2
+C3 --> EC3
+C4 --> EC4
+C5 --> EC5
+L1 ..> Oracle
+L2 ..> Oracle
+L3 ..> Oracle
+L4 ..> Oracle
+L5 ..> Oracle
+Oracle --> Decision
+Trace --> Decision
+EC1 --> Decision
+EC2 --> Decision
+Decision --> Paired : supported only
+
+note right of Oracle
+  Lean 定理是<b>理论保证</b>
+  不是直接产品声明
+  evaluation.c* 须实验证实
+end note
+
+note right of Paired
+  superiority = supported ∧
+  isDecisionPublishable ∧
+  independentlyReviewed
+end note
+
+footer 抽象 05H · 目录 05E · DESIGN-CLOSURE
+
+@enduml

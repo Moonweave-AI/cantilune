@@ -1,6 +1,6 @@
 @startuml 01c-state
 ' 图 01C：以受约束的工程流程表现协调状态与协调事件。
-' 单一向下主干；失败、返工与隔离均为右侧受控分支，避免跨图回线。
+' 字段赋值对齐 tests/contract/story-t0-to-delegate 与 src/packages/core。
 
 skinparam backgroundColor #FCFAF7
 skinparam shadowing false
@@ -24,7 +24,7 @@ skinparam note {
 }
 
 title 图 01C · 协调状态与协调事件：从观察留痕到重放后交付
-caption <color:#6E6963>案例：供应商集成风险评估。绿色为已提交变更；虚线为外部观察；橙色为受控非成功分支。</color>
+caption <color:#6E6963>案例：供应商集成风险评估。字段赋值对齐 @cantilune/core 标准故事线。</color>
 
 legend top right
   |= 颜色 / 线型 |= 工程含义 |
@@ -38,50 +38,50 @@ endlegend
 
 top to bottom direction
 
-frame "一次可审计的协作运行 · CollaborationSnapshot S0′ → ChangeLog → S8" #F8F5F0 {
+frame "一次可审计的协作运行 · snapshotRef S0′ → RunHistory → S8" #F8F5F0 {
 
   package "① 外部输入与准入 · Observation 先行" #F5F1EB {
-    rectangle "<b>S0′ · 协作会话就绪</b>\nparticipants / policyContext / auditTail\n尚无任务产物" as S0 #E5EDE5
-    rectangle "<b>ObservationEntry#001 · Human</b>\n任务请求 → payloadRef\nauditTail += 001；<b>不产生 Change</b>" as Obs1 #FFFDFC
+    rectangle "<b>S0′ · 协作会话就绪</b>\n\tsnapshotRef=snap-S0′ · epochId=42\n\tparticipants={planner-p, researcher-r, …}\n\tpolicyContext.approvalState=none\n\tauditTail=[] · artifacts={}" as S0 #E5EDE5
+    rectangle "<b>ObservationEntry#001 · human</b>\n\tsequenceNo=1 · source={human-h, human}\n\tpayloadRef=content://req-risk\n\tauditTail += 001；<b>不产生 Change</b>" as Obs1 #FFFDFC
     rectangle "<b>AdmissionGateway · Runtime</b>\n匹配 OperationTemplate\n核验授权、资源与外部证据" as Gate1 #E5ECEE
     rectangle "<b>待补充 / 拒绝</b>\n保留 Observation；请求澄清或说明原因\n<b>没有 CoordinationChange</b>" as Pending #F3E5DC
   }
 
   package "② 任务建立与协调 · Snapshot 显式迁移" #E5EDE5 {
-    rectangle "<b>S1 · chg-001 introduce_artifact</b>\n+ WorkArtifact(task, contentRef)\nbeforeRef=S0′ · afterRef=S1 · initiator=planner" as S1 #FFF9F6
-    rectangle "<b>S2 · chg-002 delegate</b>\nPlanner → Researcher\n+ private session · transfer write-lock" as S2 #FFF9F6
-    rectangle "<b>S3 · chg-003 accept</b>\nResearcher=active · Planner=waiting\n归属、能力和会话均由 Snapshot 查询" as S3 #FFF9F6
+    rectangle "<b>S1 · chg-001 introduce_artifact</b>\n\t+ WorkArtifact(task-T, kind=Task, contentRef=…)\n\t+ ScopedCapability(write-lock-w, holder=planner-p)\n\tbeforeRef=snap-S0′ · afterRef=snap-S1\n\tinitiator={planner-p, agent} · epochId=42" as S1 #FFF9F6
+    rectangle "<b>S2 · chg-002 delegate</b>\n\ttask-T.owner → researcher-r\n\twrite-lock-w.holder → researcher-r\n\t+ session-s · + link-waits-1\n\tcreatedSessionRefs=[session-s]" as S2 #FFF9F6
+    rectangle "<b>S3 · chg-003 accept</b>\n\tresearcher-r.status=active · planner-p.status=waiting\n\t归属、能力和会话均由 Snapshot Map 查询" as S3 #FFF9F6
   }
 
   package "③ 受控执行与产出 · 工具回执再次准入" #E5ECEE {
-    rectangle "<b>S4 · chg-004 invoke_tool</b>\n记录调用意图、目标与受控工具租约\nTool 不是 Change 的直接提交者" as S4 #FFF9F6
-    rectangle "<b>ObservationEntry#002 · Tool</b>\nresultRef + provenance\n工具回执到达 ≠ 协作状态改变" as Obs2 #FFFDFC
-    rectangle "<b>S5 · chg-005 attach_evidence</b>\n+ Evidence WorkArtifact / provenance link\nObs#002 成为 external evidence" as S5 #FFF9F6
-    rectangle "<b>S6 · chg-006 submit_artifact</b>\nDraft WorkArtifact(contentRef)\nlifecycle=reviewable · owner=researcher" as S6 #FFF9F6
+    rectangle "<b>S4 · chg-004 invoke_tool</b>\n\ttargets=[{kind:capability, id:tool-lease-1}]\n\tTool 不是 Change 的直接提交者" as S4 #FFF9F6
+    rectangle "<b>ObservationEntry#002 · tool</b>\n\tsequenceNo=2 · source={tool-t, tool}\n\tpayloadRef=content://result\n\t工具回执到达 ≠ 协作状态改变" as Obs2 #FFFDFC
+    rectangle "<b>S5 · chg-005 attach_evidence</b>\n\t+ WorkArtifact(evidence-E, kind=Evidence)\n\texternal 引用 Obs#002 · visibility=external" as S5 #FFF9F6
+    rectangle "<b>S6 · chg-006 submit_artifact</b>\n\tDraft WorkArtifact(contentRef=…)\n\tlifecycle=reviewable · owner=researcher-r" as S6 #FFF9F6
   }
 
   package "④ 评审、发布与重放 · 终态须独立验证" #F5F1EB {
-    rectangle "<b>S7 · chg-007 request_approval</b>\npolicyContext.approvalState=awaiting_review\nReviewer 收到评审窗口通知" as S7 #FFF9F6
-    rectangle "<b>ObservationEntry#003 · Reviewer</b>\napprove / revise → payloadRef\n先留痕；再触发下一次准入" as Obs3 #FFFDFC
+    rectangle "<b>S7 · chg-007 request_approval</b>\n\tpolicyContext.approvalState=awaiting_review\n\treviewers=[reviewer-r]" as S7 #FFF9F6
+    rectangle "<b>ObservationEntry#003 · reviewer</b>\n\tsequenceNo=3 · source={reviewer-r, reviewer}\n\tapprove / revise → payloadRef\n\t先留痕；再触发下一次准入" as Obs3 #FFFDFC
     rectangle "<b>返工 / 新的受控子运行</b>\n保留 Draft、Obs#003 与全部旧 Change\n修订创建新 Artifact / Snapshot，<b>不覆盖历史</b>" as Rework #F3E5DC
-    rectangle "<b>S8 · chg-008 publish_artifact</b>\nfinal-report.lifecycle=published\nafterRef=S8 · approval evidence=Obs#003" as S8 #FFF9F6
-    rectangle "<b>ReplayVerifier · release gate</b>\nreplay(S0′, chg-001 … chg-008)\n重算快照并比较 afterRef(S8)" as Replay #E5ECEE
+    rectangle "<b>S8 · chg-008 publish_artifact</b>\n\tfinal-report.lifecycle=published\n\tafterRef=snap-S8 · external 引用 Obs#003" as S8 #FFF9F6
+    rectangle "<b>ReplayVerifier · release gate</b>\n\tvalidateBeforeRefChain + validateEpochConsistent\n\treplay(S0′, chg-001 … chg-008) → 比较 afterRef" as Replay #E5ECEE
     rectangle "<b>隔离处置</b>\nreplay mismatch / 证据失效 / 策略冲突\ndelivery blocked；升级人工或自动处置" as Quarantine #F3E5DC
     rectangle "<b>已交付并完成</b>\ndeliver(final WorkArtifact.contentRef, provenance)\nSuccessCondition(S8)=true" as Completed #E5EDE5
   }
 
-  S0 -[#9AA6A7,dashed]down-> Obs1 : Human → ExternalSignal
-  Obs1 -[#6F8790]down-> Gate1 : append auditTail
+  S0 -[#9AA6A7,dashed]down-> Obs1 : human → ExternalSignal
+  Obs1 -[#6F8790]down-> Gate1 : appendObservation
   Gate1 -[#B57D68,dashed]right-> Pending
   Gate1 -[#8E9E8A,thickness=2]down-> S1 : admit · chg-001
   S1 -[#8E9E8A,thickness=2]down-> S2 : chg-002
   S2 -[#8E9E8A,thickness=2]down-> S3 : chg-003
   S3 -[#8E9E8A,thickness=2]down-> S4 : chg-004
-  S4 -[#9AA6A7,dashed]down-> Obs2 : Tool receipt → ExternalSignal
+  S4 -[#9AA6A7,dashed]down-> Obs2 : tool receipt → ExternalSignal
   Obs2 -[#8E9E8A,thickness=2]down-> S5 : admit · chg-005
   S5 -[#8E9E8A,thickness=2]down-> S6 : chg-006
   S6 -[#8E9E8A,thickness=2]down-> S7 : chg-007
-  S7 -[#9AA6A7,dashed]down-> Obs3 : Reviewer → ExternalSignal
+  S7 -[#9AA6A7,dashed]down-> Obs3 : reviewer → ExternalSignal
   Obs3 -[#B57D68,dashed]right-> Rework
   Obs3 -[#8E9E8A,thickness=2]down-> S8 : approve · chg-008
   S8 -[#6F8790]down-> Replay : verify release
@@ -89,12 +89,13 @@ frame "一次可审计的协作运行 · CollaborationSnapshot S0′ → ChangeL
   Replay -[#8E9E8A,thickness=2]down-> Completed : consistent ∧ success
 
   note bottom of Completed
-    <b>写入纪律</b>
-    · Actor 只发外部信号或协调意图；Runtime 是唯一的 Change 提交边界。
-    · 每条 Change 均保留 beforeRef / afterRef、targets 与授权/外部证据引用。
+    <b>写入纪律（core 已编码）</b>
+    · appendObservation 只追加 auditTail；Actor 发 CoordinationIntent。
+    · 每条 Change 含 epochId、beforeRef / afterRef、targets、visibility。
+    · RunHistory 与 auditTail 须 validateAuditTailMatchesHistory 对齐。
     · 正文和工具输出留在 WorkArtifact.contentRef，不嵌入 ChangeLog。
   end note
 }
 
-footer <color:#6E6963>形式锚点：Config σ → CollaborationSnapshot；DPOEvent σ → CoordinationChange；external observations → auditTail。正常形不自动代表成功，交付还需 SuccessCondition 与重放一致。</color>
+footer <color:#6E6963>代码锚点：collaborationSnapshot.ts · coordinationChange.ts · validation.ts · tests/contract/story-t0-to-delegate</color>
 @enduml

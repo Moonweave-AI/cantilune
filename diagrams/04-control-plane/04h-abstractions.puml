@@ -1,0 +1,80 @@
+@startuml 04h-abstractions
+' 图 04H：@cantilune/control-plane 六层治理抽象（schema epoch 跳变，非 runtime 单步 execute）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 04H · @cantilune/control-plane 六层治理抽象
+caption <color:#6E6963>control-plane = schema/policy epoch 治理；驱动 runtime epoch 切换。已落地 src/packages/control-plane/。类型 04A · 目录 04E。</color>
+
+top to bottom direction
+
+legend top right
+  |= 层 |= 抽象 |= 门面 API |= 目录 |
+  | G1 | Schema 目录 | registerSchemaRevision · list | schema/ |
+  | G2 | 绑定权威 | getActiveBinding · casActiveBinding | ports/ · activation/ |
+  | G3 | 准入工作流 | submit · approve | admission/ · engine/service |
+  | G4 | Epoch 切换 | prepare · commit | engine/worker · runtime epochAdmin |
+  | G5 | 策略与 Handler | activatePolicyRevision · manifest 校验 | policy/ · manifest/ |
+  | G6 | 舰队 reconc | setFleetRollout · acknowledge | rollout/ |
+  | 横切 | 事件·持久化 | readEvents · outbox | events/ · memory/ · file/ |
+endlegend
+
+rectangle "G1 · Schema 目录\nSchema Catalog" #EDE8F0 {
+  card "SchemaRevision\nOrchestrationSchema + digest" as G1a
+  card "computeMonotoneExtensionPlan\n单调扩展校验" as G1b
+}
+
+rectangle "G2 · 绑定权威\nBinding Authority" #E8EEF5 {
+  card "SchemaEpochBinding\nschemaRef · epochId · runtimeHead" as G2a
+  card "casActiveBinding\nbindingGeneration CAS" as G2b
+}
+
+rectangle "G3 · 准入工作流\nAdmission Governance" #F3E5DC {
+  card "submitSchemaAdmission\nqualified / awaiting_authorization" as G3a
+  card "approveSchemaAdmission\n分离职责 · authorized" as G3b
+}
+
+rectangle "G4 · Epoch 切换\nEpoch Transition\n<b>治理核心</b>" #E5EDE5 {
+  card "prepareSchemaAdmission\nFourViewEvidence + epochAdmin.prepare" as G4a
+  card "commitSchemaAdmission\nepochAdmin.commit + CAS + receipt" as G4b
+}
+
+rectangle "G5 · 策略与 Handler\nPolicy & Manifest" #F5F1EB {
+  card "PolicyRevision · activatePolicyRevision" as G5a
+  card "HandlerManifest\nvalidateHandlerManifestAgainstSchema" as G5b
+}
+
+rectangle "G6 · 舰队协调\nFleet Reconciliation" #E5ECEE {
+  card "RolloutPlan · RuntimeBinding\nacknowledge · drift 检测" as G6a
+}
+
+G1a --> G3a : candidate revision
+G2a --> G3a : expected binding/head
+G3a --> G3b
+G3b --> G4a
+G4a --> G4b
+G4b --> G2b : bump bindingGeneration
+G4b --> G6a : updateBinding
+G5a ..> G2a : policyRef 绑定
+G5b ..> G4a : prepare 时校验
+
+note right of G4a
+  @cantilune/conformance
+  verifyFourViewEvidence
+  Lean FourViewAdmission 工程存证
+end note
+
+note right of G4b
+  @cantilune/runtime
+  RuntimeEpochAdministration
+  prepareEpochTransition / commitEpochTransition
+end note
+
+footer 时序 04B · 状态 04C · 理论 04F · 产品 04G
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml 05f-theory
+title 图 05F · late-π 规范族 → 工程 API 映射
+caption <color:#6E6963>15 规范族 / 60 registry codes；family 由 operationCode 派生，禁止 caller 双提交。</color>
+
+map "P1c 规范族" as Families {
+  freeOutput => send / asyncSend / quiescentSend
+  boundOutput => boundOutput
+  lateInput => receive / boundInput / syncReceive
+  communication => comm / fork / join / par*
+  openClose => scopeOpen
+  restriction => scopeClose
+  scopeExtrusion => scopeExtrusion / scopeIntrusion
+  delegation => delegation / handoff
+  dynamicPartnerAdmission => newChannel
+  instanceReconnect => reconnect / reconnectHandoff
+  instanceDeleteQuiescent => delete / quiescentDelete
+  choiceLeft => choiceLeft / tauPrefix / eventLog
+  choiceRight => choiceRight
+  matchSuccess => matchEqTrue
+  mismatchGuard => mismatch / mismatchGuard
+}
+
+note bottom of Families
+  锚点：P1cMatrix.lean · Operations.lean · P1cOperationRegistry.lean
+  comms 每次 occurrence 持久 registryVersion + operationCode + nativeAction
+end note
+
+@enduml

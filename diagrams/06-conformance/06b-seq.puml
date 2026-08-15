@@ -1,0 +1,48 @@
+@startuml 06b-seq
+' 图 06B：sealed prepare + verifyPackage 时序 — control-plane 消费路径。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06B · sealed admission prepare + verifyPackage
+caption <color:#6E6963>通用多轮：Producer 提交证据 → Conformance 验证 → Control-plane prepare。06A · 06G。</color>
+
+legend top right
+  |= 线型 |= 语义 |
+  | <color:#2E7D32>━━</color> | 主脊：验证/admit |
+  | <color:#1565C0>┄┄</color> | Obs 回环：TrustStore |
+  | <color:#C62828>- -</color> | Event 重入：cache/revocation |
+endlegend
+
+participant "Evidence\nProducer" as Prod
+participant "EvidenceStore\n(CAS)" as CAS
+participant "ConformanceEngine" as CE
+participant "TrustStore" as TS
+participant "Human Reviewer\n(HSM)" as HR
+participant "ControlPlane\nprepare" as CP
+
+== verifyPackage（机器验证）==
+Prod -> CAS : put(artifactDigest, bytes)
+Prod -> CE : verifyPackage(manifest, inventory,\nobservedRuleIds, artifactDigests)
+CE -> CAS : has/get 复算 digest
+CE -> TS : policy/trust checkpoint
+CE --> Prod : VerificationDecision\nmachine=verified
+
+== 人类复核（独立 quorum）==
+HR -> CE : SignedHumanReviewAttestation\n+ VerifiedDecision
+CE -> TS : verifyHumanReviewAttestation\nscope conformance/human-review
+CE --> HR : ReviewedDecision sealed
+
+== control-plane prepare ==
+Prod -> CP : prepareSchemaAdmission(\nreviewedDecision, signedAttestation,\nfourViewEvidence)
+CP -> CE : validateSealedAdmissionPrepare
+CE -> TS : 重验 attestation + subject 绑定
+CP --> Prod : PreparedSchemaAdmission | blocked
+
+note over CE, TS
+  禁止：生产 API 自造 approved
+  测试 builder 仅在 @cantilune/conformance/testing
+end note
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml 06h-abstractions
+' 图 06H：@cantilune/conformance 六层验证信任抽象（S4 / QA-L5 边界）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06H · 六层验证信任抽象（M2 安全加固原型）
+caption <color:#6E6963>非 release authority；Stop-Ship 解除须 QA-L5 人工签核。06E · RFC-0003。</color>
+
+top to bottom direction
+
+legend top right
+  |= 层 |= 抽象 |= 目录 |
+  | V1 | 候选登记 | manifest/ inspectCandidate |
+  | V2 | 机器验证 | verifier/ engine/ |
+  | V3 | 理论绑定 | leanAttestation · proof manifest |
+  | V4 | 人类复核 | lifecycle/ · SignedAttestation |
+  | V5 | 发布门禁 | releaseConformanceGate · C9 |
+  | V6 | 信任持久化 | TrustStore · Revocation · CAS · hash chain |
+endlegend
+
+rectangle "V1 · 候选登记\nCandidate Intake" #EDE8F0 {
+  card "ConformanceTargetManifest\nscope/profile 策略门" as V1a
+}
+
+rectangle "V2 · 机器验证\nMachine Verification" #E8EEF5 {
+  card "verifyPackage + EvidenceStore\n禁止空 inventory 自报" as V2a
+  card "verifyFourProjection\n强制 semantics 三组" as V2b
+  card "verifyDpoReplay\nrecipe-chain + port" as V2c
+}
+
+rectangle "V3 · 理论绑定\nTheory Binding (reviewed)" #F3E5DC {
+  card "LeanBuildAttestation v2\ngit/toolchain/signature" as V3a
+}
+
+rectangle "V4 · 人类复核\nHuman Review (signed)" #E5EDE5 {
+  card "SignedHumanReviewAttestation\nTrustStore scope · COI" as V4a
+  card "sealReviewedDecision\n[reviewedBrand]" as V4b
+}
+
+rectangle "V5 · 发布门禁\nRelease Gate" #F5F1EB {
+  card "validateReleaseGateInput\nReviewedDecision + Certificate" as V5a
+}
+
+rectangle "V6 · 信任持久化\nTrust Durability" #E5ECEE {
+  card "fileEvidenceStore CAS\natomic write + digest 复算" as V6a
+  card "fileDecisionLog\npreviousEntryDigest chain" as V6b
+  card "RevocationStore 消费时重检" as V6c
+}
+
+V1a --> V2a
+V2a --> V3a
+V2a --> V4a
+V4a --> V4b
+V4b --> V5a
+V2a --> V6a
+V5a --> V6c
+
+note bottom
+  M2：工程原型 + Stop-Ship 加固
+  非 production admission authority
+end note
+
+@enduml

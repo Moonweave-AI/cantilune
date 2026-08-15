@@ -1,0 +1,36 @@
+@startuml 05e-pkg
+title 图 05E · @cantilune/comms 包依赖
+caption <color:#6E6963>生产仅依赖 @cantilune/core；runtime/control-plane/observability 经 ports 注入。</color>
+
+package "@cantilune/core" #F2EEEA {
+  [CommunicationSession]
+  [SchemaAdmissionReceipt]
+  [ActorRef / SessionId]
+}
+
+package "@cantilune/comms" #E8EEF5 {
+  package "engine/" { [CommsIngress] [Comms*Service] }
+  package "ports/" { [CommsStore] [RuntimeCommitPort] }
+  package "memory/" { [MemoryCommsStore] [LoopbackTransport] }
+  package "transports/a2a/" { [A2ATransportAdapter] }
+}
+
+package "composition root" #F3E5DC {
+  [createCommsServices]
+}
+
+package "@cantilune/runtime" #E5EDE5 {
+  [observe / admit / commit]
+}
+
+package "@cantilune/control-plane" #EDE8F0 {
+  [SchemaAdmissionReceipt]
+}
+
+[@cantilune/core] --> [@cantilune/comms]
+[createCommsServices] ..> [@cantilune/comms]
+[createCommsServices] ..> [@cantilune/runtime] : ports
+[createCommsServices] ..> [@cantilune/control-plane] : receipt resolver
+[@cantilune/comms] ..> [Remote peer] : transport adapter
+
+@enduml

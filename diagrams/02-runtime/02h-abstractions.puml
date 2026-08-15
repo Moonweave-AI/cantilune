@@ -1,0 +1,81 @@
+@startuml 02h-abstractions
+' 图 02H：@cantilune/runtime 六层运行时抽象（准入仅为 L3）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 02H · @cantilune/runtime 六层运行时抽象
+caption <color:#6E6963>runtime = 运行态抽象层；L3 意图处置（含 admission）≠ runtime 全部。L4 执行语义是核心。外置包见图 02G。</color>
+
+top to bottom direction
+
+legend top right
+  |= 层 |= 抽象 |= 门面 API |= 目录 |
+  | L1 | 运行世界 | getHead() | engine/ · ports/ · schema/ |
+  | L2 | 外部边界 | observe() | observe/ |
+  | L3 | 意图处置 | admit() · admitComposition() | admission/ · replay/recipe |
+  | L4 | 执行语义 | applyRecipe（内部） | execution/ · replay/witness |
+  | L5 | 持久轨迹 | commit() · proposeAndCommit() | execution/commit · ports/ |
+  | L6 | 重放验证 | replay() | execution/replayVerifier |
+  | 横切 | 端口·编解码·品牌 | RuntimeDependencies | foundation/ · codec/ · memory/ |
+endlegend
+
+rectangle "L1 · 运行世界抽象\nRuntime World" #E8EEF5 {
+  card "CollaborationStore.head()\n当前 CollaborationSnapshot" as L1a
+  card "OrchestrationSchema\n当前 epoch 允许空间（外部注入）" as L1b
+}
+
+rectangle "L2 · 外部边界抽象\nExternal Boundary" #F5F1EB {
+  card "ingestObservation\n仅 append auditTail · 不产生 Change" as L2a
+}
+
+rectangle "L3 · 意图处置抽象\nIntent Disposition" #F3E5DC {
+  card "AdmissionGateway\ntemplate · requires · policy · lock" as L3a
+  card "AdmittedIntent + ReplayRecipe\n无端点执行输入" as L3b
+  card "effectiveFootprint\nC-prime 并发权威" as L3c
+}
+
+rectangle "L4 · 执行语义抽象\nExecution Semantics\n<b>runtime 核心</b>" #E5EDE5 {
+  card "ReplayKernel · applyRecipe\nbefore + recipe → after" as L4a
+  card "OperationHandlerRegistry · handlers/\nintroduce · delegate · accept …" as L4b
+  card "matchWitness · complementTag\nDPO 重放见证" as L4c
+}
+
+rectangle "L5 · 持久轨迹抽象\nPersistence & Trace" #FFF9F6 {
+  card "commitChange\napply → withSnapshotRef → validate → put+append" as L5a
+  card "CoordinationChange 收据\nChangeLog 有序链" as L5b
+}
+
+rectangle "L6 · 重放验证抽象\nVerification" #E5ECEE {
+  card "ReplayVerifier\n链式 applyRecipe · 比对 afterRef" as L6a
+  card "Verified\nkernel.run recipe source = some target" as L6b
+}
+
+L1a --> L2a : 读 head
+L2a --> L3a : Obs 可进 externalEvidence
+L3a --> L3b : 准入成功
+L3b --> L4a : recipe 喂执行
+L4a --> L4b : handler 步进
+L4b --> L5a : after 产出
+L5a --> L5b : 原子入账
+L5b --> L6a : 历史可验
+L6a --> L6b
+
+note right of L4a
+  RFC-0001 §6.4 Executor API
+  与 Node contract（handler）
+  落在此层，不在 admission
+end note
+
+note bottom of L3a
+  L3 回答「能不能做、用什么配方」
+  <strong>不做</strong>状态突变
+end note
+
+footer 类型见图 02A · 目录见图 02E · 时序 02B · 状态 02C · 外置 02G
+
+@enduml

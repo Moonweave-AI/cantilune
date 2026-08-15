@@ -12,12 +12,25 @@ tmp/
 tools/plantuml.jar
 node_modules/
 dist/
+coverage/
+
+# CLI session/config state written at runtime by `cantilune`.
+.cantilune/
+# CLI test/cluster run artifacts (runtime content/reports — never source-controlled).
+.cantilune-cluster-run/
+.cantilune-test-run/
+
+# Editor-local state (Kilo) must not enter source-control deliveries.
+.kilo/
 
 # Local agent/runtime state must never enter source-control deliveries.
 .agents/
 .claude/
 .opencode/
 .swarm/
+
+# Cursor IDE hook runtime state (mutates every session; not source-controlled).
+.cursor/hooks/state/
 
 # Raw proof-run logs and self-containing repository bundles are local artifacts.
 docs/qa/evidence/runtime-*/

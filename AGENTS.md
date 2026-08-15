@@ -1,29 +1,56 @@
 ## Learned User Preferences
 
 - 偏好简体中文回复（非双语）
-- 偏好逐步协作设计，而非代理单独完成全部读写
-- 图表与文档侧重 agent orchestration 工程语义，避免数学符号与 Lean 细节
+- 偏好逐步协作设计，而非代理单独完成全部读写；评审/修复须闭环，勿悬置文档或 OPEN 项；需 Owner 决策时用 askquestion 中文直接向用户（reviewer）发问
+- 图表与文档侧重 agent orchestration 工程语义，避免数学符号与 Lean 细节；工程落地不嵌入证明，证明留在 formal/ 数学层
 - 每张 PlantUML 图范围要窄；首张图聚焦 CoordinationEvent 与 Actor（发起方）
 - 类图中每个字段须在类体内 inline 注释（含义与作用），并附具体案例赋值；不要用外部 note 延伸成独立板块
 - 要展示字段/类级关系，不只是包块之间的粗粒度关系
 - 修布局时须保留分区框、图例、案例示例；状态/时序图用列式网格、分区配色、语义线型（主脊/Obs 回环/Event 重入），跨列边最小化；时序/状态图须通用化（多轮、多分支、占位符，避免具体案例名与固定 ID）
 - 测试与生产分离：`src/` 零测试；每包 `tests/` 按 L2–L7 分层，不用仓库级 `qa/`
 - 状态图须列齐类图全部字段及案例赋值；层级用 `\t` 缩进，同级块间空描述行（PlantUML 会剥空格）
-- 同系列衍生图放在 `diagrams/01-core/`，短名后缀：`01a-class`、`01b-seq`、`01c-state`、`01d-fields`
-- 工程设计阶段要脚踏实地的接口/命名/关系规范（core 同概念合并单文件，避免 kebab 拆分与 ids/kind 重叠），不是数学原理复述
-- 代码目标为 LangChain/LangGraph 级可发布框架（非纯理论）；TS 为主；模块间隔离与 core 三柱 `nodes`·`coordination`·`structure`（组合代数原子）；Agent 运行时自行组合结构（非预画死图），静态 wiring 仅 derive 派生
+- 同系列衍生图放在 `diagrams/01-core/`、`diagrams/02-runtime/`、`diagrams/03-observability/`、`diagrams/04-control-plane/`、`diagrams/05-evaluation/`，短名后缀：`01a-class`… / `05a-class`…
+- 工程设计阶段要脚踏实地的接口/命名/关系规范（一概念一 camelCase.ts，禁止 kebab 拆分与 ids/kind 重叠）；跨包类型须继承/组合 core 已有字段，禁止平行实体类型或另起规范身份层；跨包测试 import 须走 package exports（如 `@cantilune/runtime/memory`），禁止深路径引用他包 `src/`（core `tsconfig.tests` rootDir 约束）
+- 代码目标为 LangChain/LangGraph 级可发布 OS（非应用框架/非纯理论）：用户只输入任务、集群结构与推进全由 LLM 自决，不预设角色/workflow/AgentRunner；TS 为主；模块间隔离；core/runtime 均按职责分子文件夹、柱内一概念一 camelCase.ts（禁止平铺单层）；core 三柱 `nodes`·`coordination`·`structure`；Agent 运行时自行组合结构（非预画死图），静态 wiring 仅 derive 派生
+- 各生产包 L2–L7 代码覆盖率门禁：statements/functions/lines ≥90%、branches ≥88%（vitest v8 threshold 全仓统一）
+- 拒绝 demo 式最小实现：adapter 须覆盖主流 LLM provider（OpenAI/Anthropic/Azure/DeepSeek 等，参考 LangChain/LiteLLM 等权威项目）；CLI 须系统性 Ink TUI（对标 orca），slash 命令驱动，含实时 DAG/Petri/Trace 等视图
+- 生产路径禁止 mock/占位/硬编码绕过：`src/` 须真实可运行逻辑；memory 适配器仅 dev/test；生产默认 `durable=file` + `bootFileOS`/file persistence
+- 多 Agent 集群须 peer 对等（无父子层级）；拓扑不限并行/串行/树，支持反馈环、条件启动、扇出/汇入；初始 Agent 可继续工作，任一 running Agent 均可 register 新 Agent（谁设计谁负责）
+- Boot OS 以声明式 reconcile 启动 Agent loop（ClusterSupervisor 观测 snapshot 后拉起）；Agent 仅在协调世界 register，非显式 spawn syscall
+- 各 Agent 共享 CollaborationSnapshot；内部 LLM 对话/messageHistory 私有、不入 snapshot
 
 ## Learned Workspace Facts
 
-- Cantilune 是 agent 编排项目；`diagrams/01-core/` 与 `00-naming-contract.md` 为当前工程设计载体
-- 活跃图 01 四视图：`diagrams/01-core/` 下 01A 类图 · 01B 时序 · 01C 状态 · 01D 字段（`01a-class.puml` 等）；`02-core-domain.puml` 暂缓
-- 图 01 核心：CollaborationSnapshot + CoordinationEvent + Actor 双视图（Registration 常驻世界、Ref 事件引用）+ 外部边界（ObservationEntry）
-- Trigger ≠ CoordinationEvent；Actor 不直接 emit Event；外部输入经 ObservationEntry/Command → Runtime admission → Event
+- Cantilune 是 agent 编排 monorepo；主柱 core + runtime；外置 observability + control-plane；`diagrams/` 与 `00-naming-contract.md` 为工程设计载体
+- 活跃图 04 control-plane 八视图：`diagrams/04-control-plane/` 下 04A–04H（04H 六层治理 G1–G6；04A/04E 已落地模块；04F SignatureAdmission/FourView 映射；04G 邻接 runtime/conformance）
+- 活跃图 01 四视图：`diagrams/01-core/` 下 01A–01D；活跃图 02 runtime 八视图：`diagrams/02-runtime/` 下 02A–02H；活跃图 03 observability 八视图：`diagrams/03-observability/` 下 03A–03H（03H 六层只读抽象 S0+O1–O6；03A/03E EventSpine 中轴 + 四 lens/fold；03F 理论映射；03G 邻接 core/runtime/conformance）；定锚：四角度描绘 core 协调世界，只读观察 runtime commit 轨迹
+- 图 01 核心：CollaborationSnapshot + CoordinationEvent + Actor 双视图（Registration 常驻世界、Ref 事件引用）+ 外部边界（ObservationEntry）；`AgentManifest` + `StartConditionExpression` 供 register_participant 与 ClusterSupervisor 条件启动
+- Trigger ≠ Change；Actor 不直接 commit；外部输入经 ObservationEntry → auditTail，合法改写仅 Runtime admit/commit
 - CoordinationEvent 无 payload；任务正文在 WorkArtifact；Event 需 beforeRef/afterRef 供 replay
 - `00-naming-contract.md` 为 diagrams 命名单一来源；形式化映射附录 A；锚点含技术报告第 3 章、`formal/Cantilune/Core/`、`docs/spec/zh-CN/formal-semantics.zh-CN.md`
 - 本地 PlantUML 预览需 Java；无 JVM 时可用 PlantUML 在线服务器渲染
 - PlantUML @startyaml 本地插件触发 UnsupportedOperationException；01D 改用类图语法专述字段，01A 展示关系全貌
-- `@cantilune/core` 已落地于 `src/packages/core/`（三柱纯类型+纯函数）；pnpm monorepo 根 `src/packages/`；命名统一 `CoordinationChange`
-- 单包测试：`tests/{types,unit,integration,contract,system,support}` 对应 L2–L7 金字塔；L1 在仓库根工具链；闭包与 OPEN 项见 `tests/DESIGN-CLOSURE.md`
+- `@cantilune/core` 已落地于 `src/packages/core/`（三柱 + `consistency`；ADR-0002 Accepted）
+- `@cantilune/runtime` 已落地于 `src/packages/runtime/`（六层 L1–L6；observe/admit/apply/commit/replay；`register_participant` handler + `cluster/` 条件求值 `ConditionEvaluatorRegistry`；ADR-0003 权限边界；不含四投影→observability、schema epoch 治理准入→control-plane）
+- `@cantilune/observability` 全量落地（见 `diagrams/03-observability/`）
+- `@cantilune/control-plane` 已落地于 `src/packages/control-plane/`（六层治理 G1–G6：schema 目录 · binding CAS · admission 工作流 · prepare/commit epoch 切换 · policy/manifest · fleet rollout；依赖 runtime `RuntimeEpochAdministration` + conformance `FourViewEvidence`）；见 `diagrams/04-control-plane/`
+- `@cantilune/evaluation` 已落地于 `src/packages/evaluation/`（八层评估 E1–E8：声明/协议 · 基准套件 · 候选/基线 · 计划/预算 · 执行引擎 · 评分/评审 · 分析报告 · 证据收集；E0–E1 原型阶段；依赖 core + conformance，optional peer runtime + observability）；见 `diagrams/05-evaluation/`
+- 活跃图 05 evaluation 八视图：`diagrams/05-evaluation/` 下 05A–05H（05H 八层评估 E1–E8；05A 核心类型 + 关系；05C 五状态机总览；05F 理论映射 C1–C5 / Lean / 实验；05G 邻接 core/conformance/runtime/observability）
+- `@cantilune/content` 已落地于 `src/packages/content/`（content-addressed 存储；SHA-256 → ContentRef；memory/file 两适配器；接口: put/get/exists/metadata/count；blobToText 便利方法）
+- `@cantilune/syscall` 已落地于 `src/packages/syscall/`（LLM ↔ OS 翻译层；perceive/act/readContent/writeContent/useTool/availableActions；零策略纯管道；依赖 core + runtime + content）
+- `@cantilune/boot` 已落地于 `src/packages/boot/`（bootCantilune/bootMemoryOS/bootFileOS + perceive→LLM→syscall agent loop；`cluster/` 导出 ClusterSupervisor·AgentInstance·SignalHandlerRegistry·SharedResources；`register_participant` 已入 DEFAULT_TEMPLATES；终止控制器 + `VerifierRegistry` 含 `STRUCTURED_RUBRIC_VERIFIER` 软占位 rho=0.3）；当前缺口：CLI TUI/headless 仍接单 Agent bootCantilune，ClusterSupervisor 仅 programmatic/L7 测试可用 → **ADR-0019（D2 多 Agent CLI 启动，Proposed）** 待评审后接线；**ADR-0020（C2 LLM 评判器，Proposed）** 待评审后替换 `STRUCTURED_RUBRIC_VERIFIER` 占位
+- `@cantilune/conformance` 已落地于 `src/packages/conformance/`（产品证据验证 · 形式化证明绑定 · 四投影证书 · 跨 epoch 一致性 · 发布门禁；M2 原型；供 control-plane/evaluation 消费；不在 TS 重证 Lean）
+- `@cantilune/comms` 已落地于 `src/packages/comms/`（typed late-π 通信 facet · durable delivery · admission-bound reconnect · envelope/codec/security · memory/file/a2a 适配器；control-plane 依赖；当前 transport 仅 loopback，跨进程/跨主机生产接线未实现 → **ADR-0018（D1 跨 Agent 传输，Proposed）** 待评审）
+- 单包测试：`tests/{types,unit,integration,contract,system,support}` 对应 L2–L7 金字塔；L1 在仓库根：`pnpm test:static` = lint + format:check + typecheck，与 `pnpm test`（Vitest）分立；L7 须覆盖多 Agent 串并行、nest/fork/create_session、大图及 crash-restart/soak/跨进程 file durable；冷启动 replay（T0 + durable log）与 pack smoke 须 CI 化；闭包见各包 `DESIGN-CLOSURE.md` / `CORE-HANDOFF.md` / `RUNTIME-DESIGN-CLOSURE.md`
 - `ObservationEntry` 为单条外部观察；`auditTail` 为 Snapshot 上 append-only 有序列表（≠ Change）
-- core 第二柱为组合代数原子（Port/Wire/Footprint/disjoint/trace）；局部并行不串台靠 footprint 不交判定
+- core 第二柱为组合代数原子（Port/Wire/Footprint/disjoint/trace）；并行隔离靠 effectiveFootprint 不交（不信任 agent 声明 footprint）；并行 file durable commit 各 worker 须 distinct participant footprint（共用 initiator 会锁串行化）；Change 重放配方靠 `matchBindings`
+- monorepo 现 14 个生产包（core·runtime·observability·control-plane·evaluation·comms·conformance·content·syscall·boot·adapter·tools·cli·petri；另有 test-fixtures）
+- `@cantilune/adapter` 已落地于 `src/packages/adapter/`（LLM 适配：anthropic/bedrock/google/openaiCompatible + dashscope/zhipu/baichuan 等 registry 条目 + httpClient；实现 boot `LlmAdapter`）
+- `@cantilune/tools` 已落地于 `src/packages/tools/`（Agent 工具层：filesystem/shell/web/mcp + `createToolSet` 路由；依赖 syscall）
+- `@cantilune/cli` 已落地于 `src/packages/cli/`（Ink 全屏 TUI + slash 命令 + world/graph/petri/trace/replay/observe/schema/eval/content/export/help/cluster 视图 + headless runner；bin `cantilune`；TUI `/provider`/`/model` 与 headless `--provider`/`--model` 配置 LLM；`/cluster`·`/cluster status`·`/cluster topology` 集群观测；依赖 boot/adapter/tools/runtime 等）
+- `@cantilune/petri` 已落地于 `src/packages/petri/`（无依赖 Petri 网执行内核：结构类型 + marking + enablement + 自环弧拒绝；令牌游戏 consume/produce 发射；有界 BFS 可达性 + dead-marking 判定；Martinez–Silva S-不变量；结构 `PetriNet` 类型与 `pnmlExporter` 同构，PNML 导出网可直接赋值；CLI `/petri *` 经 `petriControl` 投影 runtime→网后驱动真实引擎；ADR-0017）
+- 活跃图 06 conformance 八视图：`diagrams/06-conformance/` 下 06A–06H
+- `@cantilune/boot` 补充：`bootFileOS(storagePath)` 为 file 持久化生产入口；`bootMemoryOS` 仅内存 dev stub
+- comms 生产模式 EndpointPolicy 默认 deny-by-default（须显式 allowlist/denylist 配置）
+- runtime `templateAwarePolicyEvaluator` 校验 operationType/发起方/角色绑定（非 always-allow）
+- conformance CLI 支持 `--store-dir` 切换 file evidence/trust/audit 持久化

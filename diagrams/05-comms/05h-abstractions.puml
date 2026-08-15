@@ -1,0 +1,46 @@
+@startuml 05h-abstractions
+title 图 05H · comms 六层抽象 C0 + M1–M6
+caption <color:#6E6963>C0 foundation/protocol · M1 peer · M2 session/envelope · M3 delivery · M4 mobility/reconnect/close · M5 engine/recovery · M6 security/transport。</color>
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+package "C0 · foundation + protocol" #EDE8F0 {
+  [StableCommunicationMetadata]
+  [CommunicationOperationRegistry]
+  [CommunicationOccurrenceRecord]
+}
+
+package "M1 · peer + codec" #E8EEF5 {
+  [PeerDescriptor]
+  [CommsIngress]
+}
+
+package "M2 · session + envelope" #F3E5DC {
+  [SessionTransportBinding]
+  [CommunicationEnvelope]
+}
+
+package "M3 · delivery + store" #E5EDE5 {
+  [CommsStore]
+  [FileCommsStore]
+  [MessagingSagaCoordinator]
+}
+
+package "M4 · mobility + reconnect + close" #F5F1EB {
+  [ReconnectCoordinator]
+  [CloseCoordinator]
+}
+
+package "M5 · recovery + observability" #E5ECEE {
+  [OutboxDispatcher]
+  [ObservabilityCommsEventBridge]
+}
+
+package "M6 · security + transport" #F0EDE8 {
+  [HmacIdentityVerifier]
+  [A2ATransportAdapter]
+}
+
+@enduml

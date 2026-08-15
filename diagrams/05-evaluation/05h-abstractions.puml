@@ -1,0 +1,92 @@
+@startuml 05h-abstractions
+' 图 05H：@cantilune/evaluation 八层评估抽象。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 05H · @cantilune/evaluation 八层评估抽象
+caption <color:#6E6963>evaluation = 离线可证伪评估系统（E0–E1 原型）。NEVER 修改 runtime world / control-plane policy。已落地 src/packages/evaluation/。</color>
+
+top to bottom direction
+
+legend top right
+  |= 层 |= 抽象 |= 门面 API / 模块 |
+  | E1 | 声明与协议 | EvaluationClaim · EvaluationProtocol | claims/ |
+  | E2 | 基准套件 | BenchmarkSuite · BenchmarkCase | benchmarks/ datasets/ |
+  | E3 | 候选/基线 | CandidateSubject · BaselineSubject | subjects/ |
+  | E4 | 运行计划 | EvaluationRunPlan · BudgetPolicy | plans/ budget/ |
+  | E5 | 执行引擎 | EvaluationEngine.admitRun/executeAttempt | execution/ |
+  | E6 | 评分 / 评审 | MetricDefinition · JudgeProtocol · ClaimDecision | scoring/ oracles/ review/ |
+  | E7 | 分析报告 | AggregateAnalysis · EvaluationReport | analysis/ reports/ |
+  | E8 | 证据收集 | CertifiedTraceEvidence · TheoryOracleEvidence | collection/ oracles/ |
+  | 横切 | 状态机·端口·适配器 | RunStateMachine · Ports · memory/file/cantilune | foundation/ ports/ adapters/ |
+endlegend
+
+rectangle "E1 · 声明与协议\nClaims & Protocol" #EDE8F0 {
+  card "EvaluationClaim\nclaimCode evaluation.c1–c5" as E1a
+  card "EvaluationProtocol\n可证伪设计 · 预注册" as E1b
+}
+
+rectangle "E2 · 基准套件\nBenchmark Suite" #E8EEF5 {
+  card "BenchmarkSuite · BenchmarkCase" as E2a
+  card "DatasetManifest\nprovenance · quarantine" as E2b
+}
+
+rectangle "E3 · 候选/基线\nSubjects" #F5F1EB {
+  card "CandidateSubject\npackageConformanceCertificate" as E3a
+  card "BaselineSubject\n外部产品 · adapter" as E3b
+}
+
+rectangle "E4 · 运行计划\nPlan & Budget" #F3E5DC {
+  card "EvaluationRunPlan\npairedExecution · seed policy" as E4a
+  card "EvaluationBudgetPolicy\nreserve-before / reconcile-after" as E4b
+}
+
+rectangle "E5 · 执行引擎\nExecution Engine\n<b>核心</b>" #E5EDE5 {
+  card "admitRun → executeAttempt → completeRun" as E5a
+  card "RunAttempt\ntoken/tool/network usage · cost" as E5b
+}
+
+rectangle "E6 · 评分与评审\nScoring & Review" #EDE8F0 {
+  card "MetricDefinition · MetricObservation" as E6a
+  card "ClaimDecision\nsupported / notSupported / inconclusive" as E6b
+  card "ReviewerAttestation · 分离/dedup/COI" as E6c
+}
+
+rectangle "E7 · 分析报告\nAnalysis & Report" #E5ECEE {
+  card "AggregateAnalysis\nstatistical · effect size" as E7a
+  card "EvaluationReport\nsigned · limitations 明示" as E7b
+}
+
+rectangle "E8 · 证据收集\nEvidence Collection" #F7F3EC {
+  card "CertifiedTraceEvidence\nDAG/Petri/π/Morphism 四投影" as E8a
+  card "TheoryOracleEvidence\nLean symbol · premiseMissing" as E8b
+}
+
+E1a --> E2a : protocol 引用 suite
+E2a --> E4a : plan 绑定 suite
+E3a --> E4a
+E3b --> E4a
+E4a --> E5a
+E4b --> E5a
+E5a --> E5b
+E5b --> E6a : 产出 observation
+E6a --> E7a
+E6b --> E7b
+E7b ..> E1a : decision 反馈 claim
+E8a ..> E6a : evidence → metric
+E8b ..> E6a
+
+note right of E5a
+  NEVER 修改 runtime world
+  NEVER 发行 conformance certificate
+  budget: reserve-before, reconcile-after, fail-closed
+end note
+
+footer 类型 05A · 目录 05E · 状态机 05C · 理论 05F · RFC-0004
+
+@enduml

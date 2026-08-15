@@ -1,0 +1,56 @@
+@startuml 06c-state
+' 图 06C：ConformanceStatusAxes 四轴状态 — theory / machine / human / release。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06C · 四状态轴（独立，不可互相替代）
+caption <color:#6E6963>kernel proved ≠ product verified ≠ human reviewed ≠ released。06A · 06F。</color>
+
+state "theory 轴" as Theory {
+  [*] --> missing
+  missing --> reviewed : LeanBuildAttestation v2\n+ proof manifest 绑定
+  reviewed --> [*]
+}
+
+state "machine 轴" as Machine {
+  [*] --> candidate
+  candidate --> verified : verifyPackage / verifiers\n+ EvidenceStore 实存
+  candidate --> invalid : violations[]
+  verified --> unavailable : port 缺失
+  verified --> [*]
+  invalid --> [*]
+}
+
+state "humanReview 轴" as Human {
+  [*] --> unassigned
+  unassigned --> pending : machine=verified
+  pending --> approved : SignedHumanReviewAttestation\n+ TrustStore + COI
+  pending --> rejected
+  pending --> conflict
+  approved --> [*]
+  rejected --> [*]
+}
+
+state "release 轴" as Release {
+  [*] --> notEvaluated
+  notEvaluated --> accepted : ReviewedDecision +\nPackageConformanceCertificate
+  notEvaluated --> blocked
+  accepted --> revoked : RevocationStore
+  accepted --> expired
+  revoked --> [*]
+  expired --> [*]
+}
+
+note right of Theory
+  Lean CENTRAL-* proved
+  不推出 TS 产品 verified
+end note
+
+note right of Machine
+  recipe-chain:sha256
+  绑定 durable ReplayRecipe 链
+end note
+
+@enduml

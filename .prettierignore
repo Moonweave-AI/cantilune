@@ -1,0 +1,8 @@
+dist/
+node_modules/
+formal/.lake/
+coverage/
+pnpm-lock.yaml
+
+# CLI session/config state written at runtime by `cantilune`.
+.cantilune/

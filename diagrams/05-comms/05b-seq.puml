@@ -1,0 +1,26 @@
+@startuml 05b-seq
+title 图 05B · admission → reconnect → runtime commit 时序
+caption <color:#6E6963>案例：adm-reconnect-001 · session-rc-001 · planDigest 绑定 receipt。</color>
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+participant "ControlPlane" as CP
+participant "CommsReconnectCoordinator" as RC
+participant "CommsStore" as ST
+participant "RemotePeer" as PEER
+participant "RuntimeCommitPort" as RT
+
+CP -> RC : AdmissionReconnectPlan(receipt, session, template)
+RC -> ST : putReconnect(proposed)
+RC -> RC : authorize()
+RC -> PEER : peerAccept(planDigest)
+PEER --> RC : peerAckDigest
+RC -> RT : commitReconnect(planDigest, admissionId)
+RT --> RC : runtimeReceiptRef
+RC -> ST : casSessionBinding(generation+1)
+RC -> ST : finalizeReconnect + occurrence(instanceReconnect)
+RC --> CP : AdmissionReconnectReceipt
+
+@enduml

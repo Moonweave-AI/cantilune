@@ -1,0 +1,42 @@
+name: runtime
+
+on:
+  push:
+    paths:
+      - "src/packages/runtime/**"
+      - "src/packages/test-fixtures/**"
+      - "src/packages/core/**"
+      - "tsconfig.base.json"
+      - "pnpm-lock.yaml"
+  pull_request:
+    paths:
+      - "src/packages/runtime/**"
+      - "src/packages/test-fixtures/**"
+      - "src/packages/core/**"
+      - "tsconfig.base.json"
+      - "pnpm-lock.yaml"
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/test-fixtures build
+      - run: pnpm --filter @cantilune/runtime typecheck
+      - run: pnpm exec eslint src tests --max-warnings 0
+        working-directory: src/packages/runtime
+      - run: pnpm exec prettier --check "src/**/*.ts" "tests/**/*.ts"
+        working-directory: src/packages/runtime
+      - run: pnpm --filter @cantilune/runtime test
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm --filter @cantilune/runtime test:pack
+        working-directory: src/packages/runtime

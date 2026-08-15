@@ -1,0 +1,10 @@
+@prefix ex: <https://example.org/ontology/> .
+
+# Positive SHACL/CQ fixture for the bundled starter ontology.
+ex:entity-1
+    a ex:DomainEntity ;
+    ex:relatedDomainEntity ex:entity-2 .
+
+ex:entity-2
+    a ex:DomainEntity ;
+    ex:relatedDomainEntity ex:entity-1 .

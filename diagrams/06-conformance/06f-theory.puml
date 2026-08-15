@@ -1,0 +1,41 @@
+@startuml 06f-theory
+' 图 06F：C0–C9 证据链 ↔ formal/proof-obligations 理论映射。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06F · 工程证据链 C0–C9 ↔ Core Theory
+caption <color:#6E6963>TS 不重证 Lean；只验证产品证据满足 theory 接口。06C · formal/proof-obligations.json。</color>
+
+rectangle "Core Theory (Lean)\nformal/Cantilune/" #E5EDE5 {
+  card "CENTRAL-06\nevent_replay_unique" as T06
+  card "CENTRAL-08/09\nDAG · Petri certificates" as T08
+  card "CENTRAL-18\nfour_projection_consistency" as T18
+}
+
+rectangle "Product Conformance (TS)\nC0–C9 evidence matrix" #EDE8F0 {
+  card "C0 CandidateManifest\nVerificationPolicy · scope" as C0
+  card "C1 RuleInventory\nhidden rule 防护" as C1
+  card "C2 ProofManifest\nproof-obligations baseline" as C2
+  card "C3 TheoryBaselineRef" as C3
+  card "C4 OperationalProjection" as C4
+  card "C5 FourProjectionSemantics\n强制 semantics" as C5
+  card "C6 ReplayRecipe\nrecipe-chain digest" as C6
+  card "C7 CrossEpochChain" as C7
+  card "C8 EngineeringAdmission" as C8
+  card "C9 ReleaseCertificate\nReviewedDecision 绑定" as C9
+}
+
+C2 --> T08 : manifest 校验\n非 TS proved
+C6 --> T06 : runtime DpoReplayPort
+C5 --> T18 : 四投影 + sharedExecution
+C8 ..> C5 : 正交；profile DAG\n非整数 rank
+C9 --> C8 : release 消费 sealed
+
+note bottom
+  eight production packages **excluded**
+  须独立 Product Conformance certificate
+end note
+
+@enduml

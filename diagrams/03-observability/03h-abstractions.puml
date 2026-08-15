@@ -1,0 +1,97 @@
+@startuml 03h-abstractions
+' 图 03H：@cantilune/observability 六层只读抽象 — EventSpine 中轴 · 四角度描绘 core 世界。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 03H · @cantilune/observability 六层只读抽象（定锚版）
+caption <color:#6E6963>本质：四形式主义读角描绘 @cantilune/core 协调世界；输入来自 @cantilune/runtime commit 轨迹。never write。类型 03A · 目录 03E · 理论 03F。</color>
+
+top to bottom direction
+
+legend top right
+  |= 层 |= 抽象 |= 职责 |
+  | <back:#DDE8F0>　</back> | S0 世界+脊柱 | ObservationWorld · EventSpine（EventTag + core Change） |
+  | <back:#E8EEF5>　</back> | O1 输入装配 | runtime 产物 → ObservationWorld |
+  | <back:#EDE8F0>　</back> | O2 事件切片 | deriveEventSlice → ProjectionSlice |
+  | <back:#EDE8F0>　</back> | O3 四角度折叠 | foldFourViews → 四 View |
+  | <back:#E5ECEE>　</back> | O4 索引门面 | FourViewBundle · ObservationIndex |
+  | <back:#F5F1EB>　</back> | O5 诊断压缩 | diagnostic 可选摘要（非权威） |
+  | <back:#F7F3EC>　</back> | O6 证书 | ProjectionCertificateMeta |
+  | <back:#F0EDE8>　</back> | 横切 | CrossViewInvariants · ReadOnlyViolation |
+endlegend
+
+rectangle "外部 · 协调世界本体\n@cantilune/core" #E5EDE5 {
+  card "CollaborationSnapshot\nParticipant · Link · Capability · Session" as CoreWorld
+  card "CoordinationChange · RunHistory\nObservationEntry" as CoreFacts
+}
+
+rectangle "外部 · 运行驱动\n@cantilune/runtime" #E5ECEE {
+  card "observe → admit → commit → replay\nChangeLog · RunHistoryTracker" as RTDrive
+}
+
+rectangle "S0 · 只读世界 + 事件脊柱\n<b>observability 结构核心</b>" #DDE8F0 {
+  card "ObservationWorld\n终端 Snapshot（core 实体权威）+ ChangeIndex" as S0World
+  card "EventSpine\nEventTag + CoordinationChange（组合 core，不重复字段）" as S0Spine
+}
+
+rectangle "O1 · 输入装配" #E8EEF5 {
+  card "assembleObservationWorld()\nStore.head + Log.since + Tracker" as O1Asm
+}
+
+rectangle "O2 · 逐步切片 · 四 lens" #EDE8F0 {
+  card "deriveEventSlice(event)\n→ Delta（core Link/Capability/Session/Diagnostic 字段 diff）" as O2Slice
+}
+
+rectangle "O3 · 折叠四角度描绘" #EDE8F0 {
+  card "foldFourViews(slices)\n→ View（snapshot 终态 + byEvent 索引）" as O3Fold
+}
+
+rectangle "O4 · 观察索引" #E5ECEE {
+  card "FourViewBundle + ObservationIndex\nfromWorld · observeCommitted" as O4Idx
+}
+
+rectangle "O5 · 诊断压缩（可选）" #F5F1EB {
+  card "compressDiagnostic(structureView)\n≠ 四投影数据源" as O5Diag
+}
+
+rectangle "O6 · 证书（可选）" #F7F3EC {
+  card "ProjectionCertificateMeta\n按 eventTag 附着" as O6Cert
+}
+
+rectangle "横切 · 出厂门控" #F0EDE8 {
+  card "CrossViewInvariants\nE1–E6 跨读角一致" as XInv
+}
+
+CoreWorld --> S0World
+CoreFacts --> S0World
+RTDrive --> O1Asm : commit 后只读拉取
+O1Asm --> S0World
+S0World --> S0Spine
+S0Spine --> O2Slice
+O2Slice --> O3Fold
+O3Fold --> O4Idx
+O3Fold --> O5Diag : 压缩，非回写
+O6Cert ..> O4Idx : 可选 attach
+XInv --> O4Idx : validate 出厂
+
+note right of S0Spine
+  <b>继承纪律</b>
+  四读角 join = core 品牌 ID
+  Delta/View 沿用 CollaborationLink 等
+  禁止 EntityNode/DependencyEdge 平行类型
+end note
+
+note bottom of RTDrive
+  runtime 驱动世界改写
+  observability 只描绘已 commit 事实
+  禁止写 Store/Log · 禁止调度判据
+end note
+
+footer 类型 03A · 字段 03D · 时序 03B · 状态 03C · 产品 03G
+
+@enduml

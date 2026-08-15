@@ -1,0 +1,77 @@
+@startuml 02f-theory
+' 图 02F：Lean 理论栈 ↔ 工程分层（runtime = 六层运行时抽象）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title 图 02F · 理论闭包 vs 工程分层（runtime 六层抽象）
+caption <color:#6E6963>Lean 全栈在 formal/；@cantilune/runtime 落地 L1–L6 运行态抽象。抽象总览 02H。</color>
+
+top to bottom direction
+
+rectangle "理论层（Lean / RFC）" #EDE8F0 {
+  card "Config σ · FinSignature" as T0
+  card "ReplayRecipe · ReplayKernel · Verified" as T1
+  card "Operation admission · policy" as T2
+  card "SignatureAdmission · FourView" as T3
+  card "ExecutionPackage · InternalRanking" as T4
+  card "ProjectionCertificate · 四投影" as T5
+  card "Feedback · Markov · quorum" as T6
+  card "Pi transport · admissionReconnect" as T7
+  card "Success / Wait / Deadlock" as T8
+}
+
+rectangle "@cantilune/runtime\n六层运行时抽象" #E5EDE5 {
+  card "L1 运行世界\ngetHead · schema 绑定" as R1
+  card "L2 外部边界\nobserve / auditTail" as R2
+  card "L3 意图处置\nadmit · AdmittedIntent · recipe" as R3
+  card "L4 执行语义\napply · handlers · ReplayKernel" as R4
+  card "L5 持久轨迹\ncommit · ChangeLog" as R5
+  card "L6 重放验证\nreplayVerifier · Verified" as R6
+  card "横切 ports · codec · foundation" as Rx
+}
+
+rectangle "外置（非 runtime）" #F5F1EB {
+  card "@cantilune/observability" as E0
+  card "@cantilune/control-plane" as E1
+  card "@cantilune/comms" as E2
+  card "@cantilune/conformance" as E3
+}
+
+T0 --> R1
+T1 --> R4
+T1 --> R6
+T2 --> R3
+T3 --> E1
+T4 --> E3
+T5 --> E0
+T6 --> E2
+T7 --> E2
+T8 --> E3
+
+R1 --> R2
+R2 --> R3
+R3 --> R4
+R4 --> R5
+R5 --> R6
+R5 ..> E0 : ChangeCommitted
+E1 ..> R1 : schema 注入
+E2 ..> R2 : Obs 入口
+
+note right of R4
+  <b>L4 是 runtime 核心</b>
+  RFC Executor API + Node contract
+  L3 只产出 recipe，不做状态突变
+end note
+
+note right of E0
+  ADR-0002：四投影 = 只读 derive
+  不进 runtime 写路径
+end note
+
+footer L1–L6 详见 02H · 目录 02E · 外置 02G
+
+@enduml

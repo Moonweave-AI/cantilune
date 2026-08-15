@@ -1,6 +1,13 @@
 name: Formal theory
 
 on:
+  workflow_call:
+    inputs:
+      gate:
+        description: Formal evidence gate to run
+        required: false
+        default: development
+        type: string
   push:
     paths:
       - ".gitattributes"
@@ -81,9 +88,10 @@ jobs:
 
       - name: Run formal evidence gate
         shell: pwsh
+        env:
+          FORMAL_GATE: ${{ inputs.gate || github.event.inputs.gate || 'development' }}
         run: |
-          $gate = '${{ inputs.gate }}'
-          switch ($gate) {
+          switch ($env:FORMAL_GATE) {
             'proved' {
               ./formal/scripts/ci.ps1 -RequireProved -CleanBuild
             }
@@ -118,3 +126,10 @@ jobs:
             formal/proof-obligations.json `
             formal/scripts/ci.ps1 `
             formal/scripts/recompute-integrity.ps1
+
+      - name: Upload formal gate attestation
+        if: ${{ (inputs.gate || github.event.inputs.gate || 'development') == 'proved' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-proved-gate
+          path: formal/proof-obligations.json

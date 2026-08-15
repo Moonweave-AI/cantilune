@@ -1,0 +1,96 @@
+@startuml 05b-seq
+' 图 05B：evaluation 执行时序 — admitRun → executeAttempt → score → decision。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBackgroundColor #F7F3EC
+
+title 图 05B · Evaluation 执行时序：claim → plan → run → score → decision
+caption <color:#6E6963>案例 evaluation.c1 replay determinism。budget: reserve-before, reconcile-after。抽象 05H。</color>
+
+mainframe <b>评估纪律</b> · NEVER write runtime · budget fail-closed · retry = new attempt
+hide footbox
+
+box "Evaluator / Operator" #F5F1EB
+  actor "Operator" as Op
+end box
+
+box "EvaluationEngine · execution/" #E5EDE5
+  control "EvaluationEngine" as Eng
+  control "RunStateMachine" as RSM
+end box
+
+box "E6 Scoring / Review" #EDE8F0
+  control "MetricObservation" as Score
+  control "ClaimDecision" as Dec
+end box
+
+box "Ports / Adapters" #E8EEF5
+  database "RunStore" as Store
+  database "BudgetLedger" as Bud
+  control "CandidateRunner" as Runner
+  control "ConformanceCertificateResolver" as Cert
+end box
+
+box "External (read-only)" #E5ECEE
+  participant "@cantilune/conformance" as Conf
+  participant "@cantilune/runtime (optional)" as RT
+end box
+
+== E4 · admitRun ==
+
+Op -> Eng : admitRun(plan, candidateSubject, budgetPolicy)
+activate Eng
+Eng -> Cert : resolve(packageConformanceCertificateRef)
+Cert -> Conf : read C9 certificate
+Conf --> Cert : valid · unexpired · not revoked
+Eng -> Bud : reserveBudget(estimatedCost)
+Bud --> Eng : ledger updated
+Eng -> Store : save(EvaluationRun status=admitted)
+Eng -> RSM : transition planned→admitted
+Eng --> Op : { run, admittedToken }
+deactivate Eng
+
+== E5 · executeAttempt ==
+
+Op -> Eng : executeAttempt(runId, caseRef, seed)
+activate Eng
+Eng -> RSM : admitted→queued→leased→running
+Eng -> Runner : execute(config)
+Runner --> Eng : outputRefs · tokenUsage · cost
+Eng -> Store : saveAttempt(RunAttempt)
+Eng --> Op : RunAttempt(succeeded)
+deactivate Eng
+
+alt attempt failed
+  Eng -> Store : saveAttempt(status=failed)
+  note right of Eng: retry = new attempt\nnever overwrite
+end
+
+== E5 · completeRun ==
+
+Op -> Eng : completeRun(runId)
+Eng -> RSM : running→collecting
+Eng -> Bud : reconcileBudget(actual)
+Eng -> Store : save(run status=collecting)
+
+== E6 · scoring + decision (external pipeline) ==
+
+Op -> Score : observe + aggregate
+Score -> Dec : evaluateDecision
+Dec --> Op : ClaimDecision(supported/notSupported/inconclusive)
+
+note over Op, Conf #F7F3EC
+  ClaimDecision 发布须：
+  ① 无 blocking guardrail violations
+  ② reviewerAttestations 满 quorum + role
+  ③ evidenceRoot ≠ empty
+  ④ signatureRefs ≠ empty
+end note
+
+footer 类型 05A · 状态 05C · 目录 05E · 理论 05F
+
+@enduml

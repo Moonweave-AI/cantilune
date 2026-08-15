@@ -1,0 +1,76 @@
+name: evaluation
+
+on:
+  push:
+    paths:
+      - 'src/packages/evaluation/**'
+      - 'src/packages/core/**'
+      - 'src/packages/conformance/**'
+      - 'src/packages/runtime/**'
+      - 'src/packages/observability/**'
+      - 'formal/**'
+      - 'docs/rfc/0004-*'
+      - 'docs/adr/0011-*'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.base.json'
+  pull_request:
+    paths:
+      - 'src/packages/evaluation/**'
+      - 'src/packages/core/**'
+      - 'src/packages/conformance/**'
+      - 'src/packages/runtime/**'
+      - 'src/packages/observability/**'
+      - 'formal/**'
+      - 'docs/rfc/0004-*'
+      - 'docs/adr/0011-*'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.base.json'
+
+permissions:
+  contents: read
+
+jobs:
+  evaluation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies
+        run: |
+          pnpm --filter @cantilune/core build
+          pnpm --filter @cantilune/runtime build
+          pnpm --filter @cantilune/conformance build
+
+      - name: Build evaluation
+        run: pnpm --filter @cantilune/evaluation build
+
+      - name: Lint
+        run: pnpm --filter @cantilune/evaluation lint
+        continue-on-error: true
+
+      - name: Format check
+        run: pnpm --filter @cantilune/evaluation format:check
+        continue-on-error: true
+
+      - name: Typecheck
+        run: pnpm --filter @cantilune/evaluation typecheck
+
+      - name: Test
+        run: pnpm --filter @cantilune/evaluation test
+
+      - name: Coverage
+        run: pnpm --filter @cantilune/evaluation test:coverage
+
+      - name: Pack smoke test
+        run: |
+          cd src/packages/evaluation
+          pnpm pack
+          ls -la *.tgz

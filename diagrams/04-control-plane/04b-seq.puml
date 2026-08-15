@@ -1,0 +1,108 @@
+@startuml 04b-seq
+' 图 04B：control-plane schema admission 时序 — submit → approve → prepare → commit。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBackgroundColor #F7F3EC
+
+title 图 04B · Control-plane：schema admission 全链路时序
+caption <color:#6E6963>案例 full-admission-prepare-commit：rev-001 → rev-002(+archive_artifact) · adm-full-001。抽象 04H。</color>
+
+mainframe <b>治理纪律</b> · 单调扩展 · binding/head CAS · 分离 proposer/approver · prepare 须 FourViewEvidence
+hide footbox
+
+box "操作者" #F5F1EB
+  actor "Author\nauthor" as Author
+  actor "Proposer\nproposer" as Prop
+  actor "Reviewer\nreviewer" as Rev
+  actor "Operator\noperator" as Op
+end box
+
+box "FullControlPlaneService · engine/" #E5ECEE
+  control "ControlPlaneService" as Svc
+  control "controlPlaneWorker\nprepare/commit" as Worker
+end box
+
+box "G1 schema/ · G3 admission/" #EDE8F0
+  control "monotoneExtensionValidator" as Ext
+  database "ControlPlaneStore" as Store
+end box
+
+box "@cantilune/conformance" #EDE8F0
+  control "ConformanceEvidenceVerifier" as Conf
+end box
+
+box "@cantilune/runtime" #E5ECEE
+  control "RuntimeEpochAdministration" as Epoch
+  database "CollaborationStore\nhead" as RStore
+end box
+
+box "横切" #F7F3EC
+  queue "ControlPlaneOutbox" as Out
+end box
+
+== G1 · 注册候选 schema ==
+
+Author -> Svc : registerSchemaRevision(rev-002)
+activate Svc
+Svc -> Store : registerRevision(candidate)
+Svc --> Author : SchemaRevision
+deactivate Svc
+
+== G3 · submit：校验 binding + 单调扩展 ==
+
+Prop -> Svc : submitSchemaAdmission(adm-full-001)
+activate Svc
+Svc -> Store : getActiveBinding(default)
+Svc -> Store : getRevision(rev-001 · rev-002)
+Svc -> Ext : computeMonotoneExtensionPlan
+Ext --> Svc : SchemaExtensionPlan(+archive_artifact)
+Svc -> Store : claimIdempotency(idem-full-001)
+Svc -> Store : putAdmission(qualified/authorized)
+Svc --> Prop : SchemaAdmissionRecord
+deactivate Svc
+
+== G3 · approve：分离职责 ==
+
+Rev -> Svc : approveSchemaAdmission(adm-full-001)
+activate Svc
+Svc -> Store : getAdmission · canTransition → authorized
+Svc --> Rev : authorized
+deactivate Svc
+
+== G4 · prepare：四视图 + runtime prepare ==
+
+Op -> Svc : prepareSchemaAdmission(+fourViewEvidence)
+activate Svc
+Svc -> Conf : verifyFourViewEvidence(bundle)
+Conf --> Svc : ok
+Svc -> Epoch : prepareEpochTransition(planDigest)
+Epoch -> RStore : inspect head · quiescence checks
+Epoch --> Svc : PreparedEpochTransition
+Svc -> Store : putAdmission(prepared)
+Svc --> Op : PreparedSchemaAdmission
+deactivate Svc
+
+== G4 · commit：runtime commit + binding CAS ==
+
+Op -> Svc : commitSchemaAdmission(prepared)
+activate Svc
+Svc -> Epoch : commitEpochTransition(prepared)
+Epoch --> Svc : before/after SnapshotRef
+Svc -> Store : casActiveBinding(gen 1→2)
+Svc -> Store : putAdmission(committed)
+Svc -> Out : enqueue(SchemaAdmissionCommitted)
+Svc --> Op : SchemaAdmissionReceipt
+deactivate Svc
+
+note over Prop, Epoch #F7F3EC
+  runtime 单步 execute（admit/commit Change）
+  不在 control-plane；epoch 切换经 epochAdmin
+end note
+
+footer 状态机 04C · 类型 04A · 测试 full-admission-prepare-commit
+
+@enduml

@@ -1,0 +1,19 @@
+@startuml 05g-ecosystem
+title 图 05G · comms 邻接 core / runtime / control-plane / observability / conformance
+caption <color:#6E6963>comms 仅生产依赖 core；其余经 ports 与 composition root 注入。</color>
+
+rectangle "@cantilune/core" as CORE #F2EEEA
+rectangle "@cantilune/comms" as COMMS #E8EEF5
+rectangle "@cantilune/control-plane" as CP #EDE8F0
+rectangle "@cantilune/runtime" as RT #E5EDE5
+rectangle "@cantilune/observability" as OBS #F5F1EB
+rectangle "@cantilune/conformance" as CONF #F3E5DC
+
+CORE --> COMMS : Session · Actor · Receipt types
+CP --> COMMS : SchemaAdmissionReceipt
+COMMS --> RT : observe / commit ports
+COMMS --> OBS : sanitized CommsEvent bridge
+COMMS --> CONF : product instance certificate
+COMMS ..> "Remote A2A peer" : transport adapter
+
+@enduml

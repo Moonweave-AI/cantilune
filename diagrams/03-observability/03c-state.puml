@@ -1,0 +1,94 @@
+@startuml 03c-state
+' 图 03C：observability 状态门控 — EventSpine 管道 · 四角度 fold 出厂。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam linetype ortho
+skinparam roundcorner 12
+
+title 图 03C · Observability 管道状态门控（EventSpine 版）
+caption <color:#6E6963>案例：runtime 已 commit chg-001/002 → snap-S2。字段 03D · 抽象 03H。</color>
+
+legend top right
+  |= 色 |= 阶段 |
+  | <back:#DDE8F0>　</back> | S0 脊柱 |
+  | <back:#E8EEF5>　</back> | O1 装配 |
+  | <back:#EDE8F0>　</back> | O2 切片 · O3 折叠 |
+  | <back:#E5ECEE>　</back> | O4 出厂 |
+  | <back:#F5F1EB>　</back> | O5 诊断压缩（可选） |
+  | <back:#F0EDE8>　</back> | 横切校验 |
+  | <color:#B57D68>┄┄</color> | 拒绝（零写） |
+endlegend
+
+top to bottom direction
+
+frame "只读管道 · snap-S0 → snap-S2 已 commit" #F8F5F0 {
+
+  package "O1 · 输入装配" #E8EEF5 {
+    rectangle "<b>ObservationWorld</b>\n\tsnapshotRef=snap-S2\n\tvalidatedHistory=[Obs#001, chg-001, chg-002]\n\tchangeIndex={001,002}\n\tsinceRef=snap-S0" as W #E8EEF5
+  }
+
+  package "校验门 · 只读" #F7F3EC {
+    rectangle "<b>拒绝</b>\n\tmissing snapshot/head\n\tchain/epoch 断裂\n\tunvalidated history\n\t<b>零写 Store/Log</b>" as Rej #F3E5DC
+    rectangle "<b>输入 OK</b>\n\tvalidateBeforeRefChain\n\tvalidateEpochConsistent\n\t可选 I6 auditTail↔history" as Ok #E8EEF5
+  }
+
+  package "S0 · EventSpine" #DDE8F0 {
+    rectangle "<b>EventSpine</b>\n\t[ SourceEvent(chg-001)\n\t  SourceEvent(chg-002) ]\n\teach = EventTag + CoordinationChange" as Sp #DDE8F0
+    rectangle "<b>join</b>\n\tActorId · LinkId · CapabilityId\n\tSessionId · ArtifactId（core 品牌 ID）" as Join #DDE8F0
+  }
+
+  package "O2 · 逐步切片" #EDE8F0 {
+    rectangle "<b>ProjectionSlice ×2</b>\n\tchg-001: +CollaborationLink?\n\t  +ScopedCapability@planner\n\t  step=box(task-T)\n\tchg-002: +CommunicationSession\n\t  ScopedCapability→coder\n\t  +Link waits_for" as Sl #FFFDFC
+  }
+
+  package "O3 · 四角度 fold" #EDE8F0 {
+    rectangle "<b>DependencyView</b>\n\tlinks: CollaborationLink[]" as Dag #FFFDFC
+    rectangle "<b>ResourceView</b>\n\tcapabilities: ScopedCapability[]" as Pet #FFFDFC
+    rectangle "<b>CommunicationView</b>\n\tsessions: CommunicationSession[]" as Pi #FFFDFC
+    rectangle "<b>StructureView</b>\n\tcomposition: DerivedDiagnosticView\n\tstructuralLinks: CollaborationLink[]" as Mor #FFFDFC
+  }
+
+  package "横切 · CrossViewInvariants" #F0EDE8 {
+    rectangle "<b>E1–E6 校验</b>\n\tevent 覆盖 · session/token/link 一致\n\tstructure↔ops · 无 footprint" as XInv #FFFDFC
+  }
+
+  package "O5 · 诊断压缩（可选）" #F5F1EB {
+    rectangle "<b>DiagnosticSummary</b>\n\t3 participants · 1 artifact · 1 session\n\tcompress(structureView) · 非 derive 源" as Diag #FFFDFC
+  }
+
+  package "O4 · FourViewBundle 出厂" #E5ECEE {
+    rectangle "<b>FourViewBundle</b>\n\tspine + 四 View + optional diagnostic" as Out #EDE8F0
+  }
+
+  W -[#6F8790]down-> Ok
+  W -[#B57D68,dashed]right-> Rej
+  Ok -[#6F8790,thickness=2]down-> Sp
+  Ok -[#6F8790,thickness=2]down-> Join
+  Sp -[#8E9E8A]down-> Sl
+  Join -[#8E9E8A,dashed]down-> Sl
+  Sl -[#8E9E8A]down-> Dag
+  Sl -[#8E9E8A]down-> Pet
+  Sl -[#8E9E8A]down-> Pi
+  Sl -[#8E9E8A]down-> Mor
+  Dag -[#8E9E8A]down-> XInv
+  Pet -[#8E9E8A]down-> XInv
+  Pi -[#8E9E8A]down-> XInv
+  Mor -[#8E9E8A]down-> XInv
+  XInv -[#6F8790,thickness=2]down-> Diag : 可选
+  Mor -[#8E9E8A,dashed]down-> Diag : structure 源
+  Diag -[#6F8790,dashed]down-> Out
+  XInv -[#6F8790,thickness=2]down-> Out
+}
+
+note bottom of Out
+  <b>用途</b>
+  SDK/运维/Agent 读侧四角度 UI
+  <b>禁止</b>
+  effectiveFootprint · admit · commit
+end note
+
+footer runtime 驱动改写 · observability 描绘 · Lean Verified 在 runtime
+
+@enduml

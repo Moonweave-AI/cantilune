@@ -1,0 +1,175 @@
+name: conformance
+
+on:
+  push:
+    tags:
+      - "@cantilune/conformance@*"
+    paths:
+      - "src/packages/conformance/**"
+      - "formal/proof-obligations.json"
+      - "formal/Cantilune/**"
+      - "docs/runbooks/conformance-trust-rotation.md"
+      - "diagrams/06-conformance/**"
+      - "diagrams/00-naming-contract.md"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "eslint.config.js"
+      - "prettier.config.js"
+      - "tsconfig*.json"
+      - ".github/workflows/conformance.yml"
+  pull_request:
+    paths:
+      - "src/packages/conformance/**"
+      - "formal/proof-obligations.json"
+      - "formal/Cantilune/**"
+      - "docs/runbooks/conformance-trust-rotation.md"
+      - "diagrams/06-conformance/**"
+      - "diagrams/00-naming-contract.md"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "eslint.config.js"
+      - "prettier.config.js"
+      - "tsconfig*.json"
+      - ".github/workflows/conformance.yml"
+  workflow_dispatch:
+    inputs:
+      release_gate:
+        description: Run full release pipeline (formal proved gate + release attestation)
+        type: boolean
+        default: false
+
+jobs:
+  formal-proved:
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/@cantilune/conformance@')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.release_gate == true)
+    uses: ./.github/workflows/formal.yml
+    with:
+      gate: proved
+
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/test-fixtures build
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm format:check
+      - run: pnpm --filter @cantilune/conformance build
+      - run: pnpm --filter @cantilune/conformance typecheck
+      - run: pnpm --filter @cantilune/conformance run verify:formal-manifest
+      - name: SBOM generation gate
+        run: pnpm --filter @cantilune/conformance run sbom
+      - name: Provenance attestation gate
+        run: pnpm --filter @cantilune/conformance run provenance
+      - name: Trust rotation gate
+        run: pnpm --filter @cantilune/conformance run verify:trust-rotation
+      - run: pnpm --filter @cantilune/conformance test
+      - run: pnpm --filter @cantilune/conformance test:coverage
+      - name: Mutation testing gate
+        run: pnpm --filter @cantilune/conformance run test:mutation
+      - run: pnpm --filter @cantilune/conformance pack --dry-run
+      - name: Upload conformance supply-chain artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-supply-chain
+          path: |
+            src/packages/conformance/artifacts/sbom/conformance.cyclonedx.json
+            src/packages/conformance/artifacts/provenance/conformance-provenance.json
+
+  formal-manifest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/conformance build
+      - name: Validate proof-obligations manifest structure and evidence digests
+        run: pnpm --filter @cantilune/conformance run verify:formal-manifest
+      - name: Require committed Lean toolchain and lake lock
+        shell: bash
+        run: |
+          test -f formal/lean-toolchain
+          test -f formal/lake-manifest.json
+      - name: Install pinned Lean toolchain
+        uses: leanprover/lean-action@v1.5.0
+        with:
+          lake-package-directory: formal
+          use-mathlib-cache: true
+          use-github-cache: true
+          build: false
+      - name: Lean clean build — CentralManifestSymbols regression
+        shell: bash
+        working-directory: formal
+        run: |
+          lake clean
+          lake build Cantilune.Tests.CentralManifestSymbols
+
+  control-plane-sealed-admission:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/test-fixtures build
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm --filter @cantilune/conformance build
+      - run: pnpm --filter @cantilune/control-plane build
+      - run: pnpm --filter @cantilune/control-plane exec vitest run tests/contract/admission-security.test.ts tests/integration/full-admission-prepare-commit.test.ts tests/integration/schema-admission-flow.test.ts
+
+  conformance-release:
+    if: >-
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/@cantilune/conformance@')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.release_gate == true)
+    needs: [formal-proved, conformance]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/conformance build
+      - run: pnpm --filter @cantilune/conformance run sbom
+      - run: pnpm --filter @cantilune/conformance run provenance
+      - name: Release gate (formal proved + provenance binding)
+        env:
+          FORMAL_PROVED_GATE: passed
+        run: pnpm --filter @cantilune/conformance run verify:release-gate
+      - run: pnpm --filter @cantilune/conformance pack --dry-run
+      - name: Upload release supply-chain bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-release-bundle
+          path: |
+            src/packages/conformance/artifacts/sbom/conformance.cyclonedx.json
+            src/packages/conformance/artifacts/provenance/conformance-provenance.json
+            formal/proof-obligations.json

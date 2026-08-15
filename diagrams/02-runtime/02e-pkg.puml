@@ -1,0 +1,103 @@
+@startuml 02e-pkg
+' 图 02E：@cantilune/runtime 目录 — 六层运行时抽象 × 模块映射。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam ArrowColor #77716B
+skinparam linetype ortho
+
+title 图 02E · @cantilune/runtime 目录与依赖（六层运行时抽象）
+caption <color:#6E6963>抽象分层见图 02H。L4 执行语义是核心；L3 admission 仅为意图处置子模块。投影/控制面/传输外置见图 02G。</color>
+
+top to bottom direction
+
+package "src/packages/runtime/src/" as Root #F8F5F0 {
+
+  together {
+    package "L1 运行世界 · engine/ ports/ schema/" #E8EEF5 {
+      class "coordinationRuntime.getHead" as L1RT
+      class "collaborationStore.ts" as PStore
+      class "orchestrationSchema.ts\ntemplateRegistry.ts" as SSchema
+    }
+  }
+
+  package "L2 外部边界 · observe/" #F5F1EB {
+    class "ingestObservation.ts" as OIngest
+  }
+
+  package "L3 意图处置 · admission/ + replay/recipe" #F3E5DC {
+    class "admissionGateway.ts · admittedIntent.ts" as AGate
+    class "footprintAuthority.ts" as AFp
+    class "recipe.ts\nReplayRecipe 产出" as RRecipe
+  }
+
+  package "L4 执行语义 · execution/ + replay/witness\n<b>runtime 核心</b>" #E5EDE5 {
+    class "applyChange.ts · replayKernel.ts" as EApply
+    class "handlerRegistry.ts · handlers/*.ts" as EHandlers
+    class "matchWitness.ts · complementSelector.ts" as DWit
+  }
+
+  package "L5 持久轨迹 · execution/commit + ports/" #FFF9F6 {
+    class "commitChange.ts" as ECommit
+    class "changeLog.ts" as PLog
+  }
+
+  package "L6 重放验证 · execution/replayVerifier" #E5ECEE {
+    class "replayVerifier.ts" as EReplay
+  }
+
+  package "横切 · foundation/ codec/ memory/" #F7F3EC {
+    class "errors · brands · eventKind" as FE
+    class "snapshotCodec · changeCodec" as CCodec
+    class "memoryStore · memoryChangeLog" as MMem
+    class "runtimeDependencies.ts" as EngDep
+    class "index.ts" as Idx
+  }
+}
+
+package "外置（非 runtime）" as Ext #F5F1EB {
+  class "@cantilune/observability" as ObsPkg
+  class "@cantilune/control-plane" as CtlPkg
+  class "@cantilune/comms" as CommsPkg
+  class "@cantilune/conformance" as ConfPkg
+}
+
+package "@cantilune/core" as Core #E5EDE5 {
+  class "Snapshot · Change · Intent · consistency/*" as CoreTypes
+}
+
+L1RT --> OIngest
+L1RT --> AGate
+L1RT --> ECommit
+L1RT --> EReplay
+AGate --> SSchema
+AGate --> RRecipe
+AGate --> AFp
+RRecipe --> EApply
+EApply --> DWit
+EApply --> EHandlers
+ECommit --> EApply
+ECommit --> PLog
+ECommit --> PStore
+EReplay --> EApply
+EReplay --> PLog
+CCodec ..> CoreTypes
+MMem ..|> PStore
+MMem ..|> PLog
+Idx --> L1RT
+
+ECommit ..> ObsPkg : ChangeCommitted（可选）
+SSchema <.. CtlPkg : schema 注入
+
+note bottom of Root
+  <b>写入纪律</b>
+  observe → auditTail；admit 失败零副作用；
+  commit 原子 put+append；replay 不读 afterRef
+  <b>ADR-0002</b>：AdmissionGateway · applyAdmittedChange · ReplayVerifier · codec
+end note
+
+footer 抽象总览 02H · 类型 02A · 字段 02D · 时序 02B · 外置 02G
+
+@enduml

@@ -1,0 +1,65 @@
+name: ecosystem
+
+on:
+  push:
+    paths:
+      - "src/packages/observability/**"
+      - "src/packages/control-plane/**"
+      - "src/packages/test-fixtures/**"
+      - "src/packages/core/**"
+      - "src/packages/conformance/**"
+      - "src/packages/comms/**"
+      - "src/packages/runtime/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "eslint.config.js"
+      - "prettier.config.js"
+      - "tsconfig*.json"
+  pull_request:
+    paths:
+      - "src/packages/observability/**"
+      - "src/packages/control-plane/**"
+      - "src/packages/test-fixtures/**"
+      - "src/packages/core/**"
+      - "src/packages/conformance/**"
+      - "src/packages/comms/**"
+      - "src/packages/runtime/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "eslint.config.js"
+      - "prettier.config.js"
+      - "tsconfig*.json"
+
+jobs:
+  ecosystem:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/test-fixtures build
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm --filter @cantilune/observability build
+      - run: pnpm --filter @cantilune/observability typecheck
+      - run: pnpm format:check
+      - run: pnpm --filter @cantilune/conformance build
+      - run: pnpm --filter @cantilune/comms build
+      - run: pnpm --filter @cantilune/comms typecheck
+      - run: pnpm --filter @cantilune/control-plane build
+      - run: pnpm --filter @cantilune/control-plane typecheck
+      - run: pnpm --filter @cantilune/conformance test
+      - run: pnpm --filter @cantilune/comms test
+      - run: pnpm --filter @cantilune/comms test:coverage
+      - run: pnpm --filter @cantilune/observability test
+      - run: pnpm --filter @cantilune/observability test:coverage
+      - run: pnpm --filter @cantilune/observability test:pack
+      - run: pnpm --filter @cantilune/control-plane test
+      - run: pnpm --filter @cantilune/control-plane test:coverage
+      - run: npm pack --dry-run --workspace @cantilune/control-plane

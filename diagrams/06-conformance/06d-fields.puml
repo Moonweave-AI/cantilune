@@ -1,0 +1,69 @@
+@startuml 06d-fields
+' 图 06D：关键 subject / evidence 字段专述（inline 注释 + 案例赋值）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06D · Subject / Evidence 字段绑定
+caption <color:#6E6963>equality 须字段级比较（含 tombstone）；禁止 JSON.stringify 顺序误判。06A。</color>
+
+class "EngineeringAdmissionEvidenceSubject" as ESub #FFFDFC {
+  +admissionId: string
+  .. 例：adm-sealed-001 ..
+  +activationDomainId: string
+  .. 例：default ..
+  +fromSchemaRef: SchemaRef
+  +toSchemaRef: SchemaRef
+  +fromEpochId / toEpochId: EpochId
+  .. 例：42 → 43 ..
+  +fromEpochOrdinal / toEpochOrdinal: number
+  .. 例：1 → 2 ..
+  +extensionPlanDigest: ContentDigest
+  +expectedRuntimeHead: SnapshotRef
+  .. 例：snap-S0；须与 binding 对齐 ..
+  +expectedBindingGeneration: number
+  .. 例：1 ..
+  +tombstone?: boolean
+  .. 例：false；equality 含此字段 ..
+}
+
+class "RuleOccurrenceSubject" as RSub #FFFDFC {
+  +artifactSubjectRef: string
+  +signatureVersion: string
+  +epochId: string
+  +ruleId: string
+  +occurrenceId: string
+  +beforeSnapshotRef: SnapshotRef
+  +eventRef: ChangeId
+  +afterSnapshotRef: SnapshotRef
+  +replayRecipeRef: string
+  .. 例：recipe-chain:sha256:{chainDigest} ..
+}
+
+class "DpoReplayExecutionEvidence" as DpoEv #FFFDFC {
+  +recipeRef: string
+  .. 须匹配 durable recipe 链 digest ..
+  +deterministic: boolean
+  .. 须 true ..
+  +replayDigest: ContentDigest
+  .. 绑定 subject+endpoints+changeCount ..
+  +fromSnapshotRef: SnapshotRef
+  +toSnapshotRef: SnapshotRef
+  +changes: CoordinationChange[]
+}
+
+class "PackageConformanceCertificate" as Cert #FFFDFC {
+  +certificateId: CertificateId
+  +evidenceRootDigest: ContentDigest
+  .. 须 = ReviewedDecision.verified ..
+  +notBefore / expiresAt: ISO8601
+  +supersedes?: CertificateId
+  +status.release: accepted|revoked|expired
+}
+
+ESub --> Cert : prepare subject 绑定
+RSub --> DpoEv : replayRecipeRef = recipeRef
+DpoEv --> RSub : endpoint refs 对齐
+
+@enduml

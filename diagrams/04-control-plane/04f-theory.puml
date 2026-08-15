@@ -1,0 +1,76 @@
+@startuml 04f-theory
+' 图 04F：Lean 签名准入理论 ↔ control-plane 工程映射。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title 图 04F · 签名准入理论 ↔ @cantilune/control-plane 工程映射
+caption <color:#6E6963>锚点：Admission.lean · Package.lean · formal-semantics。抽象 04H。</color>
+
+top to bottom direction
+
+rectangle "理论层（Lean / RFC）" #EDE8F0 {
+  card "FinSignature σ\nSignatureExtension 单调扩展" as T0
+  card "SignatureAdmissionEvent\nfromVersion < toVersion" as T1
+  card "FourViewAdmission\nDAG·Petri·π·Morphism Extends" as T2
+  card "ExecutionPackage\nepoch · ranking · deletion 门控" as T3
+}
+
+rectangle "@cantilune/control-plane\n六层治理" #F3E5DC {
+  card "G1 SchemaRevision\nmonotoneExtensionValidator" as G1
+  card "G3 submit/approve\nSchemaAdmissionRecord" as G3
+  card "G4 prepare/commit\nPreparedSchemaAdmission" as G4
+  card "G2 SchemaEpochBinding\nbindingGeneration CAS" as G2
+  card "G5 PolicyRevision · HandlerManifest" as G5
+  card "G6 Fleet Reconciliation" as G6
+}
+
+rectangle "协作包（已落地）" #E5EDE5 {
+  card "@cantilune/conformance\nFourViewEvidenceBundle" as Conf
+  card "@cantilune/runtime\nRuntimeEpochAdministration" as RT
+  card "@cantilune/core\nSchemaEpochBinding 品牌类型" as Core
+}
+
+rectangle "不在 control-plane" #F5F1EB {
+  card "@cantilune/runtime\n单步 admit/commit Change" as RTex
+  card "@cantilune/observability\n四投影只读 derive" as Obs
+}
+
+T0 --> G1
+T1 --> G3
+T1 --> G4
+T2 --> Conf
+T2 --> G4
+T3 --> RT
+
+G1 --> G3
+G3 --> G4
+G4 --> G2
+G4 --> RT
+Conf --> G4
+Core --> G2
+G2 --> G6
+G5 --> G2
+
+RTex ..> RT : epoch 切换后 runtime 用新 schema
+Obs ..> Conf : 证据可来自 observability 派生
+
+note right of G4
+  <b>分工</b>
+  control-plane = 治理决策 + 绑定 CAS
+  runtime epochAdmin = 世界 quiescence +
+  snapshot epoch 物理切换
+end note
+
+note right of T2
+  prepare 路径强制
+  verifyFourViewEvidence
+  对应 FourViewAdmission 工程存证
+end note
+
+footer runtime 单步 execute 见 02H · observability 只读 03H
+
+@enduml

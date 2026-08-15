@@ -1,5 +1,5 @@
 @startuml 01a-class
-' 图 01A：以紧凑的核心类型展示 Actor、快照、协调变更与运行时边界。
+' 图 01A：@cantilune/core 三柱类型 — nodes · coordination · structure；Runtime 为包外边界。
 
 skinparam backgroundColor #FCFAF7
 skinparam shadowing false
@@ -29,151 +29,334 @@ skinparam note {
   FontColor #514C47
 }
 
-title 图 01A · 协作域模型：Actor、快照与协调变更
-caption <color:#6E6963>案例：供应商集成风险评估。此图保留可写入核心类型；能力、会话、链接与四个视图均从同一快照和变更日志派生。</color>
+title 图 01A · @cantilune/core 协作域模型：Snapshot、Change 与 Structure
+caption <color:#6E6963>对齐 src/packages/core/。案例：task-T 委派。虚线框为 runtime 层（非 core 导出）；实线框为 core 已实现类型。</color>
 
 legend top right
   |= 颜色 |= 工程语义 |
-  | <back:#E5EDE5>　</back> | CollaborationSnapshot：协作世界的持久化状态 |
-  | <back:#F3E5DC>　</back> | CoordinationChange：经准入的可审计状态转换 |
-  | <back:#E5ECEE>　</back> | Runtime：唯一提交边界、日志与重放校验 |
-  | <back:#F5F1EB>　</back> | ObservationEntry：外部输入或回执的有序留痕 |
+  | <back:#E5EDE5>　</back> | nodes + CollaborationSnapshot：协作世界持久化状态 |
+  | <back:#F3E5DC>　</back> | coordination：CoordinationChange / Intent |
+  | <back:#EDE8F0>　</back> | structure：Agent 组合原语与 RunHistory |
+  | <back:#E5ECEE>　</back> | Runtime 边界（@cantilune/runtime，非 core） |
+  | <back:#E8EEF5>　</back> | consistency：世界完整性校验 |
+  | <back:#F5F1EB>　</back> | ObservationEntry：外部输入有序留痕 |
 endlegend
 
-left to right direction
+frame "Cantilune 核心域模型 · 三柱 + Runtime 可追溯边界" #F8F5F0 {
 
-frame "Cantilune 核心域模型 · Snapshot、Change 与 Runtime 的可追溯边界" #F8F5F0 {
+  package "nodes · 协作网实体" #E5EDE5 {
 
-  package "协作世界 · CollaborationSnapshot" #E5EDE5 {
-    class "CollaborationSnapshot\n某一时刻的协作世界" as Snapshot #F9FCF8 {
-      +snapshotId: SnapshotRef
-      .. 不可变快照定位；beforeRef / afterRef 的解析目标 ..
-      +epochId: EpochId
-      .. 运行 epoch / 模式版本戳；用于重放版本对齐 ..
-      +participants: Set<Participant>
-      .. 当前注册 Actor 与调度状态；以 actorId 稳定定位 ..
-      +artifacts: Set<WorkArtifact>
-      .. 任务、计划、证据、草稿和最终产物的集合 ..
-      +capabilities / sessions / links
-      .. 写锁、预算、审批槽、通信会话与协作关系的当前归属 ..
-      +auditTail: List<ObservationEntry>
-      .. 只追加的外部观察序列；观察本身不改协作图 ..
-      +policyContext: PolicyContext
-      .. 当前授权、重试、反馈和发布条件 ..
-    }
-
-    class "Participant\nActor 常驻注册" as Participant #FFFDFC {
+    class "Participant\nActor 常驻注册" as Participant #F9FCF8 {
       +actorId: ActorId
-      .. 协作世界稳定主键；生命周期内不复用 ..
+      .. 例：planner-p；生命周期内不复用 ..
       +kind: ActorKind
-      .. Human / Agent / Tool / Reviewer / Runtime 的类别 ..
+      .. human / agent / tool / reviewer / runtime / environment ..
       +status: ParticipationStatus
-      .. active / waiting / blocked / retired 等调度状态 ..
+      .. active / waiting / blocked / retired ..
     }
 
-    class "WorkArtifact\n可传递的工作产物" as Artifact #FFFDFC {
-      +artifactId / kind: ArtifactId
-      .. Task、Plan、Evidence、Draft 或 Deliverable 的唯一标识与业务分类 ..
+    class "WorkArtifact\n可传递工作产物" as Artifact #FFFDFC {
+      +artifactId: ArtifactId
+      .. 例：task-T ..
+      +kind: string
+      .. Task / Plan / Evidence / Draft / Deliverable ..
       +contentRef: ContentRef
-      .. 正文、文件或结构化数据位置；刻意不放进 Change ..
+      .. 例：content://task-T；正文不进 Change ..
       +owner: ActorRef
-      .. 当前负责、持有或有权提交此产物的参与者 ..
+      .. 例：(actorId=planner-p, kind=agent) ..
       +lifecycle: ArtifactLifecycle
       .. proposed / active / reviewable / published / retired ..
     }
 
-    class "ObservationEntry\n外部观察（有序留痕）" as Observation #FFFDFC {
-      +sequenceNo: Long
-      .. auditTail 的严格顺序；保留观察发生先后 ..
-      +source: ActorRef
-      .. Human、Tool、Reviewer 或 Environment 的来源引用 ..
-      +payloadRef: ContentRef
-      .. 请求、批准、反馈或工具回执的位置；不复制进 Change ..
-      +receivedAt: Timestamp
-      .. Runtime 入账时间；支撑审计定位 ..
+    class "ScopedCapability\n线性稀缺能力" as Capability #FFFDFC {
+      +capabilityId: CapabilityId
+      .. 例：write-lock-w ..
+      +kind: CapabilityKind
+      .. write_lock / budget_slot / approval_slot / tool_lease ..
+      +holder: ActorId
+      .. 例：coder-c；唯一持有者 ..
+      +scope: CapabilityScope
+      .. (artifact=task-T) 或 (session=session-s) ..
     }
 
-    Snapshot *-down- Participant : 注册
-    Snapshot *-down- Artifact : 工作对象
-    Snapshot *-down- Observation : auditTail（有序）
+    class "CommunicationSession\n通信会话" as Session #FFFDFC {
+      +sessionId: SessionId
+      .. 例：session-s ..
+      +controller: ActorId
+      .. 例：coder-c ..
+      +participants: List<ActorId>
+      .. 例：[coder-c, planner-p] ..
+      +visibility: SessionVisibility
+      .. private / shared ..
+    }
+
+    class "CollaborationLink\n有向协作关系" as Link #FFFDFC {
+      +linkId: LinkId
+      .. 例：link-waits-1 ..
+      +kind: LinkKind
+      .. depends_on / waits_for / supplies / reviews / delegates_to ..
+      +from: LinkEndpoint
+      +to: LinkEndpoint
+      .. participant 或 artifact 端点 ..
+    }
+
+    class "PolicyContext\n策略上下文" as Policy #FFFDFC {
+      +approvalState: ApprovalState
+      .. none / awaiting_review / approved / rejected ..
+      +retryState: RetryState
+      .. idle / awaiting_feedback / exhausted ..
+    }
+
+    class "EntityTombstone\n实体墓碑" as Tombstone #FFFDFC {
+      +entityId: string
+      .. 例：session-s ..
+      +entityKind: RetiredEntityKind
+      .. participant / session / capability / link / artifact ..
+      +retiredAt: Timestamp
+      +reasonRef: string
+      .. optional ..
+    }
+
+    class "ObservationEntry\n外部观察（有序）" as Observation #FFFDFC {
+      +sequenceNo: SequenceNo
+      .. 例：1 → Obs#001 ..
+      +source: ActorRef
+      .. 例：(actorId=human-h, kind=human) ..
+      +payloadRef: ContentRef
+      .. 例：content://req-login ..
+      +receivedAt: Timestamp
+      .. 例：2026-08-07T10:00:00Z ..
+    }
   }
 
-  package "已提交协调变更 · CoordinationChange" #F3E5DC {
-    class "CoordinationChange\n一次已提交的协调事件" as Change #FFF9F6 {
-      +changeId / recordedAt: ChangeId, Timestamp
-      .. 每次发生的唯一、可排序身份；模板不等于事件实例 ..
+  package "coordination · 协作快照与变更" #E5EDE5 {
+
+    class "CollaborationSnapshot\n某一时刻协作世界" as Snapshot #F9FCF8 {
+      +snapshotRef: SnapshotRef
+      .. 例：snap-S1；beforeRef / afterRef 解析目标 ..
+      +epochId: EpochId
+      .. 例：42；重放版本对齐 ..
+      +participants: Map<ActorId, Participant>
+      +artifacts: Map<ArtifactId, WorkArtifact>
+      +links: Map<LinkId, CollaborationLink>
+      +sessions: Map<SessionId, CommunicationSession>
+      +capabilities: Map<CapabilityId, ScopedCapability>
+      +policyContext: PolicyContext
+      +auditTail: List<ObservationEntry>
+      .. append-only；观察本身不改协作图 ..
+      +retiredEntities: List<EntityTombstone>
+    }
+
+    Snapshot *-down- Participant
+    Snapshot *-down- Artifact
+    Snapshot *-down- Capability
+    Snapshot *-down- Session
+    Snapshot *-down- Link
+    Snapshot *-down- Policy
+    Snapshot *-down- Observation
+    Snapshot *-down- Tombstone
+  }
+
+  package "coordination · 变更与引用" #F3E5DC {
+
+    class "CoordinationChange\n已提交协调步骤" as Change #FFF9F6 {
+      +changeId: ChangeId
+      .. 例：chg-001 ..
+      +recordedAt: Timestamp
+      +epochId: EpochId
+      .. 例：42；同链须一致 ..
       +operationTypeId: OperationTypeId
-      .. 命中的 OperationTemplate；描述本次合法操作类型 ..
-      +beforeRef / afterRef: SnapshotRef
-      .. 重放起点和比对目标；两端快照必须可解析 ..
+      .. 例：introduce_artifact / delegate ..
+      +templateRef: OperationTemplateRef
+      .. optional；版本化模板指针 ..
+      +beforeRef: SnapshotRef
+      +afterRef: SnapshotRef
+      .. 例：snap-S0 → snap-S1 ..
+      +matchBindings: List<MatchBinding>
+      .. 例：task/from/to/capability；重放 recipe ..
       +targets: List<TargetRef>
-      .. 实际匹配的任务、参与者、能力、会话和协作关系 ..
-      +initiator / involved: ActorRef
-      .. 主责归因和关联方；Actor 不是 Change 的直接提交者 ..
-      +authorization / external: List<EvidenceRef>
-      .. 授权、批准、Observation 或工具回执的证据引用 ..
+      .. 由 matchBindings 派生；legacy 回退 ..
+      +initiator: ActorRef
+      .. 例：(actorId=planner-p, kind=agent) ..
+      +involved: List<ActorRef>
+      +authorization: List<EvidenceRef>
+      +external: List<EvidenceRef>
       +createdSessionRefs: List<SessionId>
-      .. 本次新鲜分配的会话名；避免与既有会话混淆 ..
+      .. 例：[session-s] ..
+      +visibility: ChangeVisibility
+      .. internal / external / administrative；必填 ..
       --
-      <b>不含 payload：</b>正文和文件仅由 WorkArtifact.contentRef 承载
+      <b>不含 payload</b>
     }
 
-    class "OperationTemplate\n合法操作模板" as Operation #FFFDFC {
+    class "CoordinationIntent\n<<transient>>\n准入前意图" as Intent #FFFDFC {
+      +initiator: ActorRef
       +operationTypeId: OperationTypeId
-      .. delegate、accept、invoke_tool、publish_artifact 等稳定操作名 ..
-      +requires / ensures: List<ContractRef>
-      .. 前置匹配、授权、资源与外部证据；以及提交后的可验证后置条件 ..
+      +matchBindings: List<MatchBinding>
+      .. 例：delegate task/from/to/capability ..
+      +targets: List<TargetRef>
+      .. 由 matchBindings 派生 ..
+      +external: List<EvidenceRef>
+      .. optional ..
     }
 
-    class "ActorRef\nActor 事件引用" as ActorRef #FFFDFC {
+    class "ProposedChange\n<<transient>>\n已准入待提交" as Proposed #FFFDFC {
+      +intent: CoordinationIntent
+      +beforeRef: SnapshotRef
+    }
+
+    class "TargetRef\n变更匹配目标" as Target #FFFDFC {
+      +kind: TargetKind
+      .. artifact / participant / session / capability / link ..
+      +id: string
+      .. 例：task-T / planner-p ..
+    }
+
+    class "MatchBinding\n命名重放绑定" as MatchBinding #FFFDFC {
+      +role: MatchRole
+      .. task / from / to / capability / session / link ..
+      +artifactId: ArtifactId
+      .. role=task|artifact 时 ..
       +actorId: ActorId
-      .. 解析 Participant 的主键；用于归因、筛选和路由 ..
-      +kind: ActorKind
-      .. 供事件消费方快速路由的类别冗余 ..
+      .. role=from|to|participant 时 ..
+      +capabilityId: CapabilityId
+      .. role=capability 时 ..
     }
 
-    class "EvidenceRef\n授权 / 外部证据引用" as Evidence #FFFDFC {
-      +evidenceId / kind: String
-      .. policy、approval、observation、receipt 等可追溯证据 ..
+    class "OperationTemplateRef\n模板版本指针" as TemplateRef #FFFDFC {
+      +operationTypeId: string
+      +revision: string
+      .. 例：delegate@1 ..
+    }
+
+    class "ActorRef\n事件侧 Actor 引用" as ActorRef #FFFDFC {
+      +actorId: ActorId
+      +kind: ActorKind
+    }
+
+    class "EvidenceRef\n授权 / 外部证据" as Evidence #FFFDFC {
+      +evidenceId: string
+      +kind: EvidenceKind
+      .. policy / approval / observation / receipt ..
       +contentRef: ContentRef
-      .. 指向原始证据；支持独立复核与重放输入 ..
+    }
+
+    Intent --> Proposed : admit 前
+    Proposed ..> Change : commit 后
+    Change *-- Target
+    Change *-- MatchBinding
+    Change *-- ActorRef
+    Change *-- Evidence
+    Change ..> TemplateRef : templateRef?
+  }
+
+  package "structure · Agent 组合原语" #EDE8F0 {
+
+    class "CompositionIntent\nAgent 结构动词" as Composition #FFFDFC {
+      +operator: CompositionOperatorKind
+      .. attach / delegate / fork / nest / rewire / isolate / close ..
+      +initiator: ActorRef
+      +footprint: Footprint
+      .. Agent 声明并发隔离范围 ..
+      +targets: List<TargetRef>
+      +openInterface: Interface
+      .. 代码字段 interface? optional ..
+      +binds: GoalOrOutcome
+      .. optional；Goal 或 Outcome ..
+    }
+
+    class "Footprint\n实体触达集合" as Footprint #FFFDFC {
+      +artifactIds: Set<ArtifactId>
+      +participantIds: Set<ActorId>
+      +sessionIds: Set<SessionId>
+      +capabilityIds: Set<CapabilityId>
+      +linkIds: Set<LinkId>
+      --
+      effectiveFootprintOfCompositionIntent()
+      .. 从 targets 派生；并发判定权威 ..
+    }
+
+    class "DerivedDiagnosticView\n诊断摘要" as DerivedView #FFFDFC {
+      +kind: serial | parallel | nest | box
+      .. 只读 derive；不可用于调度 ..
+    }
+
+    class "RunHistory\n运行历史" as History #FFFDFC {
+      +segments: List<TraceSegment>
+      .. observation | rewrite(CoordinationChange) ..
+    }
+
+    Composition --> Footprint
+    Composition ..> Intent : toCoordinationIntent()
+    History .. Change : rewrite 段
+    History .. Observation : observation 段
+    Snapshot .. DerivedView : deriveDiagnosticSummary()
+  }
+
+  package "consistency · 世界完整性" #E8EEF5 {
+
+    class "CoreViolation\n语义违规" as Violation #F8FAFD {
+      +code: CoreViolationCode
+      .. snapshot_integrity / actor_kind_mismatch ..
+      +message: string
+      +path: string
+      .. optional ..
+      +expected: string
+      +actual: string
+    }
+
+    class "validateSnapshotIntegrity\n快照完整性" as ValidateIntegrity #F8FAFD {
+      +check: Map key 对齐
+      +check: ActorRef kind 一致
+      +check: policy reviewers 已注册
+      +check: auditTail 序列连续
+    }
+
+    class "validateCollaborationWorld\n世界校验" as ValidateWorld #F8FAFD {
+      +integrity: validateSnapshotIntegrity
+      +history: validateAuditTailMatchesHistory
+    }
+
+    Snapshot .. ValidateIntegrity
+    ValidateWorld .. ValidateIntegrity
+    ValidateIntegrity .. Violation : CoreError
+  }
+
+  package "Runtime · 非 core 导出" #E5ECEE {
+
+    class "OperationTemplate\n<<runtime>>\n合法操作模板" as Operation #F8FBFB {
+      +operationTypeId: OperationTypeId
+      +requires: List<ContractRef>
+      +ensures: List<ContractRef>
+    }
+
+    class "CoordinationRuntime\n<<runtime>>\nChange 提交边界" as Runtime #F8FBFB {
+      +admit(snapshot, intent): Decision
+      +commit(change): SnapshotRef
+      +append(change): ChangeId
+      +replay(before, changes): Verification
     }
 
     Change --> Operation : 命中模板
-    Change *-- ActorRef : 归因 / 涉及
-    Change *-- Evidence : 授权 / 外部
+    Change --> Runtime : admit · commit · append · replay
   }
-
-  package "Runtime · 提交、记录与重放" #E5ECEE {
-    class "CoordinationRuntime\n唯一的 Change 提交边界" as Runtime <<runtime>> #F8FBFB {
-      +admit(snapshot, intent): Decision
-      .. 匹配模板，核验策略、资源和外部证据；拒绝时不提交 Change ..
-      +commit(change): SnapshotRef
-      .. 原子持久化 Change 与 after 快照；返回新快照引用 ..
-      +append(change): ChangeId
-      .. 只追加 ChangeLog；为审计、恢复和时间线提供完整配方 ..
-      +replay(before, changes): Verification
-      .. 重算规则、匹配、新鲜会话与证据；比较 afterRef 后决定交付或隔离 ..
-    }
-  }
-
-  Snapshot -[hidden]right- Change
-  Change -[hidden]right- Runtime
 }
 
-' 关键类级关系：实线是组成或提交路径；虚线为引用 / 解析，不代表 Actor 直接写入 Change。
+' 跨包引用关系
 Observation ..> Snapshot : append auditTail
 Snapshot .. Change : beforeRef / afterRef
 ActorRef ..> Participant : actorId 解析
 Artifact ..> ActorRef : owner
-Change --> Runtime : admit · commit · append · replay
+Capability ..> Artifact : scope.artifactId
 
 note bottom of Change
-  <b>读图纪律</b>
-  ① Observation 只记录外部事实；无论来自 Human、Tool 还是 Reviewer，都先进入 auditTail。
-  ② Actor 提交外部信号或协调意图；只有 Runtime 才能提交 CoordinationChange。
-  ③ 依赖、能力、会话和通信视图是 Snapshot + ChangeLog 的派生读模型，而非独立写入系统。
+  <b>读图纪律（core 已编码）</b>
+  ① appendObservation 只追加 auditTail，不改协作图。
+  ② Actor 提交 Intent；ProposedChange 为瞬态；CoordinationChange 为已提交事实。
+  ③ matchBindings 为重放 recipe；targets 为派生/legacy 回退。
+  ④ deriveDiagnosticSummary 为只读诊断；调度语义待新 ADR。
+  ⑤ OperationTemplate / CoordinationRuntime 属 @cantilune/runtime。
 end note
 
-footer <color:#6E6963>形式锚点：Config σ → CollaborationSnapshot；DPOEvent σ → CoordinationChange；external observations → auditTail / ObservationEntry。重放需要完整变更配方，正常形不自动等于成功。</color>
+footer <color:#6E6963>代码锚点：collaborationSnapshot.ts · coordinationChange.ts · consistency/* · structure/operators.ts · structure/derive.ts</color>
 @enduml

@@ -1,0 +1,36 @@
+@startuml 05c-state
+title 图 05C · ReconnectCoordinator + MessagingSaga 状态轴
+caption <color:#6E6963>四轴分离：π phase · occurrence lifecycle · endpoint disposition · transport delivery。</color>
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+state "ReconnectCoordinator" as RC {
+  [*] --> proposed
+  proposed --> authorized
+  authorized --> peerAccepted
+  peerAccepted --> runtimeCommitted
+  runtimeCommitted --> completed
+  peerAccepted --> recoveryRequired
+  recoveryRequired --> completed : recover()
+  proposed --> failed
+  authorized --> failed
+}
+
+state "MessagingSaga" as MS {
+  [*] --> persisted
+  persisted --> observed
+  observed --> committed
+  committed --> dispatched
+  dispatched --> acknowledged
+  persisted --> failed
+  observed --> failed
+  committed --> failed
+}
+
+note bottom of RC
+  禁止 failed → proposed 复活同一 occurrence
+end note
+
+@enduml

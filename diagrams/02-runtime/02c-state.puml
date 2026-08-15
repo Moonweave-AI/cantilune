@@ -1,0 +1,87 @@
+@startuml 02c-state
+' 图 02C：runtime 准入 / 提交 / 重放状态门控（story T0→introduce→delegate）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam packageBorderColor #AAA39C
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+}
+
+title 图 02C · Runtime 六层抽象状态门控（story T0→introduce→delegate）
+caption <color:#6E6963>字段对齐 story-t0-to-delegate。L3 意图处置 · L4 执行语义 · L5 持久 · L6 验证。抽象 02H。</color>
+
+legend top right
+  |= 颜色 |= 含义 |
+  | <back:#E5EDE5>　</back> | CollaborationSnapshot 已持久化 |
+  | <back:#F3E5DC>　</back> | AdmittedIntent / 已提交 Change |
+  | <back:#F5F1EB>　</back> | ObservationEntry（仅 auditTail） |
+  | <back:#E5ECEE>　</back> | AdmissionGateway / commit / ReplayVerifier |
+  | <color:#B57D68>┄┄</color> | 拒绝 / 返工 / 隔离分支 |
+endlegend
+
+top to bottom direction
+
+frame "Runtime 管道 · snap-S0 → snap-S2（story T0→delegate）" #F8F5F0 {
+
+  package "L2 · 外部边界" #F5F1EB {
+    rectangle "<b>snap-S0 · T0</b>\n\tparticipants={human-1, planner-p, coder-c}\n\tepochId=42 · artifacts={} · auditTail=[]" as S0 #E5EDE5
+    rectangle "<b>Obs#001 · human-1</b>\n\tpayloadRef=content://req-login\n\tingestObservation → auditTail+=001" as Obs1 #FFFDFC
+  }
+
+  package "L3 · 意图处置 · introduce" #E5ECEE {
+    rectangle "<b>AdmissionGateway</b>\n\tmatch template introduce_artifact\n\trequires: · policy · lock · epoch" as G1 #E5ECEE
+    rectangle "<b>拒绝</b>\n\ttemplate_not_found / requires_failed\n\tpolicy_denied / resource_conflict\n\t<b>Store 不变</b>" as Rej1 #F3E5DC
+    rectangle "<b>AdmittedIntent#A1</b>\n\tbeforeRef=snap-S0 · recipe(introduce)\n\teffectiveFootprint={task-T, planner-p}" as Adm1 #F3E5DC
+  }
+
+  package "L4+L5 · 执行 + 持久 · chg-001" #E5EDE5 {
+    rectangle "<b>L4 apply introduce handler</b>\n\t+ WorkArtifact(task-T, owner=planner-p)\n\t+ ScopedCapability(write-lock-w)" as Apply1 #FFFDFC
+    rectangle "<b>L5 snap-S1 · chg-001 已入账</b>\n\tbeforeRef=snap-S0 · afterRef=snap-S1\n\tmatchBindings: task/from · visibility=external" as S1 #FFF9F6
+  }
+
+  package "L3 · 意图处置 · delegate" #E5ECEE {
+    rectangle "<b>AdmissionGateway</b>\n\tbindings: task-T / from=planner-p / to=coder-c / capability=write-lock-w" as G2 #E5ECEE
+    rectangle "<b>AdmittedIntent#A2</b>\n\trecipe(delegate) · mayCreateSessions=true" as Adm2 #F3E5DC
+  }
+
+  package "L4+L5 · 执行 + 持久 · chg-002" #E5EDE5 {
+    rectangle "<b>L4 apply delegate handler</b>\n\ttask-T.owner→coder-c · write-lock-w→coder-c\n\t+ session-s · + link-waits-1" as Apply2 #FFFDFC
+    rectangle "<b>L5 snap-S2 · chg-002 已入账</b>\n\tcreatedSessionRefs=[session-s]\n\tbeforeRef=snap-S1 · afterRef=snap-S2" as S2 #FFF9F6
+  }
+
+  package "L6 · 重放验证" #E5ECEE {
+    rectangle "<b>ReplayVerifier</b>\n\treplayRecipeFromChange(chg-001…002)\n\tapplyRecipe(before, recipe) 逐链" as Rep #E5ECEE
+    rectangle "<b>Verified</b>\n\trecomputedAfterRef === afterRef\n\tvalidateBeforeRefChain · validateEpochConsistent" as Ok #E5EDE5
+    rectangle "<b>Quarantine</b>\n\treplay_mismatch / replay_chain_broken\n\tdelivery blocked" as Bad #F3E5DC
+  }
+
+  S0 -[#9AA6A7,dashed]down-> Obs1
+  Obs1 -[#6F8790]down-> G1
+  G1 -[#B57D68,dashed]right-> Rej1
+  G1 -[#8E9E8A,thickness=2]down-> Adm1
+  Adm1 -[#8E9E8A,thickness=2]down-> Apply1
+  Apply1 -[#8E9E8A,thickness=2]down-> S1
+  S1 -[#8E9E8A,thickness=2]down-> G2
+  G2 -[#8E9E8A,thickness=2]down-> Adm2
+  Adm2 -[#8E9E8A,thickness=2]down-> Apply2
+  Apply2 -[#8E9E8A,thickness=2]down-> S2
+  S2 -[#6F8790]down-> Rep
+  Rep -[#B57D68,dashed]right-> Bad
+  Rep -[#8E9E8A,thickness=2]down-> Ok
+}
+
+note bottom of Ok
+  <b>runtime 退出条件（CORE-HANDOFF）</b>
+  1. before + admitted recipe → 唯一 canonical after
+  2. replay 不读 after 即可重算
+  3. 无效输入原子拒绝且不污染状态
+  4. story-t0-to-delegate 替换 simulateCommit
+end note
+
+footer <color:#6E6963>Lean Verified：kernel.run event.replayRecipe event.source = some event.target</color>
+@enduml

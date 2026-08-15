@@ -1,0 +1,98 @@
+@startuml 03f-theory
+' 图 03F：Lean/RFC 四投影理论 ↔ observability EventSpine 工程映射。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title 图 03F · 四读角工程映射 ↔ Lean/RFC 理论参照（EventSpine 定锚）
+caption <color:#6E6963>定锚：dependency/resource/communication/coordination-structure 四工程读角描绘同一 commit 链；runtime 驱动 · observability 只读。抽象 03H。</color>
+
+top to bottom direction
+
+rectangle "理论层 · Lean / RFC-0002" #EDE8F0 {
+  card "CantiluneGraph (C,R)\n协调世界 + rewrite 规则" as T0
+  card "源 rewrite 步\nDPOEvent / Config_n → Config_{n+1}" as T0b
+  card "P_i : (C,R) → Target_i\n四形式主义 = 四读角" as T1
+  card "ProjectionCertificate\nsound · reflect · terminal_iff" as T2
+  card "Cross-projection event consistency\n同一源事件 · 四目标推导 · 同 event-tag" as T3
+}
+
+rectangle "工程 · @cantilune/core\n协调世界本体" #E5EDE5 {
+  card "CollaborationSnapshot ≈ Config σ" as C0
+  card "CoordinationChange ≈ DPOEvent" as C1
+  card "RunHistory ≈ 轨迹" as C2
+  card "Link · Capability · Session\n≈ edges · resources · names" as C3
+}
+
+rectangle "工程 · @cantilune/runtime\n运行驱动" #E5ECEE {
+  card "commit 链\nbeforeRef → afterRef" as R0
+  card "ChangeLog + RunHistoryTracker" as R1
+}
+
+rectangle "工程 · @cantilune/observability\n四角度描绘（只读）" #DDE8F0 {
+  card "ObservationWorld\n终端 CollaborationSnapshot（core 实体权威）" as O0
+  card "EventSpine / SourceEvent\nEventTag + CoordinationChange" as O1
+  card "deriveEventSlice → ProjectionSlice\nDelta 字段 = core Link/Capability/Session/Diagnostic" as O2
+  card "foldFourViews → FourViewBundle\nView 终态 = snapshot 字段 + byEvent 索引" as O3
+  card "CrossViewInvariants\n≈ 四读角 event-tag 一致门控" as O4
+  card "ReadModelDerivationEvidence\n≈ 工程自检（非形式化证书）" as O5
+}
+
+rectangle "验证 · @cantilune/conformance" #F5F1EB {
+  card "批量证书验证 · ReleaseGate" as Conf
+}
+
+T0 --> T0b
+T0b --> T1
+T1 --> T2
+T0b --> T3
+
+C0 --> O0
+C1 --> O1
+C2 --> O0
+C3 --> O0
+R0 --> O0
+R1 --> O0
+
+T0b ..> O1 : 源事件
+T1 ..> O2 : 四 functor 单步
+T3 ..> O4 : 跨投影一致
+T2 ..> O5
+
+O0 --> O1
+O1 --> O2
+O2 --> O3
+O4 --> O3
+O5 --> Conf
+O3 ..> Conf
+
+note right of O2
+  <b>工程≠四硬拼模块</b>
+  理论：四 functor 读同一 Change
+  工程：EventSpine 中轴
+  + 四 lens 产 Delta
+  + fold 产 View
+end note
+
+note right of R0
+  runtime 驱动改写
+  observability 不证明定理
+  只 derive + 出厂 invariants
+  定理/conformance 外置验证
+end note
+
+note bottom of O3
+  四工程读角（非硬拼四形式主义模块）
+  dependency ← Link 依赖边
+  resource ← Capability 资源
+  communication ← Session 会话
+  coordination-structure ← 结构诊断/组合
+  理论参照：P_DAG / P_Petri / P_π / P_Mor（conformance 外置）
+end note
+
+footer naming-contract §3.4 §7 · runtime 02F · core derive 仅 O5 压缩源
+
+@enduml

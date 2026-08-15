@@ -1,0 +1,131 @@
+@startuml 02b-seq
+' 图 02B：runtime 内部时序 — observe · admit · commit · replay（story T0→delegate）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBackgroundColor #F7F3EC
+
+title 图 02B · Runtime 六层抽象时序：World → Boundary → Disposition → Execution → Persistence → Verification
+caption <color:#6E6963>案例 story-t0-to-delegate。L3 意图处置出现 2 次；L4 执行+ L5 持久各 2 次。抽象总览 02H。</color>
+
+mainframe <b>六层运行时抽象</b> · L2 只 auditTail · L3 失败零副作用 · L5 原子 put+append · L6 不读 afterRef
+hide footbox
+
+box "外部 / Agent" #F5F1EB
+  actor "Human\nhuman-1" as Human
+  participant "Planner\nplanner-p" as Planner
+end box
+
+box "CoordinationRuntime · engine/" #E5ECEE
+  control "CoordinationRuntime" as RT
+  control "AdmissionGateway\nadmission/" as Gate
+  control "commitChange\nexecution/" as Commit
+  control "ReplayVerifier\nexecution/" as Replay
+end box
+
+box "Ports + Memory" #E8EEF5
+  database "CollaborationStore\nports/" as Store
+  database "ChangeLog\nports/" as Log
+  control "PolicyEvaluator" as Policy
+  control "ResourceLockTable" as Lock
+end box
+
+box "Schema + Handlers" #EDE8F0
+  participant "OrchestrationSchema\ndefaultSchema" as Schema
+  participant "HandlerRegistry\nhandlers.ts" as Handlers
+end box
+
+== L2 · 外部边界：observe ==
+
+Human -> RT : observe(source, payloadRef)
+activate RT
+RT -> Store : get(head) → snap-S0
+RT -> Store : put(snap-S0′ auditTail+=Obs#001)
+Store --> RT : snap-S0′
+RT --> Human : ObserveResult
+deactivate RT
+
+note right of Store #F5F1EB
+  <b>observe/ingestObservation</b>
+  协作图不变；无 ChangeLog 写入
+end note
+
+== L3 · 意图处置：admit → AdmittedIntent + ReplayRecipe ==
+
+Planner -> RT : admit(introduce_artifact intent)
+activate RT
+RT -> Store : get(snap-S0′)
+RT -> Schema : get(introduce_artifact)
+RT -> Gate : admit(snapshot, intent)
+activate Gate
+Gate -> Policy : evaluate(snapshot, intent, template)
+Policy --> Gate : allow + authorization
+Gate -> Lock : acquire(admittedId, footprint)
+Lock --> Gate : ok
+Gate --> RT : AdmittedIntent + recipe
+deactivate Gate
+RT --> Planner : ok: admitted
+deactivate RT
+
+alt admission_rejected
+  RT --> Planner : reason: requires_failed / policy_denied
+  note right of Gate #F3E5DC
+    <b>零副作用</b>：Store / ChangeLog 不变
+  end note
+end
+
+== L4+L5 · 执行语义 + 持久轨迹：apply + commit ==
+
+Planner -> RT : commit(admitted)
+activate RT
+RT -> Commit : commitChange(admitted)
+activate Commit
+Commit -> Handlers : applyAdmittedChange(before, recipe)
+Handlers --> Commit : after snap-S1 (+task-T, +write-lock-w)
+Commit -> Store : validateSnapshotIntegrity(after)
+Commit -> Store : atomic put(after) + Log.append(chg-001)
+Commit -> Lock : release(admittedId)
+Commit --> RT : CommitResult(change, after, committedChangeId)
+deactivate Commit
+RT --> Planner : snap-S1
+deactivate RT
+
+== L3+L4+L5 · delegate 第二轮 ==
+
+Planner -> RT : admit(delegate intent)
+RT -> Gate : matchBindings task/from/to/capability
+Gate --> RT : AdmittedIntent(recipe delegate)
+Planner -> RT : commit(admitted)
+RT -> Commit : apply delegate handler
+Commit -> Handlers : owner→coder-c · session-s · link
+Commit -> Log : append chg-002
+RT --> Planner : snap-S2
+
+== L6 · 重放验证：replay ==
+
+RT -> Replay : replay(fromRef=snap-S0)
+activate Replay
+Replay -> Log : since(snap-S0) → [chg-001, chg-002]
+loop 每条 Change
+  Replay -> Handlers : applyRecipe(before, replayRecipeFromChange)
+  Handlers --> Replay : recomputedAfterRef
+  Replay -> Replay : compare === recorded afterRef
+end
+Replay --> RT : ReplayVerification(steps, terminalRef)
+deactivate Replay
+
+alt replay_mismatch
+  RT --> Planner : RuntimeViolation replay_mismatch
+end
+
+note over Human, Handlers #F7F3EC
+  <b>形式对齐</b>
+  ReplayRecipe 故意无 beforeRef/afterRef（Lean Execution.ReplayRecipe）
+  Verified = kernel.run recipe source = some target
+end note
+
+footer <color:#6E6963>抽象 02H · 类型 02A · 状态 02C · L4 HandlerRegistry=Node contract 落点</color>
+@enduml

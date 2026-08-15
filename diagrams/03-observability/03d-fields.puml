@@ -1,0 +1,228 @@
+@startuml 03d-fields
+' 图 03D：@cantilune/observability 字段设计 — 沿用 core 类型 · EventSpine 中轴 · 四 Delta 索引。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+
+title 图 03D · @cantilune/observability 字段设计（沿用 core 类型版）
+caption <color:#6E6963>纪律：obs 不新造实体/边类型；Delta/View 继承或组合 @cantilune/core 已有字段 + EventTag 索引。案例 story T0→delegate。</color>
+
+top to bottom direction
+
+package "只读定锚 · ReadDiscipline" #F7F3EC {
+  class ReadDiscipline {
+    purpose: rule
+    .. 四角度描绘 core 协调世界；观察 runtime commit 轨迹 ..
+    never_write: rule
+    .. 无 put/append/observe 写路径 ..
+    core_type_reuse: rule
+    .. 公共字段须为 core 类型或 AtEvent&lt;coreType&gt;；禁止平行 Node/Edge/Token ..
+    snapshot_authoritative: rule
+    .. 实体终态以 ObservationWorld.snapshot 为准；Delta 只记本步 diff ..
+    spine_first: rule
+    .. 四 View 由 EventSpine fold；lens 读 change + snapshot ..
+    four_views_same_event_tag: rule
+    .. RFC-0002：同 eventTag 跨读角 join ..
+  }
+}
+
+package "沿用 · @cantilune/core 实体（01D · 不重定义）" #E5EDE5 {
+  class CollaborationSnapshot {
+    +participants: Map<ActorId, Participant>
+    +artifacts: Map<ArtifactId, WorkArtifact>
+    +links: Map<LinkId, CollaborationLink>
+    +sessions: Map<SessionId, CommunicationSession>
+    +capabilities: Map<CapabilityId, ScopedCapability>
+  }
+  class Participant
+  class WorkArtifact
+  class CollaborationLink {
+    +linkId / +kind / +from / +to
+    .. depends_on · waits_for · nested_in · parallel_with ..
+  }
+  class ScopedCapability {
+    +capabilityId / +holder: ActorId / +scope
+  }
+  class CommunicationSession {
+    +sessionId / +controller: ActorId / +participants
+  }
+  class CoordinationChange {
+    +changeId / +operationTypeId / +matchBindings
+    +beforeRef / +afterRef / +createdSessionRefs
+  }
+  class DerivedDiagnosticView {
+    +kind: serial | parallel | nest | box
+    .. core/structure/derive · 结构读角复用 ..
+  }
+}
+
+package "S0 · ObservationWorld · world/" #DDE8F0 {
+  class ObservationWorld {
+    +snapshotRef: SnapshotRef
+    .. snap-S2 ..
+    +snapshot: CollaborationSnapshot
+    .. 实体权威来源；四读角 join 用 core 品牌 ID ..
+    +validatedHistory: RunHistory
+    .. [Obs#001, chg-001, chg-002] ..
+    +changeIndex: Map<ChangeId, CoordinationChange>
+    +sinceRef: SnapshotRef
+    .. snap-S0 ..
+  }
+}
+
+package "S0 · EventSpine · spine/" #DDE8F0 {
+  class EventTag {
+    +changeId: ChangeId
+    +epochId: EpochId
+    +operationTypeId: OperationTypeId
+    +recordedAt: Timestamp
+    .. 跨读角唯一 join；不替代 changeId ..
+  }
+  class SourceEvent {
+    +eventTag: EventTag
+    +change: CoordinationChange
+    .. 组合 core Change；不重复 matchBindings/createdSessionRefs ..
+  }
+  class EventSpine {
+    +events: SourceEvent[]
+    .. 严格同 ChangeLog 序 ..
+  }
+  class "AtEvent<T>\n读角索引包装" as AtEvent #FFFDFC {
+    +eventTag: EventTag
+    +value: T
+    .. T 须为 core 类型；例 AtEvent&lt;CollaborationLink&gt; ..
+  }
+}
+
+package "O2 · ProjectionSlice + 四 Delta（core 字段 diff）" #EDE8F0 {
+  class ProjectionSlice {
+    +eventTag: EventTag
+    +dependency: DependencyDelta
+    +resource: ResourceDelta
+    +communication: CommunicationDelta
+    +structure: StructureDelta
+  }
+  class DependencyDelta {
+    +eventTag: EventTag
+    +addedLinks: CollaborationLink[]
+    .. waits_for reviewer-r→coder-c ..
+    +removedLinkIds: LinkId[]
+    .. 删边只记 ID；增边带完整 core Link ..
+  }
+  class ResourceDelta {
+    +eventTag: EventTag
+    +updatedCapabilities: ScopedCapability[]
+    .. delegate 后 write-lock-w.holder=coder-c ..
+    .. 本步 after 态切片；终态回 snapshot.capabilities ..
+  }
+  class CommunicationDelta {
+    +eventTag: EventTag
+    +openedSessions: CommunicationSession[]
+    .. session-s · controller=coder-c ..
+    +closedSessionIds: SessionId[]
+  }
+  class StructureDelta {
+    +eventTag: EventTag
+    +step: DerivedDiagnosticView
+    .. chg-001→box(task-T) · chg-002→nest(session-s) ..
+    +structuralLinks: CollaborationLink[]
+    .. nested_in · parallel_with；仍用 core Link ..
+  }
+}
+
+package "O3 · 四角度 View（core 终态 + byEvent 索引）" #EDE8F0 {
+  class DependencyView {
+    用户视图：FourViewBundle.dependency
+    +links: CollaborationLink[]
+    .. 终态；filter depends_on|waits_for|delegates_to ..
+    +byEvent: Map<EventTag, DependencyDelta>
+  }
+  class ResourceView {
+    用户视图：FourViewBundle.resource
+    +capabilities: ScopedCapability[]
+    .. 终态；同 snapshot.capabilities 值 ..
+    +byEvent: Map<EventTag, ResourceDelta>
+  }
+  class CommunicationView {
+    用户视图：FourViewBundle.communication
+    +sessions: CommunicationSession[]
+    .. 终态；同 snapshot.sessions ..
+    +byEvent: Map<EventTag, CommunicationDelta>
+  }
+  class StructureView {
+    用户视图：FourViewBundle.structure
+    +composition: DerivedDiagnosticView
+    .. fold StructureDelta.step 为 serial 树 ..
+    +structuralLinks: CollaborationLink[]
+    .. filter nested_in|parallel_with ..
+    +byEvent: Map<EventTag, StructureDelta>
+  }
+}
+
+package "O4 · FourViewBundle · index/" #E5ECEE {
+  class FourViewBundle {
+    +spine: EventSpine
+    +dependency / +resource / +communication / +structure
+    +diagnostic: DiagnosticSummary
+    .. 可选；deriveSnapshotStats + Structure 压缩 ..
+  }
+  class DiagnosticSummary {
+    +stats: ReturnType<deriveSnapshotStats>
+    .. core deriveSnapshotStatsWithHistory ..
+    +compositionHint: DerivedDiagnosticView
+    .. 可选；同 StructureView.composition ..
+  }
+}
+
+package "横切 · CrossViewInvariants" #F0EDE8 {
+  class CrossViewInvariants {
+    E1_event_coverage: 每 eventTag 四 Delta 至少一处非空
+    E2_session_bijection: comm Delta.openedSessions ↔ change.createdSessionRefs
+    E3_capability_matches_snapshot: resource View.capabilities = snapshot.capabilities
+    E4_link_matches_snapshot: dependency View.links ⊆ snapshot.links（同 linkId 同字段）
+    E5_structure_reuses_derive: StructureDelta.step 与 core deriveDiagnosticSummary 逐步一致
+    E6_no_parallel_entity_types: bundle 内无 obs 专属 Node/Edge/Token 类型名
+    E7_no_scheduling_fields: bundle 无 footprint 字段
+  }
+}
+
+ReadDiscipline --> ObservationWorld
+CollaborationSnapshot <-- ObservationWorld
+SourceEvent *-- EventTag
+SourceEvent --> CoordinationChange : 组合
+EventSpine *-- SourceEvent
+AtEvent ..> EventTag
+EventSpine --> ProjectionSlice
+ProjectionSlice --> DependencyDelta
+ProjectionSlice --> ResourceDelta
+ProjectionSlice --> CommunicationDelta
+ProjectionSlice --> StructureDelta
+DependencyDelta --> CollaborationLink
+ResourceDelta --> ScopedCapability
+CommunicationDelta --> CommunicationSession
+StructureDelta --> DerivedDiagnosticView
+StructureDelta --> CollaborationLink
+FourViewBundle --> DependencyView
+FourViewBundle --> ResourceView
+FourViewBundle --> CommunicationView
+FourViewBundle --> StructureView
+DependencyView --> CollaborationLink
+ResourceView --> ScopedCapability
+CommunicationView --> CommunicationSession
+StructureView --> DerivedDiagnosticView
+CrossViewInvariants --> FourViewBundle
+
+note bottom of DependencyView
+  <b>继承纪律</b>
+  同一 linkId 在 dependency/structure 读角
+  必须是同一条 CollaborationLink
+  Petri/DAG/π/Mor 仅为 RFC 读角标签，非 TS 平行类型
+end note
+
+footer 目录 03E · 类型 03A · 抽象 03H · core 01D
+
+@enduml

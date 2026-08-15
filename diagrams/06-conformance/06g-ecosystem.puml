@@ -1,0 +1,49 @@
+@startuml 06g-ecosystem
+' 图 06G：conformance 邻接 core / runtime / control-plane / observability。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06G · 生态邻接 — 谁生产证据、谁消费决策
+caption <color:#6E6963>conformance 不 commit 世界；只验证证据并输出密封决策。06B · 04G · 02G。</color>
+
+rectangle "@cantilune/core" #E5EDE5 {
+  card "CollaborationSnapshot\nCoordinationChange\nMatchBinding" as Core
+}
+
+rectangle "@cantilune/runtime" #E5ECEE {
+  card "DurableCoordinator\nReplayRecipe sidecar\nReplayVerifier" as RT
+}
+
+rectangle "@cantilune/conformance" #EDE8F0 {
+  card "ConformanceEngine\nEvidenceStore CAS\nTrust/Revocation" as CF
+  card "createRuntimeDpoReplayPort\nrecipe-chain 绑定" as DPO
+}
+
+rectangle "@cantilune/control-plane" #F3E5DC {
+  card "prepareSchemaAdmission\nvalidateSealedAdmissionPrepare" as CP
+}
+
+rectangle "@cantilune/observability" #DDE8F0 {
+  card "只读 EventSpine\n**不执行验证**" as OBS
+}
+
+rectangle "各产品包\ncomms / …" #F5F1EB {
+  card "src/conformance/\nproduct-owned evidence" as Prod
+}
+
+Core <-- RT : commit 轨迹
+RT --> DPO : recipeForChange
+DPO --> CF : DpoReplayPort
+Prod --> CF : manifest + artifacts
+CF --> CP : ReviewedDecision +\nSignedAttestation
+RT --> OBS : observe only
+CP ..> Core : epoch/binding 治理
+
+note right of OBS
+  ADR-0005：observability
+  禁止承担 verification
+end note
+
+@enduml

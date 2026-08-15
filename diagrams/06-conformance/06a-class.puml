@@ -1,0 +1,113 @@
+@startuml 06a-class
+' 图 06A：@cantilune/conformance 类型 — 四轴验证 + 证据族 + 密封决策。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+
+title 图 06A · @cantilune/conformance：验证引擎 + 证据族
+caption <color:#6E6963>已落地 src/packages/conformance/。案例：adm-sealed-001 · recipe-chain digest · cert-release-001。06H · 06E。</color>
+
+legend top right
+  |= 分区 |= 模块 |
+  | <back:#EDE8F0>　</back> | foundation/ canonical/ |
+  | <back:#E8EEF5>　</back> | evidence/ subject/ manifest/ |
+  | <back:#F3E5DC>　</back> | verifier/ engine/ |
+  | <back:#E5EDE5>　</back> | lifecycle/ certificate/ |
+  | <back:#F5F1EB>　</back> | ports/ adapters/ |
+endlegend
+
+left to right direction
+
+frame "@cantilune/conformance · 产品证据验证" #F8F5F0 {
+
+  package "foundation/ canonical/" #EDE8F0 {
+    class "VerificationDecision\n机器+人类+发布四轴" as VDec #FFFDFC {
+      +runId: VerificationRunId
+      .. 例：run-adm-001 ..
+      +profile: ConformanceProfile
+      .. 例：engineeringAdmission ..
+      +status: ConformanceStatusAxes
+      .. theory/machine/humanReview/release ..
+      +evidenceRootDigest: ContentDigest
+      +violations: ConformanceViolation[]
+    }
+    class "computeEvidenceDigest\ncanonical JSON + SHA-256" as Canon #FFFDFC {
+      +canonicalizeJson(value)
+      +formatRecipeChainRef(digest)
+      .. 例：recipe-chain:sha256:… ..
+    }
+  }
+
+  package "evidence/ subject/" #E8EEF5 {
+    class "EngineeringAdmissionEvidenceBundle\n工程准入四投影" as Eng #FFFDFC {
+      +dependencyDigest: ContentDigest
+      +resourceDigest: ContentDigest
+      +sessionDigest: ContentDigest
+      +structureDigest: ContentDigest
+      +verifierVersion: string
+    }
+    class "FormalFourProjectionCertificate\n形式四投影证书" as Four #FFFDFC {
+      +dagDigest: ContentDigest
+      +petriDigest: ContentDigest
+      +piDigest: ContentDigest
+      +morphismDigest: ContentDigest
+      +sharedExecutionDigest: ContentDigest
+    }
+    class "RuleOccurrenceSubject\n规则 occurrence 绑定" as RuleSub #FFFDFC {
+      +replayRecipeRef: string
+      .. 例：recipe-chain:sha256:… ..
+      +beforeSnapshotRef: SnapshotRef
+      +afterSnapshotRef: SnapshotRef
+    }
+  }
+
+  package "verifier/ engine/" #F3E5DC {
+    class "ConformanceEngine\n门面验证器" as Engine #FFFDFC {
+      +inspectCandidate(manifest)
+      +verifyPackage(manifest, inventory, artifacts)
+      +verifyEngineeringAdmission(bundle, subject)
+      +verifyDpoReplay(evidence, subject)
+      +verifyFourProjection(semantics, bundle)
+    }
+    class "verifyDpoReplayWithPort\n结构 + runtime 重放" as Dpo #FFFDFC {
+      +recipeRef: recipe-chain 绑定
+      +replayPort: DpoReplayPort
+    }
+  }
+
+  package "lifecycle/ certificate/" #E5EDE5 {
+    class "VerifiedDecision\n[verifiedBrand] 密封" as Verified #FFFDFC {
+      +decision: VerificationDecision
+      +verifierBuild: string
+    }
+    class "ReviewedDecision\n[reviewedBrand] 密封" as Reviewed #FFFDFC {
+      +verified: VerifiedDecision
+      +reviewDecision: approved|rejected
+    }
+    class "SignedHumanReviewAttestation\n签名 attestation" as Attest #FFFDFC {
+      +keyId: string
+      +signature: base64
+      +attestationDigest: ContentDigest
+    }
+  }
+
+  package "ports/" #F5F1EB {
+    interface "EvidenceStore\nCAS 不可变证据" as IStore
+    interface "TrustStore\nscope 根密钥" as ITrust
+    interface "RevocationStore\n撤销检查点" as IRev
+    interface "DpoReplayPort\nruntime 重放注入" as IReplay
+  }
+}
+
+Engine --> VDec : 产出
+Engine --> IStore : verifyPackage 读取 artifact
+Engine --> ITrust : Lean/HR attestation
+Engine --> IReplay : verifyDpoReplay
+Dpo --> IReplay
+Reviewed --> Verified
+Attest ..> Reviewed : prepare 绑定
+
+@enduml

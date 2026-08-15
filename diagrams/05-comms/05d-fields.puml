@@ -1,0 +1,42 @@
+@startuml 05d-fields
+title 图 05D · CommunicationEnvelope 字段专述
+caption <color:#6E6963>案例：msg-dual-001 · contentRef+digest；正文不入 CoordinationChange。</color>
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+class "CommunicationEnvelope" as Env #FFFDFC {
+  +wireVersion: WireVersion
+  .. 例：1 ..
+  +registryVersion: RegistryVersion
+  .. 例：1 ..
+  +messageId: MessageId
+  .. 例：msg-dual-001 ..
+  +operationCode: CommunicationOperationCode
+  .. 例：send；family 派生 freeOutput ..
+  +metadata: StableCommunicationMetadata
+  +sender: ActorRef
+  +recipient: ActorRef
+  +channelId: ChannelId
+  +channelGeneration: ChannelGeneration
+  +sequence: number
+  .. 例：1 ..
+  +payload: PayloadDescriptor
+  .. contentRef · digest · mediaType · byteLength ..
+  +ackMode: AckMode
+  .. durablyAccepted ≠ businessCommitted ..
+  +integrityDigest: string
+}
+
+class "PayloadDescriptor" as Pay #FFFDFC {
+  +contentRef: ContentRef
+  +contentDigest: ContentDigest
+  +mediaType: string
+  +byteLength: number
+  +classification: PayloadClassification
+}
+
+Env *-- Pay
+
+@enduml

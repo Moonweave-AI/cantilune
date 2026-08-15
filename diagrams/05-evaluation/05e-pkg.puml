@@ -1,0 +1,130 @@
+@startuml 05e-pkg
+' 图 05E：@cantilune/evaluation 目录 — 八层评估 × 已落地模块。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam ArrowColor #77716B
+skinparam linetype ortho
+
+title 图 05E · @cantilune/evaluation 目录与依赖（已落地 E0–E1 原型）
+caption <color:#6E6963>●=已实现。NEVER 修改 runtime/control-plane。抽象 05H。</color>
+
+top to bottom direction
+
+package "src/packages/evaluation/src/" as Root #F8F5F0 {
+
+  package "横切 · foundation/" #F0EDE8 {
+    class "evaluationIds.ts ●\n40+ branded IDs" as FId
+    class "evaluationStatus.ts ●\nClaimStatus · RunStatus · OracleResult…" as FSt
+    class "evaluationResult.ts ●\nok / violations 模式" as FRes
+    class "opaqueTokens.ts ●\nAdmittedEvaluationRun (internal-only)" as FTok
+  }
+
+  package "E1 声明 · claims/" #EDE8F0 {
+    class "evaluationClaim.ts ●\nEvaluationClaim · Protocol" as Claim
+    class "claimRegistry.ts ●" as CReg
+    class "claimStateMachine.ts ●" as CSM
+  }
+
+  package "E2 基准 · benchmarks/ datasets/" #E8EEF5 {
+    class "benchmarkSuite.ts ●\nBenchmarkSuite · BenchmarkCase" as BSuite
+    class "suiteStateMachine.ts ●" as SSM
+    class "datasetManifest.ts ●\nDatasetManifest" as DS
+    class "datasetStateMachine.ts ●" as DSM
+  }
+
+  package "E3 候选 · subjects/" #F5F1EB {
+    class "evaluationSubject.ts ●\nCandidateSubject · BaselineSubject" as Subj
+  }
+
+  package "E4 计划 · plans/ budget/" #F3E5DC {
+    class "evaluationRunPlan.ts ●" as Plan
+    class "evaluationBudget.ts ●\nreserve · reconcile · fail-closed" as Bud
+  }
+
+  package "E5 执行 · execution/" #E5EDE5 {
+    class "evaluationEngine.ts ●\nadmitRun · executeAttempt · completeRun" as Eng
+    class "evaluationRun.ts ●\nRun · RunAttempt · cost/usage" as ERun
+    class "runStateMachine.ts ●\nRUN_TRANSITIONS · ATTEMPT_TRANSITIONS" as RSM
+  }
+
+  package "E6 评分/评审 · scoring/ review/ oracles/" #EDE8F0 {
+    class "metricDefinition.ts ●" as MDef
+    class "metricObservation.ts ●" as MObs
+    class "judgeProtocol.ts ●" as Judge
+    class "claimDecision.ts ●\nisDecisionPublishable · supportsSuperiorityClaim" as Dec
+    class "theoryOracleEvidence.ts ●\nOracleRegistry · KNOWN_LEAN_SYMBOLS" as Oracle
+  }
+
+  package "E7 分析 · analysis/ reports/" #E5ECEE {
+    class "aggregateAnalysis.ts ●" as Agg
+    class "evaluationReport.ts ●" as Rep
+  }
+
+  package "E8 证据 · collection/" #F7F3EC {
+    class "certifiedTraceEvidence.ts ●\nDAG/Petri/π/Morphism 四投影" as Trace
+  }
+
+  package "端口 · ports/" #E8EEF5 {
+    class "stateGovernance.ts ●\nRunStore · ContentAddressedStore · Clock · BudgetLedger" as PGov
+    class "executionPorts.ts ●\nCandidateRunner · BaselineRunner · Lease" as PExe
+    class "benchmarkData.ts ●\nSuiteRegistry" as PBench
+    class "productEvidence.ts ●\nConformanceCertificateResolver" as PEvid
+    class "scoringAnalysis.ts ●" as PScore
+  }
+
+  package "适配器 · adapters/" #F7F3EC {
+    class "memory/ ●\nmemoryRunStore · memoryBudgetLedger · memoryCAS…" as AMem
+    class "file/ ●\nfileCAS · fileRunStore · fileClaimLedger" as AFile
+    class "cantilune/ ●（stub）\ncantiluneC9Resolver · replayAdapter" as ACant
+  }
+
+  class "index.ts ●" as Idx
+}
+
+package "@cantilune/core" as Core #E5EDE5 {
+  class "ContentDigest · EpochId · SnapshotRef\nbranded IDs" as CoreT
+}
+
+package "@cantilune/conformance" as Conf #EDE8F0 {
+  class "ArtifactSubject\nPackageConformanceCertificate" as ConfT
+}
+
+package "@cantilune/runtime (optional peer)" as RT #E5ECEE {
+  class "replay adapter · trace 收集" as RTT
+}
+
+package "@cantilune/observability (optional peer)" as Obs #EDE8F0 {
+  class "read-only observation evidence" as ObsT
+}
+
+Eng --> PGov
+Eng --> PExe
+Eng --> PBench
+Eng --> PEvid
+Eng --> Bud
+Claim --> CSM
+ERun --> RSM
+Subj --> ConfT
+ACant ..> RTT : optional peer
+ACant ..> ObsT : optional peer
+Idx --> Eng
+Idx --> Claim
+CoreT <-- FId
+
+note bottom of Root
+  <b>评估纪律（DESIGN-CLOSURE §Key Constraints）</b>
+  ① NEVER 修改 runtime world / control-plane policy
+  ② NEVER 发行 conformance certificate
+  ③ published row 绑定 artifact + verifier build + policy + evidence root
+  ④ 理论 oracle premiseMissing ≠ pass
+  ⑤ retry → 新 attempt，不覆盖旧记录
+  ⑥ budget: reserve-before, reconcile-after, fail-closed
+  ⑦ LLM judge 无 tools/network/secrets
+end note
+
+footer 抽象 05H · 类型 05A · 状态 05C · 理论 05F · RFC-0004 draft
+
+@enduml

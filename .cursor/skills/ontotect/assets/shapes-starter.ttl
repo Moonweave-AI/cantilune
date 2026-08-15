@@ -1,0 +1,13 @@
+@prefix ex: <https://example.org/ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+ex:DomainEntityShape
+    a sh:NodeShape ;
+    sh:targetClass ex:DomainEntity ;
+    sh:property [
+        sh:path ex:relatedDomainEntity ;
+        sh:minCount 1 ;
+        sh:class ex:DomainEntity ;
+        sh:message "A domain entity must link to at least one domain entity in this example contract."@en
+    ] .

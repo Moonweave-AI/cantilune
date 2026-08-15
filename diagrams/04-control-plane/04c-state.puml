@@ -1,0 +1,71 @@
+@startuml 04c-state
+' 图 04C：SchemaAdmissionState 状态门控（schemaAdmissionState.ts）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam linetype ortho
+skinparam roundcorner 12
+
+title 图 04C · SchemaAdmission 状态门控（已落地 transitions）
+caption <color:#6E6963>源码 admission/schemaAdmissionState.ts · canTransitionAdmission。案例 adm-full-001。</color>
+
+legend top right
+  |= 颜色 |= 含义 |
+  | <back:#F3E5DC>　</back> | 进行中状态 |
+  | <back:#E5EDE5>　</back> | 成功终态 / commit 后 |
+  | <back:#FFF9F6>　</back> | 失败/取消终态 |
+  | <color:#B57D68>┄┄</color> | rejected · cancelled · expired |
+endlegend
+
+top to bottom direction
+
+frame "SchemaAdmissionState · adm-full-001  happy path" #F8F5F0 {
+
+  package "提交阶段 · service.submit" #F3E5DC {
+    rectangle "<b>proposed</b>\n\t（入口；submit 直接写 qualified/authorized）" as S0 #FFFDFC
+    rectangle "<b>qualified</b>\n\textensionPlan OK · targetEpoch=43" as S1 #F3E5DC
+    rectangle "<b>awaiting_authorization</b>\n\t无 authorizationEvidenceRef" as S2a #F3E5DC
+    rectangle "<b>authorized</b>\n\tapprove 或 submit 带证据" as S3 #F3E5DC
+  }
+
+  package "切换阶段 · worker.prepare/commit" #E5EDE5 {
+    rectangle "<b>preparing</b>\n\tFourView + epochAdmin.prepare" as S4 #E5EDE5
+    rectangle "<b>prepared</b>\n\tPreparedSchemaAdmission 有效" as S5 #E5EDE5
+    rectangle "<b>committed</b>\n\tCAS binding · receipt" as S6 #E5EDE5
+    rectangle "<b>runtime_applying</b>\n\t舰队实例切换中" as S7 #E5EDE5
+    rectangle "<b>acknowledged</b>\n\tReconciliation 全 ack" as S8 #E5EDE5
+  }
+
+  package "终态/异常" #FFF9F6 {
+    rectangle "<b>rejected</b>" as Rej #FFF9F6
+    rectangle "<b>cancelled · expired</b>" as X #FFF9F6
+    rectangle "<b>degraded</b>\n\t可 → acknowledged" as Deg #F3E5DC
+  }
+
+  S0 -[#8E9E8A,dashed]down-> S1
+  S1 -[#8E9E8A]down-> S3 : 有证据
+  S1 -[#9AA6A7,dashed]right-> S2a
+  S2a -[#8E9E8A]down-> S3 : approve
+  S3 -[#8E9E8A,thickness=2]down-> S4
+  S4 -[#8E9E8A,thickness=2]down-> S5
+  S5 -[#8E9E8A,thickness=2]down-> S6
+  S6 -[#8E9E8A]down-> S7
+  S7 -[#8E9E8A,thickness=2]down-> S8
+  S3 -[#B57D68,dashed]right-> Rej
+  S5 -[#B57D68,dashed]right-> X : expired
+  S7 -[#B57D68,dashed]right-> Deg
+  Deg -[#8E9E8A,dashed]down-> S8
+}
+
+note bottom of S6
+  <b>commit 副作用</b>
+  casActiveBinding(bindingGeneration++)
+  epochAdmin.commitEpochTransition
+  outbox SchemaAdmissionCommitted
+  fileStore.persist + journal
+end note
+
+footer 类型 04A · 时序 04B · violation phase 见 controlPlaneViolation
+
+@enduml

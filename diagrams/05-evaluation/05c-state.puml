@@ -1,0 +1,82 @@
+@startuml 05c-state
+' 图 05C：evaluation 状态机总览 — Claim · Run · Attempt · Suite · Dataset。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam linetype ortho
+skinparam roundcorner 12
+
+title 图 05C · Evaluation 状态机总览（已落地 transitions）
+caption <color:#6E6963>源码 claimStateMachine · runStateMachine · suiteStateMachine · datasetStateMachine。</color>
+
+legend top right
+  |= 颜色 |= 含义 |
+  | <back:#EDE8F0>　</back> | Claim lifecycle |
+  | <back:#E5EDE5>　</back> | Run lifecycle |
+  | <back:#E8EEF5>　</back> | Suite / Dataset lifecycle |
+  | <color:#B57D68>┄┄</color> | 终态 |
+endlegend
+
+top to bottom direction
+
+frame "ClaimStatus（claimStateMachine.ts）" #EDE8F0 {
+  rectangle "proposed" as C0 #FFFDFC
+  rectangle "protocolFrozen" as C1 #EDE8F0
+  rectangle "measured" as C2 #EDE8F0
+  rectangle "supported\nnotSupported\ninconclusive" as C3 #EDE8F0
+  rectangle "independentlyReviewed" as C4 #EDE8F0
+  rectangle "published" as C5 #E5EDE5
+  rectangle "superseded · retracted" as C6 #FFF9F6
+
+  C0 --> C1
+  C1 --> C2
+  C2 --> C3
+  C3 --> C4
+  C4 --> C5
+  C5 -[#B57D68,dashed]-> C6
+}
+
+frame "RunStatus（runStateMachine.ts）" #E5EDE5 {
+  rectangle "planned → admitted → queued → leased → running" as R0 #E5EDE5
+  rectangle "collecting → scoring → analyzing → reviewPending" as R1 #E5EDE5
+  rectangle "accepted → published" as R2 #E5EDE5
+  rectangle "failed · cancelled · budgetExhausted\nproviderUnavailable · dataQuarantined · securityStopped" as R3 #FFF9F6
+
+  R0 --> R1
+  R1 --> R2
+  R0 -[#B57D68,dashed]-> R3
+  R1 -[#B57D68,dashed]-> R3
+}
+
+frame "AttemptStatus" #E5EDE5 {
+  rectangle "queued → running" as A0 #E5EDE5
+  rectangle "succeeded · failed · timedOut · cancelled" as A1 #FFF9F6
+
+  A0 --> A1
+}
+
+frame "SuiteStatus（suiteStateMachine.ts）" #E8EEF5 {
+  rectangle "draft → reviewPending → approved → frozen" as S0 #E8EEF5
+  rectangle "deprecated · revoked" as S1 #FFF9F6
+
+  S0 -[#B57D68,dashed]-> S1
+}
+
+frame "DatasetStatus（datasetStateMachine.ts）" #E8EEF5 {
+  rectangle "proposed → provenanceChecked → privacyReviewed → approved → frozen → active" as D0 #E8EEF5
+  rectangle "expired · quarantined · deleted" as D1 #FFF9F6
+
+  D0 -[#B57D68,dashed]-> D1
+}
+
+note bottom of C5
+  supportsSuperiorityClaim 仅在
+  status=supported ∧ publishable
+  notSupported/inconclusive 可发布
+  但 <b>不支持</b> superiority claim
+end note
+
+footer 类型 05A · 目录 05E · 抽象 05H
+
+@enduml

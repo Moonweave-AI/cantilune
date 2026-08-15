@@ -1,0 +1,135 @@
+@startuml 05a-class
+' 图 05A：@cantilune/comms 类型 — late-π 通信分面 + 持久投递。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam nodesep 22
+skinparam ranksep 30
+
+title 图 05A · @cantilune/comms：协议信封 + 会话绑定 + 协调器
+caption <color:#6E6963>已落地 src/packages/comms/。案例：session-dual-001 · msg-dual-001 · adm-reconnect-001。05H · 05E。</color>
+
+legend top right
+  |= 分区 |= 模块 |
+  | <back:#EDE8F0>　</back> | foundation/ protocol/ |
+  | <back:#E8EEF5>　</back> | peer/ envelope/ session/ |
+  | <back:#F3E5DC>　</back> | delivery/ mobility/ reconnect/ close/ |
+  | <back:#E5EDE5>　</back> | engine/ codec/ recovery/ |
+  | <back:#F5F1EB>　</back> | ports/ memory/ transports/a2a |
+endlegend
+
+left to right direction
+
+frame "@cantilune/comms · π 通信分面" #F8F5F0 {
+
+  package "foundation/ protocol/" #EDE8F0 {
+    class "StableCommunicationMetadata\n稳定关联元数据" as Meta #FFFDFC {
+      +epochId: EpochId
+      .. 例：42 ..
+      +operationTemplateRef: OperationTemplateRef
+      .. 例：send@1 ..
+      +sessionId: SessionId
+      .. 例：session-dual-001 ..
+      +correlationId: CorrelationId
+      +occurrenceId: OccurrenceId
+    }
+    class "CommunicationOperationBinding\nregistry 派生绑定" as OpBind #FFFDFC {
+      +registryVersion: RegistryVersion
+      +operationCode: CommunicationOperationCode
+      .. 例：reconnect；family 派生 instanceReconnect ..
+      +operationTemplateRef: OperationTemplateRef
+      +codecRef: string
+      +protocolVersion: string
+    }
+    class "CommunicationOccurrenceRecord\n规范 occurrence 日志" as Occ #FFFDFC {
+      +operation: CommunicationOperationBinding
+      +phase: CommunicationProtocolPhase
+      .. 例：reconnected ..
+      +lifecycle: OccurrenceLifecycle
+      +disposition: EndpointDisposition
+      +nativeAction: NativeCommunicationAction
+      +metadata: StableCommunicationMetadata
+      +effectiveFootprint: Footprint
+    }
+  }
+
+  package "envelope/ session/" #E8EEF5 {
+    class "CommunicationEnvelope\nwire 信封" as Env #FFFDFC {
+      +messageId: MessageId
+      .. 例：msg-dual-001 ..
+      +operationCode: CommunicationOperationCode
+      +metadata: StableCommunicationMetadata
+      +channelId: ChannelId
+      +channelGeneration: ChannelGeneration
+      +payload: PayloadDescriptor
+      .. contentRef+digest；正文不入 Change ..
+      +integrityDigest: string
+    }
+    class "SessionTransportBinding\n物理 channel 绑定" as Bind #F9FCF8 {
+      +sessionId: SessionId
+      +authoritativeSnapshotRef: SnapshotRef
+      +channelId: ChannelId
+      +channelGeneration: ChannelGeneration
+      .. reconnect 后 +1 ..
+      +localEndpoint: DescriptorRef
+      +remoteEndpoint: DescriptorRef
+      +status: SessionTransportStatus
+      .. active | draining | closed ..
+    }
+  }
+
+  package "reconnect/ close/" #F3E5DC {
+    class "AdmissionReconnectPlan\nreceipt 绑定重连计划" as RePlan #FFFDFC {
+      +admissionReceipt: SchemaAdmissionReceipt
+      +sessionId: SessionId
+      +operationTemplateRef: OperationTemplateRef
+      +oldEndpointRef: DescriptorRef
+      +newEndpointRef: DescriptorRef
+      +planDigest: PlanDigest
+      .. caller 不得自填 targetEpochId ..
+    }
+    class "ReconnectCoordinator\n重连状态机" as ReCoord #FFFDFC {
+      +propose(plan)
+      +authorize(record)
+      +peerAccept(record, ack)
+      +runtimeCommit(record)
+      +recover(planId)
+    }
+    class "QuiescentClosePlan\n静默关闭计划" as ClosePlan #FFFDFC {
+      +sendBarrier: boolean
+      +pendingOutbox: number
+      +peerAckDigest: string
+    }
+  }
+
+  package "engine/ ports/" #E5EDE5 {
+    class "CommsIngress\n受信入口" as Ingress #FFFDFC {
+      +acceptInboundFrame(bytes, ctx)
+      .. unknown→decoded→auth→replay→authorized→inbox ..
+    }
+    class "CommsStore\n原子持久端口" as Store #FFFDFC {
+      +appendOutbox(input)
+      +appendInbox(input)
+      +casSessionBinding(input)
+      +finalizeReconnect(input)
+    }
+    class "CommsMessagingService\n发送/投递" as Msg #FFFDFC {
+      +send(context, envelope, idempotencyKey)
+    }
+  }
+}
+
+Meta <-- Env : metadata
+OpBind <-- Occ : operation
+RePlan --> ReCoord : plan
+Bind <-- ReCoord : CAS generation
+Store <-- Msg
+Store <-- Ingress
+Env --> Store : durable envelope ref
+
+@enduml

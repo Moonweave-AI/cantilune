@@ -1,0 +1,83 @@
+@startuml 02g-ecosystem
+' 图 02G：Cantilune 产品分层 — runtime 邻接外置包（非 runtime 内柱）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 02G · 产品分层：runtime 邻接模块（理论有、runtime 无）
+caption <color:#6E6963>本图描述<strong>外置包</strong>，不是 @cantilune/runtime 目录。runtime 类图见图 02A。</color>
+
+left to right direction
+
+package "@cantilune/core" #E5EDE5 {
+  class "CollaborationSnapshot\nCoordinationChange\nCompositionIntent" as Core
+  class "deriveDiagnosticSummary\n（诊断摘要，非四投影）" as Derive
+}
+
+package "@cantilune/runtime\n六层运行时抽象" #E5ECEE {
+  class "CoordinationRuntime" as RT {
+    L1: getHead()
+    L2: observe()
+    L3: admit() · admitComposition()
+    L5: commit() · proposeAndCommit()
+    L6: replay()
+    .. L4 apply 为内部；不对外暴露 afterRef 输入 ..
+  }
+}
+
+package "@cantilune/observability\n（规划）" #EDE8F0 {
+  class "ObservationIndex\n四投影读模型" as ObsIdx {
+    +fromSnapshot(ref): DagView
+    +fromHistory(since): PetriView
+    .. 只读；Snapshot+ChangeLog 输入 ..
+  }
+  class "ProjectionCertificateStore\nsound/reflect 证存" as PCert
+}
+
+package "@cantilune/control-plane" #F3E5DC {
+  class "SchemaRegistry\nOrchestrationSchema 生命周期" as SchemaReg
+  class "SignatureAdmissionService\nepoch 跳变 · 四视图证书" as SigAdm
+}
+
+package "@cantilune/comms\n（规划）" #E5ECEE {
+  class "A2ATransport\nπ 线协议" as Comms
+  class "AdmissionReconnect\n动态准入握手" as Reconn
+}
+
+package "@cantilune/conformance\n（规划）" #E8EEF5 {
+  class "ExecutionPackageRunner\nLTS + ranking 验证" as Conf
+  class "ReleaseGate\nreplay ∧ success 交付" as Gate
+}
+
+Core <-- RT : 依赖
+RT --> Core : commit 写入
+SchemaReg ..> RT : 注入 schema
+RT ..> ObsIdx : ChangeCommitted 事件
+ObsIdx --> Core : 只读 derive
+ObsIdx --> PCert : 可选存证
+SigAdm --> SchemaReg : 修订后 bump epoch
+Comms --> RT : ObservationEntry → observe()
+Reconn --> SigAdm : 跨节点 schema 对齐
+Conf --> RT : replay() 批量验证
+Gate --> Conf : 终态判定
+
+note bottom of RT
+  runtime = 运行态抽象层
+  L3 意图处置 ≠ runtime 全部
+  L4 执行语义（handler）是核心
+end note
+
+note bottom of ObsIdx
+  RFC-0001 / ADR-0002：
+  四投影是同一 Change 的读面，
+  不是 runtime 写路径上的子系统
+end note
+
+footer 抽象 02H · runtime 目录 02E · 类型 02A
+
+@enduml

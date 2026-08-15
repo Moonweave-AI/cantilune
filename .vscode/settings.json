@@ -1,0 +1,5 @@
+{
+  "plantuml.render": "Local",
+  "plantuml.jar": "${workspaceFolder}/tools/plantuml.jar",
+  "plantuml.java": "C:/Program Files/Eclipse Adoptium/jdk-25.0.4.7-hotspot/bin/java.exe"
+}

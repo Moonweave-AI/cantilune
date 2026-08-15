@@ -1,0 +1,86 @@
+@startuml 03g-ecosystem
+' 图 03G：产品分层 — observability 四角度描绘 core · 观察 runtime 驱动。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 03G · 产品分层：observability 邻接模块（定锚版）
+caption <color:#6E6963>本质：四角度描绘 core 协调世界；输入=runtime commit 轨迹。runtime 侧 02G。</color>
+
+left to right direction
+
+package "@cantilune/core\n协调世界本体" #E5EDE5 {
+  class "CollaborationSnapshot\nCoordinationChange\nRunHistory · Link · Session" as Core
+  note bottom of Core
+    **What** — 世界里有什么
+    变更 receipt · 实体图
+  end note
+}
+
+package "@cantilune/runtime\n运行驱动" #E5ECEE {
+  class "CoordinationRuntime\nL2 observe · L3 admit\nL5 commit · L6 replay" as RT
+  class "ChangeLog · RunHistoryTracker\nCollaborationStore" as Trk
+  note bottom of RT
+    **How it moves**
+    唯一写路径 · footprint 权威
+  end note
+}
+
+package "@cantilune/observability\n四角度描绘（只读）" #EDE8F0 {
+  class "ObservabilityService\nengine/" as Svc
+  class "ObservationWorld\nEventSpine · snapshot 权威\nworld/ · spine/" as World
+  class "ProjectionEngine\nderiveEventSlice · fold" as PEng
+  class "FourViewBundle\ndependency·resource\ncommunication·coordination-structure" as Bundle
+  note bottom of Bundle
+    **How we see it**
+    同一脊柱 · 四读角
+    never write
+  end note
+}
+
+package "@cantilune/conformance\n（规划）" #E8EEF5 {
+  class "ProjectionCertificate 验证\n（形式化证书 · ReleaseGate）" as Conf
+}
+
+package "SDK / 运维 / Agent 读侧" #F5F1EB {
+  class "Dashboard · Trace UI\n四视图面板" as UI
+}
+
+Core <-- World : 只读索引实体
+RT --> Core : commit 写入
+Trk ..> World : O1 装配输入
+RT ..> Svc : ChangeCommitted（可选）
+Svc --> World
+Svc --> PEng
+PEng --> Bundle
+UI --> Svc
+Conf --> Bundle : 证书校验
+Conf ..> RT : replay 批量 gate
+
+note bottom of World
+  <b>定锚边界</b>
+  不调用 runtime admit/commit
+  不修改 Snapshot/ChangeLog
+  四 View ≠ 调度/并发判据
+  重放证明在 runtime + conformance
+end note
+
+note as NAlign
+  **用户五视图对齐（§7）**
+  structure ← StructureView
+  dependency ← DependencyView
+  capability ← ResourceView
+  communication ← CommunicationView
+  replay/feedback ← runtime ChangeLog + ReplayVerifier
+end note
+
+Bundle .. NAlign
+
+footer 抽象 03H · 目录 03E · 理论 03F · runtime 02G
+
+@enduml

@@ -1,0 +1,30 @@
+@prefix ex: <https://example.org/ontology/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/ontology>
+    a owl:Ontology ;
+    owl:versionIRI <https://example.org/ontology/0.1.0> ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:title "Ontology starter"@en ;
+    dcterms:description "Replace this namespace and model with the approved ontology contract."@en ;
+    dcterms:creator <https://example.org/agents/ontology-team> ;
+    dcterms:issued "2026-08-07"^^xsd:date ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
+
+ex:DomainEntity
+    a owl:Class ;
+    rdfs:label "domain entity"@en ;
+    skos:definition "A placeholder class to replace with a domain-authorized definition."@en ;
+    dcterms:source <https://example.org/requirements/CQ-001> .
+
+ex:relatedDomainEntity
+    a owl:ObjectProperty ;
+    rdfs:label "related domain entity"@en ;
+    skos:definition "A placeholder relation to replace with a precise, domain-authorized relation."@en ;
+    rdfs:domain ex:DomainEntity ;
+    rdfs:range ex:DomainEntity ;
+    dcterms:source <https://example.org/requirements/CQ-001> .

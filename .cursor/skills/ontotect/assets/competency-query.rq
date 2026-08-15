@@ -1,0 +1,9 @@
+PREFIX ex: <https://example.org/ontology/>
+
+# CQ-001 placeholder: replace the query and expected result with the approved CQ.
+SELECT ?entity ?related
+WHERE {
+  ?entity a ex:DomainEntity ;
+          ex:relatedDomainEntity ?related .
+}
+ORDER BY ?entity ?related

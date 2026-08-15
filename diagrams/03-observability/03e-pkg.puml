@@ -1,0 +1,125 @@
+@startuml 03e-pkg
+' 图 03E：@cantilune/observability 目录 — EventSpine 中轴 × 四 lens × fold。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam ArrowColor #77716B
+skinparam linetype ortho
+
+title 图 03E · @cantilune/observability 目录与依赖（EventSpine 定锚版）
+caption <color:#6E6963>●=已落地 stub · ◐=升级目标 · ○=规划。抽象 03H。never write。</color>
+
+top to bottom direction
+
+package "src/packages/observability/src/" as Root #F8F5F0 {
+
+  package "横切 · foundation/" #F0EDE8 {
+    class "readOnlyViolation.ts ◐" as FE
+    class "eventTag.ts ◐\nEventTag 品牌" as FT
+    class "atEvent.ts ◐\nAtEvent&lt;coreType&gt;" as FR
+  }
+
+  package "S0 脊柱 · world/" #DDE8F0 {
+    class "observationWorld.ts ◐\nObservationWorld · 含 snapshot" as OW
+    class "eventSpine.ts ◐\nEventTag · SourceEvent" as ES
+  }
+
+  package "O1 输入 · input/ ports/" #E8EEF5 {
+    class "observationInput.ts ◐" as OIn
+    class "assembleWorld.ts ◐\nStore+Log+Tracker" as Asm
+    class "snapshotReader.ts ○" as PSnap
+    class "changeLogReader.ts ○" as PLog
+  }
+
+  package "O2 切片 · spine/" #EDE8F0 {
+    class "projectionEngine.ts ◐\n调度 derive+fold" as PEng
+    class "deriveEventSlice.ts ◐\n单步唯一入口" as DES
+    class "projectionSlice.ts ◐\n四 Delta 容器" as PS
+  }
+
+  package "O3 四 lens · projection/" #EDE8F0 {
+    class "lenses/dependencyLens.ts ◐\n→ DependencyDelta" as LDag
+    class "lenses/resourceLens.ts ◐\n→ ResourceDelta" as LPet
+    class "lenses/communicationLens.ts ◐\n→ CommunicationDelta" as LPi
+    class "lenses/structureLens.ts ◐\n→ StructureDelta" as LMor
+    class "foldFourViews.ts ◐\nDelta[] → 四 View" as Fold
+    class "views/*.ts ◐\nlinks/capabilities/sessions + byEvent" as Views
+  }
+
+  package "O4 索引 · index/" #E5ECEE {
+    class "fourViewBundle.ts ◐" as OBundle
+    class "observationIndex.ts ●→◐\nstub 升级门面" as OIdx
+  }
+
+  package "O5 诊断 · diagnostic/" #F5F1EB {
+    class "compressDiagnostic.ts ◐\nStructure 压缩" as Diag
+    class "snapshotStats.ts ◐" as DStats
+  }
+
+  package "横切 · invariants/" #F0EDE8 {
+    class "crossViewInvariants.ts ◐\nE1–E7 出厂" as XInv
+  }
+
+  package "O6 证书 · certificates/" #F7F3EC {
+    class "projectionCertificate.ts ○" as PCert
+    class "certificateStore.ts ○" as PCStore
+  }
+
+  package "门面 · engine/" #E5ECEE {
+    class "observabilityService.ts ◐" as Eng
+  }
+
+  class "index.ts ●→◐" as Idx
+}
+
+package "@cantilune/core（协调世界本体）" as Core #E5EDE5 {
+  class "CollaborationSnapshot\nCoordinationChange · RunHistory\nLink · Capability · Session" as CoreT
+}
+
+package "@cantilune/runtime（运行驱动 · 只读输入）" as RT #E5ECEE {
+  class "getHead · ChangeLog.since\nRunHistoryTracker" as RTSrc
+  class "ChangeCommitted 事件 ○" as RTEv
+}
+
+package "@cantilune/conformance（规划）" as Conf #E8EEF5 {
+  class "证书 sound/reflect 验证" as ConfPkg
+}
+
+Asm --> OW
+OW --> ES
+FR .. ES : AtEvent 索引
+DES --> LDag
+DES --> LPet
+DES --> LPi
+DES --> LMor
+PEng --> DES
+PEng --> Fold
+Fold --> Views
+Fold --> OBundle
+OIdx --> OBundle
+OIdx --> PEng
+Eng --> OIdx
+Eng --> Asm
+XInv --> OBundle
+Diag ..> OBundle : 可选压缩
+OIdx ..> Diag : 非数据源
+RTSrc ..> Asm
+RTEv ..> Asm : 可选 push
+CoreT <-- OW
+CoreT <-- ES
+PCert ..> ConfPkg
+Idx --> Eng
+
+note bottom of Root
+  <b>继承目录纪律</b>
+  ① world/ 持 ObservationWorld.snapshot（core 实体权威）
+  ② Delta/View 字段类型 import 自 @cantilune/core
+  ③ 禁止 entityRegistry/平行 Node·Edge·Token 模块
+  ④ AtEvent&lt;T&gt; 仅为 EventTag 索引包装，非新实体
+end note
+
+footer 抽象 03H · 类型 03A · 字段 03D · 时序 03B · 产品 03G
+
+@enduml

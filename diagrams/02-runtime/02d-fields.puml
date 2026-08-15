@@ -1,0 +1,171 @@
+@startuml 02d-fields
+' 图 02D：@cantilune/runtime 字段设计逻辑；兼容本地预览。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+
+title 图 02D · @cantilune/runtime 字段设计（六层抽象映射）
+
+top to bottom direction
+
+package "六层抽象 · 写入纪律" #F7F3EC {
+  class RuntimeAbstractions {
+    L1_world: getHead · schema epoch
+    L2_boundary: observe_only_auditTail
+    L3_disposition: admit_zero_side_effect · recipe 产出
+    L4_execution: applyRecipe_no_after_input · handler 步进
+    L5_persistence: commit_atomic put+append
+    L6_verification: replay 链式比对 afterRef
+    footprint_authority: C-prime effectiveFootprint
+  }
+}
+
+package "L3 意图处置 · AdmittedIntent · admission/" #F3E5DC {
+  class AdmittedIntent {
+    +admittedId: AdmittedId
+    .. 例：adm-001；ResourceLockTable 键 ..
+    +intent: CoordinationIntent
+    +beforeSnapshot: CollaborationSnapshot
+    +beforeRef: SnapshotRef
+    .. 例：snap-S1 ..
+    +template: OperationTemplate
+    +effectiveFootprint: Footprint
+    .. C-prime 权威触达集 ..
+    +recipe: ReplayRecipe
+    .. 无 afterRef；Lean 对齐 ..
+    +authorization: EvidenceRef[]
+  }
+}
+
+package "L3/L4 · ReplayRecipe · replay/" #E5EDE5 {
+  class ReplayRecipe {
+    +epochId: EpochId
+    +operationTypeId: OperationTypeId
+    .. 例：delegate ..
+    +templateRef: OperationTemplateRef
+    +matchBindings: MatchBinding[]
+    .. task/from/to/capability ..
+    +matchWitness: MatchWitness
+    .. Lean matchEmbedding 可逆编码 ..
+    +complementTag: number
+    .. Lean complementTag / preservedContext ..
+    +kind: EventKind
+    .. internal / external / administrative ..
+    +authorization: EvidenceRef[]
+    +external: EvidenceRef[]
+    .. 可指向 auditTail Obs#001 ..
+    +createdSessionRefs: SessionId[]
+    +visibility: ChangeVisibility
+    --
+    刻意无 beforeRef / afterRef
+  }
+}
+
+package "L1 · OperationTemplate · schema/" #E8EEF5 {
+  class OperationTemplate {
+    +operationTypeId: OperationTypeId
+    +requiredRoles: MatchRole[]
+    +requires: TemplateCondition[]
+    .. task.exists / delegator.holds ..
+    +ensures: TemplateCondition[]
+    +mayCreateSessions: boolean
+  }
+}
+
+package "L5 持久轨迹 · CommitResult · execution/" #FFF9F6 {
+  class CommitResult {
+    +change: CoordinationChange
+    .. coordinationChangeFromCommit(recipe, meta) ..
+    +after: CollaborationSnapshot
+    .. withSnapshotRef 分配 afterRef ..
+    +committedChangeId: CommittedChangeId
+  }
+}
+
+package "L6 重放验证 · ReplayVerification · execution/" #E5ECEE {
+  class ReplayVerification {
+    +terminalRef: SnapshotRef
+    +terminal: CollaborationSnapshot
+    +steps: ReplayStep[]
+    .. changeId · recorded afterRef · recomputedAfterRef ..
+  }
+}
+
+package "L1 门面 · CoordinationRuntime · engine/" #E8EEF5 {
+  class CoordinationRuntime {
+    +getHead(): CollaborationSnapshot
+    +observe(input): ObserveResult
+    +admit(intent): AdmissionResult
+    +commit(admitted): CommitResult
+    +proposeAndCommit(intent): CommitResult
+    +replay(options): ReplayVerification
+    +admitComposition(c): AdmissionResult
+    .. 调 core toCoordinationIntent() ..
+  }
+}
+
+package "Ports · 依赖倒置" #E8EEF5 {
+  class CollaborationStore {
+    +get(ref): Snapshot
+    +put(snapshot): boolean
+    +head(): SnapshotRef
+  }
+  class ChangeLog {
+    +append(change): void
+    +since(beforeRef): Change[]
+  }
+  class PolicyEvaluator {
+    +evaluate(input): PolicyDecision
+    .. allow + authorization / deny + reason ..
+  }
+  class ResourceLockTable {
+    +acquire(admittedId, footprint): boolean
+    +release(admittedId): void
+  }
+}
+
+package "Codec · Wire DTO" #F7F3EC {
+  class ChangeWireDto {
+    +changeId: string
+    +matchBindings: MatchBindingDto[]
+    +targets: TargetRefDto[]
+    .. targets legacy 互操作；bindings 权威 ..
+  }
+  class SnapshotWireDto {
+    +snapshotRef: string
+    +participants: ParticipantDto[]
+    .. Map 序列化为数组 ..
+  }
+}
+
+RuntimeAbstractions --> AdmittedIntent
+AdmittedIntent --> ReplayRecipe
+ReplayRecipe --> CommitResult
+CommitResult --> ReplayVerification
+CoordinationRuntime --> AdmittedIntent
+CoordinationRuntime --> CollaborationStore
+CoordinationRuntime --> ChangeLog
+
+note bottom of ReplayRecipe
+  数学映射（Execution.lean）
+  signatureVersion → epochId
+  ruleId → operationTypeId
+  matchEmbedding → matchWitness / matchBindings
+  complementTag → complementTag
+  policyEvidence → authorization
+  externalEvidence → external
+  freshNames → createdSessionRefs
+  kind → EventKind
+end note
+
+footer 抽象总览 02H · 目录 02E · 类型 02A · 时序 02B · 状态 02C · 外置 02G
+@enduml

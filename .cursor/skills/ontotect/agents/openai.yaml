@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ontotect"
+  short_description: "Systematic ontology engineering workflows"
+  default_prompt: "Use $ontotect router to select the right ontology-engineering command and lifecycle stage for this request, show the Route Card, then continue only within the stated mutation boundary."

@@ -1,0 +1,258 @@
+@startuml 03a-class
+' 图 03A：@cantilune/observability — EventSpine 中轴 · 沿用 core 类型 · 四 lens/fold。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam nodesep 22
+skinparam ranksep 30
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+}
+
+title 图 03A · @cantilune/observability：EventSpine + 沿用 core 类型
+caption <color:#6E6963>案例 story T0→delegate · snap-S2 · chg-001/002。obs 不新造实体；Delta/View 组合 core 字段 + EventTag。03D · 03H。</color>
+
+legend top right
+  |= 分区 |= 含义 |
+  | <back:#E5EDE5>　</back> | 沿用 @cantilune/core 类型（01D） |
+  | <back:#E8EEF5>　</back> | O1 输入装配 |
+  | <back:#DDE8F0>　</back> | S0 EventSpine（EventTag + core Change） |
+  | <back:#EDE8F0>　</back> | O2 Delta · O3 View · lens/fold |
+  | <back:#E5ECEE>　</back> | O4 索引 · engine |
+  | <back:#F0EDE8>　</back> | 横切 invariants |
+endlegend
+
+left to right direction
+
+package "@cantilune/core · 协调世界（obs 沿用，不重定义）" #E5EDE5 {
+  class "CollaborationSnapshot" as Snap #FFFDFC {
+    +participants / +artifacts / +links
+    +sessions / +capabilities
+  }
+  class "Participant" as Part
+  class "WorkArtifact" as Art
+  class "CollaborationLink" as Link #FFFDFC {
+    +linkId / +kind / +from / +to
+  }
+  class "ScopedCapability" as Cap #FFFDFC {
+    +capabilityId / +holder / +scope
+  }
+  class "CommunicationSession" as Sess #FFFDFC {
+    +sessionId / +controller / +participants
+  }
+  class "CoordinationChange" as Chg #FFFDFC {
+    +changeId / +matchBindings / +createdSessionRefs
+    +beforeRef / +afterRef
+  }
+  class "DerivedDiagnosticView" as Drv #FFFDFC {
+    +kind: serial|parallel|nest|box
+  }
+  class "RunHistory" as Hist
+  Snap *-- Part
+  Snap *-- Art
+  Snap *-- Link
+  Snap *-- Cap
+  Snap *-- Sess
+}
+
+frame "@cantilune/observability · 只读四角度描绘" #F8F5F0 {
+
+  package "O1 输入 · input/" #E8EEF5 {
+    class "ObservationInput" as OIn #FFFDFC {
+      +headRef: SnapshotRef
+      .. snap-S2 ..
+      +sinceRef: SnapshotRef
+      +changes: CoordinationChange[]
+      +validatedHistory: RunHistory
+    }
+    class "assembleObservationWorld" as Asm #F9FCF8 {
+      +assemble(input): ObservationWorld
+    }
+  }
+
+  package "S0 · world/ + spine/" #DDE8F0 {
+    class "ObservationWorld" as ObsWorld #FFFDFC {
+      +snapshot: CollaborationSnapshot
+      .. 实体权威；四读角用 ActorId/LinkId 等 join ..
+      +changeIndex: Map<ChangeId, CoordinationChange>
+      +validatedHistory: RunHistory
+      +sinceRef: SnapshotRef
+    }
+    class "EventSpine" as Spine #FFFDFC {
+      +events: SourceEvent[]
+    }
+    class "SourceEvent" as SrcEv #FFFDFC {
+      +eventTag: EventTag
+      +change: CoordinationChange
+      .. 组合 core；字段不重复 ..
+    }
+    class "EventTag" as EvTag #FFFDFC {
+      +changeId / +epochId / +operationTypeId
+    }
+    class "AtEventWrapper" as AtEv #FFFDFC {
+      +eventTag: EventTag
+      +value: T
+      .. AtEvent 泛型；T 须为 core 类型 ..
+    }
+  }
+
+  package "O2 · spine/ · 四 Delta" #EDE8F0 {
+    class "ProjectionSlice" as Slice #FFFDFC {
+      +eventTag: EventTag
+      +dependency / +resource / +communication / +structure
+    }
+    class "DependencyDelta" as DDag #FFFDFC {
+      +addedLinks: CollaborationLink[]
+      +removedLinkIds: LinkId[]
+    }
+    class "ResourceDelta" as DPet #FFFDFC {
+      +updatedCapabilities: ScopedCapability[]
+    }
+    class "CommunicationDelta" as DPi #FFFDFC {
+      +openedSessions: CommunicationSession[]
+      +closedSessionIds: SessionId[]
+    }
+    class "StructureDelta" as DMor #FFFDFC {
+      +step: DerivedDiagnosticView
+      +structuralLinks: CollaborationLink[]
+    }
+    class "ProjectionEngine" as PEng #F9FCF8 {
+      +deriveEventSlice(world, event): ProjectionSlice
+      +foldFourViews(slices): FourViewBundle
+    }
+  }
+
+  package "O3 · projection/lenses/" #EDE8F0 {
+    class "dependencyLens" as LDag #FFFDFC {
+      +interpret(snapshot, change): DependencyDelta
+    }
+    class "resourceLens" as LPet #FFFDFC {
+      +interpret(before, after, change): ResourceDelta
+    }
+    class "communicationLens" as LPi #FFFDFC {
+      +interpret(after, change): CommunicationDelta
+    }
+    class "structureLens" as LMor #FFFDFC {
+      +interpret(change): StructureDelta
+      .. 复用 core derive 逐步语义 ..
+    }
+  }
+
+  package "O3 · 四 View（core 终态 + byEvent）" #EDE8F0 {
+    class "DependencyView" as DagV #FFFDFC {
+      +links: CollaborationLink[]
+      +byEvent: Map<EventTag, DependencyDelta>
+    }
+    class "ResourceView" as PetV #FFFDFC {
+      +capabilities: ScopedCapability[]
+      +byEvent: Map<EventTag, ResourceDelta>
+    }
+    class "CommunicationView" as PiV #FFFDFC {
+      +sessions: CommunicationSession[]
+      +byEvent: Map<EventTag, CommunicationDelta>
+    }
+    class "StructureView" as MorV #FFFDFC {
+      +composition: DerivedDiagnosticView
+      +structuralLinks: CollaborationLink[]
+      +byEvent: Map<EventTag, StructureDelta>
+    }
+  }
+
+  package "O4 · index/ + engine/" #E5ECEE {
+    class "FourViewBundle" as Bundle #F9FCF8
+    class "ObservationIndex" as OIdx #F9FCF8
+    class "ObservabilityService" as Svc #F8FBFB
+    class "DiagnosticSummary" as Diag #FFFDFC {
+      +stats / +compositionHint
+      .. deriveSnapshotStatsWithHistory ..
+    }
+  }
+
+  package "横切 · invariants/" #F0EDE8 {
+    class "CrossViewInvariants" as XInv #FFFDFC {
+      +validate(bundle, world): InvariantResult
+      .. E1-E7 见 03D ..
+    }
+  }
+
+  OIn --> Asm
+  Asm --> ObsWorld
+  ObsWorld *-- Spine
+  Spine *-- SrcEv
+  SrcEv *-- EvTag
+  PEng --> Slice
+  Slice *-- DDag
+  Slice *-- DPet
+  Slice *-- DPi
+  Slice *-- DMor
+  LDag ..> DDag
+  LPet ..> DPet
+  LPi ..> DPi
+  LMor ..> DMor
+  PEng --> LDag
+  PEng --> LPet
+  PEng --> LPi
+  PEng --> LMor
+  PEng --> Bundle
+  Bundle *-- DagV
+  Bundle *-- PetV
+  Bundle *-- PiV
+  Bundle *-- MorV
+  Bundle *-- Spine
+  Bundle ..> Diag
+  Svc *-- PEng
+  Svc *-- OIdx
+  Svc *-- Asm
+  OIdx --> Bundle
+  XInv ..> Bundle
+  AtEv ..> EvTag
+}
+
+SrcEv --> Chg
+DDag --> Link
+DPet --> Cap
+DPi --> Sess
+DMor --> Drv
+DMor --> Link
+DagV --> Link
+PetV --> Cap
+PiV --> Sess
+MorV --> Drv
+MorV --> Link
+
+package "@cantilune/runtime · 只读输入" #E5ECEE {
+  class "Store.head" as Head
+  class "ChangeLog.since" as Log
+  class "RunHistoryTracker" as Trk
+}
+
+Snap <-- ObsWorld
+Hist <-- ObsWorld
+Head ..> OIn
+Log ..> OIn
+Trk ..> OIn
+
+note bottom of ObsWorld
+  <b>继承纪律</b>
+  ① 无 EntityNode/DependencyEdge 等平行类型
+  ② join = core 品牌 ID（ActorId/LinkId/…）
+  ③ 终态 = snapshot；Delta = 本步 core 对象 diff
+  ④ lens 读 snapshot + change，不维护第二本体
+end note
+
+footer RFC-0002 读角标签 · 外置 03G · core 01D 单一实体来源
+
+@enduml

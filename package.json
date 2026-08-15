@@ -5,10 +5,24 @@
   "scripts": {
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
-    "typecheck": "pnpm -r run typecheck"
+    "test:coverage": "pnpm -r run test:coverage",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "format": "prettier --write \"src/packages/**/*.{ts,tsx,json,md}\" \"diagrams/**/*.md\" \"docs/**/*.md\"",
+    "format:check": "prettier --check \"src/packages/**/*.{ts,tsx,json,md}\" \"diagrams/**/*.md\" \"docs/**/*.md\"",
+    "check:encoding": "node scripts/checkEncoding.mjs",
+    "test:static": "pnpm check:encoding && pnpm lint && pnpm format:check && pnpm typecheck"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "eslint-plugin-unicorn": "^61.0.2",
+    "globals": "^17.11.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.54.0",
     "vitest": "^3.0.5"
   },
   "packageManager": "pnpm@9.15.4"

@@ -1,0 +1,79 @@
+{
+  "ontology": {
+    "iri": "",
+    "version_iri": "",
+    "source": "",
+    "profile": "",
+    "entailment_regime": "",
+    "imports_policy": "",
+    "graph_scope": ""
+  },
+  "baseline": {
+    "identifier": "",
+    "captured_at": "",
+    "protected_invariants": []
+  },
+  "checks": [
+    {
+      "id": "G1-parse",
+      "gate": "parse-and-iri",
+      "status": "unverified",
+      "exception": {
+        "disposition": "none",
+        "authority": "",
+        "rationale": "",
+        "scope": "",
+        "decision_artifact": "",
+        "review_or_expiry_condition": ""
+      },
+      "tool": "",
+      "tool_options": {},
+      "command_or_method": "",
+      "inputs": [],
+      "started_at": "",
+      "ended_at": "",
+      "exit_code": null,
+      "observed_result": "",
+      "expected_result": "",
+      "result_artifact": "",
+      "truncated": false,
+      "limitations": [],
+      "notes": ""
+    }
+  ],
+  "competency_questions": [
+    {
+      "id": "CQ-001",
+      "test_artifact": "",
+      "expected": "",
+      "observed": "",
+      "status": "unverified",
+      "exception": {
+        "disposition": "none",
+        "authority": "",
+        "rationale": "",
+        "scope": "",
+        "decision_artifact": "",
+        "review_or_expiry_condition": ""
+      },
+      "evidence_artifact": ""
+    }
+  ],
+  "semantic_diff": {
+    "asserted": "unverified",
+    "inferred": "unverified",
+    "behavioral": "unverified",
+    "compatibility_notes": []
+  },
+  "approvals": [
+    {
+      "role": "",
+      "authority": "",
+      "decision": "unverified",
+      "artifact": "",
+      "decided_at": ""
+    }
+  ],
+  "unverified": [],
+  "residual_risks": []
+}

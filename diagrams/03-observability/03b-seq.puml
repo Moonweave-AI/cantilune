@@ -1,0 +1,136 @@
+@startuml 03b-seq
+' 图 03B：observability 时序 — runtime commit 后 · EventSpine 中轴 · 四角度 fold。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBackgroundColor #F7F3EC
+
+title 图 03B · Observability 时序：runtime 驱动 → 四角度描绘
+caption <color:#6E6963>案例 story-t0-to-delegate · sinceRef=snap-S0 · head=snap-S2。虚线=只读。抽象 03H。</color>
+
+mainframe <b>定锚</b> · runtime 驱动改写 · observability 四角度描绘已 commit 的 core 世界 · never write
+hide footbox
+
+box "读客户端 · SDK/运维" #F5F1EB
+  actor "Observer" as Obs
+end box
+
+box "ObservabilityService · engine/" #E5ECEE
+  control "ObservabilityService" as Svc
+  control "ObservationIndex" as Idx
+end box
+
+box "S0 + O2 · world/ + spine/" #DDE8F0
+  control "assembleObservationWorld" as Asm
+  control "buildEventSpine" as Spine
+  control "ProjectionEngine" as PEng
+  control "deriveEventSlice" as Slice
+  control "foldFourViews" as Fold
+end box
+
+box "O3 · 四 lens（Delta 解释器）" #EDE8F0
+  control "dependencyLens" as Dag
+  control "resourceLens" as Pet
+  control "communicationLens" as Pi
+  control "structureLens" as Mor
+end box
+
+box "横切 · invariants/" #F0EDE8
+  control "CrossViewInvariants" as XInv
+end box
+
+box "@cantilune/runtime · 运行驱动" #E5ECEE
+  database "Store.head" as Store
+  database "ChangeLog.since" as Log
+  control "RunHistoryTracker" as Trk
+end box
+
+box "@cantilune/core · 协调世界" #E5EDE5
+  participant "Snapshot\nRunHistory\nChange" as Core
+end box
+
+== runtime 已 commit（前提） ==
+
+note over Store, Core #E5EDE5
+  chg-001 introduce → snap-S1
+  chg-002 delegate → snap-S2
+  history = [Obs#001, chg-001, chg-002]
+end note
+
+== O1 · 输入装配 → ObservationWorld ==
+
+Obs -> Svc : observeCommitted(sinceRef=snap-S0)
+activate Svc
+Svc -> Store : getHead() → snap-S2
+Svc -> Log : since(snap-S0) → [chg-001, chg-002]
+Svc -> Trk : current() → RunHistory
+Svc -> Asm : assembleObservationWorld(...)
+activate Asm
+Asm -> Core : validateBeforeRefChain / epoch
+Core --> Asm : ok
+Asm --> Svc : ObservationWorld
+deactivate Asm
+
+== S0 · 脊柱构建 ==
+
+Svc -> Spine : buildEventSpine(world)
+activate Spine
+Spine -> Core : rewriteSegments → SourceEvent[]
+Spine --> Svc : EventSpine[chg-001, chg-002]
+deactivate Spine
+
+== O2 · 逐步切片（读 snapshot + change） ==
+
+Svc -> PEng : project(world, spine)
+activate PEng
+loop 每个 SourceEvent
+  PEng -> Slice : deriveEventSlice(world, event)
+  activate Slice
+  Slice -> Dag : DependencyDelta\naddedLinks: CollaborationLink[]
+  Slice -> Pet : ResourceDelta\nupdatedCapabilities: ScopedCapability[]
+  Slice -> Pi : CommunicationDelta\nopenedSessions: CommunicationSession[]
+  Slice -> Mor : StructureDelta\nstep: DerivedDiagnosticView
+  Slice --> PEng : ProjectionSlice
+  deactivate Slice
+end
+
+== O3 · 折叠四角度 ==
+
+PEng -> Fold : foldFourViews(slices)
+activate Fold
+Fold --> PEng : FourViewBundle
+deactivate Fold
+deactivate PEng
+
+== 出厂门控 ==
+
+Svc -> XInv : validate(bundle, world)
+XInv --> Svc : ok
+
+== O5 · 可选诊断压缩 ==
+
+Svc -> Idx : attachDiagnostic(bundle)
+activate Idx
+note right of Idx
+  compressDiagnostic(structureView)
+  ≠ 四投影 derive 数据源
+end note
+Idx --> Svc : +diagnostic: SnapshotStats
+
+Svc -> Idx : return bundle
+Idx --> Obs : FourViewBundle\ndependency·resource·comm·structure
+deactivate Svc
+
+note over Obs, Core #F7F3EC
+  <b>边界</b>
+  observability 不回写 runtime
+  四 View 不可用于 admit/footprint
+  重放验证仍在 runtime ReplayVerifier
+end note
+
+footer 类型 03A · 状态 03C · 目录 03E · runtime 02H
+
+@enduml

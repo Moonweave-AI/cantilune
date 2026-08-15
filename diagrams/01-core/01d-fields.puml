@@ -1,8 +1,10 @@
 @startuml 01d-fields
-' 图 01D：字段设计逻辑。兼容本地预览与 PlantUML Server。
+' 图 01D：@cantilune/core 字段设计逻辑；兼容本地预览与 PlantUML Server。
 
 skinparam backgroundColor #FCFAF7
 skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
 skinparam classAttributeIconSize 0
 skinparam roundcorner 12
 skinparam packageStyle rectangle
@@ -12,41 +14,49 @@ skinparam class {
   HeaderBackgroundColor #F2EEEA
 }
 
-title 图 01D · 字段设计逻辑（Snapshot / Change / Observation / Runtime）
+title 图 01D · @cantilune/core 字段设计逻辑（nodes · coordination · structure）
 
 top to bottom direction
 
 package "写入纪律" #F7F3EC {
   class WriteDiscipline {
     +observation_first: rule
-    .. 外部信号先 append auditTail，不直接改协作图 ..
+    .. appendObservation 只追加 auditTail，不改协作图 ..
     +actor_not_committer: rule
-    .. Actor 只发 intent；只有 Runtime 提交 Change ..
+    .. Actor 发 CoordinationIntent；只有 Runtime commit Change ..
     +payload_outside_change: rule
-    .. 正文在 WorkArtifact.contentRef；Change 不含 payload ..
+    .. 正文在 WorkArtifact.contentRef；Change 无 payload ..
+    +epoch_consistent: rule
+    .. 同链 Change.epochId 须一致（validateEpochConsistent） ..
   }
 }
 
 package "字段规则" #F7F3EC {
   class FieldRules {
     +no_payload_in_change: rule
-    .. Change 只记录操作、目标、证据与快照引用 ..
     +before_after_required: rule
-    .. 每条 Change 须可解析 beforeRef 与 afterRef ..
+    .. validateBeforeRefChain：curr.beforeRef = prev.afterRef ..
     +template_vs_instance: rule
-    .. OperationTemplate 可多次实例化为独立 changeId ..
+    .. operationTypeId 可多次实例化为不同 changeId ..
+    +footprint_covers_targets: rule
+    .. validateCompositionIntentFootprint（structure） ..
   }
 }
 
 package "CollaborationSnapshot" #E5EDE5 {
   class CollaborationSnapshot {
-    +snapshotId: SnapshotRef
-    .. beforeRef / afterRef 解析目标 ..
+    +snapshotRef: SnapshotRef
+    .. 例：snap-S1 ..
     +epochId: EpochId
-    +participants: Set<Participant>
-    +artifacts: Set<WorkArtifact>
-    +auditTail: List<ObservationEntry>
+    .. 例：42 ..
+    +participants: Map<ActorId, Participant>
+    +artifacts: Map<ArtifactId, WorkArtifact>
+    +links: Map<LinkId, CollaborationLink>
+    +sessions: Map<SessionId, CommunicationSession>
+    +capabilities: Map<CapabilityId, ScopedCapability>
     +policyContext: PolicyContext
+    +auditTail: List<ObservationEntry>
+    +retiredEntities: List<EntityTombstone>
   }
   class Participant {
     +actorId: ActorId
@@ -55,17 +65,53 @@ package "CollaborationSnapshot" #E5EDE5 {
   }
   class WorkArtifact {
     +artifactId: ArtifactId
+    +kind: string
     +contentRef: ContentRef
     +owner: ActorRef
     +lifecycle: ArtifactLifecycle
   }
+  class ScopedCapability {
+    +capabilityId: CapabilityId
+    +kind: CapabilityKind
+    +holder: ActorId
+    +scope: CapabilityScope
+  }
+  class CommunicationSession {
+    +sessionId: SessionId
+    +controller: ActorId
+    +participants: List<ActorId>
+    +visibility: SessionVisibility
+  }
+  class CollaborationLink {
+    +linkId: LinkId
+    +kind: LinkKind
+    +from: LinkEndpoint
+    +to: LinkEndpoint
+  }
+  class PolicyContext {
+    +approvalState: ApprovalState
+    +retryState: RetryState
+  }
+  class EntityTombstone {
+    +entityId: string
+    +entityKind: RetiredEntityKind
+    +retiredAt: Timestamp
+    +reasonRef: string
+    .. optional ..
+  }
   CollaborationSnapshot *-- Participant
   CollaborationSnapshot *-- WorkArtifact
+  CollaborationSnapshot *-- ScopedCapability
+  CollaborationSnapshot *-- CommunicationSession
+  CollaborationSnapshot *-- CollaborationLink
+  CollaborationSnapshot *-- PolicyContext
+  CollaborationSnapshot *-- EntityTombstone
 }
 
 package "ObservationEntry" #F5F1EB {
   class ObservationEntry {
-    +sequenceNo: Long
+    +sequenceNo: SequenceNo
+    .. nextSequenceNo(auditTail) 自动分配 ..
     +source: ActorRef
     +payloadRef: ContentRef
     +receivedAt: Timestamp
@@ -75,40 +121,143 @@ package "ObservationEntry" #F5F1EB {
   }
 }
 
-package "CoordinationChange" #F3E5DC {
+package "CoordinationChange · 瞬态 Intent" #F3E5DC {
+  class CoordinationIntent <<transient>> {
+    +initiator: ActorRef
+    +operationTypeId: OperationTypeId
+    +matchBindings: List<MatchBinding>
+    .. 例：task/from/to/capability ..
+    +targets: List<TargetRef>
+    .. 由 matchBindings 派生 ..
+    +external: List<EvidenceRef>
+    .. optional ..
+  }
+  class ProposedChange <<transient>> {
+    +intent: CoordinationIntent
+    +beforeRef: SnapshotRef
+  }
   class CoordinationChange {
     +changeId: ChangeId
     +recordedAt: Timestamp
+    +epochId: EpochId
     +operationTypeId: OperationTypeId
+    +templateRef: OperationTemplateRef
+    .. optional ..
     +beforeRef: SnapshotRef
     +afterRef: SnapshotRef
+    +matchBindings: List<MatchBinding>
+    .. 重放 recipe；delegate from/to 语义 ..
     +targets: List<TargetRef>
+    .. 派生/legacy 回退 ..
     +initiator: ActorRef
     +involved: List<ActorRef>
     +authorization: List<EvidenceRef>
     +external: List<EvidenceRef>
     +createdSessionRefs: List<SessionId>
+    +visibility: ChangeVisibility
+    .. 必填 ..
   }
-  class OperationTemplate {
-    +operationTypeId: OperationTypeId
-    +requires: List<ContractRef>
-    +ensures: List<ContractRef>
+  class MatchBinding {
+    +role: MatchRole
+    .. task / from / to / capability / session / link ..
+    +artifactId: ArtifactId
+    +actorId: ActorId
+    +capabilityId: CapabilityId
+  }
+  class OperationTemplateRef {
+    +operationTypeId: string
+    +revision: string
+  }
+  class TargetRef {
+    +kind: TargetKind
+    +id: string
   }
   class ActorRef {
     +actorId: ActorId
     +kind: ActorKind
   }
   class EvidenceRef {
-    +evidenceId: String
+    +evidenceId: string
+    +kind: EvidenceKind
     +contentRef: ContentRef
   }
-  CoordinationChange --> OperationTemplate
+  CoordinationIntent --> ProposedChange
+  ProposedChange ..> CoordinationChange : commit
+  CoordinationChange *-- TargetRef
+  CoordinationChange *-- MatchBinding
   CoordinationChange *-- ActorRef
   CoordinationChange *-- EvidenceRef
+  CoordinationChange ..> OperationTemplateRef : templateRef?
 }
 
-package "CoordinationRuntime" #E5ECEE {
-  class CoordinationRuntime {
+package "structure · 组合与历史" #EDE8F0 {
+  class CompositionIntent {
+    +operator: CompositionOperatorKind
+    +initiator: ActorRef
+    +footprint: Footprint
+    +targets: List<TargetRef>
+    +openInterface: Interface
+    .. 代码字段 interface? optional ..
+    +binds: GoalOrOutcome
+    .. optional ..
+  }
+  class Footprint {
+    +artifactIds: Set<ArtifactId>
+    +participantIds: Set<ActorId>
+    +sessionIds: Set<SessionId>
+    +capabilityIds: Set<CapabilityId>
+    +linkIds: Set<LinkId>
+    --
+    effectiveFootprintOfCompositionIntent()
+    .. 并发判定权威触达集 ..
+  }
+  class DerivedDiagnosticView {
+    +kind: serial | parallel | nest | box
+    .. deriveDiagnosticSummary 输出；不可用于调度 ..
+  }
+  class TraceSegment <<union>> {
+    +observationEntry: ObservationEntry
+    .. kind = observation ..
+    +rewriteChange: CoordinationChange
+    .. kind = rewrite ..
+  }
+  class RunHistory {
+    +segments: List<TraceSegment>
+  }
+  CompositionIntent *-- Footprint
+  CompositionIntent ..> CoordinationIntent : toCoordinationIntent()
+  RunHistory *-- TraceSegment
+  CollaborationSnapshot .. DerivedDiagnosticView : deriveDiagnosticSummary()
+}
+
+package "consistency · 世界完整性" #E8EEF5 {
+  class CoreViolation {
+    +code: CoreViolationCode
+    +message: string
+    +path: string
+    +expected: string
+    +actual: string
+  }
+  class validateSnapshotIntegrity {
+    +Map key 对齐
+    +ActorRef kind 一致
+    +policy reviewers 已注册
+    +auditTail 序列连续
+  }
+  class validateCollaborationWorld {
+    +integrity + optional history 对齐
+  }
+  validateCollaborationWorld --> validateSnapshotIntegrity
+  validateSnapshotIntegrity ..> CoreViolation : CoreError
+}
+
+package "CoordinationRuntime · 非 core" #E5ECEE {
+  class OperationTemplate <<runtime>> {
+    +operationTypeId: OperationTypeId
+    +requires: List<ContractRef>
+    +ensures: List<ContractRef>
+  }
+  class CoordinationRuntime <<runtime>> {
     +admit(snapshot, intent): Decision
     +commit(change): SnapshotRef
     +append(change): ChangeId
@@ -118,25 +267,35 @@ package "CoordinationRuntime" #E5ECEE {
 
 package "runtime_flow" #F7F3EC {
   class RuntimeFlow {
-    +phase_0: 外部输入与准入
-    +phase_1: 任务建立与协调
-    +phase_2: 受控执行与产出
-    +phase_3: 评审与发布
-    +phase_4: 重放后交付
+    +phase_0: 外部输入 → appendObservation
+    +phase_1: introduce_artifact / delegate / accept
+    +phase_2: invoke_tool → Obs → attach_evidence
+    +phase_3: submit_artifact / request_approval / publish
+    +phase_4: replay + validateBeforeRefChain
   }
 }
 
 WriteDiscipline --> FieldRules
 FieldRules --> CollaborationSnapshot
-CollaborationSnapshot --> ObservationEntry
-ObservationEntry --> CoordinationChange
-CoordinationChange --> CoordinationRuntime
+CollaborationSnapshot --> validateSnapshotIntegrity
+validateSnapshotIntegrity --> ObservationEntry
+ObservationEntry --> CoordinationIntent
+CoordinationIntent --> CoordinationChange
+CoordinationChange --> CompositionIntent
+CompositionIntent --> CoordinationRuntime
 CoordinationRuntime --> RuntimeFlow
 
 ObservationEntry ..> CollaborationSnapshot : append auditTail
 CollaborationSnapshot .. CoordinationChange : beforeRef / afterRef
 ActorRef ..> Participant : actorId
 WorkArtifact ..> ActorRef : owner
-CoordinationChange --> CoordinationRuntime : admit / commit / replay
+RunHistory .. ObservationEntry : observation 段
+RunHistory .. CoordinationChange : rewrite 段
+
+note bottom of CoordinationChange
+  core 已实现校验：validateBeforeRefChain · validateEpochConsistent
+  · validateAuditTailMatchesHistory · validateSnapshotIntegrity
+  · validateCollaborationWorld · CoreViolation / CoreError
+end note
 
 @enduml

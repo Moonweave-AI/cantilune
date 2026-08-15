@@ -1,0 +1,133 @@
+@startuml 05d-fields
+' 图 05D：@cantilune/evaluation 字段设计（八层抽象映射）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+skinparam linetype ortho
+
+title 图 05D · @cantilune/evaluation 字段设计（八层抽象映射）
+caption <color:#6E6963>24+ branded IDs · 16+ 实体类型 · 5 状态机 · 40+ ports。案例 evaluation.c1 replay determinism。</color>
+
+top to bottom direction
+
+frame "@cantilune/evaluation · 字段总览" #F8F5F0 {
+
+  package "foundation/ · 基础类型（横切）" #F0EDE8 {
+    class "Branded IDs (24 types)" as BIDs #FFFDFC {
+      EvaluationClaimId / EvaluationProtocolId
+      BenchmarkSuiteId / BenchmarkCaseId / DatasetId
+      EvaluationSubjectId / EvaluationRunPlanId
+      EvaluationRunId / RunAttemptId
+      MetricId / MetricObservationId / JudgeProtocolId
+      AggregateAnalysisId / OracleId
+      BudgetPolicyId / ReportId / ReviewRecordId
+      LeaseId / FencingToken / WorkerId / ScorerRef / RubricRef
+      .. 全部 Brand<string, X> via @cantilune/core ..
+    }
+    class "EvaluationResult<T>" as ERes #FFFDFC {
+      ok: true → value: T
+      ok: false → violations: EvaluationViolation[]
+      .. 每个 violation 携 code + field + message ..
+    }
+    class "OpaqueTokens (internal)" as OTok #FFFDFC {
+      AdmittedEvaluationRun
+      .. _mint 仅 engine 内部调用 ..
+      .. public API 无法 mint ..
+    }
+  }
+
+  package "E1 claims/ · 声明字段" #EDE8F0 {
+    class "EvaluationClaim 字段" as CF #FFFDFC {
+      claimCode: "evaluation.c1"–"evaluation.c5"
+      statement: "Cantilune replay is deterministic…"
+      nullHypothesis: "No difference between…"
+      primaryMetricRefs / secondaryMetricRefs / guardrailMetricRefs
+      successRule / failureRule / inconclusiveRule
+      samplePlanRef · uncertaintyMethod
+      multipleComparisonPolicy · stoppingRule
+      requiredReviewerRoles: ["AI Eval", "Statistics", "Security"]
+      protocolDigest: ContentDigest
+    }
+    class "EvaluationProtocol 字段" as PF #FFFDFC {
+      samplingMethod · sampleSize · seedPolicy
+      randomizationPlan · blindingPlan
+      missingDataPolicy · outlierPolicy · stoppingPolicy
+      securityPlanRef · privacyPlanRef · budgetPolicyRef
+      frozenAt: string | undefined
+    }
+  }
+
+  package "E2 benchmarks/ · 基准字段" #E8EEF5 {
+    class "BenchmarkSuite 字段" as SF #FFFDFC {
+      caseManifestRefs · datasetRefs
+      coverageTaxonomy · requiredStrata
+      samplingPolicy · defaultBudgetPolicy
+      provenanceRef · licenseRef · privacyReviewRef
+      status: SuiteStatus (draft→frozen)
+    }
+    class "BenchmarkCase 字段" as CaseF #FFFDFC {
+      caseKind: structural|modelBacked|humanRated|adversarial
+      inputArtifactRefs · initialSnapshotRef
+      networkPolicy · filesystemPolicy
+      maxStructuralSteps · maxExecutionEpochs
+      engineeringTimeout (wall-clock ≠ formal C2 bound)
+      resourceCaps: { maxTokensI/O · maxToolCalls · maxCostCents }
+    }
+  }
+
+  package "E5 execution/ · 执行字段" #E5EDE5 {
+    class "RunAttempt 关键字段" as AF #FFFDFC {
+      idempotencyKey: "${runId}-${caseRef}-${seed}"
+      workerId · leaseId · fencingToken
+      tokenUsage: { input · output · total }
+      toolUsage: { toolCalls · toolErrors }
+      networkUsage: { requestCount · bytesIn/Out }
+      cost: { model · tool · network · total · currency · receipts }
+      terminalDisposition · failureCategory
+      resultDigest: ContentDigest
+    }
+  }
+
+  package "E8 collection/ · 证据字段" #F7F3EC {
+    class "CertifiedTraceEvidence 关键字段" as TF #FFFDFC {
+      coreChangeDigest · replayRecipeRef
+      beforeRef · afterRef: SnapshotRef
+      executionEpoch · opportunityEpoch
+      rankBefore · rankAfter
+      dagView · petriView · piCalcView · morphismView
+      .. 每 view: mapState/mapEvent/lift/native/reflection/replay/terminal ..
+      .. 独立 evidenceChainDigest ..
+      admissionEvidence: { fromVersion · toVersion · fourViewCertificateRef }
+    }
+    class "TheoryOracleEvidence 关键字段" as OF #FFFDFC {
+      leanSymbol: "Cantilune.Core.DPOEvent.event_replay_unique"
+      semanticLayer: effect | nativeTrace | terminal
+      theoryCommit · theoryBuildDigest · theoryManifestDigest
+      typedPremiseSchema: PremiseField[]
+      result: passed | failed | premiseMissing | notApplicable
+      counterexampleRef: string | undefined
+    }
+  }
+
+  package "八层评估纪律" #F7F3EC {
+    class "EvaluationDiscipline" as Disc #FFFDFC {
+      E1: claim frozen → protocol frozen → 才可 execute
+      E2: suite frozen + dataset active + clean 才可选
+      E3: C9 cert valid + 未过期 + 未 revoke
+      E4: plan frozen + budget reserved
+      E5: budget reserve-before · reconcile-after · fail-closed
+      E5: retry = new attempt（不覆盖旧记录）
+      E6: LLM judge 无 tools/network/secrets
+      E7: superiority 须 preregistered + supported + reviewed
+      E8: oracle premiseMissing ≠ pass
+    }
+  }
+}
+
+footer 抽象 05H · 类型 05A · 状态 05C · 目录 05E
+
+@enduml

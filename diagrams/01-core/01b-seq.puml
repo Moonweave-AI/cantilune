@@ -47,7 +47,7 @@ User -> Runtime : 任务请求 · 风险评估
 activate Runtime #E5ECEE
 Runtime -> Store : append Obs#001
 Store --> Runtime : S0′
-Runtime -> Runtime : admit introduce
+Runtime -> Runtime : admit introduce_artifact
 alt 不可准入
   Runtime --> User : 请求补充 / 说明拒绝原因
   note right of Runtime #F3E5DC
@@ -55,7 +55,7 @@ alt 不可准入
     <b>没有 Change 被提交。</b>
   end note
 else 准入成功
-  Runtime -> Store : chg-001 · introduce
+  Runtime -> Store : chg-001 · introduce_artifact
   Store --> Planner : 任务已创建
 end
 deactivate Runtime
@@ -63,22 +63,22 @@ deactivate Runtime
 note right of Store #F5F1EB
   <b>同一写入纪律贯穿全程</b>
   commit 前：模板匹配、授权、资源与外部证据核验。
-  commit 后：记录 beforeRef / afterRef、targets、initiator 与证据引用。
+  commit 后：记录 epochId、beforeRef / afterRef、targets、initiator、visibility 与证据引用。
 end note
 
 == 1 · 协调建立：归属、会话与能力显式迁移 ==
 
-Planner -> Runtime : intent · delegate
+Planner -> Runtime : CoordinationIntent · delegate
 activate Runtime #E5ECEE
-Runtime -> Store : chg-002 · delegate
+Runtime -> Store : chg-002 · delegate\n+ session-s · write-lock-w
 Store --> Researcher : 会话与写锁已移交
-Researcher -> Runtime : intent · accept
+Researcher -> Runtime : CoordinationIntent · accept
 Runtime -> Store : chg-003 · accept
 deactivate Runtime
 
 == 2 · 受控执行：调用是 Change，回执是 Observation ==
 
-Researcher -> Runtime : intent · invoke_tool
+Researcher -> Runtime : CoordinationIntent · invoke_tool
 activate Runtime #E5ECEE
 Runtime -> Store : chg-004 · invoke_tool
 Runtime -> Tool : 受控检索 / 取证
@@ -88,7 +88,7 @@ Tool --> Runtime : ExternalSignal · result
 activate Runtime #E5ECEE
 Runtime -> Store : append Obs#002
 Runtime --> Researcher : 证据已留痕
-Researcher -> Runtime : intent · attach_evidence
+Researcher -> Runtime : CoordinationIntent · attach_evidence
 Runtime -> Store : chg-005 · attach_evidence
 deactivate Runtime
 
@@ -100,11 +100,11 @@ end note
 
 == 3 · 产出与评审：批准 / 修订同样先成为观察 ==
 
-Researcher -> Runtime : intent · submit_artifact
+Researcher -> Runtime : CoordinationIntent · submit_artifact
 activate Runtime #E5ECEE
 Runtime -> Store : chg-006 · submit_artifact
 Runtime --> Reviewer : 草稿进入评审
-Planner -> Runtime : intent · request_approval
+Planner -> Runtime : CoordinationIntent · request_approval
 Runtime -> Store : chg-007 · request_approval
 deactivate Runtime
 
@@ -140,11 +140,12 @@ else 不一致或终态条件不满足
 end
 
 note over User, Replay #F7F3EC
-  <b>工程边界</b>
-  · Actor 只发送信号或协调意图；Runtime 是 Change 的唯一提交者。
-  · Change 不携带正文 payload；它记录操作、目标、证据与两端快照引用。
+  <b>工程边界（对齐 @cantilune/core）</b>
+  · Actor 发 CoordinationIntent；Runtime 是 Change 的唯一提交者。
+  · Change 含 epochId / visibility，无 payload；正文在 WorkArtifact.contentRef。
+  · RunHistory = observation 段 + rewrite(CoordinationChange) 段；auditTail 须与 history 对齐。
   · tracing 可补充运维观测，但 ChangeLog + Replay 才提供可复核的状态转换证据。
 end note
 
-footer <color:#6E6963>工程对齐：Cantilune 的 Config / DPOEvent / external observations；任务与产物生命周期参考 A2A；职责归因参考 W3C PROV。</color>
+footer <color:#6E6963>代码锚点：appendObservation · coordinationChange · validateBeforeRefChain · structure/trace.ts</color>
 @enduml

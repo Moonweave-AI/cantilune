@@ -1,0 +1,145 @@
+@startuml 04d-fields
+' 图 04D：@cantilune/control-plane 字段设计（六层治理）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+
+title 图 04D · @cantilune/control-plane 字段设计（六层治理）
+caption <color:#6E6963>对齐已落地类型。案例 rev-002 / adm-full-001。抽象 04H · 类型 04A。</color>
+
+top to bottom direction
+
+package "治理纪律" #F7F3EC {
+  class GovernanceDiscipline {
+    monotone_extension_only: rule
+    .. computeMonotoneExtensionPlan ..
+    binding_generation_cas: rule
+    .. expectedBindingGeneration 须匹配 ..
+    runtime_head_match: rule
+    .. expectedRuntimeHead 须匹配 active ..
+    separation_of_duties: rule
+    .. proposer ≠ approver ..
+    four_view_on_prepare: rule
+    .. conformance.verifyFourViewEvidence ..
+    idempotency_on_submit: rule
+  }
+}
+
+package "G1 · SchemaRevision · schema/" #EDE8F0 {
+  class SchemaRevision {
+    +schemaRef: SchemaRef
+    .. default-v1@rev-002@digest ..
+    +schema: OrchestrationSchema
+    +canonicalDigest: SchemaDigest
+    +parentRef: SchemaRef
+  }
+}
+
+package "G2 · SchemaEpochBinding · ports/" #E8EEF5 {
+  class SchemaEpochBinding {
+    +activationDomainId: ActivationDomainId
+    +bindingGeneration: BindingGeneration
+    .. commit 前 1 → 后 2 ..
+    +epochId: EpochId
+    +epochOrdinal: EpochOrdinal
+    +schemaRef: SchemaRef
+    +policyRef: PolicyRef
+    +handlerManifestRef: HandlerManifestRef
+    +runtimeHead: SnapshotRef
+    +admissionId: SchemaAdmissionId
+  }
+}
+
+package "G3 · SchemaAdmissionRequest · admission/" #F3E5DC {
+  class SchemaAdmissionRequest {
+    +admissionId: SchemaAdmissionId
+    +expectedBindingGeneration: BindingGeneration
+    +expectedRuntimeHead: SnapshotRef
+    +candidateSchemaRef: SchemaRef
+    +idempotencyKey: IdempotencyKey
+    +requestedBy: string
+  }
+}
+
+package "G3 · SchemaExtensionPlan · schema/" #EDE8F0 {
+  class SchemaExtensionPlan {
+    +addedOperationTypeIds: OperationTypeId[]
+    .. [archive_artifact] ..
+    +operationEmbedding: Map
+    .. 旧 operation 保真嵌入 ..
+  }
+}
+
+package "G4 · PreparedSchemaAdmission · admission/" #E5EDE5 {
+  class PreparedSchemaAdmission {
+    +preparedId: PreparedAdmissionId
+    +planDigest: string
+    +expiresAt: string
+    .. opaque brand ..
+  }
+}
+
+package "G4 · SchemaAdmissionReceipt · engine/" #E5EDE5 {
+  class SchemaAdmissionReceipt {
+    +fromBinding · toBinding: SchemaEpochBinding
+    +beforeSnapshotRef · afterSnapshotRef
+    +admissionTombstoneId: string
+    +correlationId · occurrenceId
+    +planDigest: PlanDigest
+  }
+}
+
+package "G5 · FourViewEvidenceBundle · conformance/" #F5F1EB {
+  class FourViewEvidenceBundle {
+    +fromSchemaRef · toSchemaRef: SchemaRef
+    +dependencyDigest: ContentDigest
+    +resourceDigest: ContentDigest
+    +communicationDigest: ContentDigest
+    +structureDigest: ContentDigest
+    +evidenceRef: string
+  }
+}
+
+package "G6 · RuntimeBinding · rollout/" #E5ECEE {
+  class RuntimeBinding {
+    +runtimeInstanceId: RuntimeInstanceId
+    +desiredBinding: SchemaEpochBinding
+    +observedBinding: SchemaEpochBinding
+    +status: pending | acknowledged | drift
+  }
+}
+
+package "门面 · FullControlPlaneService · engine/" #E5ECEE {
+  class FullControlPlaneService {
+    +registerSchemaRevision()
+    +submitSchemaAdmission()
+    +approveSchemaAdmission()
+    +prepareSchemaAdmission()
+    +commitSchemaAdmission()
+    +activatePolicyRevision()
+    +acknowledgeRuntimeInstance()
+  }
+}
+
+GovernanceDiscipline --> SchemaAdmissionRequest
+SchemaAdmissionRequest --> SchemaExtensionPlan
+SchemaExtensionPlan --> PreparedSchemaAdmission
+PreparedSchemaAdmission --> SchemaAdmissionReceipt
+SchemaAdmissionReceipt --> SchemaEpochBinding
+FourViewEvidenceBundle --> PreparedSchemaAdmission
+FullControlPlaneService --> SchemaAdmissionRequest
+
+note bottom of FourViewEvidenceBundle
+  数学映射（Admission.lean）
+  FourViewAdmission：dag·petri·pi·morphism Extends
+  SignatureExtension ↔ SchemaExtensionPlan
+  fromVersion&lt;toVersion ↔ epochOrdinal 递增
+end note
+
+footer 目录 04E · 时序 04B · 状态 04C · 理论 04F
+
+@enduml

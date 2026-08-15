@@ -1,0 +1,43 @@
+name: comms
+
+on:
+  push:
+    paths:
+      - "src/packages/comms/**"
+      - "src/packages/core/**"
+      - "src/packages/conformance/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/comms.yml"
+  pull_request:
+    paths:
+      - "src/packages/comms/**"
+      - "src/packages/core/**"
+      - "src/packages/conformance/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/comms.yml"
+
+jobs:
+  comms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm --filter @cantilune/conformance build
+      - run: pnpm --filter @cantilune/comms build
+      - run: pnpm --filter @cantilune/comms typecheck
+      - run: pnpm --filter @cantilune/comms test
+      - run: pnpm --filter @cantilune/comms test:coverage
+      - run: pnpm --filter @cantilune/comms test:fuzz
+      - run: pnpm --filter @cantilune/comms test:mutation
+      - run: pnpm --filter @cantilune/comms test:pack

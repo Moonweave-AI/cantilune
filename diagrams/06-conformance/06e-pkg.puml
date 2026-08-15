@@ -1,0 +1,50 @@
+@startuml 06e-pkg
+' 图 06E：@cantilune/conformance 包目录与 exports。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+
+title 图 06E · 包目录 · exports 子路径
+caption <color:#6E6963>生产依赖仅 @cantilune/core；runtime 为 optional peer。06A · 06G。</color>
+
+rectangle "src/packages/conformance/" #F8F5F0 {
+  card "foundation/\nprofile · status · policy" as F
+  card "canonical/\nevidenceDigest · replayRecipeChainDigest" as C
+  card "evidence/\nengineering · fourProjection · lean" as E
+  card "subject/\nadmission · ruleOccurrence equality" as S
+  card "manifest/\nConformanceTargetManifest · inventory" as M
+  card "verifier/\n*Verifier（按 evidence 族）" as V
+  card "engine/\nConformanceEngine · gates" as EN
+  card "lifecycle/\nsealedDecision · reviewWorkflow" as L
+  card "adapters/memory|file|runtime" as A
+  card "cli/\nconformance-cli（L5 contract）" as CLI
+  card "testing/\n**仅 harness** signed builder" as T
+}
+
+rectangle "package exports" #E8EEF5 {
+  card "@cantilune/conformance" as X0
+  card "./evidence ./profiles ./ports" as X1
+  card "./memory ./file ./admission ./release" as X2
+  card "./lifecycle ./canonical ./runtime" as X3
+  card "./testing (**非生产**)" as X4
+}
+
+F --> EN
+C --> V
+E --> V
+S --> V
+M --> EN
+V --> EN
+L --> EN
+A --> EN
+EN --> X0
+CLI ..> X0 : bin only
+T ..> X4 : 禁止生产 import
+
+note bottom of T
+  buildReviewedEngineeringAdmissionForTest
+  不得从根 export
+end note
+
+@enduml

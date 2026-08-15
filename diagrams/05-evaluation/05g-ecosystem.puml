@@ -1,0 +1,65 @@
+@startuml 05g-ecosystem
+' 图 05G：产品分层 — evaluation 邻接 core/runtime/conformance/observability。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 05G · 产品分层：@cantilune/evaluation 邻接模块
+caption <color:#6E6963>evaluation NEVER 修改 runtime/control-plane。消费 conformance 证书 + 可选 runtime replay + observability trace。</caption>
+
+left to right direction
+
+package "@cantilune/core" #E5EDE5 {
+  class "ContentDigest · EpochId\nbranded IDs" as Core
+}
+
+package "@cantilune/conformance" #EDE8F0 {
+  class "PackageConformanceCertificate\nArtifactSubject" as Conf
+}
+
+package "@cantilune/runtime\n(optional peer)" #E5ECEE {
+  class "Replay adapter\ntrace 收集" as RT
+}
+
+package "@cantilune/observability\n(optional peer)" #EDE8F0 {
+  class "Read-only observation evidence" as Obs
+}
+
+package "@cantilune/control-plane" #F3E5DC {
+  class "SchemaEpochBinding\n(read-only reference)" as CP
+}
+
+package "@cantilune/evaluation" #F5F1EB {
+  class "EvaluationEngine" as Engine {
+    E5: admitRun · executeAttempt
+  }
+  class "TheoryOracleEvidence" as Oracle
+  class "CertifiedTraceEvidence" as Trace
+  class "ClaimDecision · EvaluationReport" as Report
+}
+
+Core <-- Engine
+Conf <-- Engine : C9 证书验证
+RT ..> Engine : optional replay
+Obs ..> Trace : optional observation
+CP ..> Engine : read binding ref only
+Engine --> Report
+Oracle --> Report
+Trace --> Report
+
+note bottom of Engine
+  <b>边界</b>
+  读 conformance 证书 — 不发行
+  读 runtime head / replay — 不 commit
+  读 observability trace — 不 derive
+  control-plane binding 仅 reference
+end note
+
+footer 抽象 05H · 目录 05E · 类型 05A
+
+@enduml

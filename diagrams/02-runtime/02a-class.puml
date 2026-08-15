@@ -1,0 +1,254 @@
+@startuml 02a-class
+' 图 02A：@cantilune/runtime 类型 — 六层运行时抽象（L3 admission 仅为意图处置）。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam nodesep 22
+skinparam ranksep 30
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+}
+
+title 图 02A · @cantilune/runtime：六层运行时抽象 + CoordinationRuntime 门面
+caption <color:#6E6963>runtime = 运行态抽象层；L4 执行语义（handler+ReplayKernel）是核心。抽象总览 02H · 目录 02E · 外置 02G。</color>
+
+legend top right
+  |= 层 |= 抽象 |= 模块 |
+  | <back:#E8EEF5>　</back> | L1 运行世界 | engine · ports · schema |
+  | <back:#F5F1EB>　</back> | L2 外部边界 | observe/ |
+  | <back:#F3E5DC>　</back> | L3 意图处置 | admission/ · replay/recipe |
+  | <back:#E5EDE5>　</back> | L4 执行语义 | execution/ · replay/witness |
+  | <back:#FFF9F6>　</back> | L5 持久轨迹 | commit · ChangeLog |
+  | <back:#E5ECEE>　</back> | L6 重放验证 | replayVerifier |
+  | <back:#F0EDE8>　</back> | 横切 | foundation · codec · memory |
+endlegend
+
+left to right direction
+
+frame "@cantilune/runtime · 运行时抽象层（core 之外）" #F8F5F0 {
+
+  package "横切 · foundation/" #F0EDE8 {
+    class "RuntimeViolation\nruntime 专属违规" as RViol #FFFDFC {
+      +code: RuntimeViolationCode
+      .. admission_rejected / replay_mismatch / resource_conflict ..
+      +message: string
+      +path: string
+      .. 例：matchBindings.from ..
+      +operationTypeId: OperationTypeId
+      +cause: CoreViolation
+      .. core 校验失败时嵌套 ..
+    }
+    class "AdmittedId\n<<brand>>" as AdmId #FFFDFC {
+      .. 准入票据；SDK 不可伪造 ..
+    }
+    class "CommittedChangeId\n<<brand>>" as ComId #FFFDFC {
+      .. 已入账 changeId；区别于 mere ChangeId ..
+    }
+  }
+
+  package "L1 运行世界 · ports/" #E8EEF5 {
+    interface "CollaborationStore" as IStore {
+      +get(ref): Snapshot
+      +put(snapshot): boolean
+      +head(): SnapshotRef
+    }
+    interface "ChangeLog" as ILog {
+      +append(change): void
+      +get(changeId): Change
+      +since(beforeRef): Change[]
+      +all(): Change[]
+    }
+    interface "PolicyEvaluator" as IPolicy {
+      +evaluate(input): PolicyDecision
+    }
+    interface "ResourceLockTable" as ILock {
+      +acquire(admittedId, footprint): boolean
+      +release(admittedId): void
+    }
+    interface "Clock · IdGenerator" as IClock #FFFDFC
+  }
+
+  package "L1 运行世界 · schema/" #E8EEF5 {
+    class "OperationTemplate\n合法操作模板" as OpTpl #FFFDFC {
+      +operationTypeId: OperationTypeId
+      .. 例：introduce_artifact / delegate ..
+      +templateRef: OperationTemplateRef
+      +requiredRoles: MatchRole[]
+      .. delegate 须 task/from/to/capability ..
+      +requires: TemplateCondition[]
+      +ensures: TemplateCondition[]
+      +defaultVisibility: ChangeVisibility
+      +mayCreateSessions: boolean
+    }
+    class "OrchestrationSchema\nepoch 允许空间" as OrchSchema #FFFDFC {
+      +schemaId: string
+      +epochId: EpochId
+      .. 例：42 ..
+      +templates: TemplateRegistry
+      +allowedOperations: OperationTypeId[]
+    }
+    class "TemplateRegistry" as TReg #FFFDFC {
+      +get(id): OperationTemplate
+      +register(t): void
+      +list(): OperationTemplate[]
+    }
+  }
+
+  package "L3 意图处置 · admission/" #F3E5DC {
+    class "AdmittedIntent\n<<opaque>>\nL3 处置成功产物" as Admitted #FFF9F6 {
+      +admittedId: AdmittedId
+      +intent: CoordinationIntent
+      .. 例：delegate task-T planner-p→coder-c ..
+      +beforeSnapshot: CollaborationSnapshot
+      +beforeRef: SnapshotRef
+      .. 例：snap-S1；须与 snapshotRef 一致 ..
+      +template: OperationTemplate
+      +effectiveFootprint: Footprint
+      .. ADR C-prime 权威触达集；并发判据 ..
+      +recipe: ReplayRecipe
+      .. 无 afterRef 的做菜配方 ..
+      +authorization: EvidenceRef[]
+    }
+    class "AdmissionGateway" as AGate #FFFDFC {
+      +admit(input): AdmissionResult
+      .. template · requires · policy · lock · epoch ..
+    }
+    class "AdmissionResult" as AResult #FFFDFC {
+      ok: true + admitted: AdmittedIntent
+      ok: false + reason: AdmissionRejectReason
+      .. 失败不污染状态 ..
+    }
+  }
+
+  package "L3/L4 · replay/\nrecipe 产出 · witness 消费" #E5EDE5 {
+    class "ReplayRecipe\nL3 产出 · L4 输入" as Recipe #F9FCF8 {
+      +epochId: EpochId
+      +operationTypeId: OperationTypeId
+      +templateRef: OperationTemplateRef
+      +matchBindings: MatchBinding[]
+      .. Lean matchEmbedding 工程编码；见 dpo/matchWitness ..
+      +matchWitness: MatchWitness
+      +complementTag: number
+      .. Lean complementTag；见 dpo/complementSelector ..
+      +kind: EventKind
+      .. internal / external / administrative ..
+      +authorization: EvidenceRef[]
+      +external: EvidenceRef[]
+      +createdSessionRefs: SessionId[]
+      +visibility: ChangeVisibility
+    }
+  }
+
+  package "L4 执行语义 · execution/" #E5EDE5 {
+    class "OperationHandlerRegistry\nNode contract 落点" as HReg #FFFDFC {
+      +register(op, handler): void
+      +get(op): OperationHandler
+    }
+    class "ApplyContext" as Ctx #FFFDFC {
+      +template: OperationTemplate
+      +idGen: IdGenerator
+    }
+    class "applyChange\napplyAdmittedChange / applyRecipe" as Apply #FFFDFC {
+      .. before + recipe → after（无 afterRef 输入） ..
+    }
+    class "commitChange\nL5 持久轨迹" as Commit #FFF9F6 {
+      .. apply → withSnapshotRef → validate* → atomic put+append → release lock ..
+    }
+    class "ReplayVerifier\nL6 重放验证" as Verifier #E5ECEE {
+      +replay(options): ReplayVerification
+      .. 链式重算；比较 recomputedAfterRef ..
+    }
+  }
+
+  package "L2 外部边界 · observe/" #F5F1EB {
+    class "ingestObservation" as ObsIngest #FFFDFC {
+      +observe(input): ObserveResult
+      .. 只 append auditTail；不产生 Change ..
+    }
+  }
+
+  package "L1 门面 · engine/" #E8EEF5 {
+    class "RuntimeDependencies" as RDep #F8FBFB {
+      +store: CollaborationStore
+      +changelog: ChangeLog
+      +schema: OrchestrationSchema
+      +policy: PolicyEvaluator
+      +handlers: OperationHandlerRegistry
+      +locks: ResourceLockTable
+    }
+    class "CoordinationRuntime\n对外门面" as RT #F8FBFB {
+      +getHead(): CollaborationSnapshot
+      +observe(input): ObserveResult
+      +admit(intent): AdmissionResult
+      +commit(admitted): CommitResult
+      +proposeAndCommit(intent): CommitResult
+      +replay(options): ReplayVerification
+      +admitComposition(c): AdmissionResult
+    }
+  }
+
+  package "codec/ · memory/" #F7F3EC {
+    class "SnapshotCodec · ChangeCodec\nWire DTO" as Codec #FFFDFC {
+      .. Map→数组；matchBindings+targets 双写 ..
+    }
+    class "MemoryCollaborationStore\nMemoryChangeLog" as Mem #E8ECEE {
+      .. 测试/开发默认实现 ..
+    }
+  }
+
+  RT *-- RDep
+  RT --> ObsIngest
+  RT --> AGate
+  RT --> Commit
+  RT --> Verifier
+  AGate --> Admitted
+  Admitted *-- Recipe
+  Commit --> Apply
+  Apply --> HReg
+  Apply ..> Recipe
+  Verifier --> Apply
+  Verifier --> ILog
+  Commit --> IStore
+  Commit --> ILog
+  AGate --> OrchSchema
+  AGate --> IPolicy
+  AGate --> ILock
+  Mem ..|> IStore
+  Mem ..|> ILog
+}
+
+package "cantilune / core" #E5EDE5 {
+  class "CollaborationSnapshot" as Snap
+  class "CoordinationChange" as Chg
+  class "CoordinationIntent" as CIntent
+  class "validateSnapshotIntegrity\nvalidateBeforeRefChain" as Val
+}
+
+CIntent ..> AGate : admit 输入
+Admitted ..> Snap : beforeSnapshot
+Commit ..> Chg : 组装收据
+Commit ..> Val : commit 后校验
+Recipe ..> Chg : replayRecipeFromChange
+
+note bottom of RT
+  <b>六层抽象 · 门面映射</b>
+  L1 getHead · L2 observe · L3 admit/admitComposition
+  L4 apply（内部）· L5 commit/proposeAndCommit · L6 replay
+  L3≠runtime 全部；L4 handler+ReplayKernel 是执行核心
+end note
+
+footer <color:#6E6963>抽象总览 02H · 目录 02E · 外置 02G · Lean ReplayRecipe/ReplayKernel/Verified</color>
+@enduml

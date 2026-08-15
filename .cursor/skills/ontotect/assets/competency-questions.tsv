@@ -1,0 +1,2 @@
+cq_id	question	stakeholder	priority	positive_example	negative_example	required_terms	acceptance_type	acceptance_artifact	status	owner
+CQ-001			must				entailment|non-entailment|sparql|shacl|expert|policy		proposed	unassigned

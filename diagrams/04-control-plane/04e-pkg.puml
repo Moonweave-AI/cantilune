@@ -1,0 +1,99 @@
+@startuml 04e-pkg
+' 图 04E：@cantilune/control-plane 目录 — 六层治理 × 已落地模块。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam packageStyle rectangle
+skinparam ArrowColor #77716B
+skinparam linetype ortho
+
+title 图 04E · @cantilune/control-plane 目录与依赖（已落地）
+caption <color:#6E6963>●=src/packages/control-plane/ 已实现。抽象 04H。epoch 切换委托 runtime · 四视图证据委托 conformance。</color>
+
+top to bottom direction
+
+package "src/packages/control-plane/src/" as Root #F8F5F0 {
+
+  package "横切 · foundation/ errors/" #F0EDE8 {
+    class "controlPlaneViolation.ts ●" as FE
+  }
+
+  package "G1 Schema 目录 · schema/" #EDE8F0 {
+    class "schemaRevision.ts ●" as SRev
+    class "monotoneExtensionValidator.ts ●" as SExt
+    class "schemaCanonicalization.ts ●" as SCanon
+    class "schemaDigest.ts ●" as SDig
+  }
+
+  package "G2 绑定 · activation/ ports/" #E8EEF5 {
+    class "epochTransitionPlan.ts ●\ncreateNextBinding" as Act
+    class "controlPlaneStore.ts ●\ncasActiveBinding · snapshot" as PStore
+  }
+
+  package "G3 准入 · admission/" #F3E5DC {
+    class "schemaAdmissionRequest.ts ●" as AReq
+    class "schemaAdmissionState.ts ●\ncanTransitionAdmission" as AState
+    class "preparedSchemaAdmission.ts ●" as APrep
+  }
+
+  package "G4 工作流 · engine/" #E5EDE5 {
+    class "controlPlaneService.ts ●\nregister · submit · approve" as Svc
+    class "controlPlaneWorker.ts ●\nprepare · commit · policy" as Worker
+  }
+
+  package "G5 策略与 Handler · policy/ manifest/" #F5F1EB {
+    class "policyRevision.ts ● · policyActivation.ts ●" as Pol
+    class "handlerManifest.ts ●" as Man
+  }
+
+  package "G6 舰队 · rollout/" #E5ECEE {
+    class "reconciliationService.ts ●" as Roll
+    class "runtimeBinding.ts ●" as RB
+  }
+
+  package "横切 · events/ memory/ file/" #F7F3EC {
+    class "controlPlaneOutbox.ts ●" as Out
+    class "memoryControlPlaneStore.ts ●" as MMem
+    class "fileControlPlaneStore.ts ●" as FFile
+  }
+
+  class "index.ts ●" as Idx
+}
+
+package "@cantilune/core" as Core #E5EDE5 {
+  class "SchemaEpochBinding · SchemaAdmissionReceipt\n branded IDs" as CoreT
+}
+
+package "@cantilune/runtime" as RT #E5ECEE {
+  class "RuntimeEpochAdministration ●\nmemoryEpochAdministration" as Epoch
+  class "OrchestrationSchema · createDefaultSchema" as RSchema
+}
+
+package "@cantilune/conformance" as Conf #EDE8F0 {
+  class "ConformanceEvidenceVerifier ●\nFourViewEvidenceBundle" as FView
+}
+
+Svc --> PStore
+Worker --> Epoch
+Worker --> FView
+Worker --> Out
+Worker --> Act
+Svc --> SExt
+Svc --> AState
+Man --> RSchema
+FFile --> MMem
+Idx --> Svc
+
+note bottom of Root
+  <b>治理纪律</b>
+  ① schema 修订须单调扩展（non_monotone → reject）
+  ② submit 校验 bindingGeneration + runtimeHead 一致
+  ③ prepare 须 FourViewEvidence + handler manifest（可选）
+  ④ commit CAS bindingGeneration；分离 proposer/approver
+  <b>导出</b>：./memory · ./file · ./ports 子路径
+end note
+
+footer 抽象 04H · 类型 04A · 时序 04B · 状态 04C
+
+@enduml

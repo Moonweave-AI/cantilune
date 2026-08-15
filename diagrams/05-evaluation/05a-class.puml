@@ -1,0 +1,196 @@
+@startuml 05a-class
+' 图 05A：@cantilune/evaluation 核心类型 — 声明 · 执行 · 评分 · 证据。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+
+title 图 05A · @cantilune/evaluation：核心类型与关系
+caption <color:#6E6963>已落地 E0–E1。案例 evaluation.c1 replay determinism。抽象 05H · 目录 05E。</color>
+
+legend top right
+  |= 层 |= 模块 |
+  | <back:#EDE8F0>　</back> | E1 claims · E6 scoring/review |
+  | <back:#E8EEF5>　</back> | E2 benchmarks |
+  | <back:#F5F1EB>　</back> | E3 subjects |
+  | <back:#F3E5DC>　</back> | E4 plans/budget |
+  | <back:#E5EDE5>　</back> | E5 execution |
+  | <back:#F7F3EC>　</back> | E8 evidence/oracles |
+  | <back:#E5ECEE>　</back> | E7 analysis/reports |
+endlegend
+
+left to right direction
+
+frame "@cantilune/evaluation · 离线可证伪评估" #F8F5F0 {
+
+  package "E1 · claims/" #EDE8F0 {
+    class "EvaluationClaim" as Claim #FFFDFC {
+      +claimId: EvaluationClaimId
+      +claimCode: string
+      .. evaluation.c1–c5 ..
+      +statement: string
+      +nullHypothesis: string
+      +primaryMetricRefs: MetricId[]
+      +successRule · failureRule · inconclusiveRule
+      +status: ClaimStatus
+      .. proposed → protocolFrozen → measured → supported/notSupported → reviewed → published ..
+      +protocolDigest: ContentDigest
+    }
+    class "EvaluationProtocol" as Proto #FFFDFC {
+      +protocolId: EvaluationProtocolId
+      +claimRefs: EvaluationClaimId[]
+      +samplingMethod · sampleSize · seedPolicy
+      +randomizationPlan · blindingPlan
+      +stoppingPolicy · missingDataPolicy
+      +frozenAt: string | undefined
+    }
+  }
+
+  package "E2 · benchmarks/" #E8EEF5 {
+    class "BenchmarkSuite" as Suite #FFFDFC {
+      +suiteId: BenchmarkSuiteId
+      +status: SuiteStatus
+      .. draft → approved → frozen ..
+      +caseRefs: BenchmarkCaseId[]
+    }
+    class "BenchmarkCase" as Case #FFFDFC {
+      +caseId: BenchmarkCaseId
+      +inputArtifactRefs: string[]
+      +expectedOutcomeRef: string
+      +engineeringTimeout: number
+      +networkPolicy · filesystemPolicy
+    }
+  }
+
+  package "E3 · subjects/" #F5F1EB {
+    class "CandidateSubject" as Cand #FFFDFC {
+      +subjectId: EvaluationSubjectId
+      +subjectKind: candidate
+      +packageConformanceCertificateRef
+      +certificateDigest: ContentDigest
+      +certificateValidity: valid|expired|revoked
+      +artifactSubject: ArtifactSubject
+    }
+    class "BaselineSubject" as Base #FFFDFC {
+      +subjectKind: baseline
+      +productName · productVersion
+      +adapterDigest: ContentDigest
+      +knownLimitations: string[]
+    }
+  }
+
+  package "E4 · plans/ budget/" #F3E5DC {
+    class "EvaluationRunPlan" as Plan #FFFDFC {
+      +planId: EvaluationRunPlanId
+      +candidateSubjectRef: EvaluationSubjectId
+      +baselineSubjectRefs: EvaluationSubjectId[]
+      +pairedExecution: boolean
+      +frozenAt: string | undefined
+      +planDigest: ContentDigest
+    }
+    class "EvaluationBudgetPolicy" as Budget #FFFDFC {
+      +maxRuns · maxCases · maxConcurrency
+      +maxInputTokens · maxOutputTokens
+      +maxTotalCostCents
+      +dailyLimitCents · monthlyLimitCents
+      +hardKillEnabled: boolean
+    }
+  }
+
+  package "E5 · execution/" #E5EDE5 {
+    class "EvaluationEngine" as Engine #F8FBFB {
+      +admitRun(plan, subject, budget)
+      +executeAttempt(runId, caseRef, seed)
+      +completeRun(runId)
+    }
+    class "EvaluationRun" as Run #FFFDFC {
+      +runId: EvaluationRunId
+      +status: RunStatus
+      .. planned→admitted→queued→leased→running→collecting→scoring→published ..
+      +attemptIds: RunAttemptId[]
+      +planDigest · runDigest
+    }
+    class "RunAttempt" as Attempt #FFFDFC {
+      +attemptId: RunAttemptId
+      +status: AttemptStatus
+      +tokenUsage · toolUsage · networkUsage
+      +cost: CostRecord
+      +resultDigest: ContentDigest
+    }
+  }
+
+  package "E6 · scoring/ review/" #EDE8F0 {
+    class "MetricDefinition" as Metric #FFFDFC {
+      +metricId: MetricId
+      +endpointRole: primary|secondary|guardrail
+      +direction: higher|lower
+      +aggregation · threshold · effectSizeMethod
+    }
+    class "ClaimDecision" as Decision #FFFDFC {
+      +status: supported|notSupported|inconclusive|blocked
+      +guardrailViolations: GuardrailViolation[]
+      +reviewerAttestations: ReviewerAttestation[]
+      +evidenceRoot: ContentDigest
+      +limitations: string[]
+    }
+  }
+
+  package "E8 · oracles/ collection/" #F7F3EC {
+    class "TheoryOracleEvidence" as Oracle #FFFDFC {
+      +leanSymbol: LeanTheoremSymbol
+      +result: passed|failed|premiseMissing
+      +oracleCode · checkerDigest
+      +semanticLayer: effect|nativeTrace|terminal
+    }
+    class "CertifiedTraceEvidence" as Trace #FFFDFC {
+      +dagEvidenceRef · petriEvidenceRef
+      +piEvidenceRef · morphismEvidenceRef
+    }
+  }
+
+  package "E7 · analysis/ reports/" #E5ECEE {
+    class "EvaluationReport" as Report #FFFDFC {
+      +signatureRefs: string[]
+      +limitations: string[]
+      +publishedAt: string | undefined
+    }
+  }
+
+  Claim --> Proto
+  Proto --> Plan
+  Plan --> Engine
+  Budget --> Engine
+  Suite --> Plan
+  Cand --> Plan
+  Base --> Plan
+  Engine --> Run
+  Run *-- Attempt
+  Attempt ..> Metric
+  Metric --> Decision
+  Oracle ..> Decision
+  Trace ..> Decision
+  Decision --> Report
+  Report ..> Claim : feedback
+}
+
+package "@cantilune/conformance" #EDE8F0 {
+  class "ArtifactSubject" as ArtSub
+}
+
+Cand --> ArtSub
+
+note bottom of Engine
+  <b>不变量</b>
+  ① NEVER write runtime world
+  ② C9 cert 必须 valid + 未过期 + 未 revoke
+  ③ budget reserve-before / reconcile-after
+  ④ retry = new attempt (never overwrite)
+end note
+
+footer 目录 05E · 时序 05B · 状态 05C · 理论 05F
+
+@enduml
