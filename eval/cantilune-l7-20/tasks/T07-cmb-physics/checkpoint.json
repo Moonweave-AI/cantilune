@@ -1,0 +1,19 @@
+{
+  "taskId": "T07",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "data/cmb-synthetic.json",
+    "artifacts/baseline.md",
+    "artifacts/anomaly.md",
+    "artifacts/hypothesis.md",
+    "artifacts/lit-check.md",
+    "artifacts/critique.md"
+  ],
+  "requiredGlobs": []
+}

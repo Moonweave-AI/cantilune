@@ -7,14 +7,14 @@ import { collaborationSnapshot, snapshotRef, epochId, participant, actorId } fro
 import type { LlmChatResponse } from "../../src/types.js";
 import { mockLlmConfig } from "../support/mockLlmConfig.js";
 
-const createFileRuntimePersistenceMock = vi.fn();
+const resolveProductionDurableMock = vi.fn();
 const createFileContentStoreMock = vi.fn();
 
 vi.mock("@cantilune/runtime/memory", async (importOriginal) => {
   const actual = await importOriginal<typeof RuntimeMemory>();
   return {
     ...actual,
-    createFileRuntimePersistence: (...args: unknown[]) => createFileRuntimePersistenceMock(...args),
+    resolveProductionDurable: (...args: unknown[]) => resolveProductionDurableMock(...args),
   };
 });
 
@@ -36,6 +36,8 @@ function doneAdapter() {
   };
 }
 
+let disposeMock: ReturnType<typeof vi.fn>;
+
 function setupFileMocks(): { locks: MemoryResourceLockTable } {
   const bootParticipantId = actorId("file-test-agent");
   const t0 = collaborationSnapshot({
@@ -45,11 +47,12 @@ function setupFileMocks(): { locks: MemoryResourceLockTable } {
   });
   const memoryPersistence = createMemoryRuntimePersistence({ initial: t0 });
   const locks = new MemoryResourceLockTable();
-  createFileRuntimePersistenceMock.mockReturnValue({
-    ...memoryPersistence,
+  disposeMock = vi.fn();
+  resolveProductionDurableMock.mockReturnValue({
+    durable: memoryPersistence.durable,
     locks,
-    dir: "/mock/runtime",
-    t0Ref: t0.snapshotRef,
+    backend: "file",
+    dispose: disposeMock,
   });
   createFileContentStoreMock.mockReturnValue(createMemoryContentStore());
   return { locks };
@@ -57,7 +60,7 @@ function setupFileMocks(): { locks: MemoryResourceLockTable } {
 
 describe("bootFileOS", () => {
   beforeEach(() => {
-    createFileRuntimePersistenceMock.mockReset();
+    resolveProductionDurableMock.mockReset();
     createFileContentStoreMock.mockReset();
     setupFileMocks();
   });
@@ -72,8 +75,8 @@ describe("bootFileOS", () => {
         pendingToolObservations: [],
       },
     });
-    expect(createFileRuntimePersistenceMock).toHaveBeenCalledWith({
-      dir: join("/data/cantilune", "runtime"),
+    expect(resolveProductionDurableMock).toHaveBeenCalledWith({
+      storagePath: "/data/cantilune",
       initial: expect.objectContaining({
         snapshotRef: expect.stringMatching(/^genesis-[0-9a-f-]{36}$/u),
       }),
@@ -84,6 +87,7 @@ describe("bootFileOS", () => {
     expect(result.ok).toBe(true);
     expect(result.summary).toBe("File boot done.");
     await expect(os.shutdown()).resolves.toBeUndefined();
+    expect(disposeMock).toHaveBeenCalledOnce();
   });
 
   it("throws when storagePath is missing", () => {
@@ -99,7 +103,7 @@ describe("bootFileOS", () => {
       llm: mockLlmConfig,
       principalId: "file-test-agent",
     });
-    const persistence = createFileRuntimePersistenceMock.mock.results[0]?.value as {
+    const persistence = resolveProductionDurableMock.mock.results[0]?.value as {
       locks: MemoryResourceLockTable;
     };
     expect(persistence.locks).toBe(locks);

@@ -2,6 +2,7 @@ import { listProviders } from "@cantilune/adapter";
 import type { SlashCommand, CommandCategory, CommandServices } from "./registry.js";
 import type { AppStore } from "../store.js";
 import { missingApiKeyVar } from "../runtimeSync.js";
+import { updateConfig } from "../config.js";
 import { THEME_NAMES, isThemeName } from "../theme/palette.js";
 
 /** One-line rationale per theme, shown in the `/theme` picker. */
@@ -165,13 +166,83 @@ export function registerControlCommands(): SlashCommand[] {
       },
     },
     {
+      name: "/contract-model",
+      description: "Set dedicated goal-contract LLM: /contract-model <provider> <model>",
+      category: control,
+      args: [
+        { name: "provider", description: "Provider slug", required: true, type: "string" },
+        { name: "model", description: "Model id", required: true, type: "string" },
+      ],
+      handler: async (args, store, services) => {
+        const provider = typeof args["provider"] === "string" ? args["provider"] : "";
+        const model = typeof args["model"] === "string" ? args["model"] : "";
+        if (provider.length === 0 || model.length === 0) {
+          services?.notify?.("warn", "usage: /contract-model <provider> <model>");
+          return;
+        }
+        store.contractProvider = provider;
+        store.contractModel = model;
+        await updateConfig({ contractProvider: provider, contractModel: model });
+        services?.notify?.("info", `contract LLM=${model} @ ${provider} (separate from loop)`);
+      },
+    },
+    {
+      name: "/judge-model",
+      description: "Set dedicated LLM judge: /judge-model <provider> <model>",
+      category: control,
+      args: [
+        { name: "provider", description: "Provider slug", required: true, type: "string" },
+        { name: "model", description: "Model id", required: true, type: "string" },
+      ],
+      handler: async (args, store, services) => {
+        const provider = typeof args["provider"] === "string" ? args["provider"] : "";
+        const model = typeof args["model"] === "string" ? args["model"] : "";
+        if (provider.length === 0 || model.length === 0) {
+          services?.notify?.("warn", "usage: /judge-model <provider> <model>");
+          return;
+        }
+        store.judgeProvider = provider;
+        store.judgeModel = model;
+        await updateConfig({ judgeProvider: provider, judgeModel: model });
+        services?.notify?.("info", `judge LLM=${model} @ ${provider} (separate from loop)`);
+      },
+    },
+    {
+      name: "/judge-quorum",
+      description: "Set judge quorum models (same provider): /judge-quorum <model>[,model...]",
+      category: control,
+      args: [
+        {
+          name: "models",
+          description: "Comma-separated model ids",
+          required: true,
+          type: "string",
+        },
+      ],
+      handler: async (args, store, services) => {
+        const raw = typeof args["models"] === "string" ? args["models"] : "";
+        const models = raw
+          .split(",")
+          .map((m) => m.trim())
+          .filter((m) => m.length > 0);
+        if (models.length === 0) {
+          services?.notify?.("warn", "usage: /judge-quorum <model>[,model...]");
+          return;
+        }
+        store.judgeQuorumModels = models;
+        await updateConfig({ judgeQuorumModels: models });
+        services?.notify?.("info", `judge quorum models=${models.join(",")}`);
+      },
+    },
+    {
       name: "/tools",
       description: "List registered tools and their availability",
       category: control,
-      handler: (_args, store) => {
+      handler: async (_args, store, services) => {
         store.mode = "view";
         store.activeView = "tools";
-        store.viewArgs = {};
+        const injectedTools = (await services?.listInjectedTools?.()) ?? [];
+        store.viewArgs = { injectedTools };
       },
     },
     {
@@ -179,10 +250,11 @@ export function registerControlCommands(): SlashCommand[] {
       description: "Dry-run a tool by name",
       category: control,
       args: [{ name: "name", description: "Tool name", required: true, type: "string" }],
-      handler: (args, store) => {
+      handler: async (args, store, services) => {
         store.mode = "view";
         store.activeView = "tools-test";
-        store.viewArgs = { ...args };
+        const injectedTools = (await services?.listInjectedTools?.()) ?? [];
+        store.viewArgs = { ...args, injectedTools };
       },
     },
     {
@@ -200,10 +272,79 @@ export function registerControlCommands(): SlashCommand[] {
       description: "Connect to an MCP server",
       category: control,
       args: [{ name: "url", description: "MCP server URL", required: true, type: "string" }],
-      handler: (args, store) => {
+      handler: async (args, store, services) => {
+        const spec = typeof args.url === "string" ? args.url : "";
         store.mode = "view";
         store.activeView = "mcp-connect";
-        store.viewArgs = { ...args };
+        const { parseMcpServerSpec } = await import("../wiring/cliToolSet.js");
+        const { scheduleMcpAttach } = await import("../wiring/mcpAttach.js");
+        const parsed = parseMcpServerSpec(spec);
+        if (parsed.rejected !== undefined) {
+          store.viewArgs = { url: spec, persisted: false, error: parsed.rejected };
+          services?.notify?.("error", parsed.rejected);
+          return;
+        }
+        const next = [...new Set([...(store.mcpServers ?? []), spec])];
+        store.mcpServers = next;
+        await services?.persistConfig?.({ mcpServers: next });
+        const pending = await scheduleMcpAttach({
+          store,
+          ...(services !== undefined ? { services } : {}),
+          action: "connect",
+          servers: next,
+        });
+        store.viewArgs = {
+          url: spec,
+          persisted: true,
+          scheduled: true,
+          ...(pending.admissionId !== undefined ? { admissionId: pending.admissionId } : {}),
+        };
+        services?.notify?.(
+          "info",
+          `Scheduled MCP ${spec} for the next turn (epoch-bound attach; current turn keeps the old tool surface)`,
+        );
+      },
+    },
+    {
+      name: "/mcp disconnect",
+      description: "Disconnect an MCP server after the current turn",
+      category: control,
+      args: [{ name: "name", description: "MCP server name", required: true, type: "string" }],
+      handler: async (args, store, services) => {
+        const name = typeof args.name === "string" ? args.name : "";
+        store.mode = "view";
+        store.activeView = "mcp-disconnect";
+        const { parseMcpServerSpec } = await import("../wiring/cliToolSet.js");
+        const { scheduleMcpAttach } = await import("../wiring/mcpAttach.js");
+        const remaining = (store.mcpServers ?? []).filter((spec) => {
+          const parsed = parseMcpServerSpec(spec);
+          return parsed.config?.name !== name && spec !== name;
+        });
+        if (remaining.length === (store.mcpServers ?? []).length) {
+          store.viewArgs = { name, persisted: false, error: `MCP server not connected: ${name}` };
+          services?.notify?.("error", `MCP server not connected: ${name}`);
+          return;
+        }
+        store.mcpServers = remaining.length > 0 ? remaining : undefined;
+        await services?.persistConfig?.({
+          mcpServers: remaining.length > 0 ? remaining : undefined,
+        });
+        const pending = await scheduleMcpAttach({
+          store,
+          ...(services !== undefined ? { services } : {}),
+          action: "disconnect",
+          servers: remaining,
+        });
+        store.viewArgs = {
+          name,
+          persisted: true,
+          scheduled: true,
+          ...(pending.admissionId !== undefined ? { admissionId: pending.admissionId } : {}),
+        };
+        services?.notify?.(
+          "info",
+          `Scheduled MCP disconnect ${name} for the next turn (current turn keeps the old tool surface)`,
+        );
       },
     },
     {

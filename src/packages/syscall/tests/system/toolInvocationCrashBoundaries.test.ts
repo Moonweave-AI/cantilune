@@ -26,18 +26,15 @@ const here = fileURLToPath(import.meta.url);
 const childScript = join(here, "..", "..", "support", "toolInvocationCrashChild.mjs");
 
 function runChild(storeDir: string, crashAt: string, tier: string, callId: string, args: object) {
-  const result = spawnSync(process.execPath, [
-    childScript,
-    storeDir,
-    crashAt,
-    tier,
-    callId,
-    JSON.stringify(args),
-  ], {
-    encoding: "utf8",
-    env: { ...process.env, NODE_OPTIONS: "" },
-    timeout: 30_000,
-  });
+  const result = spawnSync(
+    process.execPath,
+    [childScript, storeDir, crashAt, tier, callId, JSON.stringify(args)],
+    {
+      encoding: "utf8",
+      env: { ...process.env, NODE_OPTIONS: "" },
+      timeout: 30_000,
+    },
+  );
   return result;
 }
 

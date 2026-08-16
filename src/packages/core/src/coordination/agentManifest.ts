@@ -7,7 +7,7 @@
 import type { ActorId } from "../primitives/ids.js";
 import type { ContentRef } from "../primitives/refs.js";
 import type { ActorKind } from "../nodes/participant.js";
-import type { StartConditionExpression } from "./startCondition.js";
+import { normalizeStartCondition, type StartConditionExpression } from "./startCondition.js";
 
 /** Hint for the OS about which coordination entities this agent will touch. */
 export interface FootprintHint {
@@ -27,10 +27,29 @@ export interface AgentManifest {
   readonly footprintHint?: FootprintHint;
   readonly maxTurns?: number;
   readonly maxTimeMs?: number;
+  /**
+   * Dispatch priority when more agents are eligible than the swarm's
+   * concurrency ceiling allows. Higher runs first; equal priorities keep
+   * admission order. Absent means {@link DEFAULT_AGENT_PRIORITY}, so a manifest
+   * written before priorities existed schedules exactly as it did before.
+   *
+   * Priority orders a queue; it never bypasses a start condition, a footprint
+   * conflict, or any admission rule.
+   */
+  readonly priority?: number;
   /** Required: Agent must emit heartbeat at this interval (ms) to prove liveness. */
   readonly heartbeatIntervalMs: number;
   /** ActorId of the agent that designed/registered this agent. */
   readonly designedBy: ActorId;
+}
+
+/** Priority assumed for a manifest that declares none. */
+export const DEFAULT_AGENT_PRIORITY = 0;
+
+/** Read a manifest's dispatch priority, defaulting when it declares none. */
+export function manifestPriority(manifest: AgentManifest): number {
+  const declared = manifest.priority;
+  return declared === undefined || !Number.isFinite(declared) ? DEFAULT_AGENT_PRIORITY : declared;
 }
 
 /** Branded reference to a manifest stored in content-addressed storage. */
@@ -43,5 +62,9 @@ export function serializeManifest(manifest: AgentManifest): string {
 
 /** Deserialize a JSON string back to AgentManifest. */
 export function deserializeManifest(json: string): AgentManifest {
-  return JSON.parse(json) as AgentManifest;
+  const parsed = JSON.parse(json) as AgentManifest;
+  return {
+    ...parsed,
+    startCondition: normalizeStartCondition(parsed.startCondition),
+  };
 }

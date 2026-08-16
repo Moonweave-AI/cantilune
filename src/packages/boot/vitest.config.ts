@@ -13,6 +13,12 @@ export default defineConfig({
       "tests/contract/**/*.test.ts",
       "tests/system/**/*.test.ts",
     ],
+    // L7 suites in this package spawn real child processes; two sequential
+    // spawns already exceed Vitest's 5s default, and coverage instrumentation
+    // plus workspace-parallel load pushes them further. Matching the timeout to
+    // what the suites actually do is what keeps them from being flaky.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",
@@ -56,6 +62,42 @@ export default defineConfig({
       {
         find: "@cantilune/syscall",
         replacement: path.resolve(packageRoot, "../syscall/src/index.ts"),
+      },
+      {
+        find: "@cantilune/comms/memory",
+        replacement: path.resolve(packageRoot, "../comms/src/memory/index.ts"),
+      },
+      {
+        find: "@cantilune/comms/ports",
+        replacement: path.resolve(packageRoot, "../comms/src/ports/index.ts"),
+      },
+      {
+        find: "@cantilune/comms",
+        replacement: path.resolve(packageRoot, "../comms/src/index.ts"),
+      },
+      {
+        find: "@cantilune/control-plane/memory",
+        replacement: path.resolve(packageRoot, "../control-plane/src/memory/index.ts"),
+      },
+      {
+        find: "@cantilune/control-plane/file",
+        replacement: path.resolve(packageRoot, "../control-plane/src/file/index.ts"),
+      },
+      {
+        find: "@cantilune/control-plane",
+        replacement: path.resolve(packageRoot, "../control-plane/src/index.ts"),
+      },
+      {
+        find: "@cantilune/conformance/admission",
+        replacement: path.resolve(packageRoot, "../conformance/src/admission/index.ts"),
+      },
+      {
+        find: "@cantilune/conformance/testing",
+        replacement: path.resolve(packageRoot, "../conformance/src/testing/index.ts"),
+      },
+      {
+        find: "@cantilune/conformance",
+        replacement: path.resolve(packageRoot, "../conformance/src/index.ts"),
       },
     ],
   },

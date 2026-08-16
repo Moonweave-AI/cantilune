@@ -1,5 +1,6 @@
-import type { SlashCommand, CommandCategory } from "./registry.js";
+import type { SlashCommand, CommandCategory, CommandServices } from "./registry.js";
 import type { AppStore, ViewType } from "../store.js";
+import { diffSnapshotsByRef } from "../wiring/worldDiff.js";
 
 function openView(view: ViewType, extra: Record<string, unknown> = {}) {
   return (args: Record<string, unknown>, store: AppStore): void => {
@@ -51,13 +52,41 @@ export function registerWorldCommands(): SlashCommand[] {
     },
     {
       name: "/world diff",
-      description: "Diff two snapshot refs",
+      description: "Diff two snapshot refs (loads each from durable store)",
       category: view,
       args: [
         { name: "refA", description: "Before snapshot ref", required: false, type: "string" },
         { name: "refB", description: "After snapshot ref", required: false, type: "string" },
       ],
-      handler: openView("world-diff"),
+      handler(args, store, services: CommandServices | undefined) {
+        const getSnapshot = services?.getSnapshot;
+        if (getSnapshot === undefined) {
+          openView("world-diff", {
+            worldDiffError: "no runtime connected — cannot load snapshots by ref",
+          })(args, store);
+          return;
+        }
+        const result = diffSnapshotsByRef(
+          {
+            getSnapshot,
+            headRef: () => services?.headSnapshotRef?.(),
+          },
+          {
+            ...(typeof args.refA === "string" ? { refA: args.refA } : {}),
+            ...(typeof args.refB === "string" ? { refB: args.refB } : {}),
+          },
+        );
+        if (!result.ok) {
+          openView("world-diff", { worldDiffError: result.message })(args, store);
+          return;
+        }
+        openView("world-diff", {
+          refA: result.refA,
+          refB: result.refB,
+          worldDiffLeft: result.left,
+          worldDiffRight: result.right,
+        })(args, store);
+      },
     },
     {
       name: "/world retired",

@@ -24,9 +24,13 @@ import type {
   ToolExecutor,
   ToolInvocationKey,
   ToolReconcileResult,
+  ToolApprover,
+  ToolApprovalRequest,
+  ToolApprovalDecision,
   OperationSchemaProvider,
   AvailableTemplate,
 } from "./syscall.js";
+import { DEFAULT_APPROVAL_TIERS } from "./syscall.js";
 
 const TOOL_OBSERVATION_RECEIPT_KIND = "cantilune.external-tool-observation-recovery";
 const TOOL_OBSERVATION_RECEIPT_VERSION = 1;
@@ -472,11 +476,29 @@ export function strictIntent(value: unknown): ToolInvocationIntent | undefined {
   const record = value as Record<string, unknown>;
   const hasOutput = "outputRef" in record;
   const expected = hasOutput
-    ? ["argumentsDigest", "kind", "originalToolCallId", "outputRef", "principal", "status", "toolName", "version"]
-    : ["argumentsDigest", "kind", "originalToolCallId", "principal", "status", "toolName", "version"];
+    ? [
+        "argumentsDigest",
+        "kind",
+        "originalToolCallId",
+        "outputRef",
+        "principal",
+        "status",
+        "toolName",
+        "version",
+      ]
+    : [
+        "argumentsDigest",
+        "kind",
+        "originalToolCallId",
+        "principal",
+        "status",
+        "toolName",
+        "version",
+      ];
   if (!exactKeys(record, expected)) return undefined;
   const principal = record["principal"];
-  if (principal === null || typeof principal !== "object" || Array.isArray(principal)) return undefined;
+  if (principal === null || typeof principal !== "object" || Array.isArray(principal))
+    return undefined;
   const principalRecord = principal as Record<string, unknown>;
   if (!exactKeys(principalRecord, ["actorId", "kind"])) return undefined;
   if (
@@ -650,46 +672,24 @@ export async function useTool(
   principal: SyscallPrincipal,
   toolExecutor: ToolExecutor | undefined,
   call: ToolCall,
+  toolApprover?: ToolApprover,
 ): Promise<ToolResult> {
   if (toolExecutor === undefined) {
-    return {
-      ok: false,
-      output: "No tool executor configured.",
-      contentRef: undefined,
-      observeWarning: undefined,
-      observationRecovery: undefined,
-    };
+    return preflightFailure("No tool executor configured.");
   }
-
   if (!call.toolName) {
-    return {
-      ok: false,
-      output: "Tool name is required.",
-      contentRef: undefined,
-      observeWarning: undefined,
-      observationRecovery: undefined,
-    };
+    return preflightFailure("Tool name is required.");
   }
-
   const canonicalArguments = canonicalToolArguments(call.args);
   if (call.callId === "" || canonicalArguments === undefined) {
-    return {
-      ok: false,
-      output: "A non-empty callId and canonical JSON arguments are required before tool execution.",
-      contentRef: undefined,
-      observeWarning: undefined,
-      observationRecovery: undefined,
-    };
+    return preflightFailure(
+      "A non-empty callId and canonical JSON arguments are required before tool execution.",
+    );
   }
 
   // ADR-0016: the idempotency key. The same tuple already authenticates the
   // observation-recovery receipt, so one key validates journal and receipt.
-  const key = invocationKey(
-    principal,
-    call.toolName,
-    canonicalArguments.digest,
-    call.callId,
-  );
+  const key = invocationKey(principal, call.toolName, canonicalArguments.digest, call.callId);
   const tier: NonNullable<ToolExecutor["tier"]> =
     toolExecutor.tierFor?.(call.toolName) ?? toolExecutor.tier ?? "non-idempotent";
 
@@ -700,64 +700,137 @@ export async function useTool(
   // the output is durable) carries the outputRef in its bytes and is therefore
   // NOT findable from the key under a content-addressed store; it is retained
   // only for observability and does not drive recovery. See ADR-0016 §4.
-  //
-  // Boundary 1 — dispatched but not completed: a prior run wrote `dispatched`
-  // and crashed before producing durable output. Re-dispatching may double a
-  // side effect, so branch on the tool's tier (ADR-0016 §4).
-  const dispatchedRef = intentRef(key, "dispatched");
-  const dispatched = await readIntent(contentStore, dispatchedRef);
+  const dispatched = await readIntent(contentStore, intentRef(key, "dispatched"));
   if (dispatched !== undefined) {
-    if (tier === "read") {
-      // No side effect: safe to re-dispatch.
-      return dispatchAndCommit(
-        runtime,
-        contentStore,
-        principal,
-        toolExecutor,
-        call,
-        canonicalArguments,
-        key,
-      );
-    }
-    if (tier === "idempotent") {
-      if (toolExecutor.reconcile === undefined) {
-        return ambiguousFailure(key, "Idempotent tool declared no reconcile method.");
-      }
-      let reconciled: ToolReconcileResult;
-      try {
-        reconciled = await toolExecutor.reconcile(key);
-      } catch {
-        return ambiguousFailure(key, "Tool reconcile raised an error.");
-      }
-      if (reconciled.status === "known") {
-        // Reuse the prior output without re-executing the side effect.
-        return commitReconciledOutput(
-          runtime,
-          contentStore,
-          principal,
-          call,
-          canonicalArguments,
-          key,
-          reconciled.output,
-        );
-      }
-      // status === "unknown": the side effect did not land; safe to re-dispatch.
-      return dispatchAndCommit(
-        runtime,
-        contentStore,
-        principal,
-        toolExecutor,
-        call,
-        canonicalArguments,
-        key,
-      );
-    }
-    // tier === "non-idempotent": MUST NOT re-dispatch (ADR-0016).
-    return ambiguousFailure(key, "Non-idempotent tool was dispatched but produced no durable output.");
+    return recoverDispatchedInvocation(
+      runtime,
+      contentStore,
+      principal,
+      toolExecutor,
+      call,
+      canonicalArguments,
+      key,
+      tier,
+    );
   }
 
-  // Fresh invocation: write the `dispatched` journal entry first, then execute.
+  // Fresh invocation. Authorization is asked here — after the recovery check,
+  // so a resumed invocation is never re-asked, and before the journal entry, so
+  // a denial leaves no `dispatched` record for a later run to recover from.
+  const decision = await requestToolApproval(toolApprover, {
+    toolName: call.toolName,
+    args: canonicalArguments.args,
+    tier,
+    key,
+  });
+  if (!decision.allowed) {
+    return preflightFailure(
+      `Tool ${call.toolName} was not authorized: ${decision.reason} ` +
+        `No side effect was dispatched.`,
+    );
+  }
+
   await writeIntent(contentStore, key, "dispatched");
+  return dispatchAndCommit(
+    runtime,
+    contentStore,
+    principal,
+    toolExecutor,
+    call,
+    canonicalArguments,
+    key,
+  );
+}
+
+/**
+ * Ask the configured approver, if this tier requires it.
+ *
+ * An approver that throws is treated as a denial rather than propagating: an
+ * unavailable human gate must not dispatch a side effect by default, and it
+ * must not crash the agent loop either.
+ */
+async function requestToolApproval(
+  approver: ToolApprover | undefined,
+  request: ToolApprovalRequest,
+): Promise<ToolApprovalDecision> {
+  if (approver === undefined) return { allowed: true };
+  const tiers = approver.requiresApprovalFor ?? DEFAULT_APPROVAL_TIERS;
+  if (!tiers.includes(request.tier)) return { allowed: true };
+  try {
+    return await approver.requestApproval(request);
+  } catch {
+    return { allowed: false, reason: "the approval gate was unavailable" };
+  }
+}
+
+/** A rejection raised before any journal entry or side effect exists. */
+function preflightFailure(output: string): ToolResult {
+  return {
+    ok: false,
+    output,
+    contentRef: undefined,
+    observeWarning: undefined,
+    observationRecovery: undefined,
+  };
+}
+
+/**
+ * Boundary 1 (ADR-0016 §4) — a prior run wrote `dispatched` and crashed before
+ * producing durable output. Re-dispatching may double a side effect, so the
+ * decision is driven entirely by the tool's declared tier.
+ */
+async function recoverDispatchedInvocation(
+  runtime: SyscallRuntime,
+  contentStore: SyscallContentStore,
+  principal: SyscallPrincipal,
+  toolExecutor: ToolExecutor,
+  call: ToolCall,
+  canonicalArguments: { readonly args: Record<string, unknown>; readonly digest: string },
+  key: ToolInvocationKey,
+  tier: NonNullable<ToolExecutor["tier"]>,
+): Promise<ToolResult> {
+  // No side effect to double: safe to re-dispatch.
+  if (tier === "read") {
+    return dispatchAndCommit(
+      runtime,
+      contentStore,
+      principal,
+      toolExecutor,
+      call,
+      canonicalArguments,
+      key,
+    );
+  }
+  // MUST NOT re-dispatch: the side effect may already have landed.
+  if (tier !== "idempotent") {
+    return ambiguousFailure(
+      key,
+      "Non-idempotent tool was dispatched but produced no durable output.",
+    );
+  }
+  if (toolExecutor.reconcile === undefined) {
+    return ambiguousFailure(key, "Idempotent tool declared no reconcile method.");
+  }
+
+  let reconciled: ToolReconcileResult;
+  try {
+    reconciled = await toolExecutor.reconcile(key);
+  } catch {
+    return ambiguousFailure(key, "Tool reconcile raised an error.");
+  }
+  // "known": reuse the prior output without re-executing the side effect.
+  if (reconciled.status === "known") {
+    return commitReconciledOutput(
+      runtime,
+      contentStore,
+      principal,
+      call,
+      canonicalArguments,
+      key,
+      reconciled.output,
+    );
+  }
+  // "unknown": the side effect did not land; an idempotent re-dispatch is safe.
   return dispatchAndCommit(
     runtime,
     contentStore,
@@ -773,7 +846,8 @@ export async function useTool(
 function ambiguousFailure(key: ToolInvocationKey, reason: string): ToolResult {
   return {
     ok: false,
-    output: `Ambiguous external-tool invocation for ${key.toolName} ` +
+    output:
+      `Ambiguous external-tool invocation for ${key.toolName} ` +
       `(callId ${key.originalToolCallId}): ${reason} ` +
       `An operator must verify whether the side effect landed before retrying.`,
     contentRef: undefined,
@@ -796,7 +870,11 @@ async function dispatchAndCommit(
   let execResult: { readonly ok: boolean; readonly output: string };
   try {
     execResult = requireToolExecutorResult(
-      await toolExecutor.execute(call.toolName, canonicalArguments.args),
+      await toolExecutor.execute(
+        call.toolName,
+        canonicalArguments.args,
+        call.signal !== undefined ? { signal: call.signal } : undefined,
+      ),
     );
   } catch {
     return {
@@ -818,7 +896,15 @@ async function dispatchAndCommit(
     };
   }
 
-  return commitReconciledOutput(runtime, contentStore, principal, call, canonicalArguments, key, execResult.output);
+  return commitReconciledOutput(
+    runtime,
+    contentStore,
+    principal,
+    call,
+    canonicalArguments,
+    key,
+    execResult.output,
+  );
 }
 
 /** Store an output (from execute or reconcile), journal `completed`, observe. */
@@ -872,7 +958,13 @@ async function commitReconciledOutput(
     );
   }
 
-  return { ok: true, output, contentRef: ref, observeWarning: undefined, observationRecovery: undefined };
+  return {
+    ok: true,
+    output,
+    contentRef: ref,
+    observeWarning: undefined,
+    observationRecovery: undefined,
+  };
 }
 
 /** Retry only the audit observation of one already-stored external-tool output. */

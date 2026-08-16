@@ -136,25 +136,6 @@ async function storeManifest(
   return store.put(JSON.stringify(manifest));
 }
 
-function signalDoneChange(agentId: ActorId): CoordinationChange {
-  return {
-    changeId: changeId("ch-done-" + (agentId as string)),
-    recordedAt: new Date().toISOString() as never,
-    epochId: epochId("e1"),
-    operationTypeId: operationTypeId("signal_done"),
-    matchBindings: [{ role: "from", actorId: agentId }],
-    targets: [],
-    initiator: { actorId: agentId, kind: "agent" },
-    involved: [{ actorId: agentId, kind: "agent" }],
-    authorization: [],
-    external: [],
-    createdSessionRefs: [],
-    beforeRef: snapshotRef("s0"),
-    afterRef: snapshotRef("s1"),
-    visibility: "external",
-  };
-}
-
 function heartbeatChange(agentId: ActorId): CoordinationChange {
   return {
     changeId: changeId("hb-" + (agentId as string)),
@@ -218,7 +199,11 @@ function registerChange(agentId: ActorId, initiator: ActorId): CoordinationChang
  * (bound on the participant in the snapshot, NOT on the change) and, if the
  * start condition is met, starts the agent.
  */
-function activateChange(agentId: ActorId, initiator: ActorId, afterRef: string = "s2"): CoordinationChange {
+function activateChange(
+  agentId: ActorId,
+  initiator: ActorId,
+  afterRef: string = "s2",
+): CoordinationChange {
   return {
     changeId: changeId("act-" + (agentId as string)),
     recordedAt: new Date().toISOString() as never,
@@ -579,7 +564,7 @@ describe("ClusterSupervisor integration", () => {
 
     it("register_participant is a no-op on the supervisor side", async () => {
       const manifest = makeManifest("agent-b");
-      const ref = await storeManifest(contentStore, manifest);
+      await storeManifest(contentStore, manifest);
       const initiator = actorId("initiator");
       const agentB = actorId("agent-b");
 

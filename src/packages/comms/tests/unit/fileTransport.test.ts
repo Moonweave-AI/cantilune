@@ -67,6 +67,28 @@ describe("FileTransport — dispatch/receive round-trip", () => {
     expect(received.error.retryable).toBe(true);
   });
 
+  it("sendRawFrame writes opaque bytes the peer can receive", async () => {
+    const [a, b] = connectFileTransportPair(dir);
+    const sent = await a.sendRawFrame(new TextEncoder().encode("raw-file"));
+    expect(sent.ok).toBe(true);
+    const received = await b.receive();
+    expect(received.ok).toBe(true);
+    if (!received.ok) {
+      return;
+    }
+    expect(new TextDecoder().decode(received.value)).toBe("raw-file");
+  });
+
+  it("sendRawFrame rejects an empty payload and a frozen gate", async () => {
+    const gate = makeEStop(true);
+    const [a] = connectFileTransportPair(dir, { eStopGate: gate });
+    const frozen = await a.sendRawFrame(new Uint8Array([1]));
+    expect(frozen.ok).toBe(false);
+    gate.setFrozen(false);
+    const empty = await a.sendRawFrame(new Uint8Array());
+    expect(empty.ok).toBe(false);
+  });
+
   it("writes the frame into the shared outbox directory durably", async () => {
     const [a] = connectFileTransportPair(dir);
     const verified = sealVerifiedEnvelope({

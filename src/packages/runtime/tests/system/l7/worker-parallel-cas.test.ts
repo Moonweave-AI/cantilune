@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { execSync, spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,9 +41,18 @@ function spawnCommit(dir: string, taskIndex: number): Promise<void> {
 }
 
 describe("L7 worker parallel CAS", () => {
+  // The children import from dist/, which the `pretest`/`pretest:coverage`
+  // hooks guarantee. Building from inside the suite spawned a nested
+  // `pnpm build` that raced the workspace build already running under
+  // `pnpm test`, so this evidence timed out for reasons unrelated to CAS.
   beforeAll(() => {
-    execSync("pnpm build", { cwd: join(packageRoot, "..", "core"), stdio: "ignore" });
-    execSync("pnpm build", { cwd: packageRoot, stdio: "ignore" });
+    const distEntry = join(packageRoot, "dist", "index.js");
+    if (!existsSync(distEntry)) {
+      throw new Error(
+        `L7 parallel CAS evidence requires a built package: ${distEntry} is missing. ` +
+          `Run \`pnpm --filter @cantilune/runtime... build\` first.`,
+      );
+    }
   });
 
   it("parallel child processes commit disjoint tasks through file durable", async () => {

@@ -31,11 +31,7 @@ export class VerifierRegistry {
    * Evaluate one criterion. An unknown verifier fails closed: q=0, ρ=1, passed
    * against a hard gate, so a misconfigured contract cannot silently pass.
    */
-  evaluate(
-    id: string,
-    criterion: AcceptanceCriterion,
-    state: AgentState,
-  ): CriterionEvaluation {
+  evaluate(id: string, criterion: AcceptanceCriterion, state: AgentState): CriterionEvaluation {
     const verifier = this.verifiers.get(id);
     if (verifier === undefined) {
       return {
@@ -59,8 +55,16 @@ function normalize(text: string): string {
 }
 
 function jaccardSimilarity(a: string, b: string): number {
-  const setA = new Set(normalize(a).split(/\s+/).filter((w) => w.length > 0));
-  const setB = new Set(normalize(b).split(/\s+/).filter((w) => w.length > 0));
+  const setA = new Set(
+    normalize(a)
+      .split(/\s+/)
+      .filter((w) => w.length > 0),
+  );
+  const setB = new Set(
+    normalize(b)
+      .split(/\s+/)
+      .filter((w) => w.length > 0),
+  );
   if (setA.size === 0 || setB.size === 0) return 0;
   let intersection = 0;
   for (const w of setA) if (setB.has(w)) intersection++;
@@ -86,8 +90,7 @@ export const NO_INFINITE_LOOP_VERIFIER: Verifier = {
       trace.plainTextTurns >= 3 && trace.toolCallTurns === 0 && trace.committedOperations === 0;
     // Detect near-duplicate consecutive replies — the exact observed symptom.
     const duplicateReply =
-      recent.length >= 2 &&
-      jaccardSimilarity(recent.at(-1) ?? "", recent.at(-2) ?? "") >= 0.6;
+      recent.length >= 2 && jaccardSimilarity(recent.at(-1) ?? "", recent.at(-2) ?? "") >= 0.6;
 
     if (looksStuck || duplicateReply) {
       return {

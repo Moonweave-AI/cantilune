@@ -2,6 +2,15 @@ import React from "react";
 import { Box, Text } from "ink";
 import { useTheme } from "../theme/themeContext.js";
 import { fg } from "../theme/theme.js";
+import { alignLineDiff, type AlignedDiffKind } from "../render/lineDiff.js";
+
+function leftSigil(kind: AlignedDiffKind): string {
+  return kind === "delete" || kind === "replace" ? "− " : "  ";
+}
+
+function rightSigil(kind: AlignedDiffKind): string {
+  return kind === "insert" || kind === "replace" ? "+ " : "  ";
+}
 
 export interface DiffViewProps {
   readonly left: string;
@@ -10,14 +19,8 @@ export interface DiffViewProps {
   readonly rightLabel: string;
 }
 
-function diffLines(left: string, right: string): { leftLines: string[]; rightLines: string[] } {
-  const leftLines = left.split("\n");
-  const rightLines = right.split("\n");
-  return { leftLines, rightLines };
-}
-
 /**
- * Side-by-side comparison.
+ * Side-by-side comparison aligned by LCS so moved lines stay paired.
  *
  * Removals and additions carry both a colour and a `−`/`+` sigil, so the diff
  * stays readable under the monochrome theme and for colour-blind users.
@@ -29,8 +32,7 @@ export function DiffView({
   rightLabel,
 }: DiffViewProps): React.ReactElement {
   const { colors } = useTheme();
-  const { leftLines, rightLines } = diffLines(left, right);
-  const maxRows = Math.max(leftLines.length, rightLines.length);
+  const rows = alignLineDiff(left, right);
 
   return (
     <Box flexDirection="column">
@@ -46,22 +48,20 @@ export function DiffView({
           </Text>
         </Box>
       </Box>
-      {Array.from({ length: maxRows }, (_, i) => {
-        const l = leftLines[i] ?? "";
-        const r = rightLines[i] ?? "";
-        const same = l === r;
+      {rows.map((row, i) => {
+        const same = row.kind === "equal";
         return (
           <Box key={i}>
             <Box width="50%" marginRight={1}>
               <Text {...(same ? {} : fg(colors.danger))}>
-                {same ? "  " : "− "}
-                {l || " "}
+                {leftSigil(row.kind)}
+                {row.left || " "}
               </Text>
             </Box>
             <Box width="50%">
               <Text {...(same ? {} : fg(colors.success))}>
-                {same ? "  " : "+ "}
-                {r || " "}
+                {rightSigil(row.kind)}
+                {row.right || " "}
               </Text>
             </Box>
           </Box>

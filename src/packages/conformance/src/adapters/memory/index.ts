@@ -25,8 +25,3 @@ export { createMemoryRevocationStore } from "./memoryRevocationStore.js";
 export { createMemoryVerificationCache } from "./memoryVerificationCache.js";
 export { createNoopAuditSink } from "./memoryAuditSink.js";
 export { createMemoryCryptoVerifier } from "./memoryCryptoVerifier.js";
-export {
-  defaultTestReviewerTrustStore,
-  TEST_REVIEWER_KEY_ID,
-  TEST_REVIEWER_PUBLIC_KEY,
-} from "./testReviewerTrustStore.js";

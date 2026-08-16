@@ -16,6 +16,8 @@ coverage/
 
 # CLI session/config state written at runtime by `cantilune`.
 .cantilune/
+# L7-20 suite run worlds (isolated per task; never source-controlled).
+eval/cantilune-l7-20/workspaces/
 # CLI test/cluster run artifacts (runtime content/reports — never source-controlled).
 .cantilune-cluster-run/
 .cantilune-test-run/

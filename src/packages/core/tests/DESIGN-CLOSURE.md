@@ -85,7 +85,7 @@
 | 类型 + 纯函数 + 校验             | `@cantilune/core` (`private: true`) | **当前**    |
 | applyChange / replay / admission | `@cantilune/runtime`                | **RUNTIME** |
 
-**下一板块：** `@cantilune/runtime` 最小纵向闭环（introduce_artifact + delegate），替换 `simulateCommit`。
+**Runtime 纵向闭环已落地。** core contract story 保留为非 L6 recipe 单测；`simulateCommit` 仅为 tests-only harness。
 
 ---
 
@@ -95,6 +95,6 @@
 | ----- | -------------------------------------------------------------------- |
 | L2    | typecheck 脚本含 `tsc`；Vitest types 测补充 compile-time             |
 | L3–L5 | **成立**（基础规则 + 负向 + story fixture）                          |
-| L6–L7 | **成立** — simulateCommit / 真 runtime；stress 100 agent / 200 trace |
+| L6–L7 | **成立** — runtime admit/commit 为 L6 证据；core stress 100 agent / 200 trace |
 
 完整对照见 `00-naming-contract.md` 附录 A 与 ADR-0002。

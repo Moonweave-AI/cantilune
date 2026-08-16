@@ -13,7 +13,18 @@ export default defineConfig({
       "tests/contract/**/*.test.ts",
       "tests/system/**/*.test.ts",
     ],
-    exclude: ["tests/support/**"],
+    exclude: [
+      "tests/support/**",
+      "tests/system/l7/postgres-live-*.test.ts",
+      "tests/system/l7/postgres-ha-live.test.ts",
+      "tests/system/l7/raft-live-*.test.ts",
+    ],
+    // L7 suites in this package spawn real child processes; two sequential
+    // spawns already exceed Vitest's 5s default, and coverage instrumentation
+    // plus workspace-parallel load pushes them further. Matching the timeout to
+    // what the suites actually do is what keeps them from being flaky.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",

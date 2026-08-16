@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -91,9 +91,16 @@ async function waitForFile(path: string): Promise<void> {
 }
 
 describe("L7 OS process comms session CAS", () => {
+  // dist/ is guaranteed by the `pretest`/`pretest:coverage` hooks. Building
+  // from inside the suite spawned a nested `pnpm build` that raced the
+  // workspace build already running under `pnpm test`.
   beforeAll(() => {
-    execSync("pnpm build", { cwd: join(packageRoot, "..", "core"), stdio: "ignore" });
-    execSync("pnpm build", { cwd: packageRoot, stdio: "ignore" });
+    if (!existsSync(fileLockModule)) {
+      throw new Error(
+        `L7 comms session CAS evidence requires a built package: ${fileLockModule} is missing. ` +
+          `Run \`pnpm --filter @cantilune/comms... build\` first.`,
+      );
+    }
   });
 
   it("allows exactly one child process to win parallel session generation CAS", async () => {

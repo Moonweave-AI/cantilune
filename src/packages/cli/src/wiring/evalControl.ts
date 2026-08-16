@@ -1,30 +1,19 @@
 /**
  * Evaluation harness wiring for the CLI (ADR-0011 / RFC-0004).
  *
- * Builds a real EvaluationEngine from in-memory ports (@cantilune/evaluation/memory)
- * plus three CLI-local adapters that the package does not ship:
- *  - CandidateRunner / BaselineRunner: bridge the CLI's LLM adapter to a
- *    single-turn chat, store the output + trace in the eval content store,
- *    and produce a RunnerOutput with a content-addressed result digest.
- *  - ConformanceCertificateResolver: the local-mode shim — accepts a
- *    self-attested certificate ref, returns a valid resolved certificate
- *    whose digest matches the candidate subject's. Production fleet
- *    resolution stays in the control-plane / conformance packages.
- *
- * A minimal frozen BenchmarkSuite ("cli-local-smoke", 1 case) + a frozen
- * EvaluationRunPlan + a CandidateSubject are assembled at boot so /eval list
- * shows a real suite and /eval run can admit → execute → complete a real run
- * with genuine token accounting from the LLM adapter receipt.
- *
- * Safety: /eval run executes one real LLM call against the same adapter the
- * agent loop uses (governed, human-configured provider). It does not introduce
- * a new egress path. Runs are marked "executed" from the genuine engine path;
- * nothing is fabricated.
+ * Builds a real EvaluationEngine from file-durable ports
+ * (`@cantilune/evaluation/file`) plus CLI LLM runners. Certificate resolution
+ * uses `createCantiluneC9Resolver` fail-closed (no invented `valid` certs).
+ * The deprecated local shim remains exported for unit tests only and is never
+ * wired into the TUI default path.
  */
 import { createHash } from "node:crypto";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { LlmAdapter } from "@cantilune/boot";
 import { contentDigest, type ContentDigest } from "@cantilune/core";
-import type { ArtifactSubject } from "@cantilune/conformance";
+import type { ArtifactSubject, PackageConformanceCertificate } from "@cantilune/conformance";
+import { createMemoryRevocationStore } from "@cantilune/conformance/memory";
 import {
   createEvaluationEngine,
   ok as evalOk,
@@ -51,6 +40,10 @@ import {
   type EvaluationSubjectId,
   type EvaluationRunId,
 } from "@cantilune/evaluation";
+import {
+  createCantiluneC9Resolver,
+  createCantiluneC9ResolverFromConformance,
+} from "@cantilune/evaluation/cantilune";
 import type {
   CandidateRunner,
   BaselineRunner,
@@ -65,11 +58,14 @@ import type {
 } from "@cantilune/evaluation/ports";
 import type { RunAttempt, EvaluationRun } from "@cantilune/evaluation/execution";
 import {
-  createMemoryRunStore,
   createMemorySuiteRegistry,
   createMemoryBudgetLedger,
-  createMemoryContentAddressedStore,
 } from "@cantilune/evaluation/memory";
+import {
+  createFileRunStore,
+  createFileContentAddressedStore,
+  createFileLeaseCoordinator,
+} from "@cantilune/evaluation/file";
 
 export interface EvalController {
   readonly engine: EvaluationEngine;
@@ -98,13 +94,26 @@ function createClock(): { now(): string; nowMs(): number } {
   };
 }
 
-/* ────────── Conformance certificate resolver (local-mode shim) ────────── */
+/* ────────── Conformance certificate resolver (test-only local shim) ────────── */
+export interface LocalCertificateShimOptions {
+  /** Required literal — the shim must never be constructed by accident. */
+  readonly allowLocalShim: true;
+}
+
+/**
+ * @deprecated Test/dev only. TUI `/eval` must not call this — use
+ * `createCantiluneC9Resolver` / `createCantiluneC9ResolverFromConformance`.
+ */
 function createLocalCertificateResolver(
   subjectDigest: ContentDigest,
+  options: LocalCertificateShimOptions,
 ): ConformanceCertificateResolver {
-  // The local-mode shim resolves any ref to a valid certificate whose digest
-  // matches the candidate subject. This is the documented local path;
-  // production fleet resolution stays in the conformance package.
+  if (options.allowLocalShim !== true) {
+    throw new Error(
+      "createLocalCertificateResolver is a local-mode shim and requires { allowLocalShim: true }. " +
+        "Production fleet resolution belongs in @cantilune/conformance.",
+    );
+  }
   const resolved: ResolvedCertificate = {
     certificateDigest: subjectDigest,
     artifactSubjectDigest: subjectDigest,
@@ -126,6 +135,67 @@ function createLocalCertificateResolver(
       return false;
     },
   };
+}
+
+/** Fail-closed C9 resolver: no certificate is invented as valid. */
+function createFailClosedCertificateResolver(): ConformanceCertificateResolver {
+  return createCantiluneC9Resolver({
+    async getCertificate() {
+      return undefined;
+    },
+    async isRevokedAtCheckpoint() {
+      return true;
+    },
+  });
+}
+
+/**
+ * Real conformance-backed resolver for CLI local subject certificates.
+ * Uses @cantilune/conformance/memory RevocationStore + an in-memory certificate
+ * map — never allowLocalShim.
+ */
+function createCliConformanceCertificateResolver(
+  certificateRef: string,
+  artifact: ArtifactSubject,
+  subjectDigest: ContentDigest,
+  revocationCheckpoint: string,
+): ConformanceCertificateResolver {
+  const cert: PackageConformanceCertificate = {
+    certificateId: certificateRef as PackageConformanceCertificate["certificateId"],
+    certificateSchemaVersion: 1,
+    conformanceProfile: "engineeringAdmission",
+    artifactSubject: artifact,
+    ruleInventoryDigest: subjectDigest as string,
+    evidenceRootDigest: subjectDigest as string,
+    proofManifestDigest: subjectDigest as string,
+    verifierBuild: "cli-local/conformance",
+    verifierArtifactDigest: subjectDigest as string,
+    policyVersion: "local",
+    policyDigest: subjectDigest as string,
+    trustRootSetVersion: "1",
+    revocationCheckpoint,
+    machineDecisionRef: "cli-local-machine",
+    humanReviewAttestationRefs: [],
+    issuedAt: "2026-01-01T00:00:00.000Z",
+    notBefore: "2026-01-01T00:00:00.000Z",
+    expiresAt: "2036-01-01T00:00:00.000Z",
+    status: {
+      theory: "partialScaffold",
+      machine: "verified",
+      humanReview: "unassigned",
+      release: "accepted",
+    },
+  };
+  const certificates = new Map<string, PackageConformanceCertificate>([[certificateRef, cert]]);
+  const revocationStore = createMemoryRevocationStore(revocationCheckpoint);
+  return createCantiluneC9ResolverFromConformance({
+    certificates: {
+      async getByRef(ref) {
+        return certificates.get(ref);
+      },
+    },
+    revocationStore,
+  });
 }
 
 /* ────────── Runner adapters (bridge the CLI LLM adapter) ────────── */
@@ -373,21 +443,26 @@ function buildCandidateSubject(subjectId: EvaluationSubjectId): CandidateSubject
 }
 
 /**
- * Build a local-mode evaluation controller bound to the CLI LLM adapter.
- * The controller owns a single frozen plan + subject + budget policy so the
- * CLI /eval commands can drive the real engine path (admit → execute →
- * complete) without re-deriving the harness configuration each call.
+ * Build the TUI evaluation controller (ADR-0011 / RFC-0004).
+ * Uses file-durable run/CAS/lease stores and a fail-closed C9 resolver —
+ * never `allowLocalShim`.
  */
-export function createEvalController(llmFactory: () => LlmAdapter): EvalController {
+export function createEvalController(
+  llmFactory: () => LlmAdapter,
+  options?: {
+    readonly evalStoreDir?: string;
+    readonly certificateResolver?: ConformanceCertificateResolver;
+  },
+): EvalController {
+  const baseDir = options?.evalStoreDir ?? join(homedir(), ".cantilune", "eval");
   const clock = createClock();
-  const cas = createMemoryContentAddressedStore();
-  const runStore: RunStore = createMemoryRunStore();
+  const cas = createFileContentAddressedStore(join(baseDir, "cas"));
+  const runStore: RunStore = createFileRunStore(baseDir);
   const suiteRegistry: SuiteRegistry = createMemorySuiteRegistry();
   const budgetLedger: BudgetLedgerPort = createMemoryBudgetLedger();
+  const leaseCoordinator = createFileLeaseCoordinator(baseDir);
 
   const { suite, case_ } = buildMinimalSuite();
-  // Suite registry holds the suite + case; errors here would be a programming
-  // fault, not a user-facing one. We discard the result objects.
   void suiteRegistry.register(suite);
   void suiteRegistry.registerCase(case_);
 
@@ -396,7 +471,8 @@ export function createEvalController(llmFactory: () => LlmAdapter): EvalControll
   const plan = buildMinimalPlan(suite.suiteId, subjectId);
   const budgetPolicy = buildMinimalBudgetPolicy();
 
-  const certificateResolver = createLocalCertificateResolver(subject.subjectDigest);
+  const certificateResolver =
+    options?.certificateResolver ?? createFailClosedCertificateResolver();
   const candidateRunner = createLocalRunner(llmFactory, cas, "candidate");
   const baselineRunner = createLocalRunner(llmFactory, cas, "baseline");
 
@@ -409,7 +485,7 @@ export function createEvalController(llmFactory: () => LlmAdapter): EvalControll
     baselineRunner,
     certificateResolver,
     suiteRegistry,
-    leaseCoordinator: undefined,
+    leaseCoordinator,
   });
 
   return {
@@ -436,5 +512,7 @@ export {
   buildMinimalSuite,
   createLocalRunner,
   createLocalCertificateResolver,
+  createFailClosedCertificateResolver,
+  createCliConformanceCertificateResolver,
   sha256Digest,
 };

@@ -1,9 +1,14 @@
 # CLI #4 — Advanced Commands (content / cluster / eval / schema / petri)
 
-> Status: **DRAFT — pending Owner approval (plan mode)**
+> Status: **EXECUTED — all four sub-items landed (2026-08-14)**
 > Date: 2026-08-14
 > Owner: Joker-of-Gotham (DRI)
 > QA Packet: `docs/qa/0012-agent-execution-continuity-qa.md` → CLI #4 zone
+>
+> This plan is retained as the execution record for the original four
+> sub-items (content / cluster / eval-schema / petri). Those phases shipped.
+> It is **not** “only independent review left”: A23–A26 / A45–A53 residuals
+> are recorded below. Owner gates C1–C8 stay open.
 
 ---
 
@@ -145,7 +150,7 @@
 **E1.** Run full CLI coverage gate (`pnpm --filter @cantilune/cli test:coverage`); ensure 90/88/90/90. Run new `petri` package gate.
 **E2.** Update `docs/qa/0012-agent-execution-continuity-qa.md` CLI #4 entry from "not started — unverified" to per-sub-item completed-work record (mark genuinely-executed vs. any unverified bits honestly).
 **E3.** Update memory `qa-0012-release-gates.md` CLI line.
-**E4.** Note the remaining QA-L5 gate (independent Architecture + Security review) for all four Stop-Ship zones + CLI #4, same as SS-01/02/03.
+**E4.** Note Owner C2 (independent Architecture + Security review, _unassigned_) **and** the A23–A26 / A45–A53 residuals in §6. Do not treat this plan as fully closed.
 
 ---
 
@@ -158,3 +163,27 @@
 
 content → cluster → eval/schema → petri(+ADR-0017) → coverage + QA-0012 update.
 Each phase lands green (tests + gate) before the next, matching "按四个子项依次全做".
+
+## 6. A23–A26 / A45–A53 residuals (2026-08-15)
+
+The original four sub-items are not the whole CLI honesty surface. Status is
+mixed: some items were engineered after this plan; some still lie.
+
+| ID | Surface | Honest status (2026-08-15) |
+| -- | ------- | -------------------------- |
+| A23 | `/observe*` `/graph*` `/trace*` `/replay*` `/world diff` | **Done (impl).** Observability / replay / worldDiff wired. Graph edges are beforeRef/afterRef, not a changeLog chain. |
+| A24 | `/eval` local C9 shim | **Done (impl).** TUI `createEvalController` uses fail-closed C9. Shim remains test-only behind `allowLocalShim: true`. |
+| A25 | `/schema` vs live file world | **Done (impl).** Default `FileControlPlaneStore` at `{storagePath}/control-plane`; memory only when ephemeral. |
+| A26 | TUI tools / MCP | **Done (impl).** `createCliToolSet` injected at boot; MCP lists `CliConfig.mcpServers`. |
+| A45 | `/content search` | **Done (impl).** Body/ref filter; empty query fail-closed. |
+| A46 | `/content gc` reference closure | **Done (impl).** Closure is auditTail.payloadRef ∪ artifacts.contentRef ∪ session refs. |
+| A47 | `/schema diff` `/schema validate` | **Done (impl).** Resolves `epochA`/`epochB` and runs `computeMonotoneExtensionPlan`. |
+| A48 | `/schema ops` | **Done (impl).** Rows read `requiredRoles` / `defaultVisibility` / `mayCreateSessions`. |
+| A49 | `/export *` | **Done (impl).** Same projections as `/graph`/`/petri`/`/observe`; atomic write to `storagePath/exports/`. |
+| A50 | `/eval run` suite / `/eval compare` | **Done (impl).** Suite honored; compare uses `compareEvaluationRuns`. |
+| A51 | `/compact` | **Done (impl).** LLM summary only with contract/judge; otherwise honest omit (not “summarize”). |
+| A52 | `/tools test` | **Done (impl).** Schema/dry-run only; injected tools refuse execute. |
+| A53 | `CliConfig` mcp/tools/contract/judge + `/mcp connect` | **Done (impl).** Persist + epoch-bound attach; HTTP and stdio MCP allowed (ADR-0026). |
+
+Owner C2 (independent Architecture + Security, _unassigned_) still applies to
+this packet. Do not treat §6 as Acceptance.

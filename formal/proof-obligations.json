@@ -12,13 +12,24 @@
     "missing": "The required central declaration is absent.",
     "partial_scaffold": "A kernel-buildable declaration exists but does not meet the recorded central scope.",
     "implemented_unverified": "The required declaration exists in the working tree but immutable commit-bound build evidence is not yet attached.",
-    "proved": "The exact declaration and proof-sensitive tree were checked by the pinned Lean kernel at verifiedCommit; this delivery remains review-pending.",
-    "reviewed": "Reserved for a later independently authenticated human QA-L4 gate; the current local gate rejects this status."
+    "proved": "The exact declaration and proof-sensitive tree were checked by the pinned Lean kernel at verifiedCommit. Kernel rows stay proved (CI requiredGate). Owner accepted this proved kernel for production engineering on 2026-08-16 (COI; no second reviewer; promotion form unused). This is not Lean status reviewed.",
+    "reviewed": "Reserved for the unused Lean promotion form (`formal/scripts/ci.ps1 -RequireComplete`). The current local gate rejects this status. Owner Accept is recorded in ownerAccept, not by rewriting rows to reviewed."
+  },
+  "ownerAccept": {
+    "status": "accepted",
+    "acceptedOn": "2026-08-16",
+    "acceptedBy": "Joker-of-Gotham",
+    "role": "Owner / DRI / Formal",
+    "conflictOfInterest": "disclosed",
+    "secondReviewer": null,
+    "promotionFormUsed": false,
+    "kernelRowStatusUnchanged": "proved",
+    "notes": "Owner accepts the proved kernel for the 0.x production engineering release. Obligation rows stay proved."
   },
   "commitSemantics": {
     "sourceCommit": "The immutable proof-sensitive source commit used by every verifiedCommit.",
     "evidenceCommit": "A later single-parent commit that introduces the hashed build-evidence file; it is a strict ancestor and never self-references the final pointer commit.",
-    "pointerCommit": "The current HEAD that records proved/review-pending statuses and the two ancestor hashes; its hash is reported externally rather than self-embedded."
+    "pointerCommit": "The current HEAD that records proved kernel-row statuses, Owner Accept, and the two ancestor hashes; its hash is reported externally rather than self-embedded."
   },
   "evidenceRule": "Only the three-commit source/evidence/pointer chain, a pinned clean build or a hash-bound process-drained continuation of that clean state with zero Lean-source diff, exact tracked-blob checks before and after the audit, placeholder scan, source-integrity check, and kernel axiom allowlist audit may promote an obligation to proved. Human review is a separate unavailable gate.",
   "obligations": [

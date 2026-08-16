@@ -19,6 +19,32 @@ on:
 jobs:
   runtime:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cantilune
+          POSTGRES_PASSWORD: cantilune
+          POSTGRES_DB: cantilune
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cantilune -d cantilune"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      etcd:
+        image: quay.io/coreos/etcd:v3.5.21
+        env:
+          ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+        ports:
+          - 2379:2379
+        options: >-
+          --health-cmd "/usr/local/bin/etcdctl endpoint health --endpoints=http://127.0.0.1:2379"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -37,6 +63,14 @@ jobs:
       - run: pnpm exec prettier --check "src/**/*.ts" "tests/**/*.ts"
         working-directory: src/packages/runtime
       - run: pnpm --filter @cantilune/runtime test
+      - name: Live Postgres L7
+        env:
+          CANTILUNE_DURABLE_DATABASE_URL: postgres://cantilune:cantilune@127.0.0.1:5432/cantilune
+        run: pnpm --filter @cantilune/runtime test:postgres-live
+      - name: Live etcd Raft L7
+        env:
+          CANTILUNE_RAFT_ENDPOINTS: http://127.0.0.1:2379
+        run: pnpm --filter @cantilune/runtime test:raft-live
       - run: pnpm --filter @cantilune/runtime build
       - run: pnpm --filter @cantilune/runtime test:pack
         working-directory: src/packages/runtime

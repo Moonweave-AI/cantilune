@@ -6,6 +6,7 @@ import { createEvaluationEngine } from "../../src/execution/evaluationEngine.js"
 import type { EvaluationEnginePorts } from "../../src/execution/evaluationEngine.js";
 import { createFileRunStore } from "../../src/adapters/file/fileRunStore.js";
 import { createFileContentAddressedStore } from "../../src/adapters/file/fileContentAddressedStore.js";
+import { createFileLeaseCoordinator } from "../../src/adapters/file/fileLeaseCoordinator.js";
 import { createMemoryBudgetLedger } from "../../src/adapters/memory/memoryBudgetLedger.js";
 import { createMemorySuiteRegistry } from "../../src/adapters/memory/memorySuiteRegistry.js";
 import { createCantiluneC9Resolver } from "../../src/adapters/cantilune/cantiluneC9Resolver.js";
@@ -95,7 +96,7 @@ describe("File-backed evaluation system flow", () => {
         },
       }),
       suiteRegistry: createMemorySuiteRegistry(),
-      leaseCoordinator: undefined,
+      leaseCoordinator: createFileLeaseCoordinator(baseDir),
     };
   }
 

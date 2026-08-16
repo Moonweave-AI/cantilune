@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { schemaDigest, schemaId, schemaRevisionId, schemaRef } from "@cantilune/core";
 import { verifyHumanReviewAttestation } from "../../src/verifier/humanReviewAttestationVerifier.js";
-import {
-  createMemoryCryptoVerifier,
-  defaultTestReviewerTrustStore,
-} from "../../src/adapters/memory/index.js";
+import { createMemoryCryptoVerifier } from "../../src/adapters/memory/index.js";
+import { defaultTestReviewerTrustStore } from "../../src/testing/index.js";
 import { buildReviewedEngineeringAdmissionForTest } from "../../src/testing/index.js";
 import { computeEvidenceDigest } from "../../src/canonical/evidenceDigest.js";
 

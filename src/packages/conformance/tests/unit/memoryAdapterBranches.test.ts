@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryEvidenceStore } from "../../src/adapters/memory/memoryEvidenceStore.js";
-import { createTestReviewerTrustStore } from "../../src/adapters/memory/testReviewerTrustStore.js";
+import { createTestReviewerTrustStore } from "../../src/testing/testReviewerTrustStore.js";
 import { computeEvidenceDigest } from "../../src/canonical/evidenceDigest.js";
 
 describe("memory adapter branches", () => {

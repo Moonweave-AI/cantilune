@@ -136,7 +136,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    const crashed = await crashSyscall.useTool({ callId: "call-crash", toolName: "shell", args: { cmd: "rmdir" } });
+    const crashed = await crashSyscall.useTool({
+      callId: "call-crash",
+      toolName: "shell",
+      args: { cmd: "rmdir" },
+    });
     // The crash surface: executor threw → invalid result.
     expect(crashed.ok).toBe(false);
     expect(crashed.output).toBe("Tool executor returned an invalid result.");
@@ -152,7 +156,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const retried = await restartSyscall.useTool({ callId: "call-crash", toolName: "shell", args: { cmd: "rmdir" } });
+    const retried = await restartSyscall.useTool({
+      callId: "call-crash",
+      toolName: "shell",
+      args: { cmd: "rmdir" },
+    });
 
     expect(retried.ok).toBe(false);
     expect(retried.disposition).toBe("ambiguous");
@@ -162,7 +170,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
   });
 
   it("boundary 2 (post-side-effect / pre-output): idempotent dispatched with no completed → reconcile(known) reuses output (no re-execute)", async () => {
-    const exec = makeExecutor({ tier: "idempotent", output: "prior-output", reconcileOutcome: "known" });
+    const exec = makeExecutor({
+      tier: "idempotent",
+      output: "prior-output",
+      reconcileOutcome: "known",
+    });
     const store = createMemoryContentStore();
 
     // Crash state: dispatched written, execute threw before output stored.
@@ -185,7 +197,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    await crashSyscall.useTool({ callId: "call-recon", toolName: "write_file", args: { path: "/x" } });
+    await crashSyscall.useTool({
+      callId: "call-recon",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
     expect(await store.count()).toBe(1); // dispatched only
 
     // Restart: reconcile-first returns the prior output; execute is NOT called.
@@ -196,7 +212,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const retried = await restartSyscall.useTool({ callId: "call-recon", toolName: "write_file", args: { path: "/x" } });
+    const retried = await restartSyscall.useTool({
+      callId: "call-recon",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
 
     expect(retried.ok).toBe(true);
     expect(retried.output).toBe("prior-output");
@@ -207,7 +227,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
   });
 
   it("boundary 2 (post-side-effect / pre-output): idempotent dispatched, reconcile unknown → safe re-dispatch", async () => {
-    const exec = makeExecutor({ tier: "idempotent", output: "retried-output", reconcileOutcome: "unknown" });
+    const exec = makeExecutor({
+      tier: "idempotent",
+      output: "retried-output",
+      reconcileOutcome: "unknown",
+    });
     const store = createMemoryContentStore();
 
     const crashExec: ToolExecutor = {
@@ -229,7 +253,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    await crashSyscall.useTool({ callId: "call-unknown", toolName: "write_file", args: { path: "/y" } });
+    await crashSyscall.useTool({
+      callId: "call-unknown",
+      toolName: "write_file",
+      args: { path: "/y" },
+    });
 
     const restartSyscall = createSyscall({
       runtime: runtime(),
@@ -238,7 +266,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const retried = await restartSyscall.useTool({ callId: "call-unknown", toolName: "write_file", args: { path: "/y" } });
+    const retried = await restartSyscall.useTool({
+      callId: "call-unknown",
+      toolName: "write_file",
+      args: { path: "/y" },
+    });
 
     // reconcile said unknown → safe re-dispatch.
     expect(retried.ok).toBe(true);
@@ -259,7 +291,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
     });
 
     // First call completes (dispatched + output + receipt + completed).
-    const first = await syscall.useTool({ callId: "call-done", toolName: "write_file", args: { path: "/z" } });
+    const first = await syscall.useTool({
+      callId: "call-done",
+      toolName: "write_file",
+      args: { path: "/z" },
+    });
     expect(first.ok).toBe(true);
     expect(exec.executeCalls).toBe(1);
 
@@ -269,7 +305,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
     // re-executing. (The `completed` journal entry carries the outputRef and is
     // NOT findable from the key under a content-addressed store; the findable
     // artifact is the `dispatched` entry, which drives reconcile. See ADR-0016.)
-    const restart = await syscall.useTool({ callId: "call-done", toolName: "write_file", args: { path: "/z" } });
+    const restart = await syscall.useTool({
+      callId: "call-done",
+      toolName: "write_file",
+      args: { path: "/z" },
+    });
     expect(restart.ok).toBe(true);
     expect(restart.output).toBe("first-output");
     // execute was NOT called again — exactly-once.
@@ -294,7 +334,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       toolExecutor: exec,
     });
 
-    const first = await syscall.useTool({ callId: "call-obs", toolName: "write_file", args: { path: "/w" } });
+    const first = await syscall.useTool({
+      callId: "call-obs",
+      toolName: "write_file",
+      args: { path: "/w" },
+    });
     expect(first.ok).toBe(false);
     expect(first.observationRecovery).toBeDefined();
 
@@ -323,7 +367,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    await crashSyscall.useTool({ callId: "bad-idem", toolName: "write_file", args: { path: "/x" } });
+    await crashSyscall.useTool({
+      callId: "bad-idem",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
 
     const restart = createSyscall({
       runtime: runtime(),
@@ -332,7 +380,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const retried = await restart.useTool({ callId: "bad-idem", toolName: "write_file", args: { path: "/x" } });
+    const retried = await restart.useTool({
+      callId: "bad-idem",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
 
     expect(retried.ok).toBe(false);
     expect(retried.disposition).toBe("ambiguous");
@@ -359,7 +411,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    await crashSyscall.useTool({ callId: "call-read", toolName: "read_file", args: { path: "/r" } });
+    await crashSyscall.useTool({
+      callId: "call-read",
+      toolName: "read_file",
+      args: { path: "/r" },
+    });
     expect(await store.count()).toBe(1);
 
     const restart = createSyscall({
@@ -369,7 +425,11 @@ describe("ADR-0016 external-tool invocation journal", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const retried = await restart.useTool({ callId: "call-read", toolName: "read_file", args: { path: "/r" } });
+    const retried = await restart.useTool({
+      callId: "call-read",
+      toolName: "read_file",
+      args: { path: "/r" },
+    });
 
     // Read tools have no side effect → safe re-dispatch.
     expect(retried.ok).toBe(true);

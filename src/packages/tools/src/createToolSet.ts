@@ -6,38 +6,51 @@ import type {
   ToolSchema,
 } from "@cantilune/syscall";
 import { createFilesystemExecutor } from "./filesystem/filesystemExecutor.js";
-import { createMcpExecutor } from "./mcp/mcpExecutor.js";
+import { applyMcpAttach, type McpAttachInput, type McpToolSurface } from "./mcp/mcpEpochAttach.js";
+import { createMcpExecutor, type McpExecutor } from "./mcp/mcpExecutor.js";
+import { createOsSandbox, type OsSandbox } from "./sandbox/osSandbox.js";
 import { createShellExecutor } from "./shell/shellExecutor.js";
-import type { ToolSetConfig } from "./types.js";
+import { DEFAULT_SANDBOX_MODE, type ToolSetConfig } from "./types.js";
 import { createWebExecutor } from "./web/webExecutor.js";
 
-export function createToolSet(config: ToolSetConfig): ToolExecutor {
-  const executors: ToolExecutor[] = [];
+export interface ToolSet extends ToolExecutor {
+  applyMcpSurface(input: McpAttachInput): McpToolSurface;
+}
+
+export function createToolSet(config: ToolSetConfig): ToolSet {
+  const sandboxMode = config.sandbox ?? DEFAULT_SANDBOX_MODE;
+  const osSandbox: OsSandbox | undefined =
+    sandboxMode === "off" ? undefined : (config.osSandbox ?? createOsSandbox());
+
+  const stable: ToolExecutor[] = [];
   const toolRoutes = new Map<string, ToolExecutor>();
 
   if (config.filesystem?.enabled) {
     const rootDir = config.filesystem.rootDir ?? config.workingDirectory;
-    const fsExecutor = createFilesystemExecutor({ ...config.filesystem, rootDir });
-    executors.push(fsExecutor);
+    stable.push(createFilesystemExecutor({ ...config.filesystem, rootDir }));
   }
 
   if (config.shell?.enabled) {
-    const shellExecutor = createShellExecutor({
-      ...config.shell,
-      workingDirectory: config.workingDirectory,
-    });
-    executors.push(shellExecutor);
+    stable.push(
+      createShellExecutor({
+        ...config.shell,
+        workingDirectory: config.workingDirectory,
+        sandbox: sandboxMode,
+        ...(osSandbox !== undefined ? { osSandbox } : {}),
+      }),
+    );
   }
 
   if (config.web?.enabled) {
-    const webExecutor = createWebExecutor(config.web);
-    executors.push(webExecutor);
+    stable.push(createWebExecutor(config.web));
   }
 
-  if (config.mcp !== undefined) {
-    for (const mcpConfig of config.mcp) {
-      executors.push(createMcpExecutor(mcpConfig));
-    }
+  let mcpExecutors: McpExecutor[] = (config.mcp ?? []).map((mcpConfig) =>
+    createMcpExecutor(mcpConfig, osSandbox),
+  );
+
+  function allExecutors(): readonly ToolExecutor[] {
+    return [...stable, ...mcpExecutors];
   }
 
   return {
@@ -47,6 +60,16 @@ export function createToolSet(config: ToolSetConfig): ToolExecutor {
     // it serves mixed-tier tools.
     tier: "non-idempotent",
 
+    applyMcpSurface(input: McpAttachInput): McpToolSurface {
+      const surface = applyMcpAttach(input);
+      for (const executor of mcpExecutors) {
+        executor.dispose?.();
+      }
+      mcpExecutors = surface.servers.map((server) => createMcpExecutor(server, osSandbox));
+      toolRoutes.clear();
+      return surface;
+    },
+
     tierFor(toolName: string): ToolExecutionTier | undefined {
       const executor = toolRoutes.get(toolName);
       if (executor === undefined) return undefined;
@@ -55,7 +78,7 @@ export function createToolSet(config: ToolSetConfig): ToolExecutor {
 
     async listTools(): Promise<ToolSchema[]> {
       const schemas: ToolSchema[] = [];
-      for (const executor of executors) {
+      for (const executor of allExecutors()) {
         const tools = await executor.listTools();
         for (const tool of tools) {
           toolRoutes.set(tool.name, executor);
@@ -68,10 +91,14 @@ export function createToolSet(config: ToolSetConfig): ToolExecutor {
     async execute(
       toolName: string,
       args: Record<string, unknown>,
+      options?: { readonly signal?: AbortSignal },
     ): Promise<{ ok: boolean; output: string }> {
+      if (options?.signal?.aborted === true) {
+        return { ok: false, output: "skipped: aborted before dispatch" };
+      }
       let executor = toolRoutes.get(toolName);
       if (executor === undefined) {
-        for (const candidate of executors) {
+        for (const candidate of allExecutors()) {
           const tools = await candidate.listTools();
           if (tools.some((tool) => tool.name === toolName)) {
             executor = candidate;
@@ -85,7 +112,7 @@ export function createToolSet(config: ToolSetConfig): ToolExecutor {
         return { ok: false, output: `Unknown tool: ${toolName}` };
       }
 
-      return executor.execute(toolName, args);
+      return executor.execute(toolName, args, options);
     },
 
     async reconcile(key: ToolInvocationKey): Promise<ToolReconcileResult> {

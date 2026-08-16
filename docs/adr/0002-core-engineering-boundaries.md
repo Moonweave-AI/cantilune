@@ -56,7 +56,7 @@ Until `@cantilune/runtime` implements `applyAdmittedChange`, Change is an **audi
 
 ### 5. Derive minimal commitment
 
-`deriveDiagnosticSummary` (formerly `deriveCompositionView`) is a **diagnostic summary only** — not for scheduling, concurrency, or structure projection until a follow-up ADR defines full projection semantics.
+`deriveDiagnosticSummary` (formerly `deriveCompositionView`) is the **read-only structure projection** (serial / parallel / nest from committed rewrite history and snapshot participants). It MUST NOT be used by `SwarmScheduler` or any write/admission path. See the 2026-08-15 follow-up below.
 
 ### 6. Package publish posture
 
@@ -74,8 +74,8 @@ Until `@cantilune/runtime` implements `applyAdmittedChange`, Change is an **audi
 **Negative / follow-ups**
 
 - `@cantilune/runtime` must implement apply + replay before L6–L7 claims
-- Wire DTO / codec for Map serialization still OPEN
-- Full structure projection ADR still required
+- Wire DTO / codec for Map serialization — **Done** (`snapshotCodec` + `wireValidation` unknown-field rejection; Map fields round-trip as DTO arrays/objects)
+- Structure projection engineering note — **follow-up Done** (2026-08-15); not Acceptance
 - ADR-0002 control-plane threat model (RFC-0001 §9) — runtime scope in **ADR-0003**; comms/network still gated
 
 ## Alternatives rejected
@@ -93,6 +93,18 @@ Until `@cantilune/runtime` implements `applyAdmittedChange`, Change is an **audi
 - [x] `consistency` module, `validateSnapshotIntegrity`, `CoreViolation`
 - [x] `deriveDiagnosticSummary` rename + deprecation alias
 - [x] `@cantilune/runtime`: OperationTemplateRegistry, AdmissionGateway, applyAdmittedChange, ReplayVerifier (M2 prototype)
-- [ ] Wire DTO / canonical wire order → **@cantilune/runtime**（strict unknown 校验已落地）
+- [x] Wire DTO / canonical wire order → **@cantilune/runtime** (`src/packages/runtime/src/codec/snapshotCodec.ts` + `wireValidation`; Map serialization closed)
 - [x] CI: core typecheck + tests + build（coverage 可选：`pnpm test:coverage`）
 - [x] CI: runtime typecheck + tests + lint + format + pack smoke（`.github/workflows/runtime.yml`）
+- [x] Structure projection engineering note (2026-08-15 follow-up) — not Acceptance
+
+## Follow-up (2026-08-15): structure projection engineering note
+
+| Field  | Value                                                                 |
+| ------ | --------------------------------------------------------------------- |
+| Status | **Proposed / follow-up Done** (engineering note only — **not** Acceptance) |
+| Date   | 2026-08-15                                                            |
+
+`deriveDiagnosticSummary` **is** the read-only structure projection: `serial` / `parallel` / `nest` derived from committed rewrite history (`create_session` → nest, `fork_branch` → parallel) and snapshot participants. Observability `FourViewBundle.structure` (via `diagnosticStepFromChange` / `foldStructureComposition`) and CLI `/observe structure` consume this derive — not a parallel type.
+
+This projection MUST NOT be consumed by `SwarmScheduler` (ADR-0019). Scheduling re-evaluates start conditions on the committed world at each drain. The note does not authorize public superiority claims or product Acceptance.

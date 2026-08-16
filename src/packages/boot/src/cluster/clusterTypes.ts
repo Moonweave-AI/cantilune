@@ -6,6 +6,23 @@ import type { Syscall } from "@cantilune/syscall";
 import type { RunResult, LlmAdapter } from "../types.js";
 import type { SharedResources } from "./sharedResources.js";
 
+/**
+ * Why a cluster run stopped.
+ *
+ * Before the scheduler existed the only outcome was "every participant reached
+ * a terminal status", and anything else waited forever. These variants make the
+ * other three endings observable instead of indistinguishable from a hang.
+ */
+export type ClusterTerminationReason =
+  /** Every non-retired participant reached `done`/`retired`. */
+  | "completed"
+  /** Nothing runs, nothing can start, and the world stopped moving. */
+  | "stalled"
+  /** A swarm budget (agents, turns, or wall clock) was exhausted. */
+  | "budget_exhausted"
+  /** The supervisor was stopped (governed E-Stop) while agents remained. */
+  | "stopped";
+
 /** Result of an entire cluster run (all agents). */
 export interface ClusterResult {
   readonly ok: boolean;
@@ -13,6 +30,13 @@ export interface ClusterResult {
   readonly agentResults: ReadonlyMap<ActorId, AgentRunResult>;
   readonly totalElapsedMs: number;
   readonly totalTurns: number;
+  /** Which ending this was. `completed` is the only one that can be `ok`. */
+  readonly reason: ClusterTerminationReason;
+  /**
+   * Human-readable explanation for a non-`completed` ending: which agents were
+   * blocked and on what, or which budget ran out. Empty when `completed`.
+   */
+  readonly diagnostic: string;
 }
 
 export interface AgentRunResult {
@@ -44,10 +68,25 @@ export type ClusterEvent =
   | { readonly kind: "agent_started"; readonly actorId: ActorId }
   | { readonly kind: "agent_done"; readonly actorId: ActorId; readonly summary: string }
   | { readonly kind: "agent_stale"; readonly actorId: ActorId; readonly lastHeartbeatMs: number }
-  | { readonly kind: "agent_restarted"; readonly actorId: ActorId }
   | { readonly kind: "agent_retired"; readonly actorId: ActorId }
   | { readonly kind: "condition_met"; readonly actorId: ActorId }
   | { readonly kind: "heartbeat_received"; readonly actorId: ActorId; readonly seq: number }
+  /** Activated and admitted to the scheduler queue, not yet started. */
+  | { readonly kind: "agent_queued"; readonly actorId: ActorId; readonly priority: number }
+  /**
+   * Activated, but its bound manifest could not be resolved — missing from the
+   * content store, unparseable, or naming a different `agentId`. The agent can
+   * never start, so this is a terminal condition for that participant.
+   */
+  | { readonly kind: "manifest_unresolved"; readonly actorId: ActorId; readonly detail: string }
+  /** No agent runs and no pending agent can start; the swarm cannot progress. */
+  | { readonly kind: "swarm_stalled"; readonly detail: string }
+  /** A swarm budget ran out; no further agent may start. */
+  | {
+      readonly kind: "budget_exhausted";
+      readonly limit: "agents" | "turns" | "wallClock";
+      readonly detail: string;
+    }
   | { readonly kind: "cluster_complete" };
 
 export type ClusterEventListener = (event: ClusterEvent) => void;

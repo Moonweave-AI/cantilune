@@ -116,8 +116,18 @@ export function renderWorldViewOutput(
       return renderLinksTable(data);
     case "world-retired":
       return renderRetiredTable(data);
-    case "world-diff":
-      return `Diff: ${str(viewArgs.refA, runtime.snapshot?.snapshotRef ?? "snap:t0")} → ${str(viewArgs.refB, "snap:head")}`;
+    case "world-diff": {
+      const err = viewArgs.worldDiffError;
+      if (typeof err === "string" && err.length > 0) {
+        return `World diff failed (fail-closed): ${err}`;
+      }
+      const left = typeof viewArgs.worldDiffLeft === "string" ? viewArgs.worldDiffLeft : "";
+      const right = typeof viewArgs.worldDiffRight === "string" ? viewArgs.worldDiffRight : "";
+      if (left.length === 0 || right.length === 0) {
+        return "No world diff — run `/world diff <refA> <refB>` to load both snapshots by ref";
+      }
+      return `Diff: ${str(viewArgs.refA, "—")} → ${str(viewArgs.refB, "—")}`;
+    }
     case "world":
     default:
       return [
@@ -141,6 +151,40 @@ export function renderWorldViewOutput(
 
 export function WorldView({ store }: ViewProps): React.ReactElement {
   const activeView = store.activeView ?? "world";
+
+  if (activeView === "world-diff") {
+    const err = store.viewArgs.worldDiffError;
+    if (typeof err === "string" && err.length > 0) {
+      return (
+        <ViewFrame
+          title="World Diff"
+          tone={WORLD_TONE}
+          empty={`World diff failed (fail-closed): ${err}`}
+        />
+      );
+    }
+    const left =
+      typeof store.viewArgs.worldDiffLeft === "string" ? store.viewArgs.worldDiffLeft : "";
+    const right =
+      typeof store.viewArgs.worldDiffRight === "string" ? store.viewArgs.worldDiffRight : "";
+    if (left.length === 0 || right.length === 0) {
+      return (
+        <ViewFrame
+          title="World Diff"
+          tone={WORLD_TONE}
+          empty="No world diff — run `/world diff <refA> <refB>` to load both snapshots by ref"
+        />
+      );
+    }
+    const refA = str(store.viewArgs.refA, "—");
+    const refB = str(store.viewArgs.refB, "—");
+    return (
+      <ViewFrame title="World Diff" tone={WORLD_TONE}>
+        <DiffView leftLabel={refA} rightLabel={refB} left={left} right={right} />
+      </ViewFrame>
+    );
+  }
+
   const data = worldDataFromRuntime(store.runtime);
   const snapshot = store.runtime.snapshot;
 
@@ -151,26 +195,6 @@ export function WorldView({ store }: ViewProps): React.ReactElement {
         tone={WORLD_TONE}
         empty={NO_RUNTIME_MESSAGE}
       />
-    );
-  }
-
-  if (activeView === "world-diff") {
-    const refA = str(store.viewArgs.refA, snapshot?.snapshotRef ?? "snap:t0");
-    const refB = str(store.viewArgs.refB, "snap:head");
-    const participantSummary = data.participants.map((p) => p.id).join(", ") || "(none)";
-    const artifactSummary =
-      data.artifacts.map((a) => `${a.id} (${a.lifecycle})`).join(", ") || "(none)";
-    const capabilitySummary =
-      data.capabilities.map((c) => `${c.kind} → ${c.holder}`).join(", ") || "(none)";
-    const diffBody = [
-      `participants: ${participantSummary}`,
-      `artifacts: ${artifactSummary}`,
-      `capabilities: ${capabilitySummary}`,
-    ].join("\n");
-    return (
-      <ViewFrame title="World Diff" tone={WORLD_TONE}>
-        <DiffView leftLabel={refA} rightLabel={refB} left={diffBody} right={diffBody} />
-      </ViewFrame>
     );
   }
 

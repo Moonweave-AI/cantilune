@@ -6,11 +6,7 @@ import {
   createMemoryConformanceEngine,
   createNoopAuditSink,
 } from "../adapters/memory/index.js";
-import {
-  createFileAuditSink,
-  createFileEvidenceStore,
-  createFileTrustStore,
-} from "../adapters/file/index.js";
+import { createFileAuditSink, createFileConformanceEngine } from "../adapters/file/index.js";
 import { createConformanceEngine } from "../engine/conformanceEngine.js";
 import type { AuditSink } from "../ports/auditSink.js";
 import type { EvidenceStore } from "../ports/evidenceStore.js";
@@ -29,14 +25,7 @@ export function createCliConformanceEngine(flags: ReadonlyMap<string, string | t
   if (dir === undefined) {
     return createMemoryConformanceEngine({ audit: createNoopAuditSink() });
   }
-  const evidenceStore = createFileEvidenceStore({ dir });
-  return createConformanceEngine({
-    evidenceStore,
-    trustStore: createFileTrustStore({ dir }),
-    revocationStore: createMemoryRevocationStore(),
-    cache: createMemoryVerificationCache(),
-    audit: createFileAuditSink({ dir }),
-  });
+  return createFileConformanceEngine({ dir, audit: createFileAuditSink({ dir }) }).engine;
 }
 
 export interface CliVerificationContext {
@@ -64,17 +53,7 @@ export function createCliVerificationContext(
       }),
     };
   }
-  const evidenceStore = createFileEvidenceStore({ dir });
   const audit = createFileAuditSink({ dir });
-  return {
-    evidenceStore,
-    audit,
-    engine: createConformanceEngine({
-      evidenceStore,
-      trustStore: createFileTrustStore({ dir }),
-      revocationStore: createMemoryRevocationStore(),
-      cache: createMemoryVerificationCache(),
-      audit,
-    }),
-  };
+  const { engine, evidenceStore } = createFileConformanceEngine({ dir, audit });
+  return { evidenceStore, audit, engine };
 }

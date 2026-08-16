@@ -3,8 +3,14 @@ import { Text } from "ink";
 import { NO_RUNTIME_MESSAGE } from "../runtimeSync.js";
 import type { AppStore, ChangeLogEntry, RuntimeState, ViewType } from "../store.js";
 import { useAppStore } from "../storeContext.js";
-import { renderGraph, type GraphEdge, type GraphNode } from "../render/asciiGraph.js";
+import { renderGraph } from "../render/asciiGraph.js";
 import { renderTable } from "../render/asciiTable.js";
+import {
+  graphDataFromRuntime,
+  graphStats,
+  shortestPath,
+  type GraphViewData,
+} from "../wiring/graphData.js";
 import { ViewFrame, type ViewTone } from "./ViewFrame.js";
 import { str } from "./viewStr.js";
 
@@ -13,33 +19,6 @@ const GRAPH_TONE: ViewTone = "success";
 
 export interface ViewProps {
   readonly store: AppStore;
-}
-
-export interface GraphViewData {
-  readonly nodes: GraphNode[];
-  readonly edges: GraphEdge[];
-}
-
-function graphDataFromRuntime(runtime: RuntimeState): GraphViewData | null {
-  if (runtime.changeLog.length === 0) {
-    return runtime.snapshot === null ? null : { nodes: [], edges: [] };
-  }
-
-  const nodes: GraphNode[] = runtime.changeLog.map((entry) => ({
-    id: entry.changeId,
-    label: `${entry.operationTypeId}(${entry.initiator})`,
-  }));
-
-  const edges: GraphEdge[] = runtime.changeLog.slice(1).map((entry, index) => {
-    const prior = runtime.changeLog[index]!;
-    return {
-      from: prior.changeId,
-      to: entry.changeId,
-      label: "chain",
-    };
-  });
-
-  return { nodes, edges };
 }
 
 function filterByArgs(data: GraphViewData, viewArgs: Record<string, unknown>): GraphViewData {
@@ -82,6 +61,7 @@ function forkRows(changeLog: readonly ChangeLogEntry[]): string[][] {
     ]);
 }
 
+
 export function renderGraphViewOutput(
   activeView: ViewType,
   viewArgs: Record<string, unknown>,
@@ -96,19 +76,25 @@ export function renderGraphViewOutput(
 
   switch (activeView) {
     case "graph-path": {
-      const refA = str(viewArgs.refA, filtered.nodes[0]?.id ?? "—");
-      const refB = str(viewArgs.refB, filtered.nodes.at(-1)?.id ?? "—");
-      const pathNodes = filtered.nodes.filter((n) => n.id === refA || n.id === refB);
-      const pathEdges = filtered.edges.filter((e) =>
-        pathNodes.some((n) => n.id === e.from || n.id === e.to),
-      );
+      const refA = str(viewArgs.refA);
+      const refB = str(viewArgs.refB);
+      if (!refA || !refB) {
+        return "Usage: /graph path <refA> <refB> — both change refs required";
+      }
+      const path = shortestPath(filtered.nodes, filtered.edges, refA, refB);
+      if (path === undefined) {
+        return `No path from ${refA} to ${refB} in the coordination DAG`;
+      }
+      const pathSet = new Set(path);
       return [
-        `Path ${refA} → ${refB}`,
+        `Shortest path ${refA} → ${refB} (${path.length} nodes)`,
+        path.join(" → "),
+        "",
         renderGraph(
-          pathNodes.length > 0 ? pathNodes : filtered.nodes.slice(0, 2),
-          pathEdges.length > 0 ? pathEdges : filtered.edges,
+          filtered.nodes.filter((n) => pathSet.has(n.id)),
+          filtered.edges.filter((e) => pathSet.has(e.from) && pathSet.has(e.to)),
         ),
-      ].join("\n\n");
+      ].join("\n");
     }
     case "graph-forks":
       return renderTable(
@@ -119,20 +105,22 @@ export function renderGraphViewOutput(
         ],
         forkRows(runtime.changeLog),
       );
-    case "graph-stats":
+    case "graph-stats": {
+      const stats = graphStats(filtered);
       return renderTable(
         [
           { header: "Metric", width: 16 },
           { header: "Value", width: 10 },
         ],
         [
-          ["Nodes", String(filtered.nodes.length)],
-          ["Edges", String(filtered.edges.length)],
-          ["Max Depth", String(filtered.nodes.length)],
+          ["Nodes", String(stats.nodes)],
+          ["Edges", String(stats.edges)],
+          ["Max Depth", String(stats.maxDepth)],
           ["Fork Points", String(forkRows(runtime.changeLog).length)],
-          ["Leaf Changes", String(filtered.nodes.length > 0 ? 1 : 0)],
+          ["Leaf Changes", String(stats.leafChanges)],
         ],
       );
+    }
     case "graph":
     default:
       if (filtered.nodes.length === 0) {

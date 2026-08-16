@@ -13,6 +13,13 @@ export class RunHistoryTracker {
     this.history = appendObservationSegment(this.history, entry);
   }
 
+  /** Rebuild observation segments after a durable resume (ADR-0021). */
+  seedFromAuditTail(entries: readonly ObservationEntry[]): void {
+    for (const entry of entries) {
+      this.recordObservation(entry);
+    }
+  }
+
   recordChange(change: CoordinationChange): void {
     this.history = appendRewriteSegment(this.history, change);
   }

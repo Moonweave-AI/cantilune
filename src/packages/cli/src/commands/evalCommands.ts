@@ -15,6 +15,19 @@ import type { AppStore } from "../store.js";
 import type { BenchmarkSuite } from "@cantilune/evaluation/benchmarks";
 import type { RunAttempt, EvaluationRun } from "@cantilune/evaluation/execution";
 import type { EvalController } from "../wiring/evalControl.js";
+import {
+  analyzeMetricObservations,
+  collectTheoryOracleBundle,
+  compareEvaluationRuns,
+  composeEvaluationReport,
+  evaluationClaimId,
+  evaluationProtocolId,
+  evaluationRunPlanId,
+  observationsFromAttempts,
+  type EvaluationClaim,
+  type EvaluationProtocol,
+} from "@cantilune/evaluation";
+import { contentDigest } from "@cantilune/core";
 
 export type EvalNoticeLevel = "info" | "warn" | "error";
 
@@ -29,6 +42,8 @@ export interface PrefetchedEvalData {
   readonly attempts?: readonly RunAttempt[];
   readonly lastRunId?: string;
   readonly notice?: EvalNotice;
+  readonly report?: unknown;
+  readonly theoryOracles?: unknown;
 }
 
 export function registerEvalCommands(): SlashCommand[] {
@@ -103,9 +118,22 @@ interface RunOutcome {
 
 async function runLocalSuite(
   controller: EvalController,
-  _requestedSuite: string | undefined,
+  requestedSuite: string | undefined,
 ): Promise<RunOutcome> {
-  const { engine, plan, subject, budgetPolicy } = controller;
+  const { engine, plan, subject, budgetPolicy, suiteId, suiteRegistry } = controller;
+  if (requestedSuite !== undefined && requestedSuite !== (suiteId as string)) {
+    const suites = await suiteRegistry.listAll();
+    const match = suites.find((s) => (s.suiteId as string) === requestedSuite);
+    if (match === undefined) {
+      return {
+        runId: "",
+        notice: {
+          level: "warn",
+          text: `unknown suite: ${requestedSuite} (registered: ${suites.map((s) => s.suiteId as string).join(", ") || "none"})`,
+        },
+      };
+    }
+  }
   const admit = await engine.admitRun(plan, subject, budgetPolicy);
   if (!admit.ok) {
     return {
@@ -134,7 +162,7 @@ async function runLocalSuite(
     runId: run.runId as string,
     notice: {
       level: "info",
-      text: `run executed: ${run.runId as string} (attempt ${attempt.value.attemptId as string}, status ${attempt.value.status})`,
+      text: `run executed: ${run.runId as string} (suite ${requestedSuite ?? (suiteId as string)}, attempt ${attempt.value.attemptId as string}, status ${attempt.value.status})`,
     },
   };
 }
@@ -173,10 +201,90 @@ async function prefetchEvalReport(
   if (controller === undefined) return runId === undefined ? {} : { lastRunId: runId };
   if (runId === undefined) return { runs: await controller.listRuns() };
   const attempts = await controller.listAttempts(runId as never);
+  const observations = observationsFromAttempts(attempts);
+  const analysis = analyzeMetricObservations({
+    planRef: evaluationRunPlanId(controller.plan.planId as string),
+    population: "cli-local",
+    observations,
+    exploratory: true,
+    analysisPlanDeclared: false,
+  });
+  const claim: EvaluationClaim = {
+    claimId: evaluationClaimId("cli-local-claim"),
+    claimVersion: 1,
+    claimCode: "evaluation.c5",
+    statement: "CLI local evaluation report (not a public superiority claim)",
+    nullHypothesis: "no attempt-success difference",
+    targetPopulation: "cli-local",
+    candidateSubjectPolicy: "c9",
+    baselineFamily: "cli-local",
+    primaryMetricRefs: [],
+    secondaryMetricRefs: [],
+    guardrailMetricRefs: [],
+    successRule: "review",
+    failureRule: "review",
+    inconclusiveRule: "default",
+    samplePlanRef: "cli-local",
+    uncertaintyMethod: "student-t",
+    multipleComparisonPolicy: "holm",
+    stoppingRule: "one-look",
+    rescopeOrTerminationRule: "none",
+    ownerRef: "cli",
+    requiredReviewerRoles: ["stats"],
+    status: "protocolFrozen",
+    protocolDigest: contentDigest("cli-local-protocol"),
+    createdAt: "2026-08-16T00:00:00.000Z",
+    frozenAt: "2026-08-16T00:00:00.000Z",
+    supersedes: undefined,
+  };
+  const protocol: EvaluationProtocol = {
+    protocolId: evaluationProtocolId("cli-local-protocol"),
+    protocolVersion: 1,
+    claimRefs: [claim.claimId],
+    benchmarkSuiteRef: controller.suiteId as string,
+    candidateSelection: "cli-local",
+    baselineSelection: "cli-local",
+    populationDefinition: "cli-local",
+    samplingMethod: "census",
+    sampleSize: attempts.length,
+    seedPolicy: "fixed",
+    repetitionPolicy: "1x",
+    randomizationPlan: "none",
+    blindingPlan: "none",
+    metricPlan: "attempt-success",
+    analysisPlan: "exploratory",
+    missingDataPolicy: "exclude",
+    outlierPolicy: "none",
+    stoppingPolicy: "one-look",
+    securityPlanRef: "cli-local",
+    privacyPlanRef: "cli-local",
+    budgetPolicyRef: "cli-local",
+    reviewPolicyRef: "cli-local",
+    amendmentOf: undefined,
+    protocolDigest: contentDigest("cli-local-protocol"),
+    frozenAt: "2026-08-16T00:00:00.000Z",
+  };
+  const report = analysis.ok
+    ? composeEvaluationReport({
+        claim,
+        protocol,
+        analysis: analysis.value,
+        candidateSubjectDigest: contentDigest("cli-local-candidate"),
+        baselineSubjectDigests: [contentDigest("cli-local-baseline")],
+        suiteRef: controller.suiteId,
+      })
+    : undefined;
+  const theoryOracles = collectTheoryOracleBundle({
+    repoRoot: process.cwd(),
+    evaluatorRef: "cli-/eval-report",
+  });
   return {
     runs: await controller.listRuns(),
     attempts,
     lastRunId: runId,
+    ...(analysis.ok ? { analysis: analysis.value } : {}),
+    ...(report !== undefined ? { report } : {}),
+    theoryOracles,
   };
 }
 
@@ -192,12 +300,17 @@ async function prefetchEvalCompare(
   }
   const attemptsA = runA !== undefined ? await controller.listAttempts(runA as never) : [];
   const attemptsB = runB !== undefined ? await controller.listAttempts(runB as never) : [];
+  const analysis =
+    runA !== undefined && runB !== undefined
+      ? compareEvaluationRuns({ runA, runB, attemptsA, attemptsB })
+      : undefined;
   return {
     runs: await controller.listRuns(),
     runA,
     runB,
     attemptsA,
     attemptsB,
+    ...(analysis !== undefined ? { analysis } : {}),
   };
 }
 

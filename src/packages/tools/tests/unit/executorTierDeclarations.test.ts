@@ -22,7 +22,7 @@ import { createFilesystemExecutor } from "../../src/filesystem/filesystemExecuto
 import { createMcpExecutor } from "../../src/mcp/mcpExecutor.js";
 import { createShellExecutor } from "../../src/shell/shellExecutor.js";
 import { createWebExecutor } from "../../src/web/webExecutor.js";
-import { createToolSet } from "../../src/createToolSet.js";
+import { createHostToolSet } from "../support/hostToolSet.js";
 import type { ToolInvocationKey } from "@cantilune/syscall";
 
 function key(toolName: string): ToolInvocationKey {
@@ -168,7 +168,7 @@ describe("createToolSet composite tier routing", () => {
   });
 
   it("routes tierFor to the owning executor", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
       shell: { enabled: true },
@@ -186,12 +186,12 @@ describe("createToolSet composite tier routing", () => {
   });
 
   it("returns undefined for an unknown tool (falls back to the composite default)", () => {
-    const toolSet = createToolSet({ workingDirectory: tempDir });
+    const toolSet = createHostToolSet({ workingDirectory: tempDir });
     expect(toolSet.tierFor?.("no_such_tool")).toBeUndefined();
   });
 
   it("composite defaults to non-idempotent and routes reconcile to the owner", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
     });
@@ -202,7 +202,7 @@ describe("createToolSet composite tier routing", () => {
   });
 
   it("composite reconcile reports unknown for an unknown tool", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
     });

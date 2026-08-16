@@ -107,6 +107,7 @@ describe("MemoryCollaborationStore", () => {
       actorId: actorId("agent-b"),
       kind: "agent",
       status: "active",
+      namespaceId: "default",
     };
     const putParticipants = new Map([[putParticipant.actorId, putParticipant]]);
     const putSnapshot = mutableSnapshot(
@@ -123,6 +124,7 @@ describe("MemoryCollaborationStore", () => {
       actorId: "agent-b",
       kind: "agent",
       status: "active",
+      namespaceId: "default",
     });
   });
 
@@ -131,6 +133,7 @@ describe("MemoryCollaborationStore", () => {
       actorId: actorId("agent-a"),
       kind: "agent",
       status: "active",
+      namespaceId: "default",
     };
     const store = new MemoryCollaborationStore({
       initial: mutableSnapshot(
@@ -221,17 +224,11 @@ function mutableSnapshot(
   policyContext: PolicyContext,
   auditTail: ObservationEntry[],
 ): CollaborationSnapshot {
-  return {
+  return collaborationSnapshot({
     snapshotRef: snapshotRef(ref),
     epochId: epochId("42"),
     participants,
-    artifacts: new Map(),
-    links: new Map(),
-    sessions: new Map(),
-    capabilities: new Map(),
     policyContext,
     auditTail,
-    retiredEntities: [],
-    heartbeatLog: [],
-  };
+  });
 }

@@ -22,6 +22,7 @@ function validChangeWire(overrides: Record<string, unknown> = {}) {
     external: [],
     createdSessionRefs: [],
     visibility: "external",
+    matchWitness: { domainSize: 1, codomainSize: 1, embedding: [0] },
     ...overrides,
   };
 }

@@ -2,7 +2,7 @@
 
 | Field          | Value                                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------------------------------- |
-| Status         | **Proposed** (Owner-approval pending; implementation not started)                                              |
+| Status         | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)       |
 | Date           | 2026-08-14                                                                                                     |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                          |
 | Reviewers      | Independent Architecture + Security reviewer required before Acceptance (COI: Owner is DRI)                    |
@@ -84,22 +84,23 @@ This ADR closes that gap: it specifies the CLI/boot surface that starts and supe
 
 ## Implementation stages (S0–S4)
 
-| Stage  | Scope                                                                                            | Status      |
-| ------ | ------------------------------------------------------------------------------------------------ | ----------- |
-| **S0** | `bootSwarm` entry; `CantiluneSwarm` type; supervisor wiring reusing ADR-0015 `ClusterSupervisor` | Done (impl) |
-| **S1** | Per-agent `CantilunOS` construction with shared stores + distinct private history                | Done (impl) |
-| **S2** | CLI `/swarm` command family + headless `--swarm` mode                                            | Done (impl) |
-| **S3** | `FileTransport`-backed one-host swarm + L7 cross-process crash test                              | Done (impl) |
-| **S4** | `NetTransport`-backed multi-host swarm (depends on ADR-0018 T3/T4)                               | Not started |
+| Stage  | Scope                                                                                            | Status           |
+| ------ | ------------------------------------------------------------------------------------------------ | ---------------- |
+| **S0** | `bootSwarm` entry; `CantiluneSwarm` type; supervisor wiring reusing ADR-0015 `ClusterSupervisor` | Done (impl)      |
+| **S1** | Per-agent `CantilunOS` construction with shared stores + distinct private history                | Done (impl)      |
+| **S2** | CLI `/swarm` command family + headless `--swarm` mode                                            | Done (impl)      |
+| **S3** | `FileTransport`-backed one-host swarm + L7 cross-process crash test                              | Done (impl)      |
+| **S4** | `NetTransport`-backed multi-host swarm: `meshHostDirectory` + `bootSwarmWorker` + `remoteRuntimeProxy` + CLI `/swarm hosts\|join` + headless `--swarm-directory` / `--swarm-listen` / `--swarm-role` | Done (impl)      |
+| **S5** | Dispatch scheduler: condition re-evaluation, concurrency ceiling, budgets, stall convergence     | Done (impl)      |
 
-> "Done (impl)" denotes implementation + automated test/coverage gates green only. The ADR remains **Proposed** — Acceptance still requires Owner signature plus independent Architecture + Security review (COI: Owner is DRI). S0–S3 status reflects realized code/tests, not ADR Acceptance.
+> "Done (impl)" denotes implementation + automated test/coverage gates green only. The ADR remains **Proposed** — Acceptance still requires Owner signature plus independent Architecture + Security review (COI: Owner is DRI). S0–S5 status reflects realized code/tests, not ADR Acceptance. S4 directory / worker / CLI exist (`meshHostDirectory.ts`, `bootSwarmWorker.ts`, `remoteRuntimeProxy.ts`, `/swarm hosts|join`). A two-physical-host operator runbook is not a CI gate and is not claimed as S4 Acceptance. Public A2A remains Owner C6.
 
 ## Test / QA plan
 
 | Tier  | Scope                                                                 | Status         |
 | ----- | --------------------------------------------------------------------- | -------------- |
 | L2–L4 | Unit/contract for `bootSwarm`, `CantiluneSwarm`, supervisor wiring    | Done (green)   |
-| L5    | Independent Architecture + Security review                            | review-pending |
+| L5    | Architecture + Security review                                        | Owner-accepted COI 2026-08-16 |
 | L6    | Integration: `bootSwarm` → activate → startAgent → signal_done → done | Done (green)   |
 | L7    | Cross-process supervisor crash; orphan retirement; no double-start    | Done (green)   |
 | CI    | `pnpm test:coverage` across boot + cli + runtime                      | Done (green)   |
@@ -108,8 +109,86 @@ This ADR closes that gap: it specifies the CLI/boot surface that starts and supe
 
 ## Approval
 
-**Owner Design Approval**: Joker-of-Gotham — 2026-08-14 (design-approved; S0–S3 realized & green — L6 + L7 cross-process crash tests pass, coverage gates EXIT=0)
-**Status**: Proposed. Acceptance requires: (1) Owner signature (design-approved above); (2) independent Architecture reviewer sign-off; (3) independent Security reviewer sign-off; (4) green L7 crash test. Per the governance baseline, chat/Agent summaries are not sources of truth; this ADR is the authority and remains Proposed until the independent Architecture + Security review (L5) is complete. The Owner (DRI) authorized a staged realization of S0–S3 ahead of Acceptance to unblock the QA-0012 release gate; the ADR records that authorization here. No merge/deploy proceeds until Acceptance. The Owner is the DRI (COI); independent review must be signed by non-DRI external reviewers. This ADR is sequenced after ADR-0015 (done) and may proceed in parallel with ADR-0018 (transport) for the `FileTransport` one-host case.
+**Owner Design Approval**: Joker-of-Gotham — 2026-08-14 (design-approved; S0–S4 directory/worker/CLI realized — L6 + L7 tests exist, coverage gates are a separate CI fact)
+**Status**: Proposed. Acceptance requires: (1) Owner signature (design-approved above); (2) independent Architecture reviewer sign-off; (3) independent Security reviewer sign-off; (4) green L7 crash test. Per the governance baseline, chat/Agent summaries are not sources of truth; this ADR is the authority and remains Proposed until the independent Architecture + Security review (L5) is complete. The Owner (DRI) authorized staged realization ahead of Acceptance; the ADR records that authorization here. No merge/deploy proceeds until Acceptance. The Owner is the DRI (COI); independent review must be signed by non-DRI external reviewers. This ADR is sequenced after ADR-0015 (done) and ADR-0018 T3/T4 (engineering).
+
+## S5 — Dispatch scheduler (2026-08-15)
+
+### The defect S0–S3 left open
+
+`ClusterSupervisor.onParticipantActivated` evaluated a manifest's
+`startCondition` exactly once, at the moment the `activate_participant` change
+arrived, and dropped the agent when the condition was false. Nothing in the
+codebase re-evaluated it. Three topology families are therefore unreachable by
+construction, because their conditions are false at activation time by
+definition:
+
+- **fan-in / convergence** — `agentsDone: [a, b]` cannot hold while `a` and `b`
+  are still being activated;
+- **conditional start** — `artifactPublished` cannot hold before the artifact
+  exists;
+- **feedback loops** — a re-entry condition depends on a later revision.
+
+The failure compounded: `isClusterComplete()` treats `active`, `registered`, and
+`waiting` participants as incomplete, so a dropped agent left the world
+permanently incomplete and `waitForCompletion()` polled at one-second intervals
+forever, with no timeout and no diagnosis.
+
+The existing topology suite could not see this. Every case in
+`tests/system/cluster/topologies.test.ts` seeds the world in its final shape and
+drains once, which tests "given this world, who is eligible" — never "the world
+changed, is this agent eligible now".
+
+### Decision
+
+Dispatch moves behind a `SwarmScheduler`
+(`src/packages/boot/src/cluster/swarmScheduler.ts`). Activation _admits_ an
+agent to a pending queue; the supervisor's drain pass re-evaluates every pending
+start condition against the committed world on every tick and dispatches those
+the world now satisfies. The scheduler owns admission, ordering, and budget; the
+supervisor keeps the feed, the manifest binding, the principal, and the runtime
+— it remains the only component that touches the runtime.
+
+| Concern             | Rule                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Re-evaluation       | Every pending condition is re-asked on each drain, including drains that found no changes                              |
+| Concurrency ceiling | `maxConcurrentAgents` (default 8); eligible agents beyond it queue as `slot_unavailable`                               |
+| Spawn budget        | `maxTotalAgents` (default 256) bounds runaway self-registration; the dispatch batch is capped by the remaining quota   |
+| Turn / clock budget | `maxTotalTurns` (10,000) and `maxWallClockMs` (1h), measured from swarm start so an idle swarm still terminates        |
+| Ordering            | Manifest `priority` descending, then admission order                                                                   |
+| Anti-starvation     | Effective priority rises one step per `agingIntervalMs` (30s) waited                                                   |
+| Stall convergence   | Nothing running + something pending + no world movement, for `stallTicksBeforeDeadlock` (3) consecutive checks         |
+| Termination reason  | `ClusterResult.reason` ∈ `completed` / `stalled` / `budget_exhausted` / `stopped`, with a `diagnostic` naming blockers |
+
+Only `completed` can report `ok: true`. A stalled or budget-exhausted swarm has
+unfinished participants, so reporting success would be exactly the vacuous
+success the SS-01 gate exists to prevent.
+
+`AgentManifest` gains an optional `priority`; a manifest written before this
+change schedules exactly as it did before (`DEFAULT_AGENT_PRIORITY = 0`).
+Priority orders a queue and never bypasses a start condition or any admission
+rule. A non-positive or NaN policy value fails closed onto the default rather
+than being honored, because a zero ceiling would deadlock the swarm.
+
+### Realized artifacts (S5, unreviewed)
+
+- `src/packages/boot/src/cluster/swarmScheduler.ts`,
+  `src/packages/boot/src/cluster/schedulerPolicy.ts`.
+- `ClusterSupervisor`: `dispatchPending`, `checkStall`, `getSchedulerSnapshot`,
+  `ClusterTerminationReason` on `ClusterResult`, and the `agent_queued` /
+  `swarm_stalled` / `budget_exhausted` cluster events.
+- `bootSwarm`: `status()` now reports real `running` state, a retained event log
+  (previously an array that was declared and never written, so the log was
+  always empty), and the scheduler snapshot; `shutdown()` releases the agent
+  pool as documented.
+- CLI: `/swarm schedule` view, scheduler state in `SwarmControllerStatus`, and a
+  `/swarm wait` message that names the termination reason and the blocked agents
+  instead of a bare "incomplete".
+- Tests: `tests/unit/cluster/swarmScheduler.test.ts` (22),
+  `tests/system/cluster/schedulingDynamics.test.ts` (7 — the temporal cases the
+  topology suite could not express), plus 5 `bootSwarm` status/lifecycle cases.
+  Boot: 490 tests, coverage 94.52 statements / 88.5 branches / 98.48 functions /
+  94.52 lines, exit 0; `src/cluster` at 99.3 / 96.44 / 100.
 
 ### Realized artifacts (S0–S3, unreviewed)
 

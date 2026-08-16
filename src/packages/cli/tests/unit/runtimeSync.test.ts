@@ -211,6 +211,7 @@ describe("runtimeSync", () => {
       maxContextMessages: 4,
       systemPrompt: "test",
       storagePath: "/tmp/cantilune",
+      onBeforeTurn: () => undefined,
     });
     expect(handle.os).toBeDefined();
     await handle.shutdown();
@@ -323,7 +324,7 @@ describe("runtimeSync", () => {
 
   it("uses file persistence when durable is file and storagePath is set", async () => {
     const storagePath = mkdtempSync(join(tmpdir(), "cantilune-cli-"));
-    const filePersistenceSpy = vi.spyOn(runtimeMemory, "createFileRuntimePersistence");
+    const durableSpy = vi.spyOn(runtimeMemory, "resolveProductionDurable");
     const contentStoreSpy = vi.spyOn(contentFile, "createFileContentStore");
 
     try {
@@ -332,28 +333,26 @@ describe("runtimeSync", () => {
         durable: "file",
         storagePath,
       });
-      expect(filePersistenceSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ dir: join(storagePath, "runtime") }),
-      );
+      expect(durableSpy).toHaveBeenCalledWith(expect.objectContaining({ storagePath }));
       expect(contentStoreSpy).toHaveBeenCalledWith(join(storagePath, "content"));
       expect(handle.syncRuntime().snapshot).not.toBeNull();
       await handle.shutdown();
     } finally {
-      filePersistenceSpy.mockRestore();
+      durableSpy.mockRestore();
       contentStoreSpy.mockRestore();
       rmSync(storagePath, { recursive: true, force: true });
     }
   });
 
   it("uses memory persistence when storagePath is set without durable file", async () => {
-    const fileSpy = vi.spyOn(runtimeMemory, "createFileRuntimePersistence");
+    const durableSpy = vi.spyOn(runtimeMemory, "resolveProductionDurable");
     const handle = createCliRuntimeBoot(INSPECT_ONLY_ADAPTER, {
       llm: INSPECT_ONLY_LLM_CONFIG,
       storagePath: "/tmp/memory-only",
     });
-    expect(fileSpy).not.toHaveBeenCalled();
+    expect(durableSpy).not.toHaveBeenCalled();
     await handle.shutdown();
-    fileSpy.mockRestore();
+    durableSpy.mockRestore();
   });
 
   /**
@@ -375,10 +374,11 @@ describe("runtimeSync", () => {
 
     // Stand in for a world already on disk under an epoch this build never chose.
     const persistence = runtimeMemory.createMemoryRuntimePersistence({ initial: stored });
-    const fileSpy = vi.spyOn(runtimeMemory, "createFileRuntimePersistence").mockReturnValue({
-      ...persistence,
+    const fileSpy = vi.spyOn(runtimeMemory, "resolveProductionDurable").mockReturnValue({
+      durable: persistence.durable,
       locks: new runtimeMemory.MemoryResourceLockTable(),
-    } as never);
+      backend: "file",
+    });
 
     let turn = 0;
     const scripted: LlmAdapter = {

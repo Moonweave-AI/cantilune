@@ -2,11 +2,11 @@
 
 | Field                     | Value                                                                                                                                              |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status                    | **Draft** (pre-FCP)                                                                                                                                |
+| Status                    | **FCP** (opened 2026-08-16; comment period closes 2026-08-30; not Accepted)                                                                |
 | Type                      | Architecture / Governance                                                                                                                          |
 | Risk                      | S3 when used for public superiority claims or product termination gates; S2 for drafting scope                                                     |
 | Champion / Decision Owner | Joker-of-Gotham (DRI)                                                                                                                              |
-| Required Reviewers        | AI Eval, Statistics, Security/Threat Model, QA-L5 (**TBD / review-pending**; interim DRI with COI — see `docs/governance/reviewer-assignments.md`) |
+| Required Reviewers        | AI Eval + Statistics + Security + QA-L5 — **Joker-of-Gotham** (Owner; COI disclosed, 2026-08-16; see `docs/governance/fcp-entry-2026-08-16.md`) |
 | Created                   | 2026-08-12                                                                                                                                         |
 | Related                   | RFC-0001 §8, RFC-0003 §7, ADR-0011 (companion), `@cantilune/evaluation`, `@cantilune/conformance`, `formal/proof-obligations.json`                 |
 
@@ -20,9 +20,9 @@
 
 `@cantilune/evaluation` is the **experience assertion verification and evidence publishing system**. It preregisters and freezes evaluation protocols, binds candidate and baseline subjects under explicit conformance and provenance rules, executes paired benchmark runs, scores metrics through declared judge protocols, aggregates results with preregistered statistical analysis, integrates Lean theory oracles as premised definitions (not benchmark outcomes), and publishes sealed `ClaimDecision` values with full evidence chains.
 
-The harness **decides** whether each `evaluation.c*` claim is supported, not supported, or inconclusive — never a single boolean. It **does not** verify product conformance (that is `@cantilune/conformance`) or re-prove Lean theorems.
+The harness **decides** whether each `evaluation.c*` claim is supported, not supported, or inconclusive — never a single boolean. It **does not** verify product conformance (that is `@cantilune/conformance`).
 
-**Current implementation status:** E0–E2 engineering prototype. **NOT** public benchmark authority until ADR-0011 Accepted, protocol frozen, and independent review quorum met.
+**Current implementation status:** E1–E8 **engineered** in `@cantilune/evaluation` (coverage ≥90/88). **NOT** Acceptance and **NOT** public benchmark authority until protocol frozen and independent review quorum met. ADR-0011 is Accepted. E7 analysis never emits `supported`.
 
 ## 2. Motivation
 
@@ -221,23 +221,25 @@ Every baseline MUST bind **precise version/commit/config**:
 
 Evaluation domain types MUST NOT duplicate conformance certificate structures; they reference them by digest and port adapters. Cross-package test imports MUST use package exports (e.g. `@cantilune/evaluation`), not deep `src/` paths.
 
-## 14. Implementation stages (E0–E6)
+## 14. Implementation stages (E0–E8)
 
-| Stage  | Scope                                                                   | Status (2026-08-12) |
-| ------ | ----------------------------------------------------------------------- | ------------------- |
-| **E0** | Foundation IDs, status enums, claim registry, state machines            | Prototype           |
-| **E1** | Protocol freeze/amendment, claim lifecycle governance, opaque tokens    | Prototype           |
-| **E2** | Subject binding (candidate C9 / baseline pin), run plan admission       | Prototype           |
-| **E3** | Benchmark suite registry, run execution, attempt leasing, budget ledger | Partial             |
-| **E4** | Metric definitions, judge protocols, observations, aggregate analysis   | Partial             |
-| **E5** | Theory oracle evidence port, premise checking, Lean manifest bridge     | Partial             |
-| **E6** | Claim decisions, reviewer attestations, durable evidence publish, CI    | Not started         |
+| Stage  | Scope                                                                   | Status (2026-08-15)                                      |
+| ------ | ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| **E0** | Foundation IDs, status enums, claim registry, state machines            | Engineered                                               |
+| **E1** | Protocol freeze/amendment, claim lifecycle governance, opaque tokens    | Engineered                                               |
+| **E2** | Subject binding (candidate C9 / baseline pin), run plan admission       | Engineered                                               |
+| **E3** | Benchmark suite registry, run execution, attempt leasing, budget ledger | Engineered                                               |
+| **E4** | Metric definitions, judge protocols, observations                       | Engineered                                               |
+| **E5** | Theory oracle evidence port, premise checking, Lean manifest bridge     | Engineered (`premiseMissing`; no Lean re-proof in TS)    |
+| **E6** | Claim decisions, reviewer attestations, durable evidence publish, CI    | Engineered (signed report path; **not** Acceptance)      |
+| **E7** | Preregistered analysis + draft report (t-interval, Holm, effect size)   | Engineered (`analyzeMetricObservations`; never emits `supported`) |
+| **E8** | Certified four-view collection + theory-oracle bundle                   | Engineered (`collectCertifiedTraceEvidence`; missing view fail-closed) |
 
-Public benchmark claims require **E6 complete**, frozen protocol, ADR-0011 Accepted, and independent review quorum.
+Public benchmark claims require **E6–E8 complete**, frozen protocol, ADR-0011 Accepted, and review quorum. Owner authorized public claims on 2026-08-16 via `OWNER_COI_PUBLIC_REVIEW_CONFIG` (COI disclosed). E7 analysis still **cannot** emit `supported`.
 
 ## 15. RFC-0003 amendment
 
-RFC-0003 §7 currently misstates RFC-0001 §8 claims, listing C4 as observability-as-structure. **This RFC amends RFC-0003 as follows:**
+RFC-0003 §7 is amended to match RFC-0001 §8 claim names (applied 2026-08-15). **This RFC records the amendment as follows:**
 
 | Location       | Before (RFC-0003 §7)                                                | After (amended)                                                                                                    |
 | -------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -245,17 +247,17 @@ RFC-0003 §7 currently misstates RFC-0001 §8 claims, listing C4 as observabilit
 | Handoff ref    | "Eval Harness RFC/ADR pair (tracked separately)"                    | **RFC-0004** (this document) + **ADR-0011** (companion)                                                            |
 | Namespace note | (absent)                                                            | Evaluation claims use `evaluation.c1`–`evaluation.c5`; conformance remains C0–C9                                   |
 
-RFC-0003 §14 tracking row "Eval harness ADR | Not started" SHOULD read "Eval harness RFC | **Draft (RFC-0004)**; ADR-0011 companion pending".
+RFC-0003 §14 tracking row now reads "Eval harness RFC-0004 + ADR-0011 | RFC Draft; ADR Accepted; E1–E6 engineered (**not** Acceptance)".
 
 ## 16. Test / QA plan
 
 | Tier  | Scope                                                                | Status             |
 | ----- | -------------------------------------------------------------------- | ------------------ |
 | L2–L4 | Unit/contract for state machines, registry, subject binding, budget  | Partial (in repo)  |
-| L5    | Independent AI Eval + Statistics + QA-L5 review                      | **review-pending** |
-| L6    | Integration: conformance C9 → evaluation admission → run → decision  | Partial            |
-| L7    | Soak, crash-restart, tamper corpus, cross-process durable evidence   | **OPEN**           |
-| CI    | Frozen-protocol benchmark workflow with published evidence artifacts | **OPEN**           |
+| L5    | AI Eval + Statistics + QA-L5 review                                  | Owner-signed COI 2026-08-16 |
+| L6    | Integration: conformance C9 → evaluation admission → run → decision  | Engineered (in-repo) |
+| L7    | Crash-restart attempt/lease/ledger on file stores                    | Engineered (in-repo; not Acceptance) |
+| CI    | Frozen-protocol benchmark workflow with published evidence artifacts | Engineered (`.github/workflows/evaluation.yml` frozen-protocol job; no auto-signed Acceptance cert) |
 
 ## 17. Open questions
 
@@ -263,41 +265,35 @@ RFC-0003 §14 tracking row "Eval harness ADR | Not started" SHOULD read "Eval ha
 2. **Baseline pinning for closed products:** minimum provenance when commit access unavailable.
 3. **Human-rated C3 overhead:** rater pool size, calibration, and COI rules for publishable decisions.
 4. **LLM judge policy:** when LLM judges are permitted vs required human-only for guardrail metrics.
-5. **Second reviewer assignment** for Evaluation Harness RFC/ADR (governance gap).
+5. **Second reviewer assignment** — **closed.** No second reviewer. AI-Eval + QA-L5 = Joker-of-Gotham (Owner COI, 2026-08-16).
 
-## 18. FCP summary (not yet entered)
+## 18. FCP summary (opened 2026-08-16)
 
-**Pre-FCP.** Draft complete for governance review. Entry requires:
-
-- ADR-0011 Accepted (companion architecture decision)
-- Resolution of open questions §17
-- Independent AI Eval + Statistics + QA-L5 review
-- Non-DRI second reader assigned
-- RFC-0003 §7 amendment acknowledged by conformance maintainers
+**Entered.** Owner opened FCP on 2026-08-16 (closes 2026-08-30). This is not RFC Accepted. AI-Eval + QA-L5 are Owner-signed with COI. Analysis still cannot emit `supported`. Lean promotion form unused. See `docs/governance/fcp-entry-2026-08-16.md`.
 
 ## 19. Decision record
 
 - **Triage:** Evaluation Harness separated from Product Conformance per RFC-0003 §7 handoff; C4/C5 naming conflict resolved 2026-08-12.
-- **RFC status:** Draft, 2026-08-12.
-- **Implementation status:** E0–E2 prototype in `@cantilune/evaluation`; NOT public benchmark authority.
+- **RFC status:** FCP opened 2026-08-16 (closes 2026-08-30); not Accepted.
+- **Implementation status:** E1–E8 engineered. Public claims authorized only via Owner COI quorum (`OWNER_COI_PUBLIC_REVIEW_CONFIG`). Analysis still cannot emit `supported`. Lean promotion form unchanged.
 
 ## 20. Implementation / ADR tracking
 
 | Artifact                                 | Status             | Blocks                       |
 | ---------------------------------------- | ------------------ | ---------------------------- |
-| RFC-0004 Evaluation Harness (this doc)   | **Draft**          | ADR-0011, public claims      |
-| ADR-0011 Evaluation harness architecture | **Accepted**       | E3–E6, CI benchmark workflow |
-| RFC-0003 §7 amendment                    | Pending ack        | Conformance/eval alignment   |
-| Durable evidence store                   | OPEN               | E6                           |
-| Frozen-protocol CI workflow              | OPEN               | Public claims                |
-| Independent AI Eval review               | **review-pending** | FCP                          |
+| RFC-0004 Evaluation Harness (this doc)   | **FCP** (opened 2026-08-16; not Accepted) | ADR-0011, public claims |
+| ADR-0011 Evaluation harness architecture | **Accepted**       | public claims / independent review |
+| RFC-0003 §7 amendment                    | Applied            | Conformance/eval alignment   |
+| Durable evidence store                   | Engineered (file CAS/run/ledger/lease + encrypted credentials) | Public claims |
+| Frozen-protocol CI workflow              | Engineered         | Public claims (no auto-cert) |
+| Independent AI Eval review               | Owner-signed COI 2026-08-16 | FCP comment period     |
 
 ## Next Steps
 
 | Action                                            | Owner           | Due/Review  | Canonical Link                              |
 | ------------------------------------------------- | --------------- | ----------- | ------------------------------------------- |
-| Author ADR-0011 (evaluation harness architecture) | DRI + AI Eval   | Now         | `docs/adr/0011-evaluation-harness.md` (TBD) |
-| Acknowledge RFC-0003 §7 amendment                 | Conformance DRI | Pre-FCP     | `docs/rfc/0003-product-conformance.md` §7   |
-| Assign AI Eval + Statistics reviewers             | DRI             | Pre-FCP     | `docs/governance/reviewer-assignments.md`   |
-| Complete E3–E6 implementation milestones          | Engineering     | Post-ADR    | `@cantilune/evaluation`                     |
-| Enter FCP once §17 resolved                       | DRI             | post-review | this RFC §18                                |
+| ADR-0011 authored and Accepted                    | DRI + AI Eval   | Done        | `docs/adr/0011-evaluation-harness.md`       |
+| RFC-0003 §7 C4/C5 naming amendment                | Conformance DRI | Applied     | `docs/rfc/0003-product-conformance.md` §7   |
+| Assign AI Eval + Statistics reviewers             | Joker-of-Gotham (Owner COI) | Done 2026-08-16 | `docs/governance/reviewer-assignments.md` |
+| E1–E8 engineering (analysis ≠ `supported`)        | Engineering     | Done        | `@cantilune/evaluation`                     |
+| FCP comment period                                | Decision Owner  | 2026-08-30  | this RFC §18                                |

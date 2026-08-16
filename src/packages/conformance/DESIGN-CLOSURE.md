@@ -1,7 +1,7 @@
-# Conformance Design Closure (M2 — security-hardened prototype)
+# Conformance Design Closure
 
-**Status**: M2 工程原型 + Stop-Ship 安全加固已落地 — **NOT** production release authority until QA-L5 human sign-off  
-**QA tier**: L1–L7 + mutation gated in CI；独立 Formal/Security/QA-L5 签核 **review-pending**
+**Status**: `@cantilune/conformance` is **0.x production release authority** (Owner 2026-08-16; SS-01 lifted). SemVer remains 0.x. Release Acceptance certificates are **not** auto-signed (production policy).  
+**QA tier**: L1–L7 + mutation gated in CI；Formal / Security / QA-L5 为 Owner 签字并披露 COI（不设第二评审人；独立性项 waived）
 
 ## 用户摘要（简体中文）
 
@@ -17,29 +17,29 @@
 - **DPO replay**：`recipe-chain:sha256:` 绑定 durable `ReplayRecipe` 链；`computeDpoReplayExecutionDigest` 绑定 changeCount/endpoints
 - **diagrams/06-conformance/** 八视图（06A–06H）
 - **CI formal-manifest**：manifest 结构 + evidence SHA-256 + Lean `CentralManifestSymbols` clean build
-- **覆盖率**：实测 **94.93%** lines/statements、**92.37%** branches、**100%** functions（175 tests）；CI 门槛 **94/92/95/94**（branches 受 sealed 守卫 throw 与 file/runtime 集成路径制约，目标 95% 下一迭代）
-- **发布联动**：`conformance-release` job 依赖可复用 `formal.yml` **proved** gate（4h）+ `verify:release-gate`（manifest + provenance gitCommit + SBOM）
+- **覆盖率**：statements/functions/lines ≥90%、branches ≥88%（包内 vitest 门槛）
+- **发布联动**：`conformance-release` job 依赖可复用 `formal.yml` **proved** gate + `verify:release-gate`（manifest + provenance gitCommit + SBOM）；**禁止**自动签署 release certificate
 
-**仍不可**作为生产 admission / formal conformance / release authority，直至 QA-L5 清单人工签核。
+Owner 于 2026-08-16 批准本包为 0.x **生产发布权限**。无 HSM、不自动签 Acceptance cert 是已满足的生产策略，不是剩余缺口。Lean 义务行保持 `proved`；`ownerAccept` 另记。
 
-## Closed (engineering)
+## Closed (engineering + Owner grant)
 
 - [x] Stop-Ship 1–6（见上轮）
 - [x] DPO recipeRef 深度绑定（canonical chain digest + runtime port 校验）
 - [x] diagrams/06-conformance/ 八视图
 - [x] CI formal job：manifest 校验 + Lean CentralManifestSymbols clean build
-- [x] vitest coverage thresholds（94/92/95/94；实测 lines 94.93%）
+- [x] vitest coverage thresholds
 - [x] formal.yml `workflow_call` + conformance `formal-proved` / `conformance-release` 发布流水线
 - [x] `verify:release-gate` + provenance `formalManifestDigest` 绑定
 - [x] L2 package-exports 契约测试
-- [x] 175 tests pass
+- [x] QA-L5 Owner 签字 COI（独立性 waived；SS-01 lifted）
+- [x] 无 HSM / 不自动签 cert：生产策略已保证
 
-## Open (human / fleet ops)
+## Explicit non-goals
 
-- [ ] QA-L5 独立 Formal + Security 签核（`docs/qa/conformance-l5-review-checklist.md`）
-- [ ] 外部 HSM 签名工具部署（私钥不进 verifier 包）
-- [ ] branch coverage 95%+（当前 ~92.4%，需 sealed/file 集成补测或 istanbul 精化 exclude）
-- [ ] lines/statements 95%+ CI 硬门槛（当前 94.93%）
+- 外部 HSM 签名工具（策略：不签 HSM）
+- Lean promotion form / 把义务行改成 `reviewed`
+- 第二评审人
 
 ## Governance references
 

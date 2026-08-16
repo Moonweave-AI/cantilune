@@ -19,7 +19,6 @@ import type {
 } from "@cantilune/core";
 import { snapshotSchemaEpochBinding } from "../engine/activeSchemaContext.js";
 import { runtimeViolation } from "../foundation/errors.js";
-import type { RuntimeViolation } from "../foundation/errors.js";
 import type { CodecParseResult } from "./wireValidation.js";
 
 /**
@@ -65,7 +64,11 @@ function fail(path: string, message: string): CodecParseResult<never> {
   return { ok: false, violation: runtimeViolation("codec_invalid", message, { path }) };
 }
 
-function requireString(record: Record<string, unknown>, key: string, path: string): CodecParseResult<string> {
+function requireString(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+): CodecParseResult<string> {
   const value = record[key];
   if (typeof value !== "string" || value.length === 0) {
     return fail(`${path}.${key}`, `expected non-empty string at ${key}`);
@@ -73,7 +76,11 @@ function requireString(record: Record<string, unknown>, key: string, path: strin
   return { ok: true, value };
 }
 
-function requireNumber(record: Record<string, unknown>, key: string, path: string): CodecParseResult<number> {
+function requireNumber(
+  record: Record<string, unknown>,
+  key: string,
+  path: string,
+): CodecParseResult<number> {
   const value = record[key];
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fail(`${path}.${key}`, `expected finite number at ${key}`);
@@ -100,79 +107,108 @@ function requireRef(
   return { ok: true, value: out };
 }
 
+/** Scalar fields the binding wire form requires, grouped by primitive type. */
+const BINDING_STRING_FIELDS = [
+  "activationDomainId",
+  "epochId",
+  "runtimeHead",
+  "admissionId",
+  "activatedBy",
+  "activatedAt",
+] as const;
+const BINDING_NUMBER_FIELDS = ["bindingGeneration", "epochOrdinal"] as const;
+
+/** Nested ref fields and the string keys each one must carry. */
+const BINDING_REF_FIELDS = [
+  ["schemaRef", ["schemaId", "revisionId", "digest"]],
+  ["policyRef", ["policyId", "revisionId", "digest"]],
+  ["handlerManifestRef", ["manifestId", "digest"]],
+] as const;
+
+/**
+ * Validate every scalar and nested-ref field in one pass.
+ *
+ * Collecting the fields through a table keeps {@link parseSchemaBindingWire}
+ * free of one guarded branch per field, which is what pushed it over the
+ * cognitive-complexity budget. The first violation short-circuits, so the
+ * reported path is still the first malformed field in declaration order.
+ */
+function collectBindingFields(input: Record<string, unknown>): CodecParseResult<{
+  readonly strings: Record<string, string>;
+  readonly numbers: Record<string, number>;
+  readonly refs: Record<string, Record<string, string>>;
+}> {
+  const strings: Record<string, string> = {};
+  for (const field of BINDING_STRING_FIELDS) {
+    const result = requireString(input, field, "schemaBinding");
+    if (!result.ok) return result;
+    strings[field] = result.value;
+  }
+
+  const numbers: Record<string, number> = {};
+  for (const field of BINDING_NUMBER_FIELDS) {
+    const result = requireNumber(input, field, "schemaBinding");
+    if (!result.ok) return result;
+    numbers[field] = result.value;
+  }
+
+  // Optional: absent means "no predecessor generation", not a malformed field.
+  if (input.previousBindingGeneration !== undefined) {
+    const prev = requireNumber(input, "previousBindingGeneration", "schemaBinding");
+    if (!prev.ok) return prev;
+    numbers.previousBindingGeneration = prev.value;
+  }
+
+  const refs: Record<string, Record<string, string>> = {};
+  for (const [field, keys] of BINDING_REF_FIELDS) {
+    const result = requireRef(input[field], `schemaBinding.${field}`, keys);
+    if (!result.ok) return result;
+    refs[field] = result.value;
+  }
+
+  return { ok: true, value: { strings, numbers, refs } };
+}
+
 /** Parse and validate a wire binding DTO into a frozen {@link SchemaEpochBinding}. */
 export function parseSchemaBindingWire(input: unknown): CodecParseResult<SchemaEpochBinding> {
   if (!isRecord(input)) {
     return fail("schemaBinding", "expected schema binding object");
   }
 
-  const activationDomainId = requireString(input, "activationDomainId", "schemaBinding");
-  if (!activationDomainId.ok) return activationDomainId;
-  const bindingGeneration = requireNumber(input, "bindingGeneration", "schemaBinding");
-  if (!bindingGeneration.ok) return bindingGeneration;
-  const epochId = requireString(input, "epochId", "schemaBinding");
-  if (!epochId.ok) return epochId;
-  const epochOrdinal = requireNumber(input, "epochOrdinal", "schemaBinding");
-  if (!epochOrdinal.ok) return epochOrdinal;
-  const schemaRef = requireRef(input.schemaRef, "schemaBinding.schemaRef", [
-    "schemaId",
-    "revisionId",
-    "digest",
-  ]);
-  if (!schemaRef.ok) return schemaRef;
-  const policyRef = requireRef(input.policyRef, "schemaBinding.policyRef", [
-    "policyId",
-    "revisionId",
-    "digest",
-  ]);
-  if (!policyRef.ok) return policyRef;
-  const handlerManifestRef = requireRef(input.handlerManifestRef, "schemaBinding.handlerManifestRef", [
-    "manifestId",
-    "digest",
-  ]);
-  if (!handlerManifestRef.ok) return handlerManifestRef;
-  const runtimeHead = requireString(input, "runtimeHead", "schemaBinding");
-  if (!runtimeHead.ok) return runtimeHead;
-  const admissionId = requireString(input, "admissionId", "schemaBinding");
-  if (!admissionId.ok) return admissionId;
-  const activatedBy = requireString(input, "activatedBy", "schemaBinding");
-  if (!activatedBy.ok) return activatedBy;
-  const activatedAt = requireString(input, "activatedAt", "schemaBinding");
-  if (!activatedAt.ok) return activatedAt;
-
-  let previousBindingGeneration: number | undefined;
-  if (input.previousBindingGeneration !== undefined) {
-    const prev = requireNumber(input, "previousBindingGeneration", "schemaBinding");
-    if (!prev.ok) return prev;
-    previousBindingGeneration = prev.value;
-  }
+  const collected = collectBindingFields(input);
+  if (!collected.ok) return collected;
+  const { strings, numbers, refs } = collected.value;
+  const schemaRef = refs.schemaRef!;
+  const policyRef = refs.policyRef!;
+  const handlerManifestRef = refs.handlerManifestRef!;
+  const previousBindingGeneration = numbers.previousBindingGeneration;
 
   const binding: SchemaEpochBinding = {
-    activationDomainId: activationDomainId.value as ActivationDomainId,
-    bindingGeneration: bindingGeneration.value as BindingGeneration,
-    epochId: epochId.value as EpochId,
-    epochOrdinal: epochOrdinal.value as EpochOrdinal,
+    activationDomainId: strings.activationDomainId as ActivationDomainId,
+    bindingGeneration: numbers.bindingGeneration as BindingGeneration,
+    epochId: strings.epochId as EpochId,
+    epochOrdinal: numbers.epochOrdinal as EpochOrdinal,
     schemaRef: {
-      schemaId: schemaRef.value.schemaId as SchemaId,
-      revisionId: schemaRef.value.revisionId as SchemaRevisionId,
-      digest: schemaRef.value.digest as SchemaDigest,
+      schemaId: schemaRef.schemaId as SchemaId,
+      revisionId: schemaRef.revisionId as SchemaRevisionId,
+      digest: schemaRef.digest as SchemaDigest,
     } as SchemaRef,
     policyRef: {
-      policyId: policyRef.value.policyId as PolicyId,
-      revisionId: policyRef.value.revisionId as PolicyRevisionId,
-      digest: policyRef.value.digest,
+      policyId: policyRef.policyId as PolicyId,
+      revisionId: policyRef.revisionId as PolicyRevisionId,
+      digest: policyRef.digest,
     } as PolicyRef,
     handlerManifestRef: {
-      manifestId: handlerManifestRef.value.manifestId as HandlerManifestId,
-      digest: handlerManifestRef.value.digest as HandlerManifestDigest,
+      manifestId: handlerManifestRef.manifestId as HandlerManifestId,
+      digest: handlerManifestRef.digest as HandlerManifestDigest,
     } as HandlerManifestRef,
-    runtimeHead: runtimeHead.value as SnapshotRef,
-    admissionId: admissionId.value as SchemaAdmissionId,
+    runtimeHead: strings.runtimeHead as SnapshotRef,
+    admissionId: strings.admissionId as SchemaAdmissionId,
     ...(previousBindingGeneration !== undefined
       ? { previousBindingGeneration: previousBindingGeneration as BindingGeneration }
       : {}),
-    activatedBy: activatedBy.value,
-    activatedAt: activatedAt.value,
+    activatedBy: strings.activatedBy!,
+    activatedAt: strings.activatedAt!,
   };
 
   // The snapshot helper validates nested ref shapes and freezes the result.

@@ -1,10 +1,15 @@
 import type { ToolExecutor, ToolSchema } from "@cantilune/syscall";
+import type { OsSandbox } from "../sandbox/osSandbox.js";
 import type { McpConfig } from "../types.js";
 import { createMcpClient, formatMcpToolResult } from "./mcpBridge.js";
 import { discoverMcpTools, type McpToolCache } from "./mcpDiscovery.js";
 
-export function createMcpExecutor(config: McpConfig): ToolExecutor {
-  const client = createMcpClient(config);
+export interface McpExecutor extends ToolExecutor {
+  dispose(): void;
+}
+
+export function createMcpExecutor(config: McpConfig, sandbox?: OsSandbox): McpExecutor {
+  const client = createMcpClient(config, sandbox !== undefined ? { sandbox } : {});
   let cache: McpToolCache | null = null;
   let connectPromise: Promise<void> | null = null;
 
@@ -53,10 +58,18 @@ export function createMcpExecutor(config: McpConfig): ToolExecutor {
       }
     },
 
+    dispose(): void {
+      client.disconnect();
+    },
+
     async execute(
       name: string,
       args: Record<string, unknown>,
+      options?: { readonly signal?: AbortSignal },
     ): Promise<{ ok: boolean; output: string }> {
+      if (options?.signal?.aborted === true) {
+        return { ok: false, output: "skipped: aborted before MCP dispatch" };
+      }
       if (name === `${toolPrefix}unavailable`) {
         return { ok: false, output: `MCP server "${config.name}" is not connected` };
       }

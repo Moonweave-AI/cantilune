@@ -29,6 +29,7 @@ function validChangeWire(overrides: Record<string, unknown> = {}) {
     external: [],
     createdSessionRefs: [],
     visibility: "external",
+    matchWitness: { domainSize: 1, codomainSize: 1, embedding: [0] },
     ...overrides,
   };
 }
@@ -67,9 +68,7 @@ describe("wireValidation", () => {
       status: "active",
       manifestRef: "sha256:manifest-agent-1",
     };
-    const okWire = parseSnapshotWire(
-      validSnapshotWire({ participants: [validParticipant] }),
-    );
+    const okWire = parseSnapshotWire(validSnapshotWire({ participants: [validParticipant] }));
     expect(okWire.ok).toBe(true);
     if (!okWire.ok) return;
     expect(okWire.value.participants[0]!.manifestRef).toBe("sha256:manifest-agent-1");

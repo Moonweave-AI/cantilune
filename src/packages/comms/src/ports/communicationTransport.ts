@@ -33,6 +33,10 @@ export interface TransportRegistry {
 export interface PeerDirectory {
   resolve(descriptorRef: DescriptorRef): Promise<PeerDescriptor | undefined>;
   register(descriptor: PeerDescriptor): void;
+  /** Current receipt-pinned certificate fingerprints for a peer. */
+  getPinnedFingerprints(peerRef: string): readonly string[];
+  /** Replace the pin set. Callers must go through admission-bound rotation. */
+  setPinnedFingerprints(peerRef: string, fingerprints: readonly string[]): void;
 }
 
 export interface MessageConsumer {

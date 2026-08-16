@@ -21,7 +21,7 @@
 | apply / admit / replay        | ❌                              | ✅                     |
 | I12 独立重放                  | 声明 receipt                    | ✅ ReplayVerifier      |
 | I6 auditTail ↔ history        | ✅ 纯函数                       | ✅ commit 路径调用     |
-| story E2E                     | ⚠️ `simulateCommit` 遗留        | ✅ canonical + bridge  |
+| story E2E                     | ⚠️ core contract 为 recipe 单测（非 L6） | ✅ canonical + bridge  |
 | CompositionIntent → admission | ⚠️ `toCoordinationIntent` lossy | ✅ `compositionBridge` |
 | 共享 fixture                  | ✅ `@cantilune/test-fixtures`   | ✅ 同包                |
 
@@ -37,10 +37,15 @@
 | 4   | story 经 runtime（非 simulateCommit）           | ✅ bridge + runtime integration |
 | 5   | L6–L7 重新标注成立                              | ✅ runtime stress               |
 
+## Closed follow-ups
+
+| 项                                 | 落点                                                                                         |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- |
+| core contract `simulateCommit`     | 已隔离：tests-only harness（`@deprecated`，非生产导出，非 L6 证据）；canonical 在 runtime    |
+| derive 结构投影                    | ADR-0002 follow-up Done：只读结构投影（serial/parallel/nest）；禁止 SwarmScheduler           |
+
 ## OPEN
 
-| 项                                            | 落点                         |
-| --------------------------------------------- | ---------------------------- |
-| core contract story 删除 simulateCommit       | 保留 deprecated 至下一里程碑 |
-| derive 结构投影                               | 新 ADR                       |
-| `@cantilune/comms` / `@cantilune/conformance` | 外置 02G                     |
+| 项                                            | 落点     |
+| --------------------------------------------- | -------- |
+| `@cantilune/comms` / `@cantilune/conformance` | 外置 02G |

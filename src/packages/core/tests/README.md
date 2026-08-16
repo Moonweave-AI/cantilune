@@ -10,7 +10,7 @@
 | L3  | `unit/`                     | **成立**                                                      |
 | L4  | `integration/`              | **部分** — 窄跨柱流                                           |
 | L5  | `contract/` + `negative/`   | **成立**                                                      |
-| L6  | `system/`                   | **成立** — 语义核 `simulateCommit` + 大规模 history/derive    |
+| L6  | `system/`                   | **成立** — 大规模 history/derive（`simulateCommit` 非 L6 证据） |
 | L7  | `system/complex/`           | **成立** — 30~50 规模隔离矩阵、nest/fork 树、循环编排 harness |
 
 L7 复杂场景（core）：

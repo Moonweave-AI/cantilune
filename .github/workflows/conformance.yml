@@ -77,6 +77,9 @@ jobs:
       - name: Mutation testing gate
         run: pnpm --filter @cantilune/conformance run test:mutation
       - run: pnpm --filter @cantilune/conformance pack --dry-run
+      - name: Verify package evidence manifests (no auto-sign)
+        run: pnpm --filter @cantilune/conformance exec vitest run tests/unit/packageEvidenceManifests.test.ts
+        # Intentionally does NOT mint or sign release certificates.
       - name: Upload conformance supply-chain artifacts
         uses: actions/upload-artifact@v4
         with:

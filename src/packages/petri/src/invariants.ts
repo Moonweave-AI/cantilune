@@ -201,6 +201,87 @@ export function placeInvariants(net: PetriNet): readonly PlaceInvariant[] {
   return dedupInvariants(invariants);
 }
 
+/** A transition invariant (T-invariant): weights over transitions with A·y = 0. */
+export interface TransitionInvariant {
+  readonly transitions: ReadonlyArray<{ readonly transitionId: string; readonly weight: number }>;
+  readonly label: string;
+}
+
+/**
+ * Compute a T-invariant basis: non-negative integer vectors `y` with `A·y = 0`.
+ * Implemented by transposing the incidence matrix and reusing the S-invariant
+ * Martinez–Silva elimination (places ↔ transitions swapped).
+ */
+export function transitionInvariants(net: PetriNet): readonly TransitionInvariant[] {
+  const transitionIds = net.transitions.map((t) => t.id);
+  const transitionNames = new Map(net.transitions.map((t) => [t.id, t.name] as const));
+  if (transitionIds.length === 0) {
+    return [];
+  }
+  const A = incidenceMatrix(net);
+  const m = A.length;
+  const n = transitionIds.length;
+  // Transpose A → At[j][i] = A[i][j], then treat transitions as "places".
+  const At: number[][] = [];
+  for (let j = 0; j < n; j += 1) {
+    At.push([]);
+    for (let i = 0; i < m; i += 1) {
+      At[j]!.push(A[i]![j] ?? 0);
+    }
+  }
+  // Reuse place-invariant machinery on the transposed matrix by building a
+  // synthetic net is heavy; run elimination directly on At as if it were A.
+  let B = seedIdentity(n);
+  const numCols = At[0]?.length ?? 0;
+  for (let j = 0; j < numCols; j += 1) {
+    const signed = B.map((row) => dotColumn(row, At, j));
+    const { positives, negatives, zeros } = partitionBySign(signed);
+    if (positives.length === 0 || negatives.length === 0) {
+      B = zeros.map((i) => B[i]!);
+      continue;
+    }
+    const { combined, used } = combineOppositeSigned(B, signed, positives, negatives, n);
+    const kept = keepUnusedZeros(B, zeros, used);
+    B = reduceRows([...kept, ...combined]);
+  }
+
+  const invariants: TransitionInvariant[] = [];
+  for (const row of B) {
+    if (row.every((w) => w === 0)) continue;
+    if (!rowIsInvariant(row, At)) continue;
+    const transitions: Array<{ transitionId: string; weight: number }> = [];
+    for (let i = 0; i < row.length; i += 1) {
+      const weight = row[i] ?? 0;
+      if (weight > 0) {
+        transitions.push({ transitionId: transitionIds[i]!, weight });
+      }
+    }
+    if (transitions.length === 0) continue;
+    const label = transitions
+      .map((t) => transitionNames.get(t.transitionId) ?? t.transitionId)
+      .join(" + ");
+    invariants.push({ transitions, label });
+  }
+  return dedupTransitionInvariants(invariants);
+}
+
+function dedupTransitionInvariants(
+  invariants: TransitionInvariant[],
+): TransitionInvariant[] {
+  const seen = new Set<string>();
+  const result: TransitionInvariant[] = [];
+  for (const inv of invariants) {
+    const sig = [...inv.transitions]
+      .sort((a, b) => a.transitionId.localeCompare(b.transitionId))
+      .map((t) => `${t.transitionId}:${t.weight}`)
+      .join("|");
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    result.push(inv);
+  }
+  return result;
+}
+
 /** Dot product of a weight row against the j-th incidence column: Σ_k row[k]·A[k][j]. */
 export function dotColumn(row: number[], A: number[][], j: number): number {
   let sum = 0;

@@ -75,6 +75,8 @@ describe("parseJsonRpcLine", () => {
     expect(mcpBridge.parseJsonRpcLine("   ")).toBeNull();
     expect(mcpBridge.parseJsonRpcLine("not json")).toBeNull();
     expect(mcpBridge.parseJsonRpcLine('{"jsonrpc":"1.0","id":1}')).toBeNull();
+    expect(mcpBridge.parseJsonRpcLine("null")).toBeNull();
+    expect(mcpBridge.parseJsonRpcLine("42")).toBeNull();
   });
 
   it("parses notifications without id", () => {
@@ -235,5 +237,18 @@ describe("createMcpExecutor", () => {
 
     const result = await executor.execute("mcp_test-server_search", { q: "x" });
     expect(result.ok).toBe(false);
+  });
+
+  it("skips MCP dispatch when already aborted", async () => {
+    const executor = createMcpExecutor(baseConfig);
+    const controller = new AbortController();
+    controller.abort();
+    const result = await executor.execute(
+      "mcp_test-server_search",
+      { q: "x" },
+      { signal: controller.signal },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("aborted before MCP dispatch");
   });
 });

@@ -52,7 +52,7 @@ export interface ChangeWireDto {
   readonly external: readonly EvidenceRef[];
   readonly createdSessionRefs: readonly string[];
   readonly visibility: "internal" | "external" | "administrative";
-  readonly matchWitness?: MatchWitnessWireDto;
+  readonly matchWitness: MatchWitnessWireDto;
   readonly complementTag?: number;
   readonly freshLinkRefs?: readonly string[];
   readonly inputContentRefs?: readonly string[];
@@ -180,7 +180,7 @@ export function decodeChangeWithRecipe(dto: ChangeWireDto): {
   const recipe = replayRecipeFromChange(change);
   const extendedRecipe: ReplayRecipe = {
     ...recipe,
-    ...(dto.matchWitness !== undefined ? { matchWitness: witnessFromWire(dto.matchWitness) } : {}),
+    matchWitness: witnessFromWire(dto.matchWitness),
     ...(dto.complementTag !== undefined ? { complementTag: dto.complementTag } : {}),
     ...(dto.freshLinkRefs !== undefined
       ? { freshLinkRefs: dto.freshLinkRefs as ReplayRecipe["freshLinkRefs"][number][] }
@@ -196,17 +196,6 @@ export function decodeChangeWithRecipe(dto: ChangeWireDto): {
 
   if (change.operationTypeId === "emit_heartbeat" && extendedRecipe.emittedAt === undefined) {
     throw new Error("emit_heartbeat change wire missing replay-authoritative emittedAt");
-  }
-
-  if (
-    dto.matchWitness === undefined &&
-    dto.complementTag === undefined &&
-    dto.freshLinkRefs === undefined &&
-    dto.inputContentRefs === undefined &&
-    dto.scalarInputs === undefined &&
-    dto.emittedAt === undefined
-  ) {
-    return { change, recipe };
   }
 
   return { change, recipe: extendedRecipe };

@@ -115,10 +115,7 @@ function digestContract(instruction: string, criteria: readonly AcceptanceCriter
  * for every instruction — no type preset — and carries the single condition that
  * directly prevents the unproductive-loop failure mode.
  */
-export function defaultSystemContract(
-  instruction: string,
-  frozenAt: string,
-): GoalContract {
+export function defaultSystemContract(instruction: string, frozenAt: string): GoalContract {
   const criteria: AcceptanceCriterion[] = [
     {
       id: "no_infinite_loop",

@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { CommsPeerService } from "../../src/engine/commsPeerService.js";
-import { buildTestPeerDescriptor } from "../support/envelopeFixtures.js";
+import { buildTestPeerDescriptor, stubPeerDirectory } from "../support/envelopeFixtures.js";
 import { descriptorRef } from "../../src/foundation/messageId.js";
 import { commsViolation } from "../../src/foundation/commsViolation.js";
 
 describe("CommsPeerService", () => {
   it("resolves registered peer", async () => {
     const descriptor = buildTestPeerDescriptor();
-    const directory = {
-      resolve: async (ref: string) => (ref === descriptor.descriptorRef ? descriptor : undefined),
-      register: () => undefined,
-    };
+    const directory = stubPeerDirectory(async (ref) =>
+      ref === descriptor.descriptorRef ? descriptor : undefined,
+    );
     const service = new CommsPeerService({
       directory,
       identity: {
@@ -27,7 +26,7 @@ describe("CommsPeerService", () => {
 
   it("returns not found for missing peer", async () => {
     const service = new CommsPeerService({
-      directory: { resolve: async () => undefined, register: () => undefined },
+      directory: stubPeerDirectory(),
       identity: {
         verifyPeer: async () => ({
           ok: false,
@@ -42,7 +41,7 @@ describe("CommsPeerService", () => {
 
   it("negotiates compatible wire version", () => {
     const service = new CommsPeerService({
-      directory: { resolve: async () => undefined, register: () => undefined },
+      directory: stubPeerDirectory(),
       identity: {
         verifyPeer: async () => ({
           ok: false,
@@ -58,7 +57,7 @@ describe("CommsPeerService", () => {
 
   it("reports incompatible wire version", () => {
     const service = new CommsPeerService({
-      directory: { resolve: async () => undefined, register: () => undefined },
+      directory: stubPeerDirectory(),
       identity: {
         verifyPeer: async () => ({
           ok: false,

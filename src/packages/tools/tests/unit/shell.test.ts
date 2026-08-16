@@ -31,6 +31,22 @@ describe("shell tools", () => {
     expect(check.reason).toContain("denyList");
   });
 
+  it("returns skipped when aborted before dispatch", async () => {
+    const executor = createShellExecutor({
+      enabled: true,
+      workingDirectory: process.cwd(),
+    });
+    const controller = new AbortController();
+    controller.abort();
+    const result = await executor.execute(
+      "shell_run_command",
+      { command: "echo hello" },
+      { signal: controller.signal },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("skipped: aborted");
+  });
+
   it("commandSandbox enforces allowList", async () => {
     vi.mocked(runCommand).mockRejectedValue(new Error("Command not in allowList"));
     const executor = createShellExecutor({

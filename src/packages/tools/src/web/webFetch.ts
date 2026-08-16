@@ -4,6 +4,7 @@ import { DEFAULT_MAX_RESPONSE_SIZE, DEFAULT_WEB_TIMEOUT_MS } from "../types.js";
 export interface WebFetchArgs {
   readonly url: string;
   readonly maxLength?: number;
+  readonly signal?: AbortSignal;
 }
 
 export async function webFetch(args: WebFetchArgs, config: WebConfig): Promise<string> {
@@ -13,6 +14,11 @@ export async function webFetch(args: WebFetchArgs, config: WebConfig): Promise<s
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const onAbort = (): void => controller.abort();
+  args.signal?.addEventListener("abort", onAbort, { once: true });
+  if (args.signal?.aborted === true) {
+    controller.abort();
+  }
 
   try {
     const response = await fetch(args.url, {
@@ -50,6 +56,7 @@ export async function webFetch(args: WebFetchArgs, config: WebConfig): Promise<s
     return text;
   } finally {
     clearTimeout(timer);
+    args.signal?.removeEventListener("abort", onAbort);
   }
 }
 

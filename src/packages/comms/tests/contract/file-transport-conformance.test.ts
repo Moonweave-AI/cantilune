@@ -19,7 +19,11 @@ import {
   computeEnvelopeIntegrityDigest,
   verifyEnvelopeIntegrityDigest,
 } from "../../src/codec/strictWireCodec.js";
-import { COMMS_WIRE_VERSION_V1, COMMS_REGISTRY_VERSION_V1, A2A_PROFILE_PINNED } from "../../src/foundation/commsLimits.js";
+import {
+  COMMS_WIRE_VERSION_V1,
+  COMMS_REGISTRY_VERSION_V1,
+  A2A_PROFILE_PINNED,
+} from "../../src/foundation/commsLimits.js";
 
 describe("FileTransport — a2a/0.1 wire v1 conformance", () => {
   let dir: string;

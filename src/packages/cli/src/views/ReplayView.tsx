@@ -5,6 +5,11 @@ import type { AppStore, RuntimeState, ViewType } from "../store.js";
 import { useAppStore } from "../storeContext.js";
 import { renderTable } from "../render/asciiTable.js";
 import { renderTimeline } from "../render/asciiTimeline.js";
+import {
+  readReplayError,
+  readReplayProjection,
+  type CliReplayProjection,
+} from "../wiring/replayControl.js";
 import { ReportView } from "./ReportView.js";
 import { ViewFrame, type ViewTone } from "./ViewFrame.js";
 import { str } from "./viewStr.js";
@@ -16,40 +21,27 @@ export interface ViewProps {
   readonly store: AppStore;
 }
 
-function replayDataFromRuntime(runtime: RuntimeState): {
-  recipe: readonly { step: string; op: string; bindings: string }[];
-  bundle: readonly { artifact: string; ref: string }[];
-} | null {
-  if (runtime.snapshot === null && runtime.changeLog.length === 0) {
-    return null;
-  }
-
-  const recipe = runtime.changeLog.map((entry, index) => ({
-    step: String(index + 1),
-    op: entry.operationTypeId,
-    bindings: `initiator=${entry.initiator}`,
-  }));
-
-  const bundle = [
-    { artifact: "snapshot", ref: runtime.snapshot?.snapshotRef ?? "—" },
-    { artifact: "changeLog", ref: String(runtime.changeLog.length) },
-    { artifact: "schema", ref: runtime.epoch?.epochId ?? runtime.snapshot?.epochId ?? "—" },
-    { artifact: "recipes", ref: String(recipe.length) },
-  ];
-
-  return { recipe, bundle };
-}
-
 export function renderReplayViewOutput(
   activeView: ViewType,
   viewArgs: Record<string, unknown>,
-  runtime: RuntimeState,
+  _runtime?: RuntimeState,
 ): string {
-  const data = replayDataFromRuntime(runtime);
-  if (data === null) {
-    return NO_RUNTIME_MESSAGE;
+  const error = readReplayError(viewArgs);
+  if (error !== undefined) {
+    return `Replay failed (fail-closed): ${error}`;
   }
+  const data = readReplayProjection(viewArgs);
+  if (data === undefined) {
+    return "No replay result — run `/replay from <ref>` to call CoordinationRuntime.replay";
+  }
+  return renderProjection(activeView, data, viewArgs);
+}
 
+function renderProjection(
+  activeView: ViewType,
+  data: CliReplayProjection,
+  viewArgs: Record<string, unknown>,
+): string {
   switch (activeView) {
     case "replay-recipe":
       return renderTable(
@@ -58,7 +50,7 @@ export function renderReplayViewOutput(
           { header: "Operation", width: 20 },
           { header: "Bindings", width: 30 },
         ],
-        data.recipe.map((r) => [r.step, r.op, r.bindings]),
+        data.steps.map((r) => [r.step, r.op, r.bindings]),
       );
     case "replay-bundle":
       return renderTable(
@@ -71,30 +63,32 @@ export function renderReplayViewOutput(
     case "replay":
     default:
       return [
-        `Replay from: ${str(viewArgs.ref, runtime.snapshot?.snapshotRef ?? "snap:t0")}`,
+        `Replay from: ${str(viewArgs.ref, data.fromRef)}`,
+        data.ok ? data.message : `FAILED: ${data.message}`,
         "",
-        renderTimeline(
-          runtime.changeLog.map((entry, index) => ({
-            timestamp: Date.parse(entry.timestamp) || Date.now() + index,
-            label: `Apply ${entry.changeId}`,
-            kind: "replay",
-          })),
-        ),
+        renderTimeline([...data.timeline]),
       ].join("\n");
   }
 }
 
 export function ReplayView({ store }: ViewProps): React.ReactElement {
   const activeView = store.activeView ?? "replay";
-  const data = replayDataFromRuntime(store.runtime);
+  const error = readReplayError(store.viewArgs);
+  const data = readReplayProjection(store.viewArgs);
   const output = renderReplayViewOutput(activeView, store.viewArgs, store.runtime);
 
-  if (data === null) {
-    return <ViewFrame title="Replay Session" tone={REPLAY_TONE} empty={NO_RUNTIME_MESSAGE} />;
+  if (error !== undefined || data === undefined) {
+    return (
+      <ViewFrame
+        title="Replay Session"
+        tone={REPLAY_TONE}
+        empty={error !== undefined ? output : store.runtime.snapshot === null ? NO_RUNTIME_MESSAGE : output}
+      />
+    );
   }
 
   if (activeView === "replay-recipe") {
-    const changeId = str(store.viewArgs.changeId, store.runtime.changeLog[0]?.changeId ?? "—");
+    const changeId = str(store.viewArgs.changeId, data.steps[0]?.changeId ?? "—");
     return (
       <ViewFrame title="Replay Recipe" tone={REPLAY_TONE} subtitle={changeId}>
         <ReportView
@@ -103,8 +97,8 @@ export function ReplayView({ store }: ViewProps): React.ReactElement {
             {
               heading: "Match Bindings",
               content:
-                store.runtime.changeLog.find((entry) => entry.changeId === changeId)?.initiator ??
-                "Derived from runtime changeLog",
+                data.steps.find((entry) => entry.changeId === changeId)?.bindings ??
+                data.message,
             },
             { heading: "Steps", content: output },
           ]}
@@ -120,7 +114,11 @@ export function ReplayView({ store }: ViewProps): React.ReactElement {
   };
 
   return (
-    <ViewFrame title={titles[activeView] ?? "Replay"} tone={REPLAY_TONE}>
+    <ViewFrame
+      title={titles[activeView] ?? "Replay"}
+      tone={REPLAY_TONE}
+      subtitle={data.ok ? data.message : data.message}
+    >
       <Text>{output}</Text>
     </ViewFrame>
   );

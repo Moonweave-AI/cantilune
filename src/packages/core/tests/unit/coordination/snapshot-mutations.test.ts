@@ -9,6 +9,9 @@ import {
   withRetiredEntity,
   withSession,
   withSnapshotRef,
+  withNamespace,
+  withTranscript,
+  withTranscriptAccessRequest,
 } from "../../../src/coordination/collaborationSnapshot.js";
 import {
   actorId,
@@ -17,6 +20,8 @@ import {
   epochId,
   linkId,
   sessionId,
+  namespaceId,
+  transcriptAccessRequestId,
 } from "../../../src/primitives/ids.js";
 import { contentRef, snapshotRef } from "../../../src/primitives/refs.js";
 import { timestamp } from "../../../src/primitives/time.js";
@@ -27,6 +32,9 @@ import { actorRef, participant } from "../../../src/nodes/participant.js";
 import { emptyPolicyContext, withApprovalState } from "../../../src/nodes/policyContext.js";
 import { scopedCapability } from "../../../src/nodes/scopedCapability.js";
 import { workArtifact } from "../../../src/nodes/workArtifact.js";
+import { collaborationNamespace } from "../../../src/nodes/collaborationNamespace.js";
+import { participantTranscript } from "../../../src/nodes/participantTranscript.js";
+import { transcriptAccessRequest } from "../../../src/nodes/transcriptAccessRequest.js";
 
 describe("snapshot mutations", () => {
   const base = collaborationSnapshot({
@@ -73,5 +81,26 @@ describe("snapshot mutations", () => {
     expect(snap.retiredEntities).toHaveLength(1);
     expect(snap.snapshotRef).toBe("snap-S1");
     expect(base.participants.size).toBe(0);
+  });
+
+  it("stores namespaces, transcripts, and access requests", () => {
+    const p = participant(actorId("planner-p"), "agent");
+    const ns = collaborationNamespace(namespaceId("tenant-a"), "tenant-a", [p.actorId]);
+    const transcript = participantTranscript(p.actorId, [{ role: "user", content: "hello" }], {
+      namespaceId: ns.namespaceId,
+    });
+    const request = transcriptAccessRequest(
+      transcriptAccessRequestId("req-1"),
+      actorRef(actorId("observer-o"), "human"),
+      p.actorId,
+      ns.namespaceId,
+    );
+    let snap = withParticipant(base, p);
+    snap = withNamespace(snap, ns);
+    snap = withTranscript(snap, transcript);
+    snap = withTranscriptAccessRequest(snap, request);
+    expect(snap.namespaces.get(ns.namespaceId)?.displayName).toBe("tenant-a");
+    expect(snap.transcripts.get(p.actorId)?.messages[0]?.content).toBe("hello");
+    expect(snap.transcriptAccessRequests.get(request.requestId)?.status).toBe("requested");
   });
 });

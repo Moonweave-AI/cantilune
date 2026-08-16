@@ -1611,9 +1611,9 @@ to immutable evidence, so `TechnicalClosure.generic_technical_closure` is
 `proved / review-pending` rather than merely a CENTRAL-18 candidate.
 The eight planned production packages remain outside Core Theory and must
 supply their own complete Product Conformance witnesses. The maximum
-governance state before independent human signatures is
-`proved / review-pending`; RFC-0002 remains Draft and ADR-0001 remains
-Proposed.
+governance state before the unused Lean promotion form is
+`proved`; Owner Accept (2026-08-16, COI) records `proved / Owner-accepted`.
+RFC-0002 is FCP-open. ADR-0001 is Accepted.
 
 ### 21.5 Implemented final load-bearing seams
 
@@ -1737,8 +1737,9 @@ The central rows are bound to source commit
 `59a1a6885ef6a2774b2731f487f83228e67d15dc` and the QA build/audit record.
 Commit-bound build continuation, source integrity, placeholder and axiom
 audits, the proved manifest, and the strict proved/tree gate are recorded
-there. The current technical status is `proved / review-pending`; independent
-review and governance acceptance remain external.
+there. The current technical status is `proved / Owner-accepted` (2026-08-16;
+rows stay `proved`; promotion unused). This is not Lean `reviewed`. RFC-0002
+remains FCP-open.
 
 ### 21.6 Cross-epoch Petri registry closure
 

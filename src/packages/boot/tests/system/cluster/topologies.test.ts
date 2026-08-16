@@ -137,25 +137,6 @@ function activateChange(
   };
 }
 
-function doneSignal(agentId: ActorId): CoordinationChange {
-  return {
-    changeId: changeId("done-" + (agentId as string)),
-    recordedAt: new Date().toISOString() as never,
-    epochId: epochId("e1"),
-    operationTypeId: operationTypeId("signal_done"),
-    matchBindings: [{ role: "from", actorId: agentId }],
-    targets: [],
-    initiator: { actorId: agentId, kind: "agent" },
-    involved: [{ actorId: agentId, kind: "agent" }],
-    authorization: [],
-    external: [],
-    createdSessionRefs: [],
-    beforeRef: snapshotRef("s0"),
-    afterRef: snapshotRef("s1"),
-    visibility: "external",
-  };
-}
-
 class TestableClusterSupervisor extends ClusterSupervisor {
   readonly startedAgents: string[] = [];
   override async startAgent(agentId: ActorId, m: AgentManifest): Promise<void> {
@@ -186,6 +167,14 @@ async function buildTopology(opts: {
     manifestRef?: ContentRef;
   }[];
   initiator?: string;
+  /**
+   * Concurrency ceiling for the topology under test. These cases assert the
+   * shape of the dependency graph, not throughput, so a case with more than
+   * `DEFAULT_SCHEDULER_POLICY.maxConcurrentAgents` simultaneously-eligible
+   * agents states the ceiling it needs rather than inheriting the production
+   * default and queueing the surplus.
+   */
+  maxConcurrentAgents?: number;
 }): Promise<{ supervisor: TestableClusterSupervisor; events: ClusterEvent[] }> {
   const store = createMockContentStore();
   const events: ClusterEvent[] = [];
@@ -210,9 +199,10 @@ async function buildTopology(opts: {
     const aid = actorId(a.id);
     const status = (a.status ?? "active") as ParticipationStatus;
     // An activated agent carries its manifestRef; a non-active agent does not.
-    const ref = status === "active" || status === "done" || status === "retired"
-      ? (a.manifestRef ?? manifestRefs.get(a.id)!)
-      : undefined;
+    const ref =
+      status === "active" || status === "done" || status === "retired"
+        ? (a.manifestRef ?? manifestRefs.get(a.id)!)
+        : undefined;
     participantMap.set(aid, participant(aid, "agent", status, ref));
   }
 
@@ -234,6 +224,9 @@ async function buildTopology(opts: {
       },
     }),
     eventListener: (e) => events.push(e),
+    ...(opts.maxConcurrentAgents !== undefined
+      ? { schedulerPolicy: { maxConcurrentAgents: opts.maxConcurrentAgents } }
+      : {}),
   });
 
   return { supervisor, events };
@@ -322,6 +315,7 @@ describe("SYS-03: Wide parallel fan-out (10 agents + aggregator)", () => {
 
     const { supervisor } = await buildTopology({
       agents: [...workers, aggregator],
+      maxConcurrentAgents: 10,
     });
 
     supervisor.start();

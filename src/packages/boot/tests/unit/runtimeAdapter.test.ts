@@ -143,7 +143,9 @@ describe("wrapCoordinationRuntime", () => {
 
   it("fails closed when the commit receipt snapshotRef is not a string", () => {
     const rt = mockRuntime({
-      proposeAndCommit: vi.fn().mockReturnValue({ after: { snapshotRef: 123 as unknown as string } }),
+      proposeAndCommit: vi
+        .fn()
+        .mockReturnValue({ after: { snapshotRef: 123 as unknown as string } }),
     });
     const wrapped = wrapCoordinationRuntime(rt);
     const result = wrapped.proposeAndCommit({}, {});

@@ -9,8 +9,9 @@ export interface CommitResult {
 }
 
 /**
- * Package-internal commit harness: apply a snapshot transition and record rewrite history.
- * Full admission/replay lives in @cantilune/runtime (future).
+ * @deprecated Not L6 evidence. Tests-only recipe harness — apply a snapshot
+ * transition and record rewrite history. Prefer runtime admit/commit
+ * (`@cantilune/runtime` integration/story-t0-to-delegate). Not a production export.
  */
 export function simulateCommit(
   before: CollaborationSnapshot,

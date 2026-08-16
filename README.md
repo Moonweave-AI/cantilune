@@ -7,9 +7,9 @@
   <p><sub>让意图成为可见、可演化、可验证的协同行动。</sub></p>
 
   <p>
-    <img alt="Status: pre-alpha" src="https://img.shields.io/badge/status-pre--alpha-D97706">
-    <img alt="Formal core: proved, review pending" src="https://img.shields.io/badge/formal%20core-proved%20%2F%20review--pending-4F46E5">
-    <img alt="Runtime: not released" src="https://img.shields.io/badge/runtime-not%20released-64748B">
+    <img alt="Status: 0.x" src="https://img.shields.io/badge/status-0.x-D97706">
+    <img alt="Formal core: proved, Owner-reviewed COI; Lean promotion unused" src="https://img.shields.io/badge/formal%20core-proved%20%2F%20Owner--reviewed%20(COI)-4F46E5">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-0F766E">
     <a href="https://github.com/Moonweave-AI/cantilune/actions/workflows/formal.yml?query=branch%3Acodex%2Ftheory-foundation">
       <img alt="Formal theory CI" src="https://github.com/Moonweave-AI/cantilune/actions/workflows/formal.yml/badge.svg?branch=codex%2Ftheory-foundation">
     </a>
@@ -19,10 +19,13 @@
 </div>
 
 > [!IMPORTANT]
-> **Cantilune is pre-alpha.** It is a formal-semantics and orchestration
-> research project, not yet a released runtime, SDK, scheduler, or agent
-> product. Features marked `†` below are architecture and theory targets, not
-> a claim of released feature parity or measured superiority.
+> **Cantilune is 0.x.** Owner accepted this engineering release (Apache-2.0,
+> npm 0.x). There is **no stable API**, schema, or compatibility promise.
+> Lean kernel is `proved / Owner-accepted` — obligation rows stay `proved`;
+> the Lean promotion form was **not** run. Owner signed governance formal /
+> QA-L5 / AI-Eval review with COI. RFC-0001–0004 are **FCP open**
+> (2026-08-16 → 2026-08-30), not Accepted.
+> Features marked `†` below are formal targets, not measured superiority.
 
 ## The goal
 
@@ -31,7 +34,7 @@ agent orchestration**. It is meant to coordinate agents, tools, people,
 services, permissions, sessions, and scarce resources in one inspectable model.
 
 The project starts from a simple observation: a capable agent is not enough for
-a capable *system*. Once several agents share work, the hard questions are
+a capable _system_. Once several agents share work, the hard questions are
 coordination questions:
 
 - Who may do what, with which budget, lock, credential, or approval?
@@ -72,14 +75,14 @@ identified reconfiguration events. The mathematics is an internal kernel; it
 should make orchestration easier to understand, inspect, and control—not force
 application authors to write category theory.
 
-| Component | Orchestration meaning | What it protects or explains |
-|---|---|---|
-| Free symmetric monoidal category | Typed sequential, parallel, and rewired composition | Illegal connections and hidden copy/discard are distinct from legal composition |
-| Typed open hypergraphs + DPOI rewriting | Add, replace, reconnect, or delete a collaboration subgraph | A change has explicit boundary, freshness, dangling, and quiescence conditions |
-| Late $\pi$-calculus | Create, hide, transfer, and close communication sessions | Delegation and handoff are protocols, not merely shared-state mutations |
-| Individual-token Petri semantics | Represent unique permission, quota, lock, budget, and session tokens | Authority and resources cannot silently duplicate or disappear |
-| FMS-style denotational research branch | Give a compositional account of supported concurrent behavior | Operational and denotational views can be related within a documented scope |
-| Projection certificates | Relate graph, dependency, resource, communication, and identity views | One source event has corresponding target events and a replay identity |
+| Component                               | Orchestration meaning                                                 | What it protects or explains                                                    |
+| --------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Free symmetric monoidal category        | Typed sequential, parallel, and rewired composition                   | Illegal connections and hidden copy/discard are distinct from legal composition |
+| Typed open hypergraphs + DPOI rewriting | Add, replace, reconnect, or delete a collaboration subgraph           | A change has explicit boundary, freshness, dangling, and quiescence conditions  |
+| Late $\pi$-calculus                     | Create, hide, transfer, and close communication sessions              | Delegation and handoff are protocols, not merely shared-state mutations         |
+| Individual-token Petri semantics        | Represent unique permission, quota, lock, budget, and session tokens  | Authority and resources cannot silently duplicate or disappear                  |
+| FMS-style denotational research branch  | Give a compositional account of supported concurrent behavior         | Operational and denotational views can be related within a documented scope     |
+| Projection certificates                 | Relate graph, dependency, resource, communication, and identity views | One source event has corresponding target events and a replay identity          |
 
 For a certified event $e$, the intended consistency condition is
 
@@ -97,13 +100,13 @@ views.
 
 ## What a user should be able to see
 
-| View | Question answered |
-|---|---|
-| Collaboration structure | Which agents, tools, people, and services are connected now? What changed? |
-| Dependency view | What is runnable, blocked, cyclic, completed, or awaiting an external input? |
-| Resource and authority view | Who holds a unique permission, budget, lock, session, or approval? |
-| Communication view | Who delegated what to whom, on which session, with which acknowledgement? |
-| Replay and feedback view | Which precise events led here, what evidence arrived, and why was the next action chosen? |
+| View                        | Question answered                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| Collaboration structure     | Which agents, tools, people, and services are connected now? What changed?                |
+| Dependency view             | What is runnable, blocked, cyclic, completed, or awaiting an external input?              |
+| Resource and authority view | Who holds a unique permission, budget, lock, session, or approval?                        |
+| Communication view          | Who delegated what to whom, on which session, with which acknowledgement?                 |
+| Replay and feedback view    | Which precise events led here, what evidence arrived, and why was the next action chosen? |
 
 The important distinction is that an LLM saying “done” is not by itself a
 completed protocol transition. Success, rejection, waiting, deadlock, and
@@ -121,21 +124,21 @@ official documentation as reviewed on 2026-07-28:
 - `✗` — not a documented primary guarantee in the sources reviewed;
 - `✓†` — Cantilune’s specified formal target, not a released runtime feature.
 
-| Capability / primary scope | [LangChain](https://docs.langchain.com/oss/python/langchain/multi-agent/) | [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) | [CrewAI](https://docs.crewai.com/) | [AutoGen](https://microsoft.github.io/autogen/stable/) | [OpenAI<br>Agents SDK](https://openai.github.io/openai-agents-python/agents/) | [Google<br>ADK](https://adk.dev/) | [Pydantic<br>AI](https://pydantic.dev/docs/ai/overview/) | [Mastra](https://mastra.ai/ai-workflows) | [Microsoft Agent<br>Framework](https://learn.microsoft.com/en-us/agent-framework/) | **Cantilune** |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| General-purpose agent/workflow orchestration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓† |
-| Explicit workflow topology: branch, loop, parallel work | △ | ✓ | ✓ | ✓ | △ | ✓ | ✓ | ✓ | ✓ | ✓† |
-| Multi-agent teams, routing, delegation, or handoff | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | △ | ✓ | ✓ | ✓† |
-| Durable state, pause/resume, or human approval | △ | ✓ | ✓ | △ | △ | ✓ | ✓ | ✓ | ✓ | ✓† |
-| Model, tool, and MCP integration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓† |
-| Trace, logging, or execution observability | △ | ✓ | ✓ | △ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓† |
-| Provider-independent **semantic** composition calculus | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓† |
-| Native scoped sessions and transferable channels | ✗ | ✗ | ✗ | △ | △ | ✗ | ✗ | ✗ | ✗ | ✓† |
-| Linear semantics for unique resources and authority | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓† |
-| Dynamic graph change admitted by structural, resource, and authorization conditions | ✗ | △ | ✗ | △ | ✗ | △ | △ | △ | △ | ✓† |
-| One event synchronized across graph, dependency, resource, and protocol views | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓† |
-| Semantic replay of identified reconfiguration events | ✗ | △ | △ | △ | △ | △ | △ | △ | △ | ✓† |
-| Released runtime, ecosystem, and production track record | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Capability / primary scope                                                          | [LangChain](https://docs.langchain.com/oss/python/langchain/multi-agent/) | [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) | [CrewAI](https://docs.crewai.com/) | [AutoGen](https://microsoft.github.io/autogen/stable/) | [OpenAI<br>Agents SDK](https://openai.github.io/openai-agents-python/agents/) | [Google<br>ADK](https://adk.dev/) | [Pydantic<br>AI](https://pydantic.dev/docs/ai/overview/) | [Mastra](https://mastra.ai/ai-workflows) | [Microsoft Agent<br>Framework](https://learn.microsoft.com/en-us/agent-framework/) | **Cantilune** |
+| ----------------------------------------------------------------------------------- | :-----------------------------------------------------------------------: | :-------------------------------------------------------------------: | :--------------------------------: | :----------------------------------------------------: | :---------------------------------------------------------------------------: | :-------------------------------: | :------------------------------------------------------: | :--------------------------------------: | :--------------------------------------------------------------------------------: | :-----------: |
+| General-purpose agent/workflow orchestration                                        |                                     ✓                                     |                                   ✓                                   |                 ✓                  |                           ✓                            |                                       ✓                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Explicit workflow topology: branch, loop, parallel work                             |                                     △                                     |                                   ✓                                   |                 ✓                  |                           ✓                            |                                       △                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Multi-agent teams, routing, delegation, or handoff                                  |                                     ✓                                     |                                   ✓                                   |                 ✓                  |                           ✓                            |                                       ✓                                       |                 ✓                 |                            △                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Durable state, pause/resume, or human approval                                      |                                     △                                     |                                   ✓                                   |                 ✓                  |                           △                            |                                       △                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Model, tool, and MCP integration                                                    |                                     ✓                                     |                                   ✓                                   |                 ✓                  |                           ✓                            |                                       ✓                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Trace, logging, or execution observability                                          |                                     △                                     |                                   ✓                                   |                 ✓                  |                           △                            |                                       ✓                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |      ✓†       |
+| Provider-independent **semantic** composition calculus                              |                                     ✗                                     |                                   ✗                                   |                 ✗                  |                           ✗                            |                                       ✗                                       |                 ✗                 |                            ✗                             |                    ✗                     |                                         ✗                                          |      ✓†       |
+| Native scoped sessions and transferable channels                                    |                                     ✗                                     |                                   ✗                                   |                 ✗                  |                           △                            |                                       △                                       |                 ✗                 |                            ✗                             |                    ✗                     |                                         ✗                                          |      ✓†       |
+| Linear semantics for unique resources and authority                                 |                                     ✗                                     |                                   ✗                                   |                 ✗                  |                           ✗                            |                                       ✗                                       |                 ✗                 |                            ✗                             |                    ✗                     |                                         ✗                                          |      ✓†       |
+| Dynamic graph change admitted by structural, resource, and authorization conditions |                                     ✗                                     |                                   △                                   |                 ✗                  |                           △                            |                                       ✗                                       |                 △                 |                            △                             |                    △                     |                                         △                                          |      ✓†       |
+| One event synchronized across graph, dependency, resource, and protocol views       |                                     ✗                                     |                                   ✗                                   |                 ✗                  |                           ✗                            |                                       ✗                                       |                 ✗                 |                            ✗                             |                    ✗                     |                                         ✗                                          |      ✓†       |
+| Semantic replay of identified reconfiguration events                                |                                     ✗                                     |                                   △                                   |                 △                  |                           △                            |                                       △                                       |                 △                 |                            △                             |                    △                     |                                         △                                          |      ✓†       |
+| Released runtime, ecosystem, and production track record                            |                                     ✓                                     |                                   ✓                                   |                 ✓                  |                           ✓                            |                                       ✓                                       |                 ✓                 |                            ✓                             |                    ✓                     |                                         ✓                                          |       ✗       |
 
 Existing frameworks are strong at the workflow-runtime layer. LangGraph focuses
 on stateful graphs, durable execution, streaming, human-in-the-loop control,
@@ -202,33 +205,81 @@ agents · coding agents · tools · MCP/A2A services · people · external syste
 
 The planned public capability family is deliberately separable:
 
-| Capability | Concern |
-|---|---|
+| Capability   | Concern                                                                             |
+| ------------ | ----------------------------------------------------------------------------------- |
 | **Notation** | Shared references, commands, observations, events, schemas, and provider boundaries |
-| **Libretto** | Intent, goals, plans, dependencies, and completion criteria |
-| **Cast** | Roles, responsibility, custody, and ownership |
-| **Baton** | Delegation, acceptance, rejection, handoff, and control transfer |
-| **Cue** | Routing, gates, retries, stop conditions, and next-step selection |
-| **Chorus** | Sequential, parallel, hierarchical, voting, merge, and convergence structures |
-| **Reprise** | Evidence-driven revision, rerouting, escalation, and improvement |
+| **Libretto** | Intent, goals, plans, dependencies, and completion criteria                         |
+| **Cast**     | Roles, responsibility, custody, and ownership                                       |
+| **Baton**    | Delegation, acceptance, rejection, handoff, and control transfer                    |
+| **Cue**      | Routing, gates, retries, stop conditions, and next-step selection                   |
+| **Chorus**   | Sequential, parallel, hierarchical, voting, merge, and convergence structures       |
+| **Reprise**  | Evidence-driven revision, rerouting, escalation, and improvement                    |
 
-No package release is available yet. The family describes the intended public
-decomposition, not an installation promise.
+The family describes the intended public decomposition. The engineering
+release is **0.x** (Apache-2.0); there is no stable API or installation
+compatibility promise.
+
+## What is implemented today
+
+The workspace ships fifteen TypeScript packages under `src/packages/`. Each one
+carries its own layered suite (`tests/{types,unit,integration,contract,system}`)
+and the same coverage floor — statements/functions/lines ≥ 90%, branches ≥ 88%.
+
+| Package                    | Concern                                                                                   |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `@cantilune/core`          | Semantic kernel: coordination events, nodes, composition algebra, consistency             |
+| `@cantilune/runtime`       | Admission, apply, commit, replay; file CAS, operator Postgres HA, or official etcd Raft   |
+| `@cantilune/observability` | Observability platform: FourView + redaction + OTel/OTLP + AG-UI over the committed world |
+| `@cantilune/control-plane` | Schema catalog, binding CAS, admission workflow, epoch activation, fleet rollout          |
+| `@cantilune/conformance`   | Product evidence verification, proof binding, four-view certificates, release gates       |
+| `@cantilune/evaluation`    | Benchmark suites, candidates/baselines, budgets, scoring, evidence collection             |
+| `@cantilune/comms`         | Typed late-π facet + **A2A Protocol 1.0.0** (JSON-RPC, HTTP/REST, SSE, official gRPC)     |
+| `@cantilune/content`       | Content-addressed store (SHA-256), memory and file adapters                               |
+| `@cantilune/syscall`       | LLM ↔ OS translation with exactly-once external-tool tiers                                |
+| `@cantilune/boot`          | Single-agent OS, swarm supervisor, dispatch scheduler, termination controller             |
+| `@cantilune/adapter`       | LLM providers: Anthropic, Bedrock, Google, OpenAI-compatible, and a provider registry     |
+| `@cantilune/tools`         | Agent tools: filesystem, shell, web, MCP; Hyper-V / gVisor sandbox (fail-closed)          |
+| `@cantilune/petri`         | Dependency-free Petri firing engine: enablement, token game, reachability, invariants     |
+| `@cantilune/cli`           | Full-screen Ink TUI, slash commands, headless runner                                      |
+| `@cantilune/test-fixtures` | Shared canonical-story fixtures                                                           |
+
+### Running it from a checkout
+
+```bash
+pnpm install
+pnpm build
+pnpm cantilune
+```
+
+`pnpm install` also prefetches host artifacts before any service starts:
+official etcd **v3.5.21** into `.cantilune/bin`, plus `postgres:16`,
+`quay.io/coreos/etcd:v3.5.21`, and `alpine:3.20`. `pnpm host:provision`
+then `up --pull never`. Re-run `pnpm host:prefetch` if Docker was down
+during install.
+
+`pnpm test:static` runs the L1 gate (encoding, lint, format, typecheck);
+`pnpm test:coverage` runs every package's suite against its coverage floor.
+Both are what CI enforces, so a green local run is the same signal.
+
+Production durable is file CAS by default, operator Postgres HA when
+`CANTILUNE_DURABLE_DATABASE_URL` is set, or official etcd Raft when
+`CANTILUNE_RAFT_ENDPOINTS` / `CANTILUNE_RAFT_EMBED=1` is set. `/status`
+and `node scripts/verify-host.mjs` report both backends.
 
 ## Formal boundary and current status
 
 The generic core theory and one substantive reference execution package are
-kernel-checked and classified as **`proved / review-pending`**. This is a
-formal-proof milestone, not a runtime release or a governance approval.
+kernel-checked as **`proved`** and Owner-accepted on 2026-08-16. This is not
+Lean `reviewed` and not RFC Accepted.
 
-| Verification fact | Current record |
-|---|---|
-| Immutable theory chain | Source S `59a1a6885ef6a2774b2731f487f83228e67d15dc` → evidence E `ed26cb74c4425b0d3025521f939695fd3fb8dee5` → pointer P `0382b74074c546abe1bf3f37f3c03d7e4d2c3611` |
-| Lean source and kernel audit | 565 maintained source files; 1,624 audited declarations; 18/18 central proof obligations recorded as `proved` |
-| Build artifacts | `formal/.lake` was deleted after verification, is ignored, and is not tracked; a fresh checkout can reconstruct it with the pinned Lean toolchain |
-| Remote review | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) targets `main`; the live workflow badge and PR checks are authoritative, and no passing result is claimed until the current PR-head run succeeds |
-| Governance | Independent QA-L4 review, FCP approval, and ADR acceptance remain pending |
-| Published branch baseline | `9375a2edafd5a7d7574a6a3d527f806122292051` records repository artifact cleanup; this README is a subsequent documentation-only update |
+| Verification fact            | Current record                                                                                                                                                                                             |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Immutable theory chain       | Source S `59a1a6885ef6a2774b2731f487f83228e67d15dc` → evidence E `ed26cb74c4425b0d3025521f939695fd3fb8dee5` → pointer P `0382b74074c546abe1bf3f37f3c03d7e4d2c3611`                                         |
+| Lean source and kernel audit | 565 maintained source files; 1,624 audited declarations; 18/18 central proof obligations recorded as `proved`                                                                                              |
+| Build artifacts              | `formal/.lake` was deleted after verification, is ignored, and is not tracked; a fresh checkout can reconstruct it with the pinned Lean toolchain                                                          |
+| Remote review                | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) targets `main`; the live workflow badge and PR checks are authoritative, and no passing result is claimed until the current PR-head run succeeds |
+| Governance                   | Lean is `proved / Owner-accepted` (promotion unused). FCP open 2026-08-16. Engineering ADRs 0021–0028 Accepted (Owner reviewer; COI disclosed)                                                      |
+| Published branch baseline    | `9375a2edafd5a7d7574a6a3d527f806122292051` records repository artifact cleanup; this README is a subsequent documentation-only update                                                                      |
 
 The [proof-obligation manifest](formal/proof-obligations.json), [canonical
 kernel/build evidence](docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md),
@@ -262,24 +313,29 @@ replace them:
 
 - [MCP](https://modelcontextprotocol.io/) for tools, resources, and external
   capabilities;
-- [A2A](https://a2a-protocol.org/latest/specification/) for remote
-  agent-to-agent interaction;
-- [AG-UI](https://docs.ag-ui.com/introduction) for user-facing agent events;
-- [OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/) for telemetry.
+- [A2A](https://a2a-protocol.org/latest/specification/) **1.0.0** for remote
+  agent-to-agent interaction (JSON-RPC, HTTP/REST, SSE, official `lf.a2a.v1` gRPC; pinned
+  `a2a/0.1` remains a CI regression profile);
+- [AG-UI](https://docs.ag-ui.com/introduction) for user-facing agent events
+  derived from the committed world;
+- [OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/) via OTLP/HTTP
+  (Cantilune OTLP export is production; official GenAI keys remain **Development**).
 
 These standards carry tools, transport, interfaces, or telemetry. Cantilune’s
 role is to make the coordination relation between them explicit and evolvable.
 
 ## Explore, status, and contribution
 
-There is no stable installation or quick-start command yet. Start with the
+The CLI runs from a checkout as shown above. npm is **0.x** with no stable API.
+For the theory, start with the
 [formal semantics specification](docs/spec/formal-semantics.md), the
 [projection consistency RFC](docs/rfc/0002-projection-consistency.md), and the
 [Open-π/FMS compatibility boundary](docs/research/0022-open-pi-wiring-and-fms-compatibility-boundary-2026-07-27.md).
 
-- **Status:** pre-alpha research and contract design; no stable API, schema,
-  compatibility promise, or runtime release. The generic formal core is
-  `proved / review-pending`; the eight production packages are deferred.
+- **Status:** **0.x**; no stable API, schema, or compatibility promise. Owner
+  accepted the engineering release. The generic formal core is `proved /
+  Owner-accepted` (Lean promotion unused; Owner governance review is COI).
+  QA-L5 is Owner-signed with independence waived. RFC FCP is open, not closed.
 - **Owner:** Moonweave AI; current DRI and review status are recorded in the
   formal documents.
 - **Contributing:** changes to contracts, protocols, schemas, or state
@@ -290,9 +346,7 @@ There is no stable installation or quick-start command yet. Start with the
 
 ## License
 
-Cantilune is intended for an open-source release. The applicable license will
-be declared in the repository's `LICENSE` file before the first public code
-release.
+Cantilune is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 

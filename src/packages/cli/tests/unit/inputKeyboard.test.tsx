@@ -455,6 +455,18 @@ describe("InputBar slash suggestions", () => {
 
     expect(onSubmit).toHaveBeenCalledWith("plain text");
   });
+
+  it("reports overlay height so the app can shrink the transcript", () => {
+    const onOverlayRows = vi.fn();
+    render(<InputBar onSubmit={vi.fn()} commands={COMMANDS} onOverlayRows={onOverlayRows} />);
+
+    type("/");
+
+    expect(onOverlayRows).toHaveBeenCalled();
+    const last = onOverlayRows.mock.calls.at(-1)?.[0];
+    expect(typeof last).toBe("number");
+    expect(last).toBeGreaterThan(0);
+  });
 });
 
 describe("useKeyboard", () => {
@@ -514,6 +526,27 @@ describe("useKeyboard", () => {
 
     expect(onScroll).toHaveBeenNthCalledWith(1, 5);
     expect(onScroll).toHaveBeenNthCalledWith(2, -5);
+  });
+
+  it("scrolls one row with Ctrl+Up and Ctrl+Down", () => {
+    const store = new ReactiveStore();
+    const onScroll = vi.fn();
+    mount(store, { onScroll });
+
+    press("", { ctrl: true, upArrow: true });
+    press("", { ctrl: true, downArrow: true });
+
+    expect(onScroll).toHaveBeenNthCalledWith(1, 1);
+    expect(onScroll).toHaveBeenNthCalledWith(2, -1);
+  });
+
+  it("toggles the newest turn activity on Ctrl+T", () => {
+    const store = new ReactiveStore();
+    const onToggleActivity = vi.fn();
+    mount(store, { onToggleActivity });
+
+    press("t", { ctrl: true });
+    expect(onToggleActivity).toHaveBeenCalledOnce();
   });
 
   it("Escape closes an open view and resets the scroll position", () => {

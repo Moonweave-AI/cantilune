@@ -334,4 +334,104 @@ describe("createOpenAiCompatibleAdapter", () => {
     expect(response.text).toBe("Recovered");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it("builds Azure deployments URL with api-version and api-key header", async () => {
+    const previousVersion = process.env.AZURE_OPENAI_API_VERSION;
+    process.env.AZURE_OPENAI_API_VERSION = "2024-10-21";
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { content: "azure-ok" }, finish_reason: "stop" }],
+        }),
+        { status: 200 },
+      ),
+    );
+    globalThis.fetch = fetchMock;
+
+    const adapter = createOpenAiCompatibleAdapter(
+      {
+        provider: "azure",
+        model: "gpt-4o",
+        apiKey: () => "azure-key",
+        baseUrl: "https://myres.openai.azure.com",
+      },
+      {
+        slug: "azure",
+        tier: "openai-compatible",
+        defaultBaseUrl: "https://{resource}.openai.azure.com/openai/deployments/{deployment}",
+        envKeyName: "AZURE_OPENAI_API_KEY",
+      },
+      { retries: 0 },
+    );
+
+    await adapter.chat({ messages: [{ role: "user", content: "Hi" }], tools: [] });
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      "https://myres.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-10-21",
+    );
+    expect(url).not.toContain("{resource}");
+    expect(init.headers).toMatchObject({
+      "api-key": "azure-key",
+    });
+    expect(init.headers).not.toHaveProperty("Authorization");
+
+    if (previousVersion === undefined) {
+      delete process.env.AZURE_OPENAI_API_VERSION;
+    } else {
+      process.env.AZURE_OPENAI_API_VERSION = previousVersion;
+    }
+  });
+
+  it("fail-closes Azure when baseUrl still has placeholders or api-version is missing", async () => {
+    const previousVersion = process.env.AZURE_OPENAI_API_VERSION;
+    const previousOpenAi = process.env.OPENAI_API_VERSION;
+    delete process.env.AZURE_OPENAI_API_VERSION;
+    delete process.env.OPENAI_API_VERSION;
+
+    const azureEntry = {
+      slug: "azure",
+      tier: "openai-compatible" as const,
+      defaultBaseUrl: "https://{resource}.openai.azure.com/openai/deployments/{deployment}",
+      envKeyName: "AZURE_OPENAI_API_KEY",
+    };
+
+    const missingVersion = createOpenAiCompatibleAdapter(
+      {
+        provider: "azure",
+        model: "gpt-4o",
+        apiKey: () => "azure-key",
+        baseUrl: "https://myres.openai.azure.com",
+      },
+      azureEntry,
+      { retries: 0 },
+    );
+    await expect(
+      missingVersion.chat({ messages: [{ role: "user", content: "Hi" }], tools: [] }),
+    ).rejects.toThrow("AZURE_OPENAI_API_VERSION");
+
+    process.env.AZURE_OPENAI_API_VERSION = "2024-10-21";
+    const placeholder = createOpenAiCompatibleAdapter(
+      {
+        provider: "azure",
+        model: "gpt-4o",
+        apiKey: () => "azure-key",
+      },
+      azureEntry,
+      { retries: 0 },
+    );
+    await expect(
+      placeholder.chat({ messages: [{ role: "user", content: "Hi" }], tools: [] }),
+    ).rejects.toThrow("placeholders are not callable");
+
+    if (previousVersion === undefined) {
+      delete process.env.AZURE_OPENAI_API_VERSION;
+    } else {
+      process.env.AZURE_OPENAI_API_VERSION = previousVersion;
+    }
+    if (previousOpenAi === undefined) {
+      delete process.env.OPENAI_API_VERSION;
+    } else {
+      process.env.OPENAI_API_VERSION = previousOpenAi;
+    }
+  });
 });

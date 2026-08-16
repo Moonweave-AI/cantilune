@@ -1,4 +1,10 @@
-import type { ActorId, ArtifactId, CapabilityId, SessionId } from "../primitives/ids.js";
+import type {
+  ActorId,
+  ArtifactId,
+  CapabilityId,
+  NamespaceId,
+  SessionId,
+} from "../primitives/ids.js";
 
 /** Kind of linear or scarce scoped resource. */
 export const CAPABILITY_KINDS = [
@@ -6,6 +12,7 @@ export const CAPABILITY_KINDS = [
   "budget_slot",
   "approval_slot",
   "tool_lease",
+  "transcript_read",
 ] as const;
 
 export type CapabilityKind = (typeof CAPABILITY_KINDS)[number];
@@ -13,7 +20,8 @@ export type CapabilityKind = (typeof CAPABILITY_KINDS)[number];
 /** What entity a capability is scoped to. */
 export type CapabilityScope =
   | { readonly kind: "artifact"; readonly artifactId: ArtifactId }
-  | { readonly kind: "session"; readonly sessionId: SessionId };
+  | { readonly kind: "session"; readonly sessionId: SessionId }
+  | { readonly kind: "transcript"; readonly actorId: ActorId; readonly namespaceId: NamespaceId };
 
 /**
  * Non-copyable scoped resource (Petri token analogue).

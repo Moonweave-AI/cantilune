@@ -1,4 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import type { OsSandbox } from "../sandbox/osSandbox.js";
 import type { McpConfig } from "../types.js";
 
 export interface McpToolSchema {
@@ -27,12 +28,22 @@ export interface JsonRpcResponse {
   readonly method?: string;
 }
 
+export interface CreateMcpClientOptions {
+  readonly timeoutMs?: number;
+  readonly sandbox?: OsSandbox;
+  readonly fetchImpl?: typeof fetch;
+}
+
 const DEFAULT_MCP_TIMEOUT_MS = 30_000;
 
 interface PendingRequest {
   readonly resolve: (value: unknown) => void;
   readonly reject: (error: Error) => void;
   readonly timer: ReturnType<typeof setTimeout>;
+}
+
+export function isHttpMcpEndpoint(command: string): boolean {
+  return command.startsWith("http://") || command.startsWith("https://");
 }
 
 /**
@@ -64,10 +75,153 @@ export function parseJsonRpcLine(line: string): JsonRpcResponse | null {
   return parsed as JsonRpcResponse;
 }
 
-export function createMcpClient(
-  config: McpConfig,
-  options?: { readonly timeoutMs?: number },
-): McpClient {
+/** Parse a Streamable HTTP SSE body for the last JSON-RPC response. */
+export function parseSseJsonRpc(body: string): JsonRpcResponse | null {
+  const dataLines: string[] = [];
+  for (const raw of body.split(/\r?\n/)) {
+    if (raw.startsWith("data:")) {
+      dataLines.push(raw.slice("data:".length).trim());
+    }
+  }
+  if (dataLines.length === 0) {
+    return parseJsonRpcLine(body);
+  }
+  for (let index = dataLines.length - 1; index >= 0; index -= 1) {
+    const parsed = parseJsonRpcLine(dataLines[index] ?? "");
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+  return parseJsonRpcLine(dataLines.join("\n"));
+}
+
+function decodeToolList(result: unknown): McpToolSchema[] {
+  const tools = (result as { tools?: McpToolSchema[] })?.tools ?? [];
+  return tools.map((tool) => ({
+    name: tool.name,
+    description: tool.description ?? "",
+    inputSchema: tool.inputSchema ?? { type: "object", properties: {} },
+  }));
+}
+
+function decodeToolResult(result: unknown): McpToolResult {
+  const typed = result as McpToolResult;
+  return {
+    content: typed.content ?? [],
+    ...(typed.isError !== undefined ? { isError: typed.isError } : {}),
+  };
+}
+
+export function createMcpClient(config: McpConfig, options?: CreateMcpClientOptions): McpClient {
+  if (isHttpMcpEndpoint(config.command)) {
+    return createHttpMcpClient(config, options);
+  }
+  return createStdioMcpClient(config, options);
+}
+
+function createHttpMcpClient(config: McpConfig, options?: CreateMcpClientOptions): McpClient {
+  const timeoutMs = options?.timeoutMs ?? DEFAULT_MCP_TIMEOUT_MS;
+  const fetchFn = options?.fetchImpl ?? fetch;
+  let sessionId: string | undefined;
+  let connected = false;
+  let nextId = 1;
+
+  async function postRpc(body: unknown, expectResponse: boolean): Promise<unknown> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+    try {
+      const headers: Record<string, string> = {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+        ...(sessionId !== undefined ? { "mcp-session-id": sessionId } : {}),
+      };
+      const response = await fetchFn(config.command, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      const nextSession = response.headers.get("mcp-session-id");
+      if (nextSession !== null && nextSession.length > 0) {
+        sessionId = nextSession;
+      }
+      if (!expectResponse) {
+        return undefined;
+      }
+      if (!response.ok) {
+        throw new Error(`MCP HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      const contentType = response.headers.get("content-type") ?? "";
+      const message = contentType.includes("text/event-stream")
+        ? parseSseJsonRpc(text)
+        : parseJsonRpcLine(text);
+      if (message === null) {
+        throw new Error("MCP HTTP response is not JSON-RPC 2.0");
+      }
+      if (message.error !== undefined) {
+        throw new Error(message.error.message ?? "MCP JSON-RPC error");
+      }
+      return message.result;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(`MCP request timed out: ${(body as { method?: string }).method ?? "http"}`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function sendRequest(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+    if (!connected && method !== "initialize") {
+      throw new Error("MCP client not connected");
+    }
+    const id = nextId++;
+    return postRpc({ jsonrpc: "2.0", id, method, params }, true);
+  }
+
+  return {
+    async connect(): Promise<void> {
+      if (connected) {
+        return;
+      }
+      await sendRequest("initialize", {
+        protocolVersion: "2025-03-26",
+        capabilities: {},
+        clientInfo: { name: "cantilune-tools", version: "0.0.1" },
+      });
+      await postRpc({ jsonrpc: "2.0", method: "notifications/initialized" }, false);
+      connected = true;
+    },
+
+    disconnect(): void {
+      const endpoint = config.command;
+      const closingSession = sessionId;
+      sessionId = undefined;
+      connected = false;
+      if (closingSession === undefined) {
+        return;
+      }
+      void fetchFn(endpoint, {
+        method: "DELETE",
+        headers: { "mcp-session-id": closingSession },
+      }).catch(() => undefined);
+    },
+
+    async listTools(): Promise<McpToolSchema[]> {
+      return decodeToolList(await sendRequest("tools/list", {}));
+    },
+
+    async callTool(name: string, args: Record<string, unknown>): Promise<McpToolResult> {
+      return decodeToolResult(await sendRequest("tools/call", { name, arguments: args }));
+    },
+  };
+}
+
+function createStdioMcpClient(config: McpConfig, options?: CreateMcpClientOptions): McpClient {
   const timeoutMs = options?.timeoutMs ?? DEFAULT_MCP_TIMEOUT_MS;
   let child: ChildProcessWithoutNullStreams | null = null;
   let nextId = 1;
@@ -137,10 +291,27 @@ export function createMcpClient(
         return;
       }
 
-      child = spawn(config.command, config.args ?? [], {
-        env: { ...process.env, ...config.env },
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      const sandbox = options?.sandbox;
+      if (sandbox !== undefined) {
+        const probed = await sandbox.probe();
+        if (!probed.isAvailable) {
+          throw new Error(
+            probed.reason !== undefined
+              ? `OsSandbox unavailable: refusing host MCP spawn (ADR-0024 fail-closed): ${probed.reason}`
+              : "OsSandbox unavailable: refusing host MCP spawn (ADR-0024 fail-closed)",
+          );
+        }
+        const invocation = sandbox.wrapSpawn(config.command, config.args ?? []);
+        child = spawn(invocation.command, [...invocation.args], {
+          env: { ...process.env, ...config.env },
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+      } else {
+        child = spawn(config.command, config.args ?? [], {
+          env: { ...process.env, ...config.env },
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+      }
 
       child.stdout.setEncoding("utf8");
       child.stdout.on("data", (chunk: string) => {
@@ -191,22 +362,11 @@ export function createMcpClient(
     },
 
     async listTools(): Promise<McpToolSchema[]> {
-      const result = await sendRequest("tools/list", {});
-      const tools = (result as { tools?: McpToolSchema[] })?.tools ?? [];
-      return tools.map((tool) => ({
-        name: tool.name,
-        description: tool.description ?? "",
-        inputSchema: tool.inputSchema ?? { type: "object", properties: {} },
-      }));
+      return decodeToolList(await sendRequest("tools/list", {}));
     },
 
     async callTool(name: string, args: Record<string, unknown>): Promise<McpToolResult> {
-      const result = await sendRequest("tools/call", { name, arguments: args });
-      const typed = result as McpToolResult;
-      return {
-        content: typed.content ?? [],
-        ...(typed.isError !== undefined ? { isError: typed.isError } : {}),
-      };
+      return decodeToolResult(await sendRequest("tools/call", { name, arguments: args }));
     },
   };
 }

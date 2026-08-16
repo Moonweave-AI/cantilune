@@ -112,7 +112,12 @@ export function collectAgentState(input: {
   }
   // Content refs are checkable artifacts — stronger than agent self-report.
   for (const ref of input.produce.contentRefs) {
-    evidenceItems.push({ ref, tier: "artifact", rho: TIER_RHO.artifact, summary: "written content" });
+    evidenceItems.push({
+      ref,
+      tier: "artifact",
+      rho: TIER_RHO.artifact,
+      summary: "written content",
+    });
   }
   const evidence: EvidenceSet = { items: evidenceItems };
 

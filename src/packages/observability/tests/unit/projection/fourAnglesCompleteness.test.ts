@@ -94,7 +94,7 @@ describe("four projection angles field completeness", () => {
 
     const dependencyDelta = interpretDependencyDelta(tag, before, after);
     const resourceDelta = interpretResourceDelta(tag, before, after);
-    const communicationDelta = interpretCommunicationDelta(tag, before, after);
+    const communicationDelta = interpretCommunicationDelta(tag, before, after, change);
     const structureDelta = interpretStructureDelta(tag, before, after, change);
 
     const depView = dependencyView({

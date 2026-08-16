@@ -26,9 +26,7 @@ function hardGateFromContract(
 ): number {
   const hard = contract.criteria.filter((c) => c.kind === "hard");
   if (hard.length === 0) return 1; // no hard conditions => gate trivially open
-  return hard.every((c) => evaluations.find((e) => e.criterionId === c.id)?.passed)
-    ? 1
-    : 0;
+  return hard.every((c) => evaluations.find((e) => e.criterionId === c.id)?.passed) ? 1 : 0;
 }
 
 /**
@@ -115,7 +113,10 @@ function tryDone(ctx: DecisionContext, chain: string[]): ControlVerdict | undefi
   if (H >= thresholds.hardGate && C >= thresholds.tauC && U <= thresholds.tauU) {
     if (VOC_star <= thresholds.epsilon) {
       chain.push("→ DONE: hard gate open, completion met, uncertainty low, no worthwhile action.");
-      return { kind: "DONE", audit: buildAudit(ctx.contract, ctx.evaluations, ctx.voc, ctx.residual, chain) };
+      return {
+        kind: "DONE",
+        audit: buildAudit(ctx.contract, ctx.evaluations, ctx.voc, ctx.residual, chain),
+      };
     }
     chain.push("→ not DONE: worthwhile continuation action remains (VOC* > ε).");
   } else {

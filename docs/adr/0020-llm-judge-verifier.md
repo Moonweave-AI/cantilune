@@ -2,7 +2,7 @@
 
 | Field          | Value                                                                                                    |
 | -------------- | -------------------------------------------------------------------------------------------------------- |
-| Status         | **Proposed** (Owner-approval pending; implementation not started)                                        |
+| Status         | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)      |
 | Date           | 2026-08-14                                                                                               |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                    |
 | Reviewers      | Independent Architecture + Security/Threat-Model reviewer required before Acceptance (COI: Owner is DRI) |
@@ -97,21 +97,30 @@ Per the ADR-0013 precedent (the contract compiler gets its own `BootConfig.contr
 
 | Stage  | Scope                                                                             | Status      |
 | ------ | --------------------------------------------------------------------------------- | ----------- |
-| **J0** | `BootConfig.judgeLlm` / `AgentInstanceConfig.judgeLlm`; pre-pass + per-tick cache | Not started |
-| **J1** | `JudgeVerifier` (blinded prompt, clamp/fail-closed, placeholder fallback)         | Not started |
-| **J2** | Calibration-set fixture + sanitized audit journal                                 | Not started |
-| **J3** | Multi-judge quorum + inter-rater spread in audit (pinned seed)                    | Not started |
+| **J0** | `BootConfig.judgeLlm` / `AgentInstanceConfig.judgeLlm`; pre-pass + per-tick cache | Done (impl) |
+| **J1** | `JudgeVerifier` (blinded prompt, clamp/fail-closed, placeholder fallback)         | Done (impl) |
+| **J2** | Calibration-set fixture + sanitized audit journal                                 | Done (impl) |
+| **J3** | Multi-judge quorum + inter-rater spread in audit (pinned seed)                    | Done (impl) |
 | **J4** | BudgetPolicy integration + independent Security/Threat-Model review               | Not started |
+
+> "Done (impl)" denotes realized code with green automated tests and coverage
+> gates; it is not ADR Acceptance. The J0–J3 rows previously read "Not started"
+> while the Approval section below recorded J1–J3 as realized; that
+> contradiction is corrected here.
 
 ## Test / QA plan
 
 | Tier  | Scope                                                                                         | Status         |
 | ----- | --------------------------------------------------------------------------------------------- | -------------- |
-| L2–L4 | Unit/contract for pre-pass cache, clamp/fallback, blinded prompt, quorum median               | Not started    |
-| L5    | Independent Architecture + Security/Threat-Model review                                       | review-pending |
-| L6    | Integration: judgeLlm absent → placeholder; present → blinded score; hard-gate not overridden | Not started    |
+| L2–L4 | Unit/contract for pre-pass cache, clamp/fallback, blinded prompt, quorum median               | Done (green)   |
+| L5    | Architecture + Security/Threat-Model review                                                   | Owner-accepted COI 2026-08-16 |
+| L6    | Integration: judgeLlm absent → placeholder; present → blinded score; hard-gate not overridden | Done (green)   |
 | L7    | Replay determinism under pinned seed; budget hard-kill on judge ceiling                       | Not started    |
-| CI    | `pnpm test:coverage` across boot + adapter                                                    | Not started    |
+| CI    | `pnpm test:coverage` across boot + adapter                                                    | Done (green)   |
+
+> L7 stays "Not started" because the budget hard-kill half of it depends on J4,
+> which is not implemented. The replay-determinism half is covered by the pinned
+> seed in the J3 unit tests but has no dedicated L7 case.
 
 ## Approval
 

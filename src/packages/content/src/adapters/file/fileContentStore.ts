@@ -347,33 +347,12 @@ export function createFileContentStore(rootDir: string): ContentStore {
     async list(): Promise<readonly ContentEntry[]> {
       const result: ContentEntry[] = [];
       try {
-        const prefixes = await readdir(rootDir);
-        for (const prefix of prefixes) {
+        for (const prefix of await readdir(rootDir)) {
           if (prefix.length !== 2 || !HEX_CHAR.test(prefix)) continue;
           const dir = join(rootDir, prefix);
-          const files = await readdir(dir);
-          for (const file of files) {
-            // A stored blob is <64hex>.blob; its sibling <64hex>.meta.json
-            // carries the canonical metadata. Skip repair claims and temp files.
-            if (!file.endsWith(".blob")) continue;
-            const hex = file.slice(0, -".blob".length);
-            if (hex.length !== 64 || !HEX_CHAR.test(hex)) continue;
-            const ref = `sha256:${hex}` as ContentRef;
-            const metaPath = join(dir, `${hex}.meta.json`);
-            try {
-              const [raw, blobStat] = await Promise.all([
-                readFile(metaPath, "utf-8"),
-                stat(join(dir, file)),
-              ]);
-              result.push({ ref, metadata: parseStoredMetadata(raw, blobStat.size, ref) });
-            } catch (err: unknown) {
-              // A blob whose metadata is missing/corrupt is listed with the
-              // corruption surfaced by metadata() callers; list() reports the
-              // ref only when both blob and valid metadata are present so stats
-              // never silently count a half-written entry.
-              if (isEnoent(err) || err instanceof SyntaxError) continue;
-              throw err;
-            }
+          for (const file of await readdir(dir)) {
+            const entry = await readShardEntry(dir, file);
+            if (entry !== undefined) result.push(entry);
           }
         }
       } catch (err: unknown) {
@@ -398,6 +377,33 @@ export function createFileContentStore(rootDir: string): ContentStore {
       return true;
     },
   };
+}
+
+/**
+ * Read one shard directory entry as a listed blob, or `undefined` when the file
+ * is not a listable blob.
+ *
+ * A stored blob is `<64hex>.blob` with a sibling `<64hex>.meta.json` carrying
+ * the canonical metadata; repair claims and temp files are neither. An entry
+ * whose metadata is missing or corrupt is omitted rather than reported, so a
+ * half-written blob is never counted by `list()` or the stats derived from it.
+ */
+async function readShardEntry(dir: string, file: string): Promise<ContentEntry | undefined> {
+  if (!file.endsWith(".blob")) return undefined;
+  const hex = file.slice(0, -".blob".length);
+  if (hex.length !== 64 || !HEX_CHAR.test(hex)) return undefined;
+
+  const ref = `sha256:${hex}` as ContentRef;
+  try {
+    const [raw, blobStat] = await Promise.all([
+      readFile(join(dir, `${hex}.meta.json`), "utf-8"),
+      stat(join(dir, file)),
+    ]);
+    return { ref, metadata: parseStoredMetadata(raw, blobStat.size, ref) };
+  } catch (err: unknown) {
+    if (isEnoent(err) || err instanceof SyntaxError) return undefined;
+    throw err;
+  }
 }
 
 function parseStoredMetadata(raw: string, byteLength: number, ref: ContentRef): ContentMetadata {

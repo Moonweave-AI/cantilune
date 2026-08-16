@@ -7,6 +7,9 @@
  * run + attempt with genuine token accounting from the mocked LLM adapter.
  * Nothing here fabricates a run; the attempt comes from the real engine.
  */
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import type { LlmAdapter, LlmChatRequest, LlmChatResponse } from "@cantilune/boot";
 import {
@@ -17,6 +20,7 @@ import {
   buildMinimalBudgetPolicy,
   createLocalRunner,
   createLocalCertificateResolver,
+  createCliConformanceCertificateResolver,
   sha256Digest,
   type EvalController,
 } from "../../src/wiring/evalControl.js";
@@ -85,16 +89,45 @@ describe("evalControl — bootstrap helpers", () => {
   });
 });
 
+function isolatedEvalDir(): string {
+  return mkdtempSync(join(tmpdir(), "cli-eval-"));
+}
+
+function testEvalController(adapter: () => LlmAdapter = createStubAdapter): EvalController {
+  const subject = buildCandidateSubject(evaluationSubjectId("cli-local-candidate"));
+  return createEvalController(adapter, {
+    evalStoreDir: isolatedEvalDir(),
+    certificateResolver: createCliConformanceCertificateResolver(
+      subject.packageConformanceCertificateRef,
+      subject.artifactSubject,
+      subject.subjectDigest,
+      subject.revocationCheckpoint,
+    ),
+  });
+}
+
 describe("evalControl — real engine path", () => {
+  it("TUI default createEvalController is fail-closed (no minted valid cert)", async () => {
+    const controller = createEvalController(createStubAdapter, {
+      evalStoreDir: isolatedEvalDir(),
+    });
+    const admit = await controller.engine.admitRun(
+      controller.plan,
+      controller.subject,
+      controller.budgetPolicy,
+    );
+    expect(admit.ok).toBe(false);
+  });
+
   it("createEvalController registers the suite in the suite registry", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const suites = await controller.suiteRegistry.listAll();
     expect(suites).toHaveLength(1);
     expect(suites[0]!.suiteId as string).toBe("cli-local-smoke");
   });
 
   it("admit → execute → complete produces a real run + attempt", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const admit = await controller.engine.admitRun(
       controller.plan,
       controller.subject,
@@ -133,7 +166,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("listRuns returns the persisted run", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const admit = await controller.engine.admitRun(
       controller.plan,
       controller.subject,
@@ -146,7 +179,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("admit rejects a non-frozen plan", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const unfrozenPlan = { ...controller.plan, frozenAt: undefined };
     const admit = await controller.engine.admitRun(
       unfrozenPlan,
@@ -159,7 +192,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("admit rejects a subject mismatch", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const otherSubject = buildCandidateSubject(evaluationSubjectId("different-candidate"));
     const admit = await controller.engine.admitRun(
       controller.plan,
@@ -172,7 +205,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("executeAttempt on a non-existent run is rejected", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const attempt = await controller.engine.executeAttempt(
       "nonexistent-run" as never,
       "cli-local-smoke-case-1" as never,
@@ -184,7 +217,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("runner failure surfaces as a failed attempt", async () => {
-    const controller: EvalController = createEvalController(() =>
+    const controller: EvalController = testEvalController(() =>
       createFailingAdapter("network down"),
     );
     const admit = await controller.engine.admitRun(
@@ -208,7 +241,7 @@ describe("evalControl — real engine path", () => {
   });
 
   it("completeRun on a non-existent run is rejected", async () => {
-    const controller: EvalController = createEvalController(createStubAdapter);
+    const controller: EvalController = testEvalController();
     const complete = await controller.engine.completeRun("nonexistent" as never);
     expect(complete.ok).toBe(false);
     if (complete.ok) return;
@@ -322,7 +355,7 @@ function createFailingCas(): ContentAddressedStore {
 describe("evalControl — local certificate resolver", () => {
   it("resolves any ref to a valid certificate matching the subject digest", async () => {
     const digest = sha256Digest("test") as ContentDigest;
-    const resolver = createLocalCertificateResolver(digest);
+    const resolver = createLocalCertificateResolver(digest, { allowLocalShim: true });
     const result = await resolver.resolve("any-ref");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -331,12 +364,24 @@ describe("evalControl — local certificate resolver", () => {
   });
 
   it("checkValidity always returns valid", async () => {
-    const resolver = createLocalCertificateResolver(sha256Digest("x") as ContentDigest);
+    const resolver = createLocalCertificateResolver(sha256Digest("x") as ContentDigest, {
+      allowLocalShim: true,
+    });
     expect(await resolver.checkValidity("any")).toBe("valid");
   });
 
+  it("refuses to construct without the explicit local-mode gate", () => {
+    expect(() =>
+      createLocalCertificateResolver(sha256Digest("x") as ContentDigest, {
+        allowLocalShim: false as unknown as true,
+      }),
+    ).toThrow(/allowLocalShim/);
+  });
+
   it("checkRevocation always returns false", async () => {
-    const resolver = createLocalCertificateResolver(sha256Digest("x") as ContentDigest);
+    const resolver = createLocalCertificateResolver(sha256Digest("x") as ContentDigest, {
+      allowLocalShim: true,
+    });
     expect(await resolver.checkRevocation("any", "now")).toBe(false);
   });
 });

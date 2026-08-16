@@ -1,0 +1,21 @@
+{
+  "taskId": "T15",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/sources.md",
+    "artifacts/narrative-v1.md",
+    "artifacts/narrative-v2.md",
+    "artifacts/counter-evidence.md",
+    "artifacts/factcheck.md",
+    "artifacts/interviews.md",
+    "artifacts/cut-list.md",
+    "artifacts/vo-script.md"
+  ],
+  "requiredGlobs": []
+}

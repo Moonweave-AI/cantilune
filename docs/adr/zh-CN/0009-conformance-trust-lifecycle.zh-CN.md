@@ -2,7 +2,7 @@
 
 | 字段           | 值                                                                                                                                                                          |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted**（已接受）（M2–M3 工程范围 —— 信任端口已搭建；持久化 CAS、外部签署与非 DRI 评审 **pending**（待完成））                                                         |
+| Status         | **Accepted**（已接受）（M2–M3 工程范围 —— file trust/revocation/evidence 适配器已落地；外部签署与非 DRI 评审 **pending**）                                                 |
 | Date           | 2026-08-11                                                                                                                                                                  |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                                                       |
 | Reviewers      | Joker-of-Gotham（DRI 临时安全 + 形式）；FCP 之前须进行外部独立评审 —— 见 `docs/governance/reviewer-assignments.md`                                                          |
@@ -12,8 +12,8 @@
 
 RFC-0003 定义了 C0–C9 证书链与五个符合性问题。ADR-0006 将 control-plane 的 schema 激活绑定到四视图证据验证。若无显式的信任生命周期规则，M2 中仍存在以下缺口：
 
-- 仅内存的 trust/revocation/cache 适配器，无持久化检查点语义
-- 无不可伪造的密封决策类型（`Verified*` / `Reviewed*` 仍 OPEN）
+- 内存 trust/revocation/cache 适配器仍是进程内默认；file 适配器已存在（`--store-dir`）
+- 密封 `VerifiedDecision` / `ReviewedDecision` 类型已存在（工程）；product 范围发布仍受 Owner 门禁
 - 人工评审工作流未规定（quorum、COI、冲突处理）
 - 验证器构建钉扎存在于类型中，但未作为轮换策略强制执行
 - 若 cache 键省略 policy/revocation generation，control-plane 理论上可能消费过期的缓存决策
@@ -34,7 +34,7 @@ RFC-0003 定义了 C0–C9 证书链与五个符合性问题。ADR-0006 将 cont
 | TR-2 | 验证器 MUST 拒绝在根范围或有效窗口之外签署的证明                                               |
 | TR-3 | `trustRootSetVersion` MUST 出现在每个 `PackageConformanceCertificate` 与缓存键中               |
 | TR-4 | 信任根轮换为 **append-only**（仅追加）：新版本添加根；旧根在显式过期前保持有效（不得静默移除） |
-| TR-5 | M2：仅内存信任 store；生产环境需要持久化信任清单 + CI 验证（**OPEN**）                         |
+| TR-5 | 内存信任 store 仍是进程内默认；**file** `createFileTrustStore` 已存在，供 `--store-dir` / 生产接线。该路径的独立评审仍为 Owner C3。 |
 
 ### 证书生命周期（C1–C9）
 
@@ -64,7 +64,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 | RV-2 | `revocationCheckpoint` 为单调；消费者 MUST 追踪已见最新检查点                                         |
 | RV-3 | 吊销查询 MUST 先于缓存命中与门禁评估                                                                  |
 | RV-4 | 吊销 C8 使依赖的 C9 无效；吊销信任根版本使该版本下所有证明无效                                        |
-| RV-5 | M2：内存吊销 store；持久化吊销日志 **OPEN**                                                           |
+| RV-5 | 内存吊销 store 仍是进程内默认；**file** `createFileRevocationStore` 已存在。该路径的独立评审仍为 Owner C3。 |
 
 ### 人工评审 quorum
 
@@ -76,7 +76,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 | HR-4 | `HumanReviewAttestation` 绑定 `machineDecisionRef`、`reviewerId`、`roles[]`、`decision`、`reviewedAt`                      |
 | HR-5 | 冲突证明（`decision: conflict`）阻塞发布（`release: blocked`），直至新一轮评审解决                                         |
 | HR-6 | Agent/自动化评审不满足人工评审轴                                                                                           |
-| HR-7 | M2：quorum 未在代码中强制执行；L5 checklist 关闭前对 S4 为 **Stop-Ship**                                                   |
+| HR-7 | Quorum 已在 `humanReviewAttestationVerifier` 中强制执行；独立评审人仍为 _unassigned_。L5 checklist 关闭前对 S4 为 **Stop-Ship** |
 
 **评审人角色（信息性）：** formal-mathematics、process-semantics、security/threat-model、package-owner（对自有包非投票）。
 
@@ -93,7 +93,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 
 **规则 CA-1：** 缓存条目 MUST NOT 在任一键组件失效后存续。
 **规则 CA-2：** 正向缓存命中 MUST 仍在消费时重新检查吊销检查点与过期（TOCTOU 缓解 —— 见 ADR-0010）。
-**规则 CA-3：** M2 `MemoryVerificationCache` 通过 `cacheKeyString` 实现键字符串化；持久化缓存 **OPEN**。
+**规则 CA-3：** `MemoryVerificationCache` 通过 `cacheKeyString` 实现键字符串化；**file** `createFileVerificationCache` 与 `createFileEvidenceStore` 已存在。持久化缓存语义的独立评审仍为 Owner C3。
 
 ### 验证器构建钉扎
 
@@ -124,7 +124,7 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 | Commit admission  | 先前 prepare + 授权角色（ADR-0006）                                                                                                  | 不经服务端 bundle fetch 而从客户端提供的摘要重新验证   |
 | Release / fleet   | `evaluateReleaseConformanceGate → accepted`                                                                                          | 将 `conditional` 当作 accepted                         |
 
-**密封类型目标（OPEN）：** 一旦实现，将原始 `VerificationDecision` 透传替换为不可伪造的 `VerifiedAdmissionDecision` / `ReviewedReleaseDecision` brand。在此之前，门禁 MUST 使用引擎入口点 —— 而非调用者构造的决策对象。
+**密封类型（工程已落地，Owner-accepted 2026-08-16）：** `VerifiedDecision` / `ReviewedDecision`（`sealVerifiedDecision` / `sealReviewedDecision`）拒绝调用者构造的对象。门禁仍 MUST 使用引擎入口点。`@cantilune/conformance` 为 0.x 生产发布权限；仍不自动签 release cert。
 
 **可观察性边界：** 可观察性读取 admission 回执与验证审计事件；它不执行符合性验证（ADR-0005 模式）。
 
@@ -138,17 +138,20 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 | 机器证明上的 `verifierBuild` + engineering verifier 常量              | ✅      |
 | 缓存键包含 evidence root + profile                                    | ✅ 部分 |
 | `evaluateAdmissionConformanceGate` / `evaluateReleaseConformanceGate` | ✅      |
-| Quorum 强制执行、持久化 store、密封类型、外部签署                     | ❌ OPEN |
+| File 适配器：trust、revocation、evidence、cache、audit、decision log | ✅      |
+| 密封 `VerifiedDecision` / `ReviewedDecision`                         | ✅      |
+| 人工评审 quorum 验证器（`humanReviewAttestationVerifier`）           | ✅      |
+| 外部签署工具 / HSM                                                   | 策略：无 HSM；CI 不自动签 Acceptance cert（2026-08-16） |
 
 ## 残余风险
 
 | 风险                                       | 状态     | 备注                       |
 | ------------------------------------------ | -------- | -------------------------- |
-| 仅内存的 trust/revocation 在进程重启后存续 | **OPEN** | 对 S4 为 Stop-Ship         |
-| 无密封决策类型 —— 通过伪造决策对象绕过门禁 | **OPEN** | ADR-0010 T-CP-1 缓解计划中 |
-| Quorum 未在代码中强制执行                  | **OPEN** | HR-7                       |
-| 外部安全非 DRI 签署                        | **OPEN** | Pre-FCP                    |
-| Lean 证明人工/CI 缺口                      | **OPEN** | C7 桥接                    |
+| 调用方仍只接线 Memory\* 时 file trust/revocation 未被使用 | 残留     | 工程适配器已存在；生产接线必须注入 file store |
+| 密封类型已存在；product 范围发布由 Owner 门禁             | 策略 | Owner COI（2026-08-16）；不设第二评审人        |
+| Quorum 验证器已存在；独立性已 waived                      | 策略 | HR-7 waived；Joker-of-Gotham（COI）           |
+| 外部安全非 DRI 签署                                       | 策略 | 不设第二评审人；Owner 兼任 Security           |
+| Lean 行保持 `proved`；已记录 `ownerAccept`                | 策略 | 不跑 promotion form                           |
 
 ## 后果
 
@@ -180,12 +183,12 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 - [x] 内存适配器
 - [x] 证书 schema 生命周期字段
 - [x] admission/release 门禁评估器
-- [ ] 持久化 evidence + revocation CAS
-- [ ] 人工评审工作流中的 quorum 强制执行
-- [ ] `Verified*` / `Reviewed*` 密封决策类型
-- [ ] 外部签署工具集成
+- [x] 持久化 file evidence + revocation + trust + cache 适配器（`src/packages/conformance/src/adapters/file/`）
+- [x] `humanReviewAttestationVerifier` 中的 quorum 强制执行（Owner COI 法定人数；不设第二评审人）
+- [x] `VerifiedDecision` / `ReviewedDecision` 密封类型
+- [x] 无 HSM / 不自动签 Acceptance cert（Owner C7 生产策略）
+- [x] 安全 + QA-L5 评审（Owner 签字 COI 2026-08-16）
 - [ ] 针对消费契约的 control-plane 接线审计
-- [ ] 独立安全 + QA-L5 评审（review-pending）
 
 ## 批准
 

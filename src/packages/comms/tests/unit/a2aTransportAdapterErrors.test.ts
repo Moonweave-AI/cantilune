@@ -15,30 +15,39 @@ import {
 import { commsViolation } from "../../src/foundation/commsViolation.js";
 
 describe("A2ATransportAdapter errors", () => {
-  it("rejects dispatch without sendFrame", async () => {
-    const adapter = new A2ATransportAdapter({ remoteEndpoint: "http://agent" });
+  it("default HTTP sendFrame fails closed when the endpoint is unreachable", async () => {
+    const adapter = new A2ATransportAdapter({
+      remoteEndpoint: "http://agent.invalid/a2a",
+      fetchImpl: (async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+    });
     const verified = sealVerifiedEnvelope({
       envelope: buildTestEnvelope(),
       verifiedAt: "2026-08-11T16:00:00Z",
     });
     const result = await adapter.dispatch(verified);
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain("sendFrame handler not provided");
-    }
   });
 
-  it("rejects receive without receiveFrame", async () => {
-    const adapter = new A2ATransportAdapter({ remoteEndpoint: "http://agent" });
+  it("default HTTP receiveFrame fails closed when the endpoint is unreachable", async () => {
+    const adapter = new A2ATransportAdapter({
+      remoteEndpoint: "http://agent.invalid/a2a",
+      fetchImpl: (async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+    });
     const result = await adapter.receive();
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.message).toContain("receiveFrame handler not provided");
-    }
   });
 
-  it("rejects handshake without sendFrame", async () => {
-    const adapter = new A2ATransportAdapter({ remoteEndpoint: "http://agent" });
+  it("rejects handshake when default HTTP send fails", async () => {
+    const adapter = new A2ATransportAdapter({
+      remoteEndpoint: "http://agent.invalid/a2a",
+      fetchImpl: (async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+    });
     const sid = sessionId("session-1");
     const result = await adapter.handshake({
       sessionId: sid,

@@ -236,10 +236,16 @@ describe("SOAK-01: 20-Agent cluster composite topology", () => {
     const participantMap = new Map<ActorId, ReturnType<typeof participant>>();
     participantMap.set(init, participant(init, "agent", "active"));
     for (const id of parallelIds) {
-      participantMap.set(actorId(id), participant(actorId(id), "agent", "active", manifestRefs.get(id)));
+      participantMap.set(
+        actorId(id),
+        participant(actorId(id), "agent", "active", manifestRefs.get(id)),
+      );
     }
     for (const id of conditionalIds) {
-      participantMap.set(actorId(id), participant(actorId(id), "agent", "active", manifestRefs.get(id)));
+      participantMap.set(
+        actorId(id),
+        participant(actorId(id), "agent", "active", manifestRefs.get(id)),
+      );
     }
 
     const snap = collaborationSnapshot({
@@ -264,6 +270,10 @@ describe("SOAK-01: 20-Agent cluster composite topology", () => {
         },
       }),
       eventListener: (e) => events.push(e),
+      // This case measures composite-topology throughput, so it raises the
+      // ceiling above the production default rather than asserting against a
+      // queue it did not intend to exercise.
+      schedulerPolicy: { maxConcurrentAgents: 20 },
     });
 
     supervisor.start();
@@ -300,7 +310,10 @@ describe("SOAK-01: 20-Agent cluster composite topology", () => {
     const participantMap = new Map<ActorId, ReturnType<typeof participant>>();
     participantMap.set(init, participant(init, "agent", "active"));
     for (const id of agentIds) {
-      participantMap.set(actorId(id), participant(actorId(id), "agent", "active", manifestRefs.get(id)));
+      participantMap.set(
+        actorId(id),
+        participant(actorId(id), "agent", "active", manifestRefs.get(id)),
+      );
     }
 
     const snap = collaborationSnapshot({
@@ -568,6 +581,10 @@ describe("SOAK-04: Large-scale condition re-evaluation stress", () => {
         },
       }),
       eventListener: (e) => events.push(e),
+      // This case measures condition-evaluation cost at scale, so it raises the
+      // ceiling above the production default: queueing the surplus would
+      // measure the queue rather than the evaluator.
+      schedulerPolicy: { maxConcurrentAgents: 50 },
     });
 
     supervisor.start();
@@ -683,7 +700,10 @@ describe("SOAK-05: Crash-restart resilience", () => {
 
     const participantMap = new Map<ActorId, ReturnType<typeof participant>>();
     participantMap.set(init, participant(init, "agent", "active"));
-    participantMap.set(actorId("volatile"), participant(actorId("volatile"), "agent", "active", ref));
+    participantMap.set(
+      actorId("volatile"),
+      participant(actorId("volatile"), "agent", "active", ref),
+    );
 
     const snap = collaborationSnapshot({
       snapshotRef: snapshotRef("s1"),

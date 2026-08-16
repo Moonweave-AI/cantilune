@@ -31,7 +31,12 @@ import {
 import { validateAuditTailMatchesHistory } from "../../src/consistency/index.js";
 import { simulateCommit } from "../support/harness/simulate-commit.js";
 
-/** @deprecated Canonical E2E lives in @cantilune/runtime integration/story-t0-to-delegate.test.ts */
+/**
+ * NOT L6 evidence. Unit-level recipe/invariant walk of the naming-contract story.
+ * Canonical admit/commit/replay lives in
+ * `@cantilune/runtime` `tests/integration/story-t0-to-delegate.test.ts`.
+ * `simulateCommit` is a tests-only harness — not a production export.
+ */
 
 describe("story T0 to delegate", () => {
   it("follows naming contract §2.4 and §5", () => {

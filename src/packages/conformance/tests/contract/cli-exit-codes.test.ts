@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   sampleInventory,
   sampleLeanAttestationWire,
@@ -9,22 +9,24 @@ import {
   SAMPLE_OBSERVED,
   FIXTURE_ARTIFACT_DIGESTS,
 } from "../support/conformanceFixtures.js";
-import { cliBuilt, runCli } from "../support/runCli.js";
+import { requireCliBuilt, runCli } from "../support/runCli.js";
 
 describe("L5 conformance CLI exit codes", () => {
-  it.skipIf(!cliBuilt())("returns 0 for help", () => {
+  beforeAll(requireCliBuilt);
+
+  it("returns 0 for help", () => {
     const result = runCli(["help"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("conformance-cli");
   });
 
-  it.skipIf(!cliBuilt())("returns 2 for unknown command", () => {
+  it("returns 2 for unknown command", () => {
     const result = runCli(["not-a-command"]);
     expect(result.exitCode).toBe(2);
     expect(result.stderr).toContain("unknown command");
   });
 
-  it.skipIf(!cliBuilt())("returns 2 for missing required flags", () => {
+  it("returns 2 for missing required flags", () => {
     expect(runCli(["inspect"]).exitCode).toBe(2);
     expect(runCli(["verify-rule"]).exitCode).toBe(2);
     expect(runCli(["verify-package"]).exitCode).toBe(2);
@@ -33,13 +35,13 @@ describe("L5 conformance CLI exit codes", () => {
     expect(runCli(["explain"]).exitCode).toBe(2);
   });
 
-  it.skipIf(!cliBuilt())("returns 3 for unreadable JSON path", () => {
+  it("returns 3 for unreadable JSON path", () => {
     const result = runCli(["inspect", "--manifest", join(tmpdir(), "missing-manifest.json")]);
     expect(result.exitCode).toBe(3);
     expect(result.stderr).toContain("failed to read JSON");
   });
 
-  it.skipIf(!cliBuilt())("returns 0 for inspect on allowed manifest", () => {
+  it("returns 0 for inspect on allowed manifest", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const manifestPath = join(dir, "manifest.json");
@@ -52,7 +54,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 1 for inspect on disallowed product scope", () => {
+  it("returns 1 for inspect on disallowed product scope", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const manifestPath = join(dir, "manifest.json");
@@ -69,7 +71,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 1 for verify-rule inventory violations", () => {
+  it("returns 1 for verify-rule inventory violations", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const inventoryPath = join(dir, "inventory.json");
@@ -90,7 +92,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 0 for verify-rule complete inventory", () => {
+  it("returns 0 for verify-rule complete inventory", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const inventoryPath = join(dir, "inventory.json");
@@ -111,7 +113,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 0 for verify-package on reference manifest", () => {
+  it("returns 0 for verify-package on reference manifest", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const manifestPath = join(dir, "manifest.json");
@@ -140,7 +142,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 1 for verify-lean-attestation digest mismatch", () => {
+  it("returns 1 for verify-lean-attestation digest mismatch", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const attestationPath = join(dir, "attestation.json");
@@ -159,7 +161,7 @@ describe("L5 conformance CLI exit codes", () => {
     }
   });
 
-  it.skipIf(!cliBuilt())("returns 0 for list-missing and explain", () => {
+  it("returns 0 for list-missing and explain", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-cli-"));
     try {
       const inventoryPath = join(dir, "inventory.json");

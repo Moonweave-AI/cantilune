@@ -56,7 +56,7 @@
 
 ### 5. 派生最小承诺
 
-`deriveDiagnosticSummary`（前称 `deriveCompositionView`）**仅为诊断摘要**——在后续 ADR 定义完整投影语义之前，不用于调度、并发或结构投影。
+`deriveDiagnosticSummary`（前称 `deriveCompositionView`）是**只读结构投影**（由已提交 rewrite 历史与 snapshot 参与者派生 serial / parallel / nest）。**不得**被 `SwarmScheduler` 或任何写/准入路径使用。见下方 2026-08-15 后续说明。
 
 ### 6. 包发布姿态
 
@@ -74,8 +74,8 @@
 **负面 / 后续**
 
 - `@cantilune/runtime` 必须在 L6–L7 声称之前实现 apply + replay
-- 用于 Map 序列化的 Wire DTO / 编解码器仍开放
-- 仍需完整结构投影 ADR
+- 用于 Map 序列化的 Wire DTO / 编解码器 —— **已完成**（`snapshotCodec` + `wireValidation` 未知字段拒绝；Map 字段以 DTO 数组/对象往返）
+- 结构投影工程说明——**后续已完成**（2026-08-15）；非 Acceptance
 - ADR-0002 控制面威胁模型（RFC-0001 §9）——运行时范围在 **ADR-0003**；comms/网络仍受门禁约束
 
 ## 考虑过的备选方案
@@ -93,6 +93,18 @@
 - [x] `consistency` 模块、`validateSnapshotIntegrity`、`CoreViolation`
 - [x] `deriveDiagnosticSummary` 重命名 + 弃用别名
 - [x] `@cantilune/runtime`：OperationTemplateRegistry、AdmissionGateway、applyAdmittedChange、ReplayVerifier（M2 原型）
-- [ ] Wire DTO / 规范 wire 顺序 → **@cantilune/runtime**（strict unknown 校验已落地）
+- [x] Wire DTO / 规范 wire 顺序 → **@cantilune/runtime**（`src/packages/runtime/src/codec/snapshotCodec.ts` + `wireValidation`；Map 序列化已闭合）
 - [x] CI：core typecheck + tests + build（coverage 可选：`pnpm test:coverage`）
 - [x] CI：runtime typecheck + tests + lint + format + pack smoke（`.github/workflows/runtime.yml`）
+- [x] 结构投影工程说明（2026-08-15 后续）——非 Acceptance
+
+## 后续（2026-08-15）：结构投影工程说明
+
+| 字段   | 值                                                                          |
+| ------ | --------------------------------------------------------------------------- |
+| Status | **Proposed / follow-up Done**（仅工程说明——**非** Acceptance）              |
+| Date   | 2026-08-15                                                                  |
+
+`deriveDiagnosticSummary` **就是**只读结构投影：由已提交 rewrite 历史派生 `serial` / `parallel` / `nest`（`create_session` → nest，`fork_branch` → parallel）。Observability `FourViewBundle.structure`（经 `diagnosticStepFromChange` / `foldStructureComposition`）与 CLI `/observe structure` 消费此 derive——不是平行类型。
+
+此投影**不得**被 `SwarmScheduler`（ADR-0019）消费。调度在每次 drain 时对已提交世界重新求值 start condition。本说明不授权公开优越性主张或产品 Acceptance。

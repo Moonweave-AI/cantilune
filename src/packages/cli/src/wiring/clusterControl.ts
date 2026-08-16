@@ -76,6 +76,19 @@ export interface ClusterController {
   activate(agentId: string, manifest?: Partial<AgentManifest>): Promise<ActivateResult>;
 }
 
+/**
+ * Optional live swarm (or another ClusterSupervisor owner) on the same runtime.
+ *
+ * When present, this controller must not open a second feed watcher — two
+ * supervisors draining one `activate_participant` would start two agent loops.
+ */
+export interface ClusterSupervisorSibling {
+  start(): ActivateResult;
+  stop(): void;
+  status(): { readonly running: boolean; readonly events: readonly ClusterEventRecord[] };
+  activate(agentId: string, manifest?: Partial<AgentManifest>): Promise<ActivateResult>;
+}
+
 interface ClusterBackends {
   readonly contentStore: ContentStore | undefined;
   readonly syscallRuntime: SyscallRuntime | undefined;
@@ -101,13 +114,22 @@ function recordEvent(events: ClusterEventRecord[], event: ClusterEvent): void {
 export function createClusterController(
   backends: () => ClusterBackends,
   llmFactory: () => LlmAdapter,
+  sibling?: () => ClusterSupervisorSibling | undefined,
 ): ClusterController {
   let supervisor: ClusterSupervisor | undefined;
+  let attachedSibling: ClusterSupervisorSibling | undefined;
   const events: ClusterEventRecord[] = [];
 
   return {
     start(): ActivateResult {
+      if (attachedSibling !== undefined) return { ok: true, message: "already running" };
       if (supervisor !== undefined) return { ok: true, message: "already running" };
+      const liveSibling = sibling?.();
+      if (liveSibling !== undefined) {
+        const result = liveSibling.start();
+        if (result.ok) attachedSibling = liveSibling;
+        return result;
+      }
       const { contentStore, syscallRuntime, storagePath } = backends();
       if (syscallRuntime === undefined || contentStore === undefined) {
         return { ok: false, message: "no runtime connected — start an agent loop first" };
@@ -139,16 +161,28 @@ export function createClusterController(
     },
 
     stop(): void {
+      if (attachedSibling !== undefined) {
+        attachedSibling.stop();
+        attachedSibling = undefined;
+        return;
+      }
       if (supervisor === undefined) return;
       supervisor.stop();
       supervisor = undefined;
     },
 
     status(): ClusterStatus {
+      if (attachedSibling !== undefined) {
+        const live = attachedSibling.status();
+        return { running: live.running, events: live.events };
+      }
       return { running: supervisor !== undefined, events: [...events] };
     },
 
     async activate(agentId: string, manifest?: Partial<AgentManifest>): Promise<ActivateResult> {
+      if (attachedSibling !== undefined) {
+        return attachedSibling.activate(agentId, manifest);
+      }
       const { contentStore, syscallRuntime } = backends();
       if (syscallRuntime === undefined || contentStore === undefined) {
         return { ok: false, message: "no runtime connected" };

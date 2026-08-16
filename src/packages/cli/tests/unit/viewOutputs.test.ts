@@ -9,6 +9,10 @@ import { renderReplayViewOutput } from "../../src/views/ReplayView.js";
 import { renderGraphViewOutput } from "../../src/views/GraphView.js";
 import { renderPetriViewOutput } from "../../src/views/PetriView.js";
 import { emptyRuntime, sampleRuntime } from "../support/sampleRuntime.js";
+import {
+  sampleObserveProjection,
+  sampleReplayProjection,
+} from "../support/sampleObserveReplay.js";
 import { fireTransition, invariantsFor, reachability } from "../../src/wiring/petriControl.js";
 
 describe("view render outputs", () => {
@@ -23,9 +27,18 @@ describe("view render outputs", () => {
     expect(renderWorldViewOutput("world-caps", {}, sampleRuntime)).toContain("write_lock");
     expect(renderWorldViewOutput("world-links", {}, sampleRuntime)).toContain("depends_on");
     expect(renderWorldViewOutput("world-retired", {}, sampleRuntime)).toContain("actor:scout");
-    expect(renderWorldViewOutput("world-diff", { refA: "a", refB: "b" }, sampleRuntime)).toContain(
-      "a → b",
-    );
+    expect(
+      renderWorldViewOutput(
+        "world-diff",
+        {
+          refA: "a",
+          refB: "b",
+          worldDiffLeft: "participants: x",
+          worldDiffRight: "participants: y",
+        },
+        sampleRuntime,
+      ),
+    ).toContain("a → b");
     expect(renderWorldViewOutput("world", {}, emptyRuntime)).toContain("No runtime connected");
   });
 
@@ -115,13 +128,20 @@ describe("view render outputs", () => {
   });
 
   it("renders observe lenses", () => {
-    expect(renderObserveViewOutput("observe", sampleRuntime)).toContain("dependency");
-    expect(renderObserveViewOutput("observe-dependency", sampleRuntime)).toContain("task");
-    expect(renderObserveViewOutput("observe-resource", sampleRuntime)).toContain("write_lock");
-    expect(renderObserveViewOutput("observe-communication", sampleRuntime)).toContain("sess:main");
-    expect(renderObserveViewOutput("observe-structure", sampleRuntime)).toContain("task");
-    expect(renderObserveViewOutput("observe-spine", sampleRuntime)).toContain("EventSpine");
-    expect(renderObserveViewOutput("observe-diagnostic", sampleRuntime)).toContain("Diagnostics");
+    const args = { observeProjection: sampleObserveProjection };
+    expect(renderObserveViewOutput("observe", args, sampleRuntime)).toContain("dependency");
+    expect(renderObserveViewOutput("observe-dependency", args, sampleRuntime)).toContain("task");
+    expect(renderObserveViewOutput("observe-resource", args, sampleRuntime)).toContain(
+      "write_lock",
+    );
+    expect(renderObserveViewOutput("observe-communication", args, sampleRuntime)).toContain(
+      "private",
+    );
+    expect(renderObserveViewOutput("observe-structure", args, sampleRuntime)).toContain("task");
+    expect(renderObserveViewOutput("observe-spine", args, sampleRuntime)).toContain("EventSpine");
+    expect(renderObserveViewOutput("observe-diagnostic", args, sampleRuntime)).toContain(
+      "Diagnostics",
+    );
   });
 
   it("renders schema sub-views", () => {
@@ -156,11 +176,12 @@ describe("view render outputs", () => {
   });
 
   it("renders replay sub-views", () => {
-    expect(renderReplayViewOutput("replay", {}, sampleRuntime)).toContain("Replay from");
-    expect(renderReplayViewOutput("replay-recipe", {}, sampleRuntime)).toContain(
+    const args = { replayProjection: sampleReplayProjection };
+    expect(renderReplayViewOutput("replay", args, sampleRuntime)).toContain("Replay from");
+    expect(renderReplayViewOutput("replay-recipe", args, sampleRuntime)).toContain(
       "introduce_artifact",
     );
-    expect(renderReplayViewOutput("replay-bundle", {}, sampleRuntime)).toContain("snapshot");
+    expect(renderReplayViewOutput("replay-bundle", args, sampleRuntime)).toContain("snapshot");
   });
 
   it("renders extended graph and petri branches", () => {

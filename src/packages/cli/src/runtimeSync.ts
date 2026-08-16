@@ -28,14 +28,17 @@ import {
   createDefaultHandlers,
   createDefaultSchema,
   runtimeDependenciesWithStaticSchema,
+  RunHistoryTracker,
   templateAwarePolicyEvaluator,
 } from "@cantilune/runtime";
 import type { Clock, IdGenerator, ResourceLockTable } from "@cantilune/runtime";
+import type { DurableCoordinator } from "@cantilune/runtime";
 import {
-  createFileRuntimePersistence,
   createMemoryRuntimePersistence,
   MemoryResourceLockTable,
+  resolveProductionDurable,
 } from "@cantilune/runtime/memory";
+import type { ToolApprover } from "@cantilune/syscall";
 import type { ChangeLogEntry, EpochInfo, RuntimeState, SnapshotData } from "./store.js";
 import { createCliInitialSnapshot } from "./cliWorld.js";
 
@@ -108,6 +111,7 @@ export function snapshotToData(snapshot: CollaborationSnapshot): SnapshotData {
       id: String(entry.artifactId),
       kind: entry.kind,
       lifecycle: entry.lifecycle,
+      contentRef: String(entry.contentRef),
     })),
     sessions: [...snapshot.sessions.values()].map((entry) => ({
       id: String(entry.sessionId),
@@ -196,6 +200,16 @@ export interface CliRuntimeHandle {
    * comms store path; absent in memory mode, where a temp path is substituted.
    */
   storagePath(): string | undefined;
+  /**
+   * Load a committed CollaborationSnapshot by ref from the durable store.
+   * Used by `/world diff` and `/observe*` (fail-closed when missing).
+   */
+  getSnapshot(ref: string): import("@cantilune/core").CollaborationSnapshot | undefined;
+  /**
+   * The underlying CoordinationRuntime (sole mutator + replay authority).
+   * `/replay*` calls `replay()`; `/observe*` builds ObservationReadPorts.
+   */
+  coordinationRuntime(): import("@cantilune/runtime").CoordinationRuntime;
 }
 
 function wallClock(): Clock {
@@ -214,9 +228,7 @@ function uuidIdGenerator(): IdGenerator {
   };
 }
 
-type CliDurable =
-  | ReturnType<typeof createMemoryRuntimePersistence>["durable"]
-  | ReturnType<typeof createFileRuntimePersistence>["durable"];
+type CliDurable = DurableCoordinator;
 type CliContentStore =
   ReturnType<typeof createMemoryContentStore> | ReturnType<typeof createFileContentStore>;
 
@@ -226,6 +238,7 @@ interface CliBackends {
   readonly contentStore: CliContentStore;
   readonly durableBackend: BootConfig["durable"];
   readonly contentBackend: BootConfig["contentStore"];
+  readonly dispose?: () => void;
 }
 
 function assertResumedCliPrincipal(
@@ -269,17 +282,18 @@ function createCliBackends(
     };
   }
 
-  const filePersistence = createFileRuntimePersistence({
-    dir: join(config.storagePath, "runtime"),
+  const production = resolveProductionDurable({
+    storagePath: config.storagePath,
     initial,
   });
-  assertResumedCliPrincipal(filePersistence.durable, bootParticipantId, pid, pkind);
+  assertResumedCliPrincipal(production.durable, bootParticipantId, pid, pkind);
   return {
-    durable: filePersistence.durable,
-    locks: filePersistence.locks,
+    durable: production.durable,
+    locks: production.locks,
     contentStore: createFileContentStore(join(config.storagePath, "content")),
     durableBackend: "file",
     contentBackend: "file",
+    ...(production.dispose !== undefined ? { dispose: () => production.dispose?.() } : {}),
   };
 }
 
@@ -291,6 +305,13 @@ export function createCliRuntimeBoot(
     readonly embedder?: EmbeddingAdapter;
     /** Dedicated adapter for goal-contract compilation; undefined → no LLM, default system contract. */
     readonly contractLlm?: LlmAdapter;
+    /** Dedicated adapter for ADR-0020 LLM judge; must not share the loop adapter. */
+    readonly judgeLlm?: LlmAdapter;
+    /**
+     * Human authorization gate for side-effecting tools; undefined → tools run
+     * unattended, which is the headless/observer default.
+     */
+    readonly toolApprover?: ToolApprover;
   },
 ): CliRuntimeHandle {
   if (config?.llm === undefined) {
@@ -306,13 +327,15 @@ export function createCliRuntimeBoot(
   const bootParticipantId = coreActorId(pid);
   const t0 = createCliInitialSnapshot(pid, pkind);
 
-  const { durable, locks, contentStore, durableBackend, contentBackend } = createCliBackends(
-    config,
-    t0,
-    bootParticipantId,
-    pid,
-    pkind,
-  );
+  const { durable, locks, contentStore, durableBackend, contentBackend, dispose } =
+    createCliBackends(config, t0, bootParticipantId, pid, pkind);
+
+  const runHistory = new RunHistoryTracker();
+  const resumedHeadRef = durable.head();
+  const resumedHead = resumedHeadRef === undefined ? undefined : durable.get(resumedHeadRef);
+  if (resumedHead !== undefined) {
+    runHistory.seedFromAuditTail(resumedHead.auditTail);
+  }
 
   const coordinationRuntime = createCoordinationRuntime(
     runtimeDependenciesWithStaticSchema({
@@ -326,6 +349,7 @@ export function createCliRuntimeBoot(
       handlers: createDefaultHandlers(),
       locks,
       contentRefAuthority: contentStore,
+      runHistory,
     }),
   );
   const wrappedRuntime = wrapCoordinationRuntime(coordinationRuntime);
@@ -335,6 +359,7 @@ export function createCliRuntimeBoot(
   // `config` are still honored when `extras` is omitted.
   const embedder = extras?.embedder ?? config.embedder;
   const contractLlm = extras?.contractLlm ?? config.contractLlm;
+  const judgeLlm = extras?.judgeLlm ?? config.judgeLlm;
   const finalConfig: BootConfig = {
     durable: durableBackend,
     contentStore: contentBackend,
@@ -353,16 +378,19 @@ export function createCliRuntimeBoot(
     ...(config.onHistoryCheckpoint !== undefined
       ? { onHistoryCheckpoint: config.onHistoryCheckpoint }
       : {}),
+    ...(config.onBeforeTurn !== undefined ? { onBeforeTurn: config.onBeforeTurn } : {}),
     ...(config.compatibleEpochIds !== undefined
       ? { compatibleEpochIds: config.compatibleEpochIds }
       : {}),
     ...(config.storagePath !== undefined ? { storagePath: config.storagePath } : {}),
     // Inject the controller's optional sensors without falling back to the
     // loop adapter: `embedder` undefined degrades the residual engine to
-    // Jaccard; `contractLlm` undefined compiles the default system contract
-    // with no LLM call. Neither is required; both are one-time per run.
+    // Jaccard; `contractLlm`/`judgeLlm` undefined skip those LLM calls.
+    // Neither may share the loop adapter object.
     ...(embedder !== undefined ? { embedder } : {}),
     ...(contractLlm !== undefined ? { contractLlm } : {}),
+    ...(judgeLlm !== undefined ? { judgeLlm } : {}),
+    ...(extras?.toolApprover !== undefined ? { toolApprover: extras.toolApprover } : {}),
   };
   const os = bootCantilune({
     runtime: wrappedRuntime,
@@ -370,17 +398,29 @@ export function createCliRuntimeBoot(
     llmAdapter,
     config: finalConfig,
   });
+  const closableOs: CantilunOS = {
+    ...os,
+    async shutdown() {
+      try {
+        await os.shutdown();
+      } finally {
+        dispose?.();
+      }
+    },
+  };
 
   return {
-    os,
-    privateHistory: () => os.privateHistory?.() ?? null,
+    os: closableOs,
+    privateHistory: () => closableOs.privateHistory?.() ?? null,
     syncRuntime() {
       return buildRuntimeState(coordinationRuntime.getHead(), durable.changes());
     },
-    shutdown: () => os.shutdown(),
+    shutdown: () => closableOs.shutdown(),
     contentStore: () => contentStore,
     syscallRuntime: () => wrappedRuntime,
     storagePath: () => config.storagePath,
+    getSnapshot: (ref) => durable.get(ref as import("@cantilune/core").SnapshotRef),
+    coordinationRuntime: () => coordinationRuntime,
   };
 }
 

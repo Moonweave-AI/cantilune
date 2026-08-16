@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createToolSet } from "../../src/createToolSet.js";
+import { createHostToolSet } from "../support/hostToolSet.js";
 
 describe("toolSet system scenarios", () => {
   let tempDir: string;
@@ -27,7 +27,7 @@ describe("toolSet system scenarios", () => {
   });
 
   it("supports filesystem-only deployment with full CRUD-like workflow", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
     });
@@ -55,7 +55,7 @@ describe("toolSet system scenarios", () => {
   });
 
   it("supports web-only deployment for fetch workflow", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       web: { enabled: true, timeoutMs: 5000 },
     });

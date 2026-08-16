@@ -261,10 +261,77 @@ describe("view-opening control commands", () => {
   it("passes arguments through to the sub-views", async () => {
     const store = createStore();
     await commandNamed("/tools test").handler({ name: "read_content" }, store);
-    expect(store.viewArgs).toEqual({ name: "read_content" });
+    expect(store.viewArgs).toEqual({ name: "read_content", injectedTools: [] });
 
     await commandNamed("/mcp connect").handler({ url: "http://localhost:3000" }, store);
-    expect(store.viewArgs).toEqual({ url: "http://localhost:3000" });
+    expect(store.viewArgs).toMatchObject({
+      url: "http://localhost:3000",
+      persisted: true,
+      scheduled: true,
+    });
+  });
+});
+
+describe("/mcp connect and disconnect", () => {
+  it("schedules epoch-bound attach without resetting the runtime", async () => {
+    const h = harness();
+    await commandNamed("/mcp connect").handler({ url: "docs=npx -y server" }, h.store, h.services);
+
+    expect(h.store.mcpServers).toEqual(["docs=npx -y server"]);
+    expect(h.store.pendingToolSurface).toMatchObject({
+      action: "connect",
+      servers: ["docs=npx -y server"],
+    });
+    expect(h.resetRuntime).not.toHaveBeenCalled();
+    expect(h.persisted[0]).toEqual({ mcpServers: ["docs=npx -y server"] });
+    expect(h.notices[0]?.text).toMatch(/next turn/);
+  });
+
+  it("submits schema admission when control-plane is available", async () => {
+    const h = harness();
+    const admitCandidate = vi.fn(async () => ({
+      ok: true,
+      message: "submitted",
+      admissionId: "adm-mcp-1",
+    }));
+    const services = {
+      ...h.services,
+      controlPlane: () =>
+        ({
+          admitCandidate,
+          genesisBinding: { epochId: "epoch-1" },
+        }) as never,
+    };
+    await commandNamed("/mcp connect").handler({ url: "docs=npx server" }, h.store, services);
+    expect(admitCandidate).toHaveBeenCalled();
+    expect(h.store.pendingToolSurface?.admissionId).toBe("adm-mcp-1");
+  });
+
+  it("schedules disconnect and removes the named server", async () => {
+    const h = harness({
+      store: { mcpServers: ["docs=npx server", "other=node x.js"] },
+    });
+    await commandNamed("/mcp disconnect").handler({ name: "docs" }, h.store, h.services);
+    expect(h.store.mcpServers).toEqual(["other=node x.js"]);
+    expect(h.store.pendingToolSurface).toMatchObject({
+      action: "disconnect",
+      servers: ["other=node x.js"],
+    });
+    expect(h.resetRuntime).not.toHaveBeenCalled();
+  });
+
+  it("clears mcpServers when the last server is disconnected", async () => {
+    const h = harness({ store: { mcpServers: ["docs=npx server"] } });
+    await commandNamed("/mcp disconnect").handler({ name: "docs" }, h.store, h.services);
+    expect(h.store.mcpServers).toBeUndefined();
+    expect(h.store.pendingToolSurface?.servers).toEqual([]);
+  });
+
+  it("rejects disconnect of an unknown server", async () => {
+    const h = harness();
+    await commandNamed("/mcp disconnect").handler({ name: "missing" }, h.store, h.services);
+    expect(h.store.viewArgs.error).toMatch(/not connected/);
+    expect(h.store.pendingToolSurface).toBeNull();
   });
 });
 

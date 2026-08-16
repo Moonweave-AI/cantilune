@@ -14,6 +14,14 @@ describe("@cantilune/boot package exports", () => {
     expect(bootExports.bootFileOS).toBeTypeOf("function");
   });
 
+  it("exports createDurableCoordinatorFromEnv", () => {
+    expect(bootExports.createDurableCoordinatorFromEnv).toBeTypeOf("function");
+  });
+
+  it("exports resolveProductionDurable", () => {
+    expect(bootExports.resolveProductionDurable).toBeTypeOf("function");
+  });
+
   it("exports runAgentLoop", () => {
     expect(bootExports.runAgentLoop).toBeTypeOf("function");
   });
@@ -32,6 +40,14 @@ describe("@cantilune/boot package exports", () => {
 
   it("exports mergeToolExecutors", () => {
     expect(bootExports.mergeToolExecutors).toBeTypeOf("function");
+  });
+
+  it("exports invalidateToolIndex", () => {
+    expect(bootExports.invalidateToolIndex).toBeTypeOf("function");
+  });
+
+  it("exports startControlPlaneAdminListener", () => {
+    expect(bootExports.startControlPlaneAdminListener).toBeTypeOf("function");
   });
 
   it("exports DEFAULT_TEMPLATES array", () => {

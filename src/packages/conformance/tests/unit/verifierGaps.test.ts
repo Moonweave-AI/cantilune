@@ -23,10 +23,8 @@ import { buildReviewedEngineeringAdmissionForTest } from "../../src/testing/inde
 import type { ReviewedDecision } from "../../src/lifecycle/sealedDecision.js";
 import { computeEvidenceDigest } from "../../src/canonical/evidenceDigest.js";
 import { initialConformanceStatus } from "../../src/foundation/conformanceStatus.js";
-import {
-  createMemoryCryptoVerifier,
-  defaultTestReviewerTrustStore,
-} from "../../src/adapters/memory/index.js";
+import { createMemoryCryptoVerifier } from "../../src/adapters/memory/index.js";
+import { defaultTestReviewerTrustStore } from "../../src/testing/index.js";
 import type { PackageConformanceCertificate } from "../../src/certificate/packageConformanceCertificate.js";
 import {
   sampleInventory,

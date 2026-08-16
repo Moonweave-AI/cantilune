@@ -55,6 +55,38 @@ function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.slice(0, end);
 }
 
+function isAzureProvider(entry: ProviderEntry): boolean {
+  return entry.slug === "azure";
+}
+
+/** Resolve chat completions URL; Azure uses deployments + api-version. */
+function chatCompletionsUrl(
+  entry: ProviderEntry,
+  baseUrl: string,
+  model: string,
+): string {
+  if (!isAzureProvider(entry)) {
+    return `${baseUrl}/chat/completions`;
+  }
+  const apiVersion =
+    process.env.AZURE_OPENAI_API_VERSION?.trim() || process.env.OPENAI_API_VERSION?.trim();
+  if (apiVersion === undefined || apiVersion.length === 0) {
+    throw new Error(
+      "Azure OpenAI requires AZURE_OPENAI_API_VERSION or OPENAI_API_VERSION (fail-closed)",
+    );
+  }
+  if (baseUrl.includes("{resource}") || baseUrl.includes("{deployment}")) {
+    throw new Error(
+      "Azure OpenAI requires an explicit baseUrl with the resource host " +
+        "(and optionally /openai/deployments/{deployment}); placeholders are not callable",
+    );
+  }
+  const path = baseUrl.includes("/openai/deployments/")
+    ? `${baseUrl}/chat/completions`
+    : `${baseUrl}/openai/deployments/${encodeURIComponent(model)}/chat/completions`;
+  return `${path}?api-version=${encodeURIComponent(apiVersion)}`;
+}
+
 export function createOpenAiCompatibleAdapter(
   config: LlmConfig,
   entry: ProviderEntry,
@@ -69,7 +101,12 @@ export function createOpenAiCompatibleAdapter(
       ...options?.headers,
     };
     if (apiKey) {
-      headers.Authorization = `Bearer ${apiKey}`;
+      if (isAzureProvider(entry)) {
+        // Azure OpenAI rejects Bearer for the resource endpoint; it expects api-key.
+        headers["api-key"] = apiKey;
+      } else {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
     }
     return headers;
   }
@@ -101,7 +138,7 @@ export function createOpenAiCompatibleAdapter(
     if (stream) {
       headers.Accept = "text/event-stream";
     }
-    const response = await fetchWithRetry(`${baseUrl}/chat/completions`, {
+    const response = await fetchWithRetry(chatCompletionsUrl(entry, baseUrl, config.model), {
       method: "POST",
       headers,
       body: JSON.stringify(buildBody(request, stream)),

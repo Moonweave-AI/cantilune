@@ -1,7 +1,9 @@
+import type { SchemaAdmissionReceipt } from "@cantilune/core";
+import type { ToolApprovalRequest } from "@cantilune/syscall";
 import type { ThemeName } from "./theme/palette.js";
 
 /** TUI 模式 */
-export type TuiMode = "chat" | "command" | "view" | "picker" | "confirm" | "ask";
+export type TuiMode = "chat" | "command" | "view" | "picker" | "confirm" | "ask" | "approve";
 
 /**
  * Layout preset.
@@ -55,6 +57,9 @@ export type ViewType =
   | "schema-epoch-history"
   | "schema-diff"
   | "schema-validate"
+  | "schema-admit"
+  | "schema-commit"
+  | "schema-rollout"
   | "eval-run"
   | "eval-list"
   | "eval-report"
@@ -64,10 +69,12 @@ export type ViewType =
   | "cluster-topology"
   | "swarm"
   | "swarm-status"
+  | "swarm-schedule"
   | "tools"
   | "tools-test"
   | "mcp"
   | "mcp-connect"
+  | "mcp-disconnect"
   | "config"
   | "session-list"
   | "status"
@@ -197,11 +204,40 @@ export interface PendingAsk {
   readonly answer: (reply: string) => void;
 }
 
+/**
+ * A side-effecting tool invocation paused on the operator's authorization.
+ *
+ * The syscall layer holds the dispatch until `decide` resolves, so nothing has
+ * run yet and a denial leaves no journal entry (ADR-0016). `decide` is called
+ * exactly once.
+ */
+/**
+ * MCP tool-surface change scheduled for the next turn (ADR-0026).
+ * The current LLM turn keeps the old tools until `applyPendingMcpAttach`.
+ */
+export interface PendingToolSurface {
+  readonly action: "connect" | "disconnect";
+  readonly servers: readonly string[];
+  readonly currentEpoch: string;
+  readonly admissionId?: string;
+  readonly admissionReceipt?: SchemaAdmissionReceipt;
+}
+
+export interface PendingApproval {
+  readonly request: ToolApprovalRequest;
+  readonly decide: (choice: "once" | "always" | "deny") => void;
+}
+
 export interface SnapshotData {
   readonly snapshotRef: string;
   readonly epochId: string;
   readonly participants: readonly { id: string; kind: string; status: string }[];
-  readonly artifacts: readonly { id: string; kind: string; lifecycle: string }[];
+  readonly artifacts: readonly {
+    id: string;
+    kind: string;
+    lifecycle: string;
+    contentRef: string;
+  }[];
   readonly sessions: readonly { id: string; initiator: string; status: string }[];
   readonly capabilities: readonly { id: string; kind: string; holder: string }[];
   readonly links: readonly { from: string; to: string; kind: string }[];
@@ -255,6 +291,13 @@ export interface AppStore {
   principalId: string | undefined;
   compatibleEpochIds: readonly string[] | undefined;
   maxTurns: number | undefined;
+  contractProvider: string | undefined;
+  contractModel: string | undefined;
+  judgeProvider: string | undefined;
+  judgeModel: string | undefined;
+  judgeQuorumModels: readonly string[] | undefined;
+  mcpServers: readonly string[] | undefined;
+  searchProvider: "tavily" | "serper" | "brave" | "none" | undefined;
   connected: boolean;
   agentRunning: boolean;
   phase: AgentPhase;
@@ -263,6 +306,10 @@ export interface AppStore {
   notice: { readonly level: "info" | "warn" | "error"; readonly text: string } | null;
   /** Controller-initiated question the loop is paused on, or null when idle. */
   pendingAsk: PendingAsk | null;
+  /** Tool invocation awaiting operator authorization, or null when idle. */
+  pendingApproval: PendingApproval | null;
+  /** Epoch-bound MCP attach waiting for the next turn (ADR-0026). */
+  pendingToolSurface: PendingToolSurface | null;
   /** Live per-event timeline of the agent loop; ring-buffered to {@link EVENT_LOG_CAPACITY}. */
   eventLog: readonly TimelineEntry[];
 }
@@ -293,12 +340,21 @@ export function createStore(overrides?: Partial<AppStore>): AppStore {
     principalId: undefined,
     compatibleEpochIds: undefined,
     maxTurns: undefined,
+    contractProvider: undefined,
+    contractModel: undefined,
+    judgeProvider: undefined,
+    judgeModel: undefined,
+    judgeQuorumModels: undefined,
+    mcpServers: undefined,
+    searchProvider: undefined,
     connected: false,
     agentRunning: false,
     phase: { kind: "idle" },
     runtime: createEmptyRuntime(),
     notice: null,
     pendingAsk: null,
+    pendingApproval: null,
+    pendingToolSurface: null,
     eventLog: [],
     ...overrides,
   };
@@ -384,6 +440,24 @@ export class ReactiveStore {
       if (last === undefined) return {};
       messages[messages.length - 1] = update(last);
       return { messages };
+    });
+  }
+
+  /**
+   * Rewrite the most recent assistant bubble. Tool cards are appended as
+   * later system messages, so {@link updateLastMessage} is not the turn owner.
+   */
+  updateLastAssistant(update: (message: ChatMessage) => ChatMessage): void {
+    this.setSession((session) => {
+      const messages = session.messages.slice();
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const current = messages[i];
+        if (current?.role === "assistant") {
+          messages[i] = update(current);
+          return { messages };
+        }
+      }
+      return {};
     });
   }
 

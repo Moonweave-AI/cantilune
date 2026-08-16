@@ -1,0 +1,119 @@
+@startuml 07e-otel
+' 图 07E：可观测性平台读面 — OTel + AG-UI + OTLP。证书仍属 conformance。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+
+title 图 07E · 可观测性平台：FourView + AG-UI + OTLP
+caption <color:#6E6963>ADR-0025。GenAI semconv 仍为 Development。SIEM 只经 OTLP；不锁 Splunk/Elastic API。无第二 EventSpine。</color>
+
+legend top right
+  |= 颜色 |= 模块 |
+  | <back:#DDE8F0>　</back> | 已提交世界读入 |
+  | <back:#EDE8F0>　</back> | 脱敏 + 访问上下文 |
+  | <back:#E5ECEE>　</back> | AG-UI 事件 |
+  | <back:#E8EEF5>　</back> | OTLP / OTel |
+  | <back:#F5F1EB>　</back> | conformance digest 引用 |
+endlegend
+
+frame "@cantilune/observability · 平台读面" #F8F5F0 {
+
+  package "输入 · 已提交事实" #DDE8F0 {
+
+    class "ObservationWorld\n只读协调世界" as World #F9FCF8 {
+      +snapshot: CollaborationSnapshot
+      .. 含 transcripts；在场 ≠ 可见 ..
+      +spine: EventSpine
+      .. 与 ChangeLog 同序；每副本同一 head ..
+    }
+
+    class "ObservationAccessContext\n生产读必带" as Access #FFFDFC {
+      +principal: ActorRef
+      .. 例：(ops-admin-1, human) ..
+      +scope: Footprint
+      .. 例：participantIds={planner-p} ..
+      +visibilityPolicy: ObservableLtsPolicy
+      .. 例：external-only ..
+    }
+  }
+
+  package "脱敏" #EDE8F0 {
+
+    class "RedactedFourViewBundle\n跨 NS 读产物" as Redact #FFFDFC {
+      +bundle: FourViewBundle
+      .. 四 lens 只读；不改世界 ..
+      +transcripts: Map<ActorId, TranscriptVisibility>
+      .. full / summary / absent ..
+      +snapshot: CollaborationSnapshot
+      .. 超范围明文 transcript 已剥除 ..
+    }
+  }
+
+  package "AG-UI" #E5ECEE {
+
+    class "AgUiCommittedRun\n已提交回合" as Run #FFFDFC {
+      +threadId: string
+      .. 例：thread-alpha ..
+      +runId: string
+      .. 例：run-0042 ..
+      +snapshot: CollaborationSnapshot
+      +visibleTranscripts: full | summary | absent
+    }
+
+    class "AgUiEvent\n用户面事件" as Ev #FFFDFC {
+      +type: AgUiEventType
+      .. RUN_* / TEXT_MESSAGE_* / TOOL_CALL_* ..
+      +type: STATE_SNAPSHOT / REASONING_*
+      .. 从 committed 世界+可见 transcript 派生 ..
+      +timestamp: number
+      .. optional ..
+    }
+  }
+
+  package "OTLP" #E8EEF5 {
+
+    class "ObservabilityTraceExporter\nOTLP/HTTP" as Exp #F8FBFB {
+      +exportCommittedChanges(changes)
+      .. 官方 @opentelemetry/* ..
+      +shutdown()
+    }
+
+    class "GEN_AI_ATTRIBUTES\n实验档" as Gen #FFFDFC {
+      +stability: Development
+      .. cantilune.gen_ai.semconv.stability ..
+      +operationName: gen_ai.operation.name
+      +providerName / conversationId / requestModel
+      .. 非 Stable；SIEM 按实验键映射 ..
+    }
+  }
+
+  package "证书边界" #F5F1EB {
+
+    class "projectionCertificateDigest\n只持引用" as Dig #FFFDFC {
+      +digest: ContentDigest
+      .. ProjectionCertificate 仍在 conformance ..
+    }
+  }
+
+  World ..> Access : 生产读要求
+  Access ..> Redact : redactFourViewBundle
+  Redact ..> Run : 可见 transcript
+  Run --> Ev : toAgUiEvents
+  World ..> Exp : committed Change
+  Exp ..> Gen : 实验属性
+  Dig ..> Redact : 可选附着
+}
+
+footer <color:#6E6963>代码锚点：redactFourViewBundle.ts · agUiEventAdapter.ts · otlpTraceExporter.ts</color>
+@enduml

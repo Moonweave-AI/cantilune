@@ -51,7 +51,16 @@ function createMockContentStore(): SyscallContentStore {
     async get(ref: ContentRef) {
       const bytes = storage.get(ref as string);
       if (bytes === undefined) return undefined;
-      return { ref, bytes, metadata: { size: bytes.length, mimeType: "application/json", createdAt: "", createdBy: undefined } };
+      return {
+        ref,
+        bytes,
+        metadata: {
+          size: bytes.length,
+          mimeType: "application/json",
+          createdAt: "",
+          createdBy: undefined,
+        },
+      };
     },
     async exists(ref: ContentRef) {
       return storage.has(ref as string);
@@ -59,7 +68,10 @@ function createMockContentStore(): SyscallContentStore {
   };
 }
 
-function createMockRuntime(snapshot: unknown, feed: readonly CoordinationChange[] = []): SyscallRuntime {
+function createMockRuntime(
+  snapshot: unknown,
+  feed: readonly CoordinationChange[] = [],
+): SyscallRuntime {
   return {
     getHead: () => snapshot,
     changes(since?: SnapshotRef): readonly CoordinationChange[] {
@@ -135,18 +147,50 @@ class TestableSupervisor extends ClusterSupervisor {
     this.startedAgents.push(key);
     internals.emitEvent({ kind: "agent_started", actorId: agentId });
   }
-  async driveOnAgentComplete(agentId: ActorId, result: { ok: boolean; summary: string; turns: number; elapsedMs: number; producedRefs: readonly ContentRef[]; terminationReason?: string }, manifest: AgentManifest): Promise<void> {
-    const internals = this as unknown as { onAgentComplete(id: ActorId, result: { ok: boolean; summary: string; turns: number; elapsedMs: number; producedRefs: readonly ContentRef[]; terminationReason?: string }, manifest: AgentManifest): Promise<void> };
+  async driveOnAgentComplete(
+    agentId: ActorId,
+    result: {
+      ok: boolean;
+      summary: string;
+      turns: number;
+      elapsedMs: number;
+      producedRefs: readonly ContentRef[];
+      terminationReason?: string;
+    },
+    manifest: AgentManifest,
+  ): Promise<void> {
+    const internals = this as unknown as {
+      onAgentComplete(
+        id: ActorId,
+        result: {
+          ok: boolean;
+          summary: string;
+          turns: number;
+          elapsedMs: number;
+          producedRefs: readonly ContentRef[];
+          terminationReason?: string;
+        },
+        manifest: AgentManifest,
+      ): Promise<void>;
+    };
     await internals.onAgentComplete(agentId, result, manifest);
   }
 }
 
-function makeSupervisor(runtime: SyscallRuntime, store: SyscallContentStore, events: ClusterEvent[] = []): TestableSupervisor {
+function makeSupervisor(
+  runtime: SyscallRuntime,
+  store: SyscallContentStore,
+  events: ClusterEvent[] = [],
+): TestableSupervisor {
   const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
   return new TestableSupervisor({
     shared,
     conditionRegistry: createDefaultConditionRegistry(),
-    llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+    llmAdapterFactory: () => ({
+      async chat() {
+        return { text: "", toolCalls: [], finishReason: "stop" as const };
+      },
+    }),
     eventListener: (e) => events.push(e),
   });
 }
@@ -319,7 +363,11 @@ describe("ClusterSupervisor — defensive guard branches", () => {
       livenessTable: Map<string, LivenessEntry>;
     };
     internals.agents.set("init", { abort() {} });
-    internals.livenessTable.set("init", { lastHeartbeatTime: 0, sequenceNo: 0, heartbeatIntervalMs: 60000 });
+    internals.livenessTable.set("init", {
+      lastHeartbeatTime: 0,
+      sequenceNo: 0,
+      heartbeatIntervalMs: 60000,
+    });
 
     const change: CoordinationChange = {
       changeId: changeId("hb-nofrom"),
@@ -384,7 +432,10 @@ describe("ClusterSupervisor — defensive guard branches", () => {
       epochId: epochId("e1"),
       participants: new Map([
         [actorId("init"), participant(actorId("init"), "agent", "active")],
-        [actorId("nullish-liveness"), participant(actorId("nullish-liveness"), "agent", "active", ref)],
+        [
+          actorId("nullish-liveness"),
+          participant(actorId("nullish-liveness"), "agent", "active", ref),
+        ],
       ]),
     });
     const feed = [activateChange(actorId("nullish-liveness"), actorId("init"), "s2")];
@@ -440,7 +491,11 @@ describe("ClusterSupervisor — defensive guard branches", () => {
     const supervisor = new TestableSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
     });
 
     supervisor.start();

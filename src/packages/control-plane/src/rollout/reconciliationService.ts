@@ -1,4 +1,5 @@
 import type { RuntimeInstanceId } from "@cantilune/core";
+import type { FileControlPlaneStore } from "../file/fileControlPlaneStore.js";
 import {
   reconcileRuntimeBinding,
   type RuntimeBinding,
@@ -12,9 +13,23 @@ export interface ReconciliationReport {
   readonly failed: number;
 }
 
+export interface ReconciliationServiceOptions {
+  readonly fileStore?: FileControlPlaneStore;
+}
+
 export class ReconciliationService {
   // NOSONAR — bindings is already readonly
   private readonly bindings = new Map<RuntimeInstanceId, RuntimeBinding>();
+  private readonly fileStore: FileControlPlaneStore | undefined;
+
+  constructor(options: ReconciliationServiceOptions = {}) {
+    this.fileStore = options.fileStore;
+    if (this.fileStore !== undefined) {
+      for (const [id, binding] of this.fileStore.loadFleetBindings()) {
+        this.bindings.set(id, binding);
+      }
+    }
+  }
 
   setDesired(plan: RolloutPlan): void {
     for (const runtimeInstanceId of plan.runtimeInstanceIds) {
@@ -25,6 +40,7 @@ export class ReconciliationService {
         drift: true,
       });
     }
+    this.persist();
   }
 
   acknowledge(
@@ -41,6 +57,7 @@ export class ReconciliationService {
       lastAcknowledgedAt: new Date().toISOString(),
       status: "acknowledged",
     });
+    this.persist();
   }
 
   list(): readonly RuntimeBinding[] {
@@ -56,8 +73,17 @@ export class ReconciliationService {
       failed: bindings.filter((item) => item.status === "failed").length,
     };
   }
+
+  private persist(): void {
+    if (this.fileStore === undefined) {
+      return;
+    }
+    this.fileStore.persistFleetBindings(this.bindings);
+  }
 }
 
-export function createReconciliationService(): ReconciliationService {
-  return new ReconciliationService();
+export function createReconciliationService(
+  options: ReconciliationServiceOptions = {},
+): ReconciliationService {
+  return new ReconciliationService(options);
 }

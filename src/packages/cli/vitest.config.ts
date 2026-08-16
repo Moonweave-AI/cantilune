@@ -61,6 +61,18 @@ export default defineConfig({
         replacement: path.resolve(packageRoot, "../adapter/src/index.ts"),
       },
       { find: "@cantilune/tools", replacement: path.resolve(packageRoot, "../tools/src/index.ts") },
+      {
+        find: "@cantilune/evaluation/benchmarks",
+        replacement: path.resolve(packageRoot, "../evaluation/src/benchmarks/index.ts"),
+      },
+      {
+        find: "@cantilune/evaluation/execution",
+        replacement: path.resolve(packageRoot, "../evaluation/src/execution/index.ts"),
+      },
+      {
+        find: "@cantilune/evaluation",
+        replacement: path.resolve(packageRoot, "../evaluation/src/index.ts"),
+      },
       { find: "@cantilune/petri", replacement: path.resolve(packageRoot, "../petri/src/index.ts") },
     ],
   },

@@ -1,0 +1,19 @@
+{
+  "taskId": "T08",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/basin.md",
+    "artifacts/sim-30y.md",
+    "artifacts/policy-a.md",
+    "artifacts/policy-b.md",
+    "artifacts/conflicts.md",
+    "artifacts/pareto.md"
+  ],
+  "requiredGlobs": []
+}

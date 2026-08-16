@@ -5,6 +5,7 @@ import {
   preparedAdmissionId,
   policyId,
   policyRevisionId,
+  runtimeInstanceId,
   schemaAdmissionId,
   schemaRevisionId,
   storeSequence,
@@ -298,5 +299,38 @@ describe("memory control plane store", () => {
     expect(authoritative.schema.operationTypes.size).toBeGreaterThan(0);
     expect(authoritative.schemaRef.digest).toBe(lookupRef.digest);
     expect(authoritative.provenanceEvidence).toEqual(["evidence://original"]);
+  });
+
+  it("snapshots and restores fleet bindings", () => {
+    const store = new MemoryControlPlaneStore();
+    const { genesisBinding } = bootstrapDefaultControlPlane(store);
+    const instance = runtimeInstanceId("memory-fleet");
+    store.replaceFleetBindings([
+      [
+        instance,
+        {
+          runtimeInstanceId: instance,
+          desiredBinding: genesisBinding,
+          status: "pending",
+          drift: true,
+        },
+      ],
+    ]);
+    expect(store.getFleetBindings().get(instance)?.status).toBe("pending");
+    const snapshot = store.snapshot();
+    expect(snapshot.fleetBindings?.get(instance)?.status).toBe("pending");
+
+    const restored = new MemoryControlPlaneStore();
+    restored.restoreSnapshot(snapshot);
+    expect(restored.getFleetBindings().get(instance)?.desiredBinding.epochId).toBe(
+      genesisBinding.epochId,
+    );
+
+    const withoutFleet = { ...snapshot };
+    delete (withoutFleet as { fleetBindings?: unknown }).fleetBindings;
+    const empty = new MemoryControlPlaneStore();
+    empty.replaceFleetBindings(snapshot.fleetBindings ?? []);
+    empty.restoreSnapshot(withoutFleet);
+    expect(empty.getFleetBindings().size).toBe(0);
   });
 });

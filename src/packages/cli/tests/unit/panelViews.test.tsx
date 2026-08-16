@@ -13,6 +13,10 @@ import { McpView, renderMcpViewOutput } from "../../src/views/McpView.js";
 import McpViewContainer from "../../src/views/McpView.js";
 import { ConfigView, renderConfigViewOutput } from "../../src/views/ConfigView.js";
 import ConfigViewContainer from "../../src/views/ConfigView.js";
+import { StatusView, renderStatusViewOutput } from "../../src/views/StatusView.js";
+import StatusViewContainer from "../../src/views/StatusView.js";
+import { SessionView, renderSessionViewOutput } from "../../src/views/SessionView.js";
+import SessionViewContainer from "../../src/views/SessionView.js";
 import { createStore, type AppStore, type SnapshotData } from "../../src/store.js";
 
 const SNAPSHOT: SnapshotData = {
@@ -170,19 +174,53 @@ describe("ToolsView", () => {
 describe("McpView", () => {
   it("explains that no servers are attached by default", () => {
     const output = renderMcpViewOutput("mcp", {});
-    expect(output).toContain("No servers attached");
-    expect(output).toContain("BootConfig.tools");
+    expect(output).toContain("No servers in CliConfig.mcpServers");
   });
 
-  it("emits a wiring snippet containing the requested URL", () => {
+  it("accepts HTTP MCP URLs and still requires epoch-bound attach", () => {
     const output = renderMcpViewOutput("mcp-connect", { url: "http://localhost:9000" });
     expect(output).toContain("http://localhost:9000");
-    expect(output).toContain("createMcpToolExecutor");
+    expect(output).toContain("Requested HTTP MCP");
   });
 
-  it("explains why runtime attachment is refused", () => {
-    const output = renderMcpViewOutput("mcp-connect", { url: "x" });
-    expect(output).toContain("invalidate the epoch");
+  it("accepts a stdio MCP spec", () => {
+    const output = renderMcpViewOutput("mcp-connect", { url: "docs=npx mcp-server" });
+    expect(output).toContain("stdio MCP");
+  });
+
+  it("mentions a persisted spec before scheduling", () => {
+    const output = renderMcpViewOutput("mcp-connect", {
+      url: "docs=npx mcp-server",
+      persisted: true,
+    });
+    expect(output).toContain("Wrote CliConfig.mcpServers.");
+  });
+
+  it("explains a scheduled epoch-bound attach", () => {
+    const output = renderMcpViewOutput("mcp-connect", {
+      url: "docs=npx mcp-server",
+      scheduled: true,
+    });
+    expect(output).toContain("epoch-bound attach");
+  });
+
+  it("renders disconnect scheduling and errors", () => {
+    expect(renderMcpViewOutput("mcp-disconnect", { name: "docs", scheduled: true })).toContain(
+      "epoch-bound detach",
+    );
+    expect(
+      renderMcpViewOutput("mcp-disconnect", { name: "docs", error: "not connected" }),
+    ).toContain("not connected");
+    expect(renderMcpViewOutput("mcp-disconnect", { name: "docs" })).toContain("/mcp disconnect");
+  });
+
+  it("lists persisted stdio and HTTP servers", () => {
+    const output = renderMcpViewOutput("mcp", {}, [
+      "docs=npx -y server",
+      "https://mcp.example/sse",
+    ]);
+    expect(output).toContain("docs stdio npx");
+    expect(output).toContain("mcp.example http https://mcp.example/sse");
   });
 
   it("renders both MCP sub-views", () => {
@@ -194,8 +232,14 @@ describe("McpView", () => {
     );
     expect(connect.container.textContent).toContain("Connect");
 
+    const disconnect = render(
+      <McpView store={createStore({ viewArgs: { name: "docs" } })} activeView="mcp-disconnect" />,
+    );
+    expect(disconnect.container.textContent).toContain("Disconnect");
+
     render(<McpViewContainer />);
     render(<McpViewContainer activeView="mcp-connect" viewArgs={{ url: "http://x" }} />);
+    render(<McpViewContainer activeView="mcp-disconnect" viewArgs={{ name: "docs" }} />);
   });
 });
 
@@ -240,14 +284,127 @@ describe("ConfigView", () => {
   });
 
   it("distinguishes a started runtime from a cold one", () => {
-    expect(renderConfigViewOutput(createStore({ connected: true }))).toContain("connected");
+    expect(renderConfigViewOutput(createStore({ connected: true, durable: "file" }))).toContain(
+      "connected (file)",
+    );
+    expect(renderConfigViewOutput(createStore({ connected: true, durable: "memory" }))).toContain(
+      "connected (memory)",
+    );
     expect(renderConfigViewOutput(createStore({ connected: false }))).toContain("not started");
+    expect(
+      renderConfigViewOutput(
+        createStore({ connected: true, durable: "file", storagePath: undefined }),
+      ),
+    ).toContain("(unset)");
+    expect(renderConfigViewOutput(createStore({ connected: true, durable: "memory" }))).toContain(
+      "in-memory (dev)",
+    );
   });
 
   it("renders the config panel", () => {
     const { container } = render(<ConfigView store={createStore()} />);
     expect(container.textContent).toContain("Configuration");
     render(<ConfigViewContainer />);
+  });
+});
+
+describe("StatusView", () => {
+  it("reports durable mode and turn budget", () => {
+    const output = renderStatusViewOutput(
+      createStore({ connected: true, durable: "file", storagePath: "/tmp/os" }),
+    );
+    expect(output).toContain("file");
+    expect(output).toContain("/tmp/os");
+    const { container } = render(<StatusView store={createStore({ connected: true })} />);
+    expect(container.textContent).toContain("Status");
+    render(<StatusViewContainer />);
+  });
+
+  it("covers memory durable, missing path, running agent, and zero maxTurns", () => {
+    expect(renderStatusViewOutput(createStore({ durable: "memory", connected: false }))).toContain(
+      "in-memory (dev)",
+    );
+    expect(
+      renderStatusViewOutput(createStore({ durable: "file", storagePath: undefined })),
+    ).toContain("(unset)");
+    expect(renderStatusViewOutput(createStore({ agentRunning: true }))).toContain("running");
+    expect(
+      renderStatusViewOutput(
+        createStore({
+          viewArgs: {
+            host: {
+              platform: "win32",
+              postgres: {
+                urlConfigured: false,
+                host: "127.0.0.1",
+                port: 5432,
+                tcpReachable: false,
+                haReady: false,
+                reason: "unset",
+              },
+              sandbox: {
+                platform: "win32",
+                isolation: "hyperv",
+                isolationReady: false,
+                dockerAvailable: false,
+                hypervisorPresent: true,
+                vmmsRunning: false,
+                reason: "VMMS",
+              },
+              raft: {
+                endpointsConfigured: false,
+                embedRequested: false,
+                endpoints: [],
+                host: "127.0.0.1",
+                port: 2379,
+                tcpReachable: false,
+                ready: false,
+                reason: "unset",
+              },
+              required: { postgresHa: false, raft: false, sandbox: false, multi: false },
+              ok: true,
+              failClosedReasons: [],
+            },
+          },
+        }),
+      ),
+    ).toContain("sandbox.isolation:");
+    const { container } = render(
+      <StatusView
+        store={createStore({ maxTurns: 0, session: { ...createStore().session, turnCount: 3 } })}
+      />,
+    );
+    expect(container.textContent).toContain("turns");
+  });
+});
+
+describe("SessionView", () => {
+  it("lists saved slots and surfaces errors", () => {
+    expect(renderSessionViewOutput({})).toContain("No saved session slots");
+    expect(renderSessionViewOutput({ error: "disk full" })).toContain("disk full");
+    expect(renderSessionViewOutput({ slots: [null, "x", { name: 1 }] })).toContain(
+      "No saved session slots",
+    );
+    expect(
+      renderSessionViewOutput({
+        slots: [
+          { name: "alpha", savedAt: "2026-01-01T00:00:00.000Z", turnCount: 2, messageCount: 4 },
+        ],
+      }),
+    ).toContain("alpha");
+    const { container } = render(
+      <SessionView
+        store={createStore({
+          viewArgs: {
+            slots: [
+              { name: "alpha", savedAt: "2026-01-01T00:00:00.000Z", turnCount: 2, messageCount: 4 },
+            ],
+          },
+        })}
+      />,
+    );
+    expect(container.textContent).toContain("Session slots");
+    render(<SessionViewContainer />);
   });
 });
 

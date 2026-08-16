@@ -55,21 +55,21 @@ describe("export and help views", () => {
     expect(bundle).toContain('"changeCount": 4');
 
     const fourView = renderExportViewOutput({ target: "four-view", format: "json" }, sampleRuntime);
-    expect(fourView).toContain('"dependency"');
+    expect(fourView).toContain("observability controller required");
 
     const custom = renderExportViewOutput(
       { target: "custom-bundle", format: "json" },
       sampleRuntime,
     );
-    expect(custom).toContain('"custom-bundle"');
+    expect(custom).toContain("unknown export target");
   });
 
   it("shows no-runtime message for empty runtime export targets", () => {
     expect(renderExportViewOutput({ target: "graph", format: "json" }, emptyRuntime)).toContain(
-      "No runtime connected",
+      "Export failed: no runtime graph",
     );
     expect(renderExportViewOutput({ target: "petri", format: "pnml" }, emptyRuntime)).toContain(
-      "No runtime connected",
+      "Export failed:",
     );
   });
 

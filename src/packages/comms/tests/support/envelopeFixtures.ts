@@ -9,7 +9,13 @@ import {
   sessionId,
 } from "@cantilune/core";
 import type { CommunicationEnvelope } from "../../src/envelope/communicationEnvelope.js";
-import { channelGeneration, channelId, messageId } from "../../src/foundation/messageId.js";
+import {
+  channelGeneration,
+  channelId,
+  messageId,
+  type DescriptorRef,
+} from "../../src/foundation/messageId.js";
+import type { PeerDirectory } from "../../src/ports/communicationTransport.js";
 import { computeEnvelopeIntegrityDigest } from "../../src/codec/strictWireCodec.js";
 import type { AuthenticatedCommsContext } from "../../src/peer/authenticatedPeerContext.js";
 import { sealTestAuthContext } from "./commsTestHelpers.js";
@@ -115,6 +121,17 @@ export const defaultTestSessionAuthority = {
   isController: () => true,
   isMember: () => true,
 };
+
+export function stubPeerDirectory(
+  resolveImpl?: (ref: DescriptorRef) => Promise<PeerDescriptor | undefined>,
+): PeerDirectory {
+  return {
+    resolve: resolveImpl ?? (async () => undefined),
+    register: () => undefined,
+    getPinnedFingerprints: () => [],
+    setPinnedFingerprints: () => undefined,
+  };
+}
 
 export function buildTestCommsServices(options?: {
   readonly transport?: CommsServices["transport"];

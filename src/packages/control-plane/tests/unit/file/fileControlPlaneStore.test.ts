@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { MemoryControlPlaneStore } from "../../../src/memory/memoryControlPlaneStore.js";
 import { createFileControlPlaneStore } from "../../../src/file/fileControlPlaneStore.js";
 import { bootstrapDefaultControlPlane } from "../../../src/engine/controlPlaneService.js";
-import { bindingGeneration } from "@cantilune/core";
+import { bindingGeneration, runtimeInstanceId } from "@cantilune/core";
 
 describe("file control plane store", () => {
   it("persists, reloads journal, and recovers snapshot", () => {
@@ -68,6 +68,103 @@ describe("file control plane store", () => {
       const memory = new MemoryControlPlaneStore();
       const fileStore = createFileControlPlaneStore(dir, memory);
       expect(fileStore.loadJournal()).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("persists and reloads fleetBindings on the snapshot", () => {
+    const dir = mkdtempSync(join(tmpdir(), "cp-file-fleet-"));
+    try {
+      const memory = new MemoryControlPlaneStore();
+      const { genesisBinding } = bootstrapDefaultControlPlane(memory);
+      const fileStore = createFileControlPlaneStore(dir, memory);
+      const instance = runtimeInstanceId("runtime-file-fleet");
+      memory.replaceFleetBindings([
+        [
+          instance,
+          {
+            runtimeInstanceId: instance,
+            desiredBinding: genesisBinding,
+            status: "pending",
+            drift: true,
+          },
+        ],
+      ]);
+      fileStore.persistFleetBindings(memory.getFleetBindings());
+      expect(
+        fileStore
+          .loadJournal()
+          .some((entry) => (entry as { kind?: string }).kind === "fleetBindings"),
+      ).toBe(true);
+
+      const reloaded = new MemoryControlPlaneStore();
+      const recovered = createFileControlPlaneStore(dir, reloaded);
+      expect(recovered.loadFleetBindings().get(instance)?.status).toBe("pending");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("recovers fleetBindings from journal when the snapshot omits them", () => {
+    const dir = mkdtempSync(join(tmpdir(), "cp-file-fleet-journal-"));
+    try {
+      const memory = new MemoryControlPlaneStore();
+      const { genesisBinding } = bootstrapDefaultControlPlane(memory);
+      const fileStore = createFileControlPlaneStore(dir, memory);
+      fileStore.persist();
+      const instance = runtimeInstanceId("runtime-journal-fleet");
+      fileStore.appendJournal({ kind: "unrelated" });
+      fileStore.appendJournal({ kind: "fleetBindings" });
+      fileStore.appendJournal(null);
+      fileStore.appendJournal({
+        kind: "fleetBindings",
+        bindings: [
+          [
+            instance,
+            {
+              runtimeInstanceId: instance,
+              desiredBinding: genesisBinding,
+              status: "pending",
+              drift: true,
+            },
+          ],
+        ],
+      });
+
+      const reloaded = new MemoryControlPlaneStore();
+      const recovered = createFileControlPlaneStore(dir, reloaded);
+      expect(recovered.loadFleetBindings().has(instance)).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("recovers fleetBindings from journal when no snapshot exists", () => {
+    const dir = mkdtempSync(join(tmpdir(), "cp-file-fleet-journal-only-"));
+    try {
+      const memory = new MemoryControlPlaneStore();
+      const { genesisBinding } = bootstrapDefaultControlPlane(memory);
+      const fileStore = createFileControlPlaneStore(dir, memory);
+      const instance = runtimeInstanceId("runtime-journal-only");
+      fileStore.appendJournal({
+        kind: "fleetBindings",
+        bindings: [
+          [
+            instance,
+            {
+              runtimeInstanceId: instance,
+              desiredBinding: genesisBinding,
+              status: "pending",
+              drift: true,
+            },
+          ],
+        ],
+      });
+
+      const reloaded = new MemoryControlPlaneStore();
+      const recovered = createFileControlPlaneStore(dir, reloaded);
+      expect(recovered.loadFleetBindings().has(instance)).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

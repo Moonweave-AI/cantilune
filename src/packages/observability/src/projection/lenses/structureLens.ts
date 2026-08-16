@@ -8,7 +8,12 @@ import { type EventTag } from "../../foundation/eventTag.js";
 import { type StructureDelta } from "../../spine/projectionSlice.js";
 import { addedLinks, isStructuralLinkKind, removedLinkIds, updatedLinks } from "../linkFilters.js";
 
-/** Per-change structure step — aligned with core {@link diagnosticStepFromChange}. */
+/**
+ * Per-change structure step — core {@link diagnosticStepFromChange}
+ * (`create_session` → nest, `fork_branch` → parallel). Structural links
+ * (`nested_in`, `parallel_with`) come from committed snapshot diffs.
+ * Read-only; MUST NOT feed SwarmScheduler.
+ */
 export { diagnosticStepFromChange as structureStepFromChange } from "@cantilune/core";
 
 export function interpretStructureDelta(

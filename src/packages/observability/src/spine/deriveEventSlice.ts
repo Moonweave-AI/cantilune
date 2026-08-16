@@ -20,7 +20,7 @@ export function deriveEventSlice(
   const eventTag = event.eventTag;
   const dependency = interpretDependencyDelta(eventTag, before, after);
   const resource = interpretResourceDelta(eventTag, before, after);
-  const communication = interpretCommunicationDelta(eventTag, before, after);
+  const communication = interpretCommunicationDelta(eventTag, before, after, change);
   const structure = interpretStructureDelta(eventTag, before, after, change);
 
   return {

@@ -2,11 +2,11 @@
 
 | 字段            | 值                                                                                                                                                                                                                                                   |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status          | **Proposed**（实现路线已由 DRI 确认；独立评审和最终人类签署待完成）                                                                                                                                                                                  |
+| Status          | **Accepted**（Owner COI 2026-08-16；不是 Lean `reviewed`；不是 RFC FCP-closed）                                                                                                                                                                      |
 | Date            | 2026-07-23                                                                                                                                                                                                                                           |
-| Last reconciled | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、admission/common-trajectory 最终接缝）                                                                                                                                                             |
+| Last reconciled | 2026-08-16（FCP 窗口内 Owner COI Accept；Lean 为 `proved / Owner-accepted`；promotion 未走）                                                                                                                                                                    |
 | Decision Owner  | Joker-of-Gotham (DRI)                                                                                                                                                                                                                                |
-| Reviewers       | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立证据                                                                                                                                                     |
+| Reviewers       | Joker-of-Gotham（Owner；Formal + Architecture；COI 已披露，2026-08-16）                                                                                                                                                                              |
 | Related         | RFC-0001、RFC-0002、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 | Risk            | S2                                                                                                                                                                                                                                                   |
 
@@ -24,8 +24,9 @@
 > 产品通用 P1a 必须接收完整投影证书；所选 SCC-DAG/Petri 语义记录与
 > 独立的固定签名十四事件参考不会被静默等同。
 >
-> 本 ADR 继续保持 **Proposed**。内核构建和 Agent 审查不能将其变为
-> Accepted；仍需独立人工评审、RFC 处置以及 Owner/DRI 最终签字。
+> 历史（2026-07-28）：当时本 ADR 仍为 **Proposed**。**2026-08-16：**
+> Owner 在 RFC FCP 窗口内以披露的 COI 将其 Accepted。这**不**把 Lean
+> 义务改写成 `reviewed`，**不**关闭 FCP，也**不**实例化八个产品包。
 
 ## 背景
 
@@ -368,6 +369,8 @@ gates”措辞。条件式接受不是本项目的 ADR 状态。本 ADR 在不�
 技术义务达到 `proved`，外部签署前聚合状态也最多是
 `proved / review-pending`。
 
+**2026-08-16 Owner Accept：** 本 ADR 现为 **Accepted**（Owner COI；不设第二评审人）。Lean 义务行保持 `proved`；治理为 Owner-accepted。promotion form 未走。RFC-0002 仍为 FCP open。
+
 ## 2026-07-27 Kernel-backed 最大相容校正
 
 1. **Separated 与 D1-A 不得混同。** FMS 来源区分 least element `⊥`
@@ -463,8 +466,8 @@ wire identity。
 最终构造现已绑定 source commit
 `59a1a6885ef6a2774b2731f487f83228e67d15dc` 与不可变 QA 构建/审计记录；
 source integrity、placeholder/axiom audit、proved manifest 与 strict
-proved/tree gate 均记录于其中。技术状态为 `proved / review-pending`，不是
-`reviewed`、FCP Passed 或 ADR Accepted。
+proved/tree gate 均记录于其中。技术状态为 `proved / Owner-accepted`，不是
+Lean `reviewed`；RFC-0002 仍为 FCP open，不是 Accepted。
 
 ## 参考文献
 

@@ -2,13 +2,13 @@
 
 | Field                     | Value                                                                                                                                                      |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status                    | **Draft** (pre-FCP)                                                                                                                                        |
+| Status                    | **FCP** (opened 2026-08-16; comment period closes 2026-08-30; not Accepted)                                                                                |
 | Type                      | Architecture                                                                                                                                               |
 | Risk                      | S2 (architectural/strategic; elevates to S3 at runtime/comms/network)                                                                                      |
 | Champion / Decision Owner | Joker-of-Gotham (DRI)                                                                                                                                      |
-| Required Reviewers        | Architecture (second reader — **TBD, gap**), Security/Threat Model (**interim: DRI**, ADR-0003; external sign-off pre-FCP), AI Eval (pre-benchmark-claims) |
+| Required Reviewers        | Architecture + Security + Formal + Process + Lean Assumptions + QA-L5 + AI Eval — **Joker-of-Gotham** (Owner; COI disclosed, 2026-08-16)                  |
 | Created                   | 2026-07-23                                                                                                                                                 |
-| Related                   | ADR-0001 (unified formal structure), GitHub Issue TBD                                                                                                      |
+| Related                   | ADR-0001 (unified formal structure)                                                                                                                        |
 
 > **Governance note:** This RFC is the canonical source of truth for the `cantilune` goal. Chat discussion is not authoritative. Reviewer assignment is deferred to FCP entry (acceptable at M0/M1; flagged as a gate, not a blocker to drafting).
 
@@ -88,7 +88,7 @@ Second, the table above is a _map of the territory_, not the territory. It says 
 | **MCP**                          | Tool-call standard                           | Cantilune nodes should be able to invoke MCP tools; MCP is a node-internal capability, not an orchestration primitive.                                                                                                                                                                |
 | **Temporal / Airflow / Dagster** | DAG workflows (non-agent)                    | Cantilune shares DAG topology but adds agent-specific facets (comms, model-decoupled routing, agent observability). These systems are data-plane references for scheduler design.                                                                                                     |
 
-> **Critical gap to close before FCP:** validate the LangGraph differential concretely. "LangGraph lacks X" must be checked against LangGraph's actual current capabilities, not assumed.
+> **Q2 (closed 2026-08-15):** keep the LangGraph differential table above as a living positioning map. Do **not** freeze a competitor snapshot as a permanent claim; re-check official sources whenever this positioning changes.
 
 ## 6. Proposal
 
@@ -210,7 +210,7 @@ These four claims are **the bar `cantilune` must clear** to be considered succes
 
 - **Threat Model:** ADR-0003 (`docs/adr/0003-runtime-threat-model.md`) covers runtime prototype scope; comms/network facets require follow-up before production exposure.
 - **Untrusted inputs:** graphs, node payloads, MCP tool outputs, A2A messages are untrusted data; the executor must enforce node-internal capability boundaries (least privilege per node).
-- **IP:** framework to be open-sourced (license TBD); no third-party code incorporated without provenance review.
+- **IP:** framework is open-sourced under **Apache-2.0** (`LICENSE`); no third-party code incorporated without provenance review.
 - **Secrets:** no secrets in graphs/traces; traces must not leak node-internal model prompts that may contain user data (to be addressed in the Observability/Data-handling ADR).
 
 ## 10. AI/Agent considerations
@@ -244,44 +244,62 @@ See §6.3. Traces are first-class; replay is a structural property. Evaluation (
 - Greenfield; no legacy migration. Interop targets (A2A, MCP) are compatibility surfaces, not migration.
 - LangGraph/AutoGen interop is a **non-goal for P1–P2**; revisit if eval requires.
 
-## 15. Open questions (to resolve before FCP)
+## 15. Owner questions (closed 2026-08-15; FCP entered 2026-08-16)
 
-1. **Q1:** Concrete definition of the unified `CantiluneGraph` and the functorial mappings between projections (ADR-0001 scope). _Largest open item._
+Owner closed Q1–Q6 for the 0.x engineering release. FCP opened 2026-08-16 (see §16).
+
+1. **Q1:** Concrete definition of the unified `CantiluneGraph` and the functorial mappings between projections (ADR-0001 scope).
+   **Closed:** Engineering landed the core three pillars (`nodes` · `coordination` · `structure` in `@cantilune/core`) plus the four read projections in `@cantilune/observability`. Formal kernel is `proved / Owner-accepted`; this is not Lean `reviewed`.
 2. **Q2:** LangGraph differential — validate concretely against current LangGraph capabilities.
+   **Closed:** Keep the §5.2 LangGraph differential table. Do not freeze a competitor snapshot as a permanent claim; re-check official sources when positioning changes.
 3. **Q3:** Does the policy DSL need to be Turing-complete or deliberately restricted? (affects termination guarantees).
+   **Closed:** Deliberately **not** Turing-complete. Policy remains a restricted, inspectable layer over admitted structure so termination and replay obligations stay decidable.
 4. **Q4:** License choice.
+   **Closed:** **Apache-2.0** (`LICENSE`).
 5. **Q5:** Eval benchmark suite selection (existing suites vs bespoke).
+   **Closed:** Use the existing C1–C4 corpus plus `@cantilune/evaluation` (RFC-0004 / ADR-0011). Public claims require Owner COI quorum (`OWNER_COI_PUBLIC_REVIEW_CONFIG`); analysis still cannot emit `supported`.
 6. **Q6:** Second reviewer assignment (governance gap).
+   **Closed:** Architecture + Security + Formal + Process + QA-L5 + AI-Eval for this window is **Joker-of-Gotham** (Owner; COI disclosed, 2026-08-16). No second reviewer. Lean kernel is `proved / Owner-accepted`.
 
-## 16. FCP summary (not yet entered)
+## 16. FCP summary (opened 2026-08-16)
 
-Not entered. Pre-FCP. Open questions Q1–Q6 must be addressed, and a second reviewer assigned, before Final Comment Period.
+**Entered.** Owner opened FCP on 2026-08-16 with a 14-day comment period (closes 2026-08-30). This is not RFC Accepted. Lean obligation rows stay `proved`; Owner Accept is recorded separately (`ownerAccept`). The promotion form remains unused. Governance formal review is Owner-signed with COI (`docs/governance/fcp-entry-2026-08-16.md`). RFC-0002 / 0003 / 0004 are in FCP on the same clock. API remains SemVer 0.x.
 
 ## 17. Decision record
 
 - **Triage:** idea cleared (exit: Discovery → RFC), 2026-07-23.
 - **Structural decision:** unified structure (DAG+Petri+π+morphism) — recorded as ADR-0001.
-- **RFC status:** Draft, awaiting review and second-reader assignment.
+- **Q1–Q6:** Owner-closed 2026-08-15 (engineering 0.x). FCP opened 2026-08-16.
+- **RFC status:** FCP (opened 2026-08-16; closes 2026-08-30; not Accepted).
 
 ## 18. Implementation / ADR tracking
 
-| Artifact                                     | Status             | Blocks |
-| -------------------------------------------- | ------------------ | ------ |
-| ADR-0001 Unified formal structure            | **Proposed**       | P1     |
-| ADR-0002 Core engineering boundaries         | **Accepted**       | P2     |
-| ADR-0003 Runtime threat model                | **Accepted** (M2)  | P2     |
-| ADR-0004 Comms facet + A2A transport         | Pending            | P3     |
-| ADR-0005 Trace/replay schema (observability) | Pending            | P4     |
-| ADR-0006 Eval harness & metrics              | Pending            | P4     |
-| ADR-0007 Morphism composition facet          | Pending            | P5     |
-| GitHub Issue (kickoff)                       | To create          | —      |
-| Implementation Project board                 | To create post-FCP | —      |
+Statuses below record **existing** ADR/RFC documents. This table does **not**
+promote any **Proposed** artifact to **Accepted**. Q1–Q6 are closed in §15
+(2026-08-15); that closure is not FCP entry.
+
+| Artifact                                              | Status                                                                 | Blocks |
+| ----------------------------------------------------- | ---------------------------------------------------------------------- | ------ |
+| ADR-0001 Unified formal structure                     | **Accepted** (Owner COI 2026-08-16; Lean `proved / Owner-accepted`) | P1  |
+| ADR-0002 Core engineering boundaries                  | **Accepted**                                                           | P2     |
+| ADR-0003 Runtime threat model                         | **Accepted** (M2)                                                      | P2     |
+| ADR-0004 Comms facet + A2A transport                  | **Accepted** (M3 engineering; public A2A **1.0.0** = Owner C6 authorized 2026-08-15) | P3     |
+| ADR-0005 Observability read boundary                  | **Accepted** (M2–M3 engineering)                                       | P4     |
+| ADR-0006 Control-plane schema admission               | **Accepted** (M3 engineering) — **not** the eval harness               | P3     |
+| ADR-0007 Control-plane threat model                   | **Accepted** (M3 engineering) — **not** a morphism-facet ADR           | P3     |
+| ADR-0011 Evaluation architecture                      | **Accepted** (M2–M3 engineering)                                       | P4     |
+| RFC-0004 Evaluation harness                           | FCP (opened 2026-08-16; not Accepted)                                  | P4     |
+| Morphism composition facet                            | Covered by ADR-0001; no separate ADR (historical §18 row was mislabeled as ADR-0007) | —      |
+| ADRs 0012–0020 (continuity / swarm / transport / judge) | Owner-accepted engineering 0.x (C1); Lean `proved / Owner-accepted`    | C1     |
+| ADRs 0021–0029 (transcript / NS / durable / sandbox / platform / MCP / A2A 1.0 / typed mobility / etcd Raft) | **Accepted** (2026-08-15–16; Owner; COI) | —      |
+
+**Owner questions Q1–Q6** are closed in §15. Chat/Agent summaries do not
+enter FCP or rewrite formal status to `reviewed`.
 
 ## Next Steps
 
-| Action                                     | Owner                                | Due/Review  | Canonical Link                              |
-| ------------------------------------------ | ------------------------------------ | ----------- | ------------------------------------------- |
-| Author ADR-0001 (unified formal structure) | Joker-of-Gotham (DRI), Claude drafts | Now         | `docs/adr/0001-unified-formal-structure.md` |
-| Resolve Q2 (LangGraph differential)        | DRI + reviewer                       | Pre-FCP     | this RFC §5.2                               |
-| Assign second reviewer                     | DRI                                  | Pre-FCP     | RFC §0                                      |
-| Enter FCP once Q1–Q6 addressed             | DRI                                  | post-review | this RFC §16                                |
+| Action                                            | Owner                                | Due/Review  | Canonical Link                              |
+| ------------------------------------------------- | ------------------------------------ | ----------- | ------------------------------------------- |
+| ADR-0001 Accepted (Owner COI)                     | Joker-of-Gotham                      | Done 2026-08-16 | `docs/adr/0001-unified-formal-structure.md` |
+| Keep §5.2 LangGraph table living (Q2)             | DRI                                  | ongoing     | this RFC §5.2                               |
+| FCP comment period                                | Decision Owner                       | 2026-08-30  | this RFC §16                                |

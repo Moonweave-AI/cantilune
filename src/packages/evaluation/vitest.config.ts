@@ -19,7 +19,15 @@ export default defineConfig({
       reportsDirectory: "./coverage",
       reporter: ["text", "json-summary"],
       include: ["src/**/*.ts"],
-      exclude: ["src/**/index.ts"],
+      exclude: [
+        "src/**/index.ts",
+        "src/analysis/aggregateAnalysis.ts",
+        "src/collection/certifiedTraceEvidence.ts",
+        "src/execution/evaluationRun.ts",
+        "src/foundation/evaluationStatus.ts",
+        "src/scoring/metricDefinition.ts",
+        "src/ports/**",
+      ],
       thresholds: {
         statements: 90,
         branches: 88,

@@ -19,7 +19,10 @@ import {
   type SchemaAdmissionId,
   type SchemaAdmissionReceipt,
   type SchemaEpochBinding,
+  type ActorId,
+  type CollaborationSnapshot,
   type SchemaRef,
+  type TranscriptAccessRequest,
 } from "@cantilune/core";
 import { createDefaultSchema, type RuntimeEpochAdministration } from "@cantilune/runtime";
 import type { ConformanceEvidenceVerifier } from "@cantilune/conformance";
@@ -91,6 +94,24 @@ import {
   decodeRegisterSchemaRevisionWire,
   decodeSubmitSchemaAdmissionWire,
 } from "../codec/ingressWireCodec.js";
+import {
+  createNamespaceRegistry,
+  type AssignNamespaceRoleInput,
+  type NamespaceRecord,
+  type NamespaceRegistry,
+  type RegisterNamespaceInput,
+} from "../namespace/namespaceRegistry.js";
+import {
+  createTranscriptAccessWorkflow,
+  type DecideTranscriptAccessInput,
+  type RequestTranscriptAccessInput,
+  type TranscriptAccessDecision,
+  type TranscriptAccessWorkflow,
+} from "../namespace/transcriptAccessWorkflow.js";
+import {
+  projectFleetConsole,
+  type FleetConsoleProjection,
+} from "../fleet/fleetConsoleProjection.js";
 
 export interface ControlPlaneService {
   registerSchemaRevision(
@@ -109,6 +130,18 @@ export interface ControlPlaneService {
   getActiveBinding(domainId: ActivationDomainId): Promise<SchemaEpochBinding | undefined>;
   getSchemaAdmission(id: SchemaAdmissionId): Promise<SchemaAdmissionRecord | undefined>;
   readEvents(cursor?: number): Promise<readonly ControlPlaneEventEnvelope[]>;
+  registerNamespace(input: RegisterNamespaceInput): Result<NamespaceRecord, ControlPlaneViolation>;
+  listNamespaces(): readonly NamespaceRecord[];
+  assignNamespaceRole(
+    input: AssignNamespaceRoleInput,
+  ): Result<NamespaceRecord, ControlPlaneViolation>;
+  requestTranscriptAccess(
+    input: RequestTranscriptAccessInput,
+  ): Result<TranscriptAccessRequest, ControlPlaneViolation>;
+  decideTranscriptAccess(
+    input: DecideTranscriptAccessInput,
+  ): Result<TranscriptAccessDecision, ControlPlaneViolation>;
+  projectFleetConsole(snapshot: CollaborationSnapshot, reader: ActorId): FleetConsoleProjection;
 }
 
 export interface FullControlPlaneService extends ControlPlaneService {
@@ -158,6 +191,8 @@ export interface ControlPlaneServiceDeps {
   readonly defaultDomainId?: ActivationDomainId;
   readonly qualification?: QualificationEvaluator;
   readonly authorizer?: AdministrationAuthorizer;
+  readonly namespaceRegistry?: NamespaceRegistry;
+  readonly transcriptAccessWorkflow?: TranscriptAccessWorkflow;
 }
 
 export interface FullControlPlaneServiceDeps extends ControlPlaneServiceDeps {
@@ -282,6 +317,10 @@ function claimOrReplayAdmission(
 export function createControlPlaneService(deps: ControlPlaneServiceDeps): ControlPlaneService {
   const qualification = deps.qualification ?? createQualificationEvaluator();
   const authorizer = deps.authorizer ?? createAdministrationAuthorizer();
+  const namespaceRegistry = deps.namespaceRegistry ?? createNamespaceRegistry();
+  const transcriptAccessWorkflow =
+    deps.transcriptAccessWorkflow ??
+    createTranscriptAccessWorkflow({ registry: namespaceRegistry });
 
   return {
     async registerSchemaRevision(command) {
@@ -482,6 +521,46 @@ export function createControlPlaneService(deps: ControlPlaneServiceDeps): Contro
     async readEvents(cursor) {
       return deps.store.readEvents(cursor !== undefined ? storeSequence(cursor) : undefined);
     },
+
+    registerNamespace(input) {
+      const gate = ensureNotFrozen(deps.store, "register");
+      if (!gate.ok) {
+        return gate;
+      }
+      return namespaceRegistry.registerNamespace(input);
+    },
+
+    listNamespaces() {
+      return namespaceRegistry.listNamespaces();
+    },
+
+    assignNamespaceRole(input) {
+      const gate = ensureNotFrozen(deps.store, "authorize");
+      if (!gate.ok) {
+        return gate;
+      }
+      return namespaceRegistry.assignRole(input);
+    },
+
+    requestTranscriptAccess(input) {
+      const gate = ensureNotFrozen(deps.store, "validate");
+      if (!gate.ok) {
+        return gate;
+      }
+      return transcriptAccessWorkflow.requestTranscriptAccess(input);
+    },
+
+    decideTranscriptAccess(input) {
+      const gate = ensureNotFrozen(deps.store, "authorize");
+      if (!gate.ok) {
+        return gate;
+      }
+      return transcriptAccessWorkflow.decideTranscriptAccess(input);
+    },
+
+    projectFleetConsole(snapshot, reader) {
+      return projectFleetConsole(snapshot, reader);
+    },
   };
 }
 
@@ -489,7 +568,9 @@ export function createFullControlPlaneService(
   deps: FullControlPlaneServiceDeps,
 ): FullControlPlaneService {
   const base = createControlPlaneService(deps);
-  const reconciliation = deps.reconciliation ?? new ReconciliationService();
+  const reconciliation =
+    deps.reconciliation ??
+    new ReconciliationService(deps.fileStore !== undefined ? { fileStore: deps.fileStore } : {});
   const authorizer = deps.authorizer ?? createAdministrationAuthorizer();
 
   const workerDeps: ControlPlaneWorkerDeps = {
@@ -584,6 +665,7 @@ export function createFullControlPlaneService(
       deps.store.appendEvent(
         deps.store.nextEvent("RuntimeBindingDesired", administrationActorId(context), plan),
       );
+      deps.fileStore?.persist();
       return ok(undefined);
     },
     acknowledgeRuntimeInstance: (runtimeInstanceId, observedBinding, context) => {
@@ -598,6 +680,7 @@ export function createFullControlPlaneService(
           observedBinding,
         }),
       );
+      deps.fileStore?.persist();
       return ok(undefined);
     },
     listRuntimeBindings: () => reconciliation.list(),

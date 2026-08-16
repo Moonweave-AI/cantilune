@@ -100,12 +100,7 @@ const ev = {
     output,
     ...(coordination ? { coordination: true } : {}),
   }),
-  error: (
-    turn: number,
-    phase: string,
-    message: string,
-    detail?: string,
-  ): AgentEvent => ({
+  error: (turn: number, phase: string, message: string, detail?: string): AgentEvent => ({
     kind: "error",
     turn,
     phase: phase as never,

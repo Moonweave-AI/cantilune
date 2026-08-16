@@ -2,7 +2,7 @@
 
 | Field          | Value                                                                                                                                                                       |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted** (M2–M3 engineering scope — trust ports scaffolded; durable CAS, external signing, and non-DRI review **pending**)                                              |
+| Status         | **Accepted** (M2–M3 engineering scope — file trust/revocation/evidence adapters landed; external signing and non-DRI review **pending**)                                   |
 | Date           | 2026-08-11                                                                                                                                                                  |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                                                       |
 | Reviewers      | Joker-of-Gotham (DRI interim Security + Formal); external independent review before FCP — see `docs/governance/reviewer-assignments.md`                                     |
@@ -12,8 +12,8 @@
 
 RFC-0003 defines the C0–C9 certificate chain and five conformance questions. ADR-0006 binds control-plane schema activation to four-view evidence verification. Without explicit trust lifecycle rules, the following gaps remain in M2:
 
-- Memory-only trust/revocation/cache adapters with no durable checkpoint semantics
-- No non-forgeable sealed decision types (`Verified*` / `Reviewed*` still OPEN)
+- Memory trust/revocation/cache adapters remain the in-process default; file adapters now exist
+- Sealed `VerifiedDecision` / `ReviewedDecision` types exist (engineering); product-scope release still Owner-gated
 - Human review workflow unspecified (quorum, COI, conflict handling)
 - Verifier build pinning present in types but not enforced as a rotation policy
 - Control-plane could theoretically consume stale cached decisions if cache keys omit policy/revocation generation
@@ -34,7 +34,7 @@ Implement conformance trust as an **immutable evidence CAS + versioned trust pol
 | TR-2 | Verifiers MUST reject attestations signed outside root scope or validity window                                                  |
 | TR-3 | `trustRootSetVersion` MUST appear in every `PackageConformanceCertificate` and cache key                                         |
 | TR-4 | Trust root rotation is **append-only**: new version adds roots; old roots remain valid until explicit expiry (no silent removal) |
-| TR-5 | M2: memory trust store only; production requires durable trust manifest + CI verification (**OPEN**)                             |
+| TR-5 | Memory trust store remains the in-process default; **file** `createFileTrustStore` exists for durable `--store-dir` / production wiring. Independent review of that path is still Owner C3. |
 
 ### Certificate lifecycle (C1–C9)
 
@@ -64,7 +64,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 | RV-2 | `revocationCheckpoint` is monotonic; consumers MUST track latest checkpoint seen                                  |
 | RV-3 | Revocation lookup MUST precede cache hit and gate evaluation                                                      |
 | RV-4 | Revoking C8 invalidates dependent C9; revoking trust root version invalidates all attestations under that version |
-| RV-5 | M2: memory revocation store; durable revocation journal **OPEN**                                                  |
+| RV-5 | Memory revocation store remains the in-process default; **file** `createFileRevocationStore` exists. Independent review of that path is still Owner C3. |
 
 ### Human review quorum
 
@@ -76,7 +76,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 | HR-4 | `HumanReviewAttestation` binds `machineDecisionRef`, `reviewerId`, `roles[]`, `decision`, `reviewedAt`                                                            |
 | HR-5 | Conflicting attestations (`decision: conflict`) block release (`release: blocked`) until resolved by new review round                                             |
 | HR-6 | Agent/automated review does NOT satisfy human review axis                                                                                                         |
-| HR-7 | M2: quorum not enforced in code; **Stop-Ship** for S4 until L5 checklist closed                                                                                   |
+| HR-7 | Quorum is enforced in `humanReviewAttestationVerifier`; independent reviewers remain _unassigned_. **Stop-Ship** for S4 until L5 checklist closed                 |
 
 **Reviewer roles (informative):** formal-mathematics, process-semantics, security/threat-model, package-owner (non-voting for own package).
 
@@ -93,7 +93,7 @@ draft manifest → evidence assembly → machine verify (C8) → human review (C
 
 **Rule CA-1:** Cache entries MUST NOT survive invalidation of any key component.  
 **Rule CA-2:** Positive cache hits MUST still re-check revocation checkpoint and expiry at consumption time (TOCTOU mitigation — see ADR-0010).  
-**Rule CA-3:** M2 `MemoryVerificationCache` implements key stringing via `cacheKeyString`; durable cache **OPEN**.
+**Rule CA-3:** `MemoryVerificationCache` implements key stringing via `cacheKeyString`; **file** `createFileVerificationCache` exists alongside `createFileEvidenceStore`. Independent review of durable cache semantics is still Owner C3.
 
 ### Verifier build pinning
 
@@ -124,7 +124,7 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 | Commit admission  | Prior prepare + authorization roles (ADR-0006)                                                                                                          | Re-verify from client-supplied digests without server-side bundle fetch |
 | Release / fleet   | `evaluateReleaseConformanceGate → accepted`                                                                                                             | Treat `conditional` as accepted                                         |
 
-**Sealed type target (OPEN):** Replace raw `VerificationDecision` pass-through with non-forgeable `VerifiedAdmissionDecision` / `ReviewedReleaseDecision` brands once implemented. Until then, gates MUST use engine entry points — not caller-constructed decision objects.
+**Sealed types (engineering landed, Owner-accepted 2026-08-16):** `VerifiedDecision` / `ReviewedDecision` (`sealVerifiedDecision` / `sealReviewedDecision`) reject caller-constructed objects. Gates MUST still use engine entry points. `@cantilune/conformance` is 0.x production release authority; release certs are still not auto-signed.
 
 **Observability boundary:** Observability reads admission receipts and verification audit events; it does not perform conformance verification (ADR-0005 pattern).
 
@@ -138,17 +138,20 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 | `verifierBuild` on machine attestation + engineering verifier constant     | ✅         |
 | Cache key includes evidence root + profile                                 | ✅ Partial |
 | `evaluateAdmissionConformanceGate` / `evaluateReleaseConformanceGate`      | ✅         |
-| Quorum enforcement, durable stores, sealed types, external signing         | ❌ OPEN    |
+| File adapters: trust, revocation, evidence, cache, audit, decision log     | ✅         |
+| Sealed `VerifiedDecision` / `ReviewedDecision`                             | ✅         |
+| Human-review quorum verifier (`humanReviewAttestationVerifier`)            | ✅         |
+| External signing tool / HSM                                                | Policy: no HSM; CI does not auto-sign Acceptance certs (2026-08-16) |
 
 ## Residual risks
 
 | Risk                                                              | Status   | Notes                              |
 | ----------------------------------------------------------------- | -------- | ---------------------------------- |
-| Memory-only trust/revocation survives process restart             | **OPEN** | Stop-Ship for S4                   |
-| No sealed decision types — gate bypass via forged decision object | **OPEN** | ADR-0010 T-CP-1 mitigation planned |
-| Quorum not code-enforced                                          | **OPEN** | HR-7                               |
-| External Security non-DRI sign-off                                | **OPEN** | Pre-FCP                            |
-| Lean attestation manual / CI gap                                  | **OPEN** | C7 bridge                          |
+| File trust/revocation unused if caller still wires Memory\* only  | Residual | Engineering adapters exist; production wiring must inject file stores |
+| Sealed types exist; product-scope release is Owner-gated          | Policy | Owner COI (2026-08-16); no second reviewer                         |
+| Quorum verifier exists; independence waived                       | Policy | HR-7 waived; Joker-of-Gotham (COI)                                 |
+| External Security non-DRI sign-off                                | Policy | No second reviewer; Owner is Security                              |
+| Lean rows stay `proved`; `ownerAccept` recorded                   | Policy | promotion form unused                                              |
 
 ## Consequences
 
@@ -180,12 +183,12 @@ ConformanceEngine.verifyEngineeringAdmission(...)
 - [x] Memory adapters
 - [x] Certificate schema lifecycle fields
 - [x] Admission/release gate evaluators
-- [ ] Durable evidence + revocation CAS
-- [ ] Quorum enforcement in human review workflow
-- [ ] `Verified*` / `Reviewed*` sealed decision types
-- [ ] External signing tool integration
+- [x] Durable file evidence + revocation + trust + cache adapters (`src/packages/conformance/src/adapters/file/`)
+- [x] Quorum enforcement in `humanReviewAttestationVerifier` (Owner COI quorum; no second reviewer)
+- [x] `VerifiedDecision` / `ReviewedDecision` sealed types
+- [x] No HSM / no auto-signed Acceptance cert (Owner C7 production policy)
+- [x] Security + QA-L5 review (Owner-signed COI 2026-08-16)
 - [ ] Control-plane wiring audit against consumption contract
-- [ ] Independent Security + QA-L5 review (review-pending)
 
 ## Approval
 

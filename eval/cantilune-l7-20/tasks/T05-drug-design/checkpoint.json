@@ -1,0 +1,19 @@
+{
+  "taskId": "T05",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/target.md",
+    "artifacts/candidates.md",
+    "artifacts/admet.md",
+    "artifacts/retrosynthesis.md",
+    "artifacts/redesign-loop.md",
+    "constraints/reagents.json"
+  ],
+  "requiredGlobs": []
+}

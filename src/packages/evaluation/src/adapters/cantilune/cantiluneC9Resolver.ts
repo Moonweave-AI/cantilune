@@ -11,8 +11,8 @@ import type {
 import type { CertificateValidity } from "../../foundation/evaluationStatus.js";
 
 /**
- * Resolves sealed C9 PackageConformanceCertificates from the conformance package.
- * Delegates to a CertificateStorePort — callers wire the actual conformance backend.
+ * Resolves sealed C9 PackageConformanceCertificates from a conformance-backed store.
+ * checkRevocation MUST honor the revocation checkpoint parameter (ADR-0011 A54).
  */
 export function createCantiluneC9Resolver(
   certificateStore: CertificateStorePort,
@@ -38,14 +38,36 @@ export function createCantiluneC9Resolver(
       return cert.status;
     },
 
-    async checkRevocation(certificateRef: string, _checkpoint: string): Promise<boolean> {
+    async checkRevocation(certificateRef: string, checkpoint: string): Promise<boolean> {
+      if (typeof checkpoint !== "string" || checkpoint.length === 0) {
+        // Fail-closed: missing checkpoint must not silently skip revocation.
+        return true;
+      }
+
+      if (certificateStore.isRevokedAtCheckpoint !== undefined) {
+        return certificateStore.isRevokedAtCheckpoint(certificateRef, checkpoint);
+      }
+
       const cert = await certificateStore.getCertificate(certificateRef);
       if (cert === undefined) return true;
-      return cert.status === "revoked";
+      if (cert.status === "revoked") return true;
+
+      // When the store exposes a checkpoint on the certificate, a mismatched
+      // caller checkpoint fails closed (A54: mid-run revocation detection).
+      const certCheckpoint = cert.revocationCheckpoint;
+      if (typeof certCheckpoint === "string" && certCheckpoint !== checkpoint) {
+        return true;
+      }
+      return false;
     },
   };
 }
 
 export interface CertificateStorePort {
   getCertificate(ref: string): Promise<ResolvedCertificate | undefined>;
+  /**
+   * Optional conformance RevocationStore bridge.
+   * When present, checkRevocation delegates checkpoint-aware lookup here.
+   */
+  isRevokedAtCheckpoint?(certificateRef: string, checkpoint: string): Promise<boolean>;
 }

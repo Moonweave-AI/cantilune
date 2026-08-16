@@ -5,9 +5,9 @@
 | 状态       | **草案**                                                                                                                                                                                  |
 | 类型       | 工程设计 / 命名规范                                                                                                                                                                       |
 | 受众       | 运行时、SDK、控制面、可观测性工程师                                                                                                                                                       |
-| 更新日期   | 2026-08-06                                                                                                                                                                                |
-| 关联图表   | `diagrams/01-core/`（01A–01D）；`diagrams/02-runtime/`（02A–02H）；`diagrams/03-observability/`（03A–03H）；`diagrams/04-control-plane/`（04A–04H）；`diagrams/05-evaluation/`（05A–05H） |
-| 代码锚点   | `src/packages/core/` · `src/packages/runtime/` · `src/packages/observability/` · `src/packages/control-plane/` · `src/packages/evaluation/`                                               |
+| 更新日期   | 2026-08-15                                                                                                                                                                                |
+| 关联图表   | `diagrams/01-core/`（01A–01D）；`diagrams/02-runtime/`（02A–02H）；`diagrams/03-observability/`（03A–03H）；`diagrams/04-control-plane/`（04A–04H）；`diagrams/05-evaluation/`（05A–05H）；`diagrams/05-comms/`（05A–05H）；`diagrams/06-conformance/`（06A–06H）；`diagrams/07-production/`（07A–07H） |
+| 代码锚点   | `src/packages/core/` · `src/packages/runtime/` · `src/packages/observability/` · `src/packages/control-plane/` · `src/packages/comms/` · `src/packages/tools/` · `src/packages/evaluation/` |
 | 形式化对照 | 附录 A（Lean / 数学符号，供实现层映射）                                                                                                                                                   |
 
 > **定位：** 本文档定义**编排工程语言**——开发者、运维和系统设计者在讨论 Cantilune 时应使用的名字。
@@ -151,7 +151,7 @@ Actor **不发射** Event。`initiator` = 主责归因，不是触发器。
 | `Footprint`               | 实体触达集          | Agent 声明的隔离域（须覆盖 targets）    | 请求锁多大范围？               |
 | `effectiveFootprint`      | 权威触达集          | 从 targets 派生；并发判定唯一依据       | 实际会碰哪些实体？             |
 | `RunHistory`              | 运行历史            | observation + rewrite 段的可切片轨迹    | 某 artifact 范围内发生了什么？ |
-| `deriveDiagnosticSummary` | 诊断摘要            | 只读 derive；**不可**用于调度           | 当前粗粒度结构？               |
+| `deriveDiagnosticSummary` | 只读结构投影        | serial/parallel/nest；**不可**用于调度  | 当前粗粒度结构？               |
 | `DerivedCompositionView`  | （deprecated 别名） | 同 `deriveDiagnosticSummary`            | —                              |
 
 ### 3.2c 一致性校验（@cantilune/core consistency）
@@ -200,6 +200,29 @@ Actor **不发射** Event。`initiator` = 主责归因，不是触发器。
 
 ---
 
+### 3.6 生产隔离与发布面（图 07）
+
+> **图 07 结构：** `diagrams/07-production/` 八视图（07A–07H）。英文 ADR-0021–0029 为权威。
+> 画的是 Namespace / Transcript / durable / sandbox / 平台导出 / A2A 1.0 / MCP epoch / fleet 脱敏，不是评测包（评测仍是图 05）。
+
+| 工程名                      | 中文           | 职责                                         | 典型问题                         |
+| --------------------------- | -------------- | -------------------------------------------- | -------------------------------- |
+| `CollaborationNamespace`    | 协作命名空间   | 租户隔离域；Participant 组合 `namespaceId`   | 这两个 Agent 是否同域？          |
+| `ParticipantTranscript`     | 参与者对话记录 | 已提交循环历史；在场 ≠ 授权                  | 同 NS 能否读全文？               |
+| `TranscriptAccessRequest`   | 记录访问申请   | 跨 NS 申请；**仅被看方 Actor** 可裁决        | 谁批准了跨域阅读？               |
+| `transcript_read`           | 记录阅读能力   | 既有 `ScopedCapability` kind，不平行授权类型 | 授权作用域是哪个 Actor？         |
+| `visibleTranscript`         | 可见记录       | full / summary / absent                      | 跨 NS 默认看到什么？             |
+| `DurableCoordinator`        | 耐久协调器     | file / Postgres HA / 官方 etcd Raft          | 跨副本是否共享同一 head？        |
+| `RaftKv`                    | Raft KV 端口   | 线性一致 get/txn/lease；生产 etcd            | 多宿主有没有共享 head？          |
+| `RaftDurableCoordinator`    | Raft 耐久实现  | ADR-0029；官方 etcd v3.5.21                  | fencing lease 谁持有？           |
+| `OsSandbox`                 | OS 沙箱        | win32 Hyper-V / linux gVisor；探测失败关闭   | 缺运行时会不会落到宿主进程？     |
+| `ObservabilityTraceExporter`| OTLP 导出      | 官方 OTel；Cantilune 导出已生产；`gen_ai.*` 官方仍为 Development | SIEM 是否只经 OTLP？             |
+| `AgUiEvent`                 | AG-UI 事件     | 从已提交世界 + 可见 transcript 派生          | 用户面看到的是哪一轮？           |
+| `A2AOperationName`          | A2A 1.0 操作   | Send/Stream/Get/List/Cancel + Card + push    | 公开主张钉死哪个版本？           |
+| `applyMcpAttach`            | MCP epoch 热挂 | 须 SchemaAdmissionReceipt；当前回合不换面    | 新工具何时生效？                 |
+
+---
+
 ## 3. 禁止混用的名字
 
 | 应该说                  | 不要说（除非实现层内部）                  | 原因                               |
@@ -211,6 +234,9 @@ Actor **不发射** Event。`initiator` = 主责归因，不是触发器。
 | `WorkArtifact`          | `Data`, `Payload`                         | 必须强调工作对象与归属             |
 | `epochId`               | `signature`, `version`（单独使用时）      | epoch 是运行版本，不是编排模式本身 |
 | `OrchestrationSchema`   | `Sigma`, `Signature`（对外 API）          | 形式化名仅限实现/论文层            |
+| `CollaborationNamespace` | `Tenant`（单独当身份层）                 | 租户是 Namespace + RBAC，不另起身份 |
+| `visibleTranscript`     | 把 Snapshot.transcripts 当明文广播        | 在场 ≠ 授权；跨 NS 默认摘要        |
+| A2A **1.0.0**           | 把 `a2a/0.1` harness 写成公开互操作主张   | 0.1 是 CI 回归；公开钉死 1.0.0     |
 
 ---
 
@@ -281,9 +307,9 @@ Actor **不发射** Event。`initiator` = 主责归因，不是触发器。
   src/adapters/file/     # CAS · decision log · fileLock（L7 durable）
   src/adapters/runtime/  # createRuntimeDpoReplayPort（optional peer runtime）
   src/testing/           # **仅 harness** · 禁止生产 import
-  # 禁止：自审批 helper 从根 export；boolean-only 验证；Lean 定理 TS 重证
+  # 禁止：自审批 helper 从根 export；boolean-only 验证
 
-@cantilune/evaluation     # 经验主张验证 · 配对实验 · 证据发布（diagrams/07-evaluation/）
+@cantilune/evaluation     # 经验主张验证 · 配对实验 · 证据发布（diagrams/05-evaluation/）
   src/foundation/        # evaluationIds · evaluationResult · evaluationStatus · opaqueTokens
   src/claims/            # EvaluationClaim · EvaluationProtocol · claimStateMachine · claimRegistry
   src/benchmarks/        # BenchmarkSuite · BenchmarkCase · suiteStateMachine
@@ -432,6 +458,9 @@ after:
 | `policyContext`   | `policyState`                     | `PolicyContext`                        |
 | `auditTail`       | `externalObservations`            | `ObservationEntry[]`                   |
 | `retiredEntities` | `tombstones`                      | `EntityTombstone[]`                    |
+| `namespaces`      | （工程扩展；ADR-0022）            | `Map<NamespaceId, CollaborationNamespace>` |
+| `transcripts`     | （工程扩展；ADR-0021）            | `Map<ActorId, ParticipantTranscript>`  |
+| `transcriptAccessRequests` | （工程扩展；ADR-0022）     | `Map<RequestId, TranscriptAccessRequest>` |
 
 ### 字段级映射：`CoordinationChange`
 

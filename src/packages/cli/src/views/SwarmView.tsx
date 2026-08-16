@@ -123,6 +123,71 @@ function statusView(store: AppStore, status: SwarmControllerStatus | undefined):
   ].join("\n");
 }
 
+/**
+ * Scheduler view: the queue, the ceiling, and the budget.
+ *
+ * This is the answer to "why is nothing happening". A pending agent's
+ * `blockedBy` distinguishes the three reasons it is not running — its start
+ * condition is unmet, the concurrency ceiling is full, or a budget is spent —
+ * which are indistinguishable from the participant table alone.
+ */
+function scheduleView(status: SwarmControllerStatus | undefined): string {
+  const scheduler = status?.scheduler;
+  if (scheduler === undefined) {
+    return "No scheduler — the swarm is not started. Run `/swarm start`.";
+  }
+
+  const { policy, budget } = scheduler;
+  const budgetLine =
+    budget.kind === "within_budget"
+      ? "Budget: within limits"
+      : `Budget: EXHAUSTED (${budget.limit}) — ${budget.detail}`;
+
+  // `effectivePriority` already folds in anti-starvation aging, so it is the
+  // number that actually decides order — showing the declared base priority
+  // would mislead about why a long-queued agent jumped ahead.
+  const queueRows = scheduler.pending.map((p) => [
+    p.agentId as string,
+    p.blockedBy,
+    String(p.effectivePriority),
+    String(p.evaluations),
+  ]);
+
+  const stallLine =
+    scheduler.stallTicks > 0
+      ? `Stall checks: ${scheduler.stallTicks}/${policy.stallTicksBeforeDeadlock} consecutive`
+      : "Stall checks: none";
+
+  return [
+    `Running: ${scheduler.running}/${formatLimit(policy.maxConcurrentAgents)}` +
+      `${scheduler.saturated ? "  (saturated — new work queues)" : ""}`,
+    `Queued: ${scheduler.pending.length}`,
+    `Started: ${scheduler.startedTotal}/${formatLimit(policy.maxTotalAgents)}  ·  ` +
+      `Completed: ${scheduler.completedTotal}  ·  ` +
+      `Turns: ${scheduler.consumedTurns}/${formatLimit(policy.maxTotalTurns)}`,
+    `Elapsed: ${Math.round(scheduler.elapsedMs / 1000)}s/${formatLimit(policy.maxWallClockMs / 1000)}s`,
+    budgetLine,
+    stallLine,
+    "",
+    queueRows.length === 0
+      ? "Queue is empty — every activated agent is running or finished."
+      : renderTable(
+          [
+            { header: "Queued agent", width: 34 },
+            { header: "Blocked by", width: 18 },
+            { header: "Priority", width: 10 },
+            { header: "Evals", width: 7 },
+          ],
+          queueRows,
+        ),
+  ].join("\n");
+}
+
+/** Render an unbounded limit as a symbol rather than `Infinity`. */
+function formatLimit(value: number): string {
+  return Number.isFinite(value) ? String(Math.round(value)) : "∞";
+}
+
 export function renderSwarmViewOutput(
   activeView: ViewType,
   store: AppStore,
@@ -132,6 +197,8 @@ export function renderSwarmViewOutput(
   switch (activeView) {
     case "swarm-status":
       return statusView(store, swarmStatus);
+    case "swarm-schedule":
+      return scheduleView(swarmStatus);
     default:
       return overview(store, swarmStatus);
   }
@@ -140,6 +207,7 @@ export function renderSwarmViewOutput(
 const TITLES: Partial<Record<ViewType, string>> = {
   swarm: "Swarm — Overview",
   "swarm-status": "Swarm — Liveness",
+  "swarm-schedule": "Swarm — Scheduler",
 };
 
 export function SwarmView({

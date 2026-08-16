@@ -1,4 +1,10 @@
-import type { ToolExecutor, ToolExecutionTier, ToolInvocationKey, ToolReconcileResult, ToolSchema } from "@cantilune/syscall";
+import type {
+  ToolExecutor,
+  ToolExecutionTier,
+  ToolInvocationKey,
+  ToolReconcileResult,
+  ToolSchema,
+} from "@cantilune/syscall";
 import type { FilesystemConfig } from "../types.js";
 import { DEFAULT_MAX_FILE_SIZE } from "../types.js";
 import { editFile, editFileSchema } from "./editFile.js";
@@ -60,7 +66,11 @@ export function createFilesystemExecutor(
     async execute(
       toolName: string,
       args: Record<string, unknown>,
+      options?: { readonly signal?: AbortSignal },
     ): Promise<{ ok: boolean; output: string }> {
+      if (options?.signal?.aborted === true) {
+        return { ok: false, output: "skipped: aborted before filesystem dispatch" };
+      }
       try {
         switch (toolName) {
           case "filesystem_read_file":
@@ -98,8 +108,7 @@ export function createFilesystemExecutor(
      * Only `filesystem_write_file` reaches this method; other tools resolve to
      * a non-idempotent tier and never call reconcile.
      */
-    async reconcile(key: ToolInvocationKey): Promise<ToolReconcileResult> {
-      void key;
+    async reconcile(_key: ToolInvocationKey): Promise<ToolReconcileResult> {
       return { status: "unknown" };
     },
   };

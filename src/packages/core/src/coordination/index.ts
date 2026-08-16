@@ -6,6 +6,7 @@ export * from "./schemaAdmissionReceipt.js";
 export * from "./startCondition.js";
 export * from "./agentManifest.js";
 export * from "./heartbeat.js";
+export * from "./transcriptVisibility.js";
 export {
   validateAuditTailMatchesHistory,
   validateAuditTailMatchesHistoryResult,

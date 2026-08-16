@@ -4,6 +4,7 @@ import type {
   ControlPlaneEventId,
   IdempotencyKey,
   PreparedAdmissionId,
+  RuntimeInstanceId,
   SchemaAdmissionId,
   SchemaAdmissionReceipt,
   SchemaEpochBinding,
@@ -21,6 +22,7 @@ import type {
 import type { QualificationEvidence } from "../administration/qualificationEvaluator.js";
 import type { AuthorizationEvidence } from "../administration/administrationAuthorizer.js";
 import type { VerifiedFourViewEvidence } from "@cantilune/conformance";
+import type { RuntimeBinding } from "../rollout/runtimeBinding.js";
 
 export type ControlPlaneEventKind =
   | "SchemaRevisionRegistered"
@@ -60,6 +62,8 @@ export interface ControlPlaneSnapshot {
   readonly events: readonly ControlPlaneEventEnvelope[];
   readonly frozen: boolean;
   readonly lastSequence: StoreSequence;
+  /** Fleet/runtime reconciliation bindings. Absent on pre-fleet snapshots. */
+  readonly fleetBindings?: ReadonlyMap<RuntimeInstanceId, RuntimeBinding>;
 }
 
 export interface IdempotencyClaim {

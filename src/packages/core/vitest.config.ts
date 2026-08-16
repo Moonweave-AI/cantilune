@@ -20,7 +20,10 @@ export default defineConfig({
       reportsDirectory: "./coverage",
       reporter: ["text", "json-summary"],
       include: ["src/**/*.ts"],
-      exclude: ["src/**/index.ts"],
+      // `index.ts` is re-export surface. `schemaAdmissionReceipt.ts` declares
+      // only interfaces — it emits no runtime statements, so it can never be
+      // covered and only distorts the denominator.
+      exclude: ["src/**/index.ts", "src/coordination/schemaAdmissionReceipt.ts"],
       thresholds: {
         statements: 90,
         branches: 88,
@@ -29,23 +32,15 @@ export default defineConfig({
       },
     },
   },
+  // core sits at the bottom of the workspace graph: it resolves only itself.
+  // Aliasing a dependent package here would require a dev-dependency edge back
+  // into that package, closing a cycle that defeats pnpm's topological build
+  // ordering. Cross-package cases live in the dependent package's suite.
   resolve: {
     alias: [
       {
-        find: "@cantilune/runtime/memory",
-        replacement: path.resolve(packageRoot, "../runtime/src/memory/index.ts"),
-      },
-      {
-        find: "@cantilune/runtime",
-        replacement: path.resolve(packageRoot, "../runtime/src/index.ts"),
-      },
-      {
         find: "@cantilune/core",
         replacement: path.resolve(packageRoot, "src/index.ts"),
-      },
-      {
-        find: "@cantilune/test-fixtures",
-        replacement: path.resolve(packageRoot, "../test-fixtures/src/index.ts"),
       },
     ],
   },

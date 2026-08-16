@@ -1,0 +1,18 @@
+{
+  "taskId": "T13",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "data/novel.md",
+    "artifacts/bible.md",
+    "artifacts/boards/ep01.md",
+    "artifacts/lighting-deps.md",
+    "artifacts/continuity-reject.md"
+  ],
+  "requiredGlobs": ["artifacts/episodes/**"]
+}

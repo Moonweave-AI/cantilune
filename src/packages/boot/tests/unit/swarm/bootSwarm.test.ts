@@ -36,6 +36,7 @@ import { createMemoryContentStore } from "@cantilune/content/memory";
 import { wrapCoordinationRuntime } from "../../../src/runtimeAdapter.js";
 import { uuidIdGenerator, BOOT_EPOCH_ID } from "../../../src/bootCantilune.js";
 import { bootSwarm, createCantiluneOsAgent } from "../../../src/swarm/bootSwarm.js";
+import { createLoopbackMeshRouter } from "../../../src/cluster/commsIntegration.js";
 import type { LlmAdapter, LlmChatResponse } from "../../../src/types.js";
 
 /** Scripted LLM: immediately calls `done`, so the real agent loop resolves fast. */
@@ -186,12 +187,120 @@ describe("bootSwarm — CantiluneSwarm construction (ADR-0019 §1)", () => {
       livenessGraceFactor: 2,
       contractLlm: immediateDoneLlm(),
       judgeLlm: immediateDoneLlm(),
+      meshTransport: createLoopbackMeshRouter(),
     });
     swarm.start();
     expect(swarm.status().running).toBe(true);
     await swarm.shutdown();
     // shutdown calls supervisor.stop(); no run was driven so no agent events.
     expect(events).not.toContain("agent_started");
+  });
+});
+
+describe("bootSwarm — status reflects real lifecycle and scheduler state", () => {
+  it("running tracks start/stop/shutdown rather than always reporting true", async () => {
+    const { runtime, contentStore } = await seedRealCluster();
+    const swarm = bootSwarm({
+      runtime: wrapCoordinationRuntime(runtime),
+      contentStore,
+      storagePath: "/tmp/swarm-lifecycle",
+      llmAdapterFactory: () => immediateDoneLlm(),
+      conditionRegistry: createDefaultConditionRegistry(),
+    });
+    expect(swarm.status().running).toBe(false);
+    swarm.start();
+    expect(swarm.status().running).toBe(true);
+    swarm.stop();
+    expect(swarm.status().running).toBe(false);
+    swarm.start();
+    await swarm.shutdown();
+    expect(swarm.status().running).toBe(false);
+  });
+
+  it("records supervisor events instead of returning an empty log", async () => {
+    const { runtime, contentStore, initiator, worker, manifestRef } = await seedRealCluster();
+    const forwarded: string[] = [];
+    const swarm = bootSwarm({
+      runtime: wrapCoordinationRuntime(runtime),
+      contentStore,
+      storagePath: "/tmp/swarm-events",
+      llmAdapterFactory: () => immediateDoneLlm(),
+      conditionRegistry: createDefaultConditionRegistry(),
+      eventListener: (e) => forwarded.push(e.kind),
+    });
+
+    swarm.start();
+    commitActivate(runtime, initiator, worker, manifestRef);
+    await swarm.supervisor.drainFeed();
+
+    const kinds = swarm.status().events.map((e) => e.kind);
+    expect(kinds).toContain("agent_queued");
+    expect(kinds).toContain("agent_started");
+    // The caller's own listener still sees the same stream.
+    expect(forwarded).toEqual(kinds);
+    await swarm.shutdown();
+  });
+
+  it("caps the retained event log so a long run does not grow without bound", async () => {
+    const { runtime, contentStore } = await seedRealCluster();
+    const swarm = bootSwarm({
+      runtime: wrapCoordinationRuntime(runtime),
+      contentStore,
+      storagePath: "/tmp/swarm-event-cap",
+      llmAdapterFactory: () => immediateDoneLlm(),
+      conditionRegistry: createDefaultConditionRegistry(),
+    });
+    // Drive the tee directly: the supervisor would need 600 real lifecycle
+    // transitions to reach the cap, which this unit test has no reason to run.
+    const emit = (
+      swarm.supervisor as unknown as { emitEvent(e: { kind: string; detail: string }): void }
+    ).emitEvent.bind(swarm.supervisor);
+    for (let i = 0; i < 600; i += 1) {
+      emit({ kind: "swarm_stalled", detail: `tick-${i}` });
+    }
+    const events = swarm.status().events;
+    expect(events).toHaveLength(500);
+    // The window keeps the most recent entries, not the oldest.
+    expect((events.at(-1) as { detail: string }).detail).toBe("tick-599");
+    await swarm.shutdown();
+  });
+
+  it("exposes the resolved scheduler policy and queue state", async () => {
+    const { runtime, contentStore } = await seedRealCluster();
+    const swarm = bootSwarm({
+      runtime: wrapCoordinationRuntime(runtime),
+      contentStore,
+      storagePath: "/tmp/swarm-policy",
+      llmAdapterFactory: () => immediateDoneLlm(),
+      conditionRegistry: createDefaultConditionRegistry(),
+      schedulerPolicy: { maxConcurrentAgents: 3 },
+      completionPollMs: 5,
+    });
+    swarm.start();
+    const scheduler = swarm.status().scheduler;
+    expect(scheduler.policy.maxConcurrentAgents).toBe(3);
+    expect(scheduler.running).toBe(0);
+    expect(scheduler.pending).toHaveLength(0);
+    expect(scheduler.budget.kind).toBe("within_budget");
+    await swarm.shutdown();
+  });
+
+  it("waitForCompletion delegates to the supervisor and reports the reason", async () => {
+    const { runtime, contentStore } = await seedRealCluster();
+    const swarm = bootSwarm({
+      runtime: wrapCoordinationRuntime(runtime),
+      contentStore,
+      storagePath: "/tmp/swarm-wait",
+      llmAdapterFactory: () => immediateDoneLlm(),
+      conditionRegistry: createDefaultConditionRegistry(),
+      completionPollMs: 5,
+    });
+    swarm.start();
+    swarm.stop();
+    const result = await swarm.waitForCompletion();
+    expect(result.reason).toBe("stopped");
+    expect(result.ok).toBe(false);
+    await swarm.shutdown();
   });
 });
 
@@ -355,6 +464,43 @@ describe("bootSwarm — CantilunOS agent handle branches (ADR-0019 §1, coverage
     // The aborted run still resolves (shutdown is best-effort); swallow it so the
     // test does not surface an unhandled rejection.
     await promise.catch(() => undefined);
+  });
+
+  it("abort cancels the run itself, not just the OS beneath it", async () => {
+    const { runtime, contentStore, agent } = await seedActiveAgentRuntime();
+    const syscallRuntime = wrapCoordinationRuntime(runtime);
+
+    // An adapter that only settles far in the future: the run can end promptly
+    // only if the abort actually reaches the loop. `os.shutdown()` alone leaves
+    // the in-flight `os.run` going, which is how a stopped supervisor could
+    // still observe a late turn commit.
+    const stalling: LlmAdapter = {
+      async chat(): Promise<LlmChatResponse> {
+        await new Promise((resolve) => setTimeout(resolve, 60_000));
+        return { text: "late", toolCalls: [], finishReason: "stop" };
+      },
+    };
+    const handle = createCantiluneOsAgent(
+      agent,
+      makeManifest(agent),
+      syscallRuntime,
+      contentStore,
+      stalling,
+      {},
+    );
+
+    const started = Date.now();
+    const run = handle.start();
+    expect(handle.isRunning).toBe(true);
+
+    handle.abort();
+    const result = await run;
+
+    expect(handle.isRunning).toBe(false);
+    expect(result.ok).toBe(false);
+    // Settling at all is the assertion; the bound guards against a regression
+    // that reverts to waiting out the adapter.
+    expect(Date.now() - started).toBeLessThan(10_000);
   });
 
   it("start() called twice returns the same run promise (no double-start)", async () => {

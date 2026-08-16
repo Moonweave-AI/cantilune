@@ -1,0 +1,20 @@
+{
+  "taskId": "T11",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "data/fomc-statement.md",
+    "data/chair-transcript.md",
+    "artifacts/semantics.md",
+    "artifacts/audio-shift.md",
+    "artifacts/book.md",
+    "artifacts/cancels.md",
+    "artifacts/clock.md"
+  ],
+  "requiredGlobs": []
+}

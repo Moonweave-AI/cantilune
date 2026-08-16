@@ -21,6 +21,10 @@ export interface JudgeProtocol {
   readonly retryRule: string;
   readonly failureRule: string;
   readonly judgeDigest: ContentDigest;
+  /** D6: LLM judge must not hold tools, network, or secrets. */
+  readonly toolsEnabled?: boolean;
+  readonly networkEnabled?: boolean;
+  readonly secretsHeld?: boolean;
 }
 
 export interface HumanReviewRecord {
@@ -45,5 +49,10 @@ export interface HumanReviewRecord {
  * Deterministic oracle should be preferred over LLM judge.
  */
 export function isJudgeSafe(protocol: JudgeProtocol): boolean {
-  return protocol.selfReviewProhibited && protocol.graderCount >= protocol.quorum;
+  if (!protocol.selfReviewProhibited) return false;
+  if (protocol.graderCount < protocol.quorum) return false;
+  if (protocol.toolsEnabled === true) return false;
+  if (protocol.networkEnabled === true) return false;
+  if (protocol.secretsHeld === true) return false;
+  return true;
 }

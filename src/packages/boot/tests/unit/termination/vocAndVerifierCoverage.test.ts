@@ -10,13 +10,11 @@
 import { describe, it, expect } from "vitest";
 import { estimateVOC } from "../../../src/termination/valueOfContinuation.js";
 import {
-  createDefaultVerifierRegistry,
   VerifierRegistry,
   NO_INFINITE_LOOP_VERIFIER,
   DUPLICATE_REPLY_VERIFIER,
 } from "../../../src/termination/index.js";
 import type {
-  CandidateAction,
   CriterionEvaluation,
   GoalContract,
   AgentState,
@@ -39,10 +37,24 @@ function evalFor(id: string, q: number): CriterionEvaluation {
 
 function makeState(overrides: Partial<AgentState> = {}): AgentState {
   const base: AgentState = {
-    environment: { worldSummary: "", headRef: undefined, epochId: "e1", participantCount: 1, artifactCount: 0, auditTailLength: 0 },
+    environment: {
+      worldSummary: "",
+      headRef: undefined,
+      epochId: "e1",
+      participantCount: 1,
+      artifactCount: 0,
+      auditTailLength: 0,
+    },
     artifacts: { artifactIds: [], contentRefs: [] },
     evidence: { items: [] },
-    trace: { conversationTurns: 1, plainTextTurns: 1, toolCallTurns: 0, recentAssistantTexts: [], committedOperations: 0, rejectedOperations: 0 },
+    trace: {
+      conversationTurns: 1,
+      plainTextTurns: 1,
+      toolCallTurns: 0,
+      recentAssistantTexts: [],
+      committedOperations: 0,
+      rejectedOperations: 0,
+    },
     pendingReply: { text: "", hasToolCalls: false },
     ...overrides,
   };
@@ -50,17 +62,27 @@ function makeState(overrides: Partial<AgentState> = {}): AgentState {
 }
 
 const crit = (id: string, verifierId: string, weight = 1): GoalContract["criteria"][number] => ({
-  id, description: "d", kind: "hard", weight, threshold: 1, verifierId,
+  id,
+  description: "d",
+  kind: "hard",
+  weight,
+  threshold: 1,
+  verifierId,
 });
 
 describe("estimateVOC — relevance branches", () => {
   it("rates tool/coordination actions as relevant to task_artifact_exists", () => {
     const contract = contractWith([crit("c", "task_artifact_exists")]);
-    const voc = estimateVOC(contract, [evalFor("c", 0)], [
-      { name: "writeFile", kind: "tool" },
-      { name: "introduce", kind: "coordination" },
-      { name: "talk", kind: "text" },
-    ], DEFAULT_THRESHOLDS);
+    const voc = estimateVOC(
+      contract,
+      [evalFor("c", 0)],
+      [
+        { name: "writeFile", kind: "tool" },
+        { name: "introduce", kind: "coordination" },
+        { name: "talk", kind: "text" },
+      ],
+      DEFAULT_THRESHOLDS,
+    );
     // tool and coordination both rel=0.8; text rel=0.2 — tool/coordination should
     // outweigh text on the same unmet criterion.
     expect(voc.perAction.get("writeFile")).toBeGreaterThan(voc.perAction.get("talk")!);
@@ -69,10 +91,15 @@ describe("estimateVOC — relevance branches", () => {
 
   it("rates a distinct text action as relevant to duplicate_reply / no_infinite_loop", () => {
     const contract = contractWith([crit("c", "duplicate_reply")]);
-    const voc = estimateVOC(contract, [evalFor("c", 0)], [
-      { name: "saySomethingNew", kind: "text" },
-      { name: "doWork", kind: "coordination" },
-    ], DEFAULT_THRESHOLDS);
+    const voc = estimateVOC(
+      contract,
+      [evalFor("c", 0)],
+      [
+        { name: "saySomethingNew", kind: "text" },
+        { name: "doWork", kind: "coordination" },
+      ],
+      DEFAULT_THRESHOLDS,
+    );
     // text rel=0.3 (success 1, cost 0.5); coordination rel=0.2 (success 0.85, cost 1).
     // text should rate higher here because rel×pSucc dominates.
     expect(voc.perAction.get("saySomethingNew")).toBeGreaterThan(voc.perAction.get("doWork")!);
@@ -81,7 +108,12 @@ describe("estimateVOC — relevance branches", () => {
   it("coalesces a missing criterion evaluation to q=0 (nullish ?? 0)", () => {
     const contract = contractWith([crit("c", "coordination_progress")]);
     // No evaluation provided for criterion "c" → evalById has no entry → q ?? 0 = 0.
-    const voc = estimateVOC(contract, [], [{ name: "act", kind: "coordination" }], DEFAULT_THRESHOLDS);
+    const voc = estimateVOC(
+      contract,
+      [],
+      [{ name: "act", kind: "coordination" }],
+      DEFAULT_THRESHOLDS,
+    );
     // With q=0 the deltaC is positive; star must be finite and the action recorded.
     expect(voc.perAction.has("act")).toBe(true);
     expect(Number.isFinite(voc.star)).toBe(true);
@@ -114,7 +146,14 @@ describe("VerifierRegistry — defensive branches", () => {
     const eval_ = DUPLICATE_REPLY_VERIFIER.evaluate(
       crit("c", "duplicate_reply"),
       makeState({
-        trace: { conversationTurns: 2, plainTextTurns: 2, toolCallTurns: 0, recentAssistantTexts: ["", ""], committedOperations: 0, rejectedOperations: 0 },
+        trace: {
+          conversationTurns: 2,
+          plainTextTurns: 2,
+          toolCallTurns: 0,
+          recentAssistantTexts: ["", ""],
+          committedOperations: 0,
+          rejectedOperations: 0,
+        },
         pendingReply: { text: "a real distinct reply", hasToolCalls: false },
       }),
     );
@@ -126,7 +165,14 @@ describe("VerifierRegistry — defensive branches", () => {
     const eval_ = DUPLICATE_REPLY_VERIFIER.evaluate(
       crit("c", "duplicate_reply"),
       makeState({
-        trace: { conversationTurns: 2, plainTextTurns: 2, toolCallTurns: 0, recentAssistantTexts: ["Hello I am the agent", "Hello I am the agent"], committedOperations: 0, rejectedOperations: 0 },
+        trace: {
+          conversationTurns: 2,
+          plainTextTurns: 2,
+          toolCallTurns: 0,
+          recentAssistantTexts: ["Hello I am the agent", "Hello I am the agent"],
+          committedOperations: 0,
+          rejectedOperations: 0,
+        },
         pendingReply: { text: "Hello I am the agent", hasToolCalls: false },
       }),
     );
@@ -138,8 +184,18 @@ describe("VerifierRegistry — defensive branches", () => {
     const eval_ = DUPLICATE_REPLY_VERIFIER.evaluate(
       crit("c", "duplicate_reply"),
       makeState({
-        trace: { conversationTurns: 2, plainTextTurns: 2, toolCallTurns: 0, recentAssistantTexts: ["I will write a report now", "Let me fetch the data first"], committedOperations: 0, rejectedOperations: 0 },
-        pendingReply: { text: "Now I will compile the findings into a summary document", hasToolCalls: false },
+        trace: {
+          conversationTurns: 2,
+          plainTextTurns: 2,
+          toolCallTurns: 0,
+          recentAssistantTexts: ["I will write a report now", "Let me fetch the data first"],
+          committedOperations: 0,
+          rejectedOperations: 0,
+        },
+        pendingReply: {
+          text: "Now I will compile the findings into a summary document",
+          hasToolCalls: false,
+        },
       }),
     );
     expect(eval_.passed).toBe(true);
@@ -150,7 +206,14 @@ describe("VerifierRegistry — defensive branches", () => {
     const eval_ = DUPLICATE_REPLY_VERIFIER.evaluate(
       crit("c", "duplicate_reply"),
       makeState({
-        trace: { conversationTurns: 1, plainTextTurns: 1, toolCallTurns: 0, recentAssistantTexts: ["prior reply"], committedOperations: 0, rejectedOperations: 0 },
+        trace: {
+          conversationTurns: 1,
+          plainTextTurns: 1,
+          toolCallTurns: 0,
+          recentAssistantTexts: ["prior reply"],
+          committedOperations: 0,
+          rejectedOperations: 0,
+        },
         pendingReply: { text: "   ", hasToolCalls: false },
       }),
     );

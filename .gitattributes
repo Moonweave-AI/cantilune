@@ -1,5 +1,12 @@
 # Formal evidence is hashed after UTF-8/LF canonicalization, and these
 # attributes keep ordinary checkouts aligned with that canonical form.
+#
+# LF is the canonical form for every text file, not just the hashed evidence.
+# Without this, a Windows checkout materializes CRLF while Prettier writes LF,
+# so `pnpm format` reports the entire repository as modified and
+# `pnpm format:check` can never pass on Windows.
+* text=auto eol=lf
+
 /.gitattributes text eol=lf
 /.github/workflows/formal.yml text eol=lf
 /formal/*.lean text eol=lf

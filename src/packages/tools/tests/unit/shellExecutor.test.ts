@@ -41,7 +41,7 @@ describe("createShellExecutor", () => {
     expect(result.output).toBe("command output");
     expect(runCommand).toHaveBeenCalledWith(
       { command: "node -v", cwd: "/tmp", env: { FOO: "bar" }, timeoutMs: 1000 },
-      { enabled: true, workingDirectory: "/work" },
+      expect.objectContaining({ enabled: true, workingDirectory: "/work", sandbox: "required" }),
       "/work",
     );
   });

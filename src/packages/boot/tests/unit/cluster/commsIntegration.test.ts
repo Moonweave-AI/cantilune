@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { actorId } from "@cantilune/core";
 import {
   createLoopbackMeshRouter,
+  createNetMeshRouter,
   allocateLoopbackTransport,
 } from "../../../src/cluster/commsIntegration.js";
 import { createSharedResources, commsStorePath } from "../../../src/cluster/sharedResources.js";
@@ -14,13 +15,11 @@ describe("commsIntegration", () => {
       expect(router.size).toBe(0);
     });
 
-    it("allocates transport via factory (not placeholder)", () => {
+    it("allocates a mesh-hub endpoint (not a discarded pair half)", () => {
       const router = createLoopbackMeshRouter();
       const transport = router.allocate(actorId("agent-a"));
       expect(transport).toBeDefined();
-      // Factory-created transports have "loopback" in their ID (from LoopbackTransport)
-      expect(transport.transportId).toBeDefined();
-      expect(transport.transportId).not.toBe("mesh-agent-a");
+      expect(transport.transportId).toBe("mesh-hub");
     });
 
     it("creates distinct transports for multiple agents", () => {
@@ -45,6 +44,18 @@ describe("commsIntegration", () => {
       const t1 = allocateLoopbackTransport(actorId("agent-x"), router);
       const t2 = allocateLoopbackTransport(actorId("agent-x"), router);
       expect(t1).toBe(t2);
+    });
+  });
+
+  describe("createNetMeshRouter", () => {
+    it("allocates a hub endpoint with a NetTransport physical backend", async () => {
+      const router = createNetMeshRouter();
+      const transport = router.allocate(actorId("agent-net"));
+      expect(transport.transportId).toBe("mesh-hub");
+      expect(router.getPhysicalTransport(actorId("agent-net"))?.transportId).toBe("net");
+      router.deallocate(actorId("agent-net"));
+      expect(router.size).toBe(0);
+      await new Promise((resolve) => setTimeout(resolve, 20));
     });
   });
 

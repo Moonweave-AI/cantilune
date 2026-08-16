@@ -2,16 +2,11 @@ import React from "react";
 import { Text } from "ink";
 import { ViewFrame } from "./ViewFrame.js";
 import { NO_RUNTIME_MESSAGE } from "../runtimeSync.js";
-import type { AppStore, ChangeLogEntry, RuntimeState } from "../store.js";
+import type { AppStore, RuntimeState } from "../store.js";
 import { useAppStore } from "../storeContext.js";
-import type { GraphEdge, GraphNode } from "../render/asciiGraph.js";
-import { exportDot } from "../render/dotExporter.js";
-import { exportJson } from "../render/jsonExporter.js";
-import { str } from "./viewStr.js";
-import { exportMermaid } from "../render/mermaidExporter.js";
-import { exportPlantUml } from "../render/plantumlExporter.js";
-import { exportPnml, type PetriNet } from "../render/pnmlExporter.js";
 import { renderTable } from "../render/asciiTable.js";
+import { str } from "./viewStr.js";
+import { buildExportBody } from "../wiring/exportControl.js";
 
 export interface ViewProps {
   readonly store: AppStore;
@@ -26,129 +21,6 @@ const EXPORT_TARGETS: Record<string, readonly string[]> = {
   "four-view": ["json"],
 };
 
-function graphDataFromRuntime(
-  runtime: RuntimeState,
-): { nodes: GraphNode[]; edges: GraphEdge[] } | null {
-  if (runtime.changeLog.length === 0) {
-    return runtime.snapshot === null ? null : { nodes: [], edges: [] };
-  }
-
-  const nodes: GraphNode[] = runtime.changeLog.map((entry) => ({
-    id: entry.changeId,
-    label: `${entry.operationTypeId}(${entry.initiator})`,
-  }));
-
-  const edges: GraphEdge[] = runtime.changeLog.slice(1).map((entry, index) => {
-    const prior = runtime.changeLog[index]!;
-    return { from: prior.changeId, to: entry.changeId, label: "chain" };
-  });
-
-  return { nodes, edges };
-}
-
-function petriNetFromRuntime(runtime: RuntimeState): PetriNet | null {
-  if (runtime.snapshot === null) {
-    return null;
-  }
-
-  const places = [
-    ...runtime.snapshot.artifacts.map((artifact, index) => ({
-      id: `p${index}`,
-      name: `artifact:${artifact.kind}`,
-      tokens: 1,
-    })),
-    ...runtime.snapshot.capabilities.map((capability, index) => ({
-      id: `c${index}`,
-      name: capability.kind,
-      tokens: 1,
-    })),
-  ];
-
-  const transitions = [...new Set(runtime.changeLog.map((entry) => entry.operationTypeId))].map(
-    (op, index) => ({
-      id: `t${index}`,
-      name: op,
-    }),
-  );
-
-  const arcs = transitions.flatMap((transition, index) => {
-    const place = places[index % Math.max(places.length, 1)];
-    if (place === undefined) {
-      return [];
-    }
-    return [{ id: `a${index}`, source: place.id, target: transition.id }];
-  });
-
-  return { places, transitions, arcs };
-}
-
-function exportGraphFormat(format: string, nodes: GraphNode[], edges: GraphEdge[]): string {
-  switch (format) {
-    case "dot":
-      return exportDot(nodes, edges);
-    case "mermaid":
-      return exportMermaid(nodes, edges);
-    case "plantuml":
-      return exportPlantUml(nodes, edges);
-    case "json":
-    default:
-      return exportJson({ nodes, edges });
-  }
-}
-
-function exportPetriFormat(format: string, net: PetriNet): string {
-  switch (format) {
-    case "pnml":
-      return exportPnml(net);
-    case "dot": {
-      const nodes: GraphNode[] = [
-        ...net.places.map((place) => ({ id: place.id, label: place.name })),
-        ...net.transitions.map((transition) => ({ id: transition.id, label: transition.name })),
-      ];
-      const edges: GraphEdge[] = net.arcs.map((arc) => ({
-        from: arc.source,
-        to: arc.target,
-      }));
-      return exportDot(nodes, edges);
-    }
-    case "json":
-    default:
-      return exportJson(net);
-  }
-}
-
-function traceExportPayload(changeLog: readonly ChangeLogEntry[]): unknown {
-  return { trace: changeLog };
-}
-
-function snapshotExportPayload(runtime: RuntimeState, ref: string | undefined): unknown {
-  if (runtime.snapshot === null) {
-    return { ref, snapshot: null };
-  }
-  if (ref !== undefined && ref !== runtime.snapshot.snapshotRef) {
-    return { ref, snapshot: null, note: "Only current head snapshot is available in CLI sync" };
-  }
-  return { ref: runtime.snapshot.snapshotRef, snapshot: runtime.snapshot };
-}
-
-function bundleExportPayload(runtime: RuntimeState): unknown {
-  return {
-    snapshotRef: runtime.snapshot?.snapshotRef ?? null,
-    epochId: runtime.epoch?.epochId ?? runtime.snapshot?.epochId ?? null,
-    changeCount: runtime.changeLog.length,
-    changes: runtime.changeLog,
-  };
-}
-
-function fourViewExportPayload(runtime: RuntimeState): unknown {
-  return {
-    dependency: runtime.snapshot?.links ?? [],
-    resource: runtime.snapshot?.capabilities ?? [],
-    communication: runtime.snapshot?.sessions ?? [],
-    structure: runtime.snapshot?.artifacts ?? [],
-  };
-}
-
 export function renderExportViewOutput(
   viewArgs: Record<string, unknown>,
   runtime: RuntimeState,
@@ -156,6 +28,21 @@ export function renderExportViewOutput(
   const target = str(viewArgs.target, "graph");
   const formats = EXPORT_TARGETS[target] ?? ["json"];
   const format = str(viewArgs.format, formats[0] ?? "json");
+  const writtenPath = typeof viewArgs.writtenPath === "string" ? viewArgs.writtenPath : undefined;
+  const error = typeof viewArgs.error === "string" ? viewArgs.error : undefined;
+  const prefetchedBody = typeof viewArgs.body === "string" ? viewArgs.body : undefined;
+  const computed =
+    prefetchedBody === undefined && error === undefined
+      ? buildExportBody(
+          target,
+          format,
+          runtime,
+          undefined,
+          typeof viewArgs.ref === "string" ? viewArgs.ref : undefined,
+        )
+      : undefined;
+  const body = prefetchedBody ?? (computed?.ok === true ? computed.body : undefined);
+  const computeError = computed !== undefined && !computed.ok ? computed.message : undefined;
 
   const formatList = renderTable(
     [
@@ -165,53 +52,23 @@ export function renderExportViewOutput(
     Object.entries(EXPORT_TARGETS).map(([key, values]) => [key, values.join(", ")]),
   );
 
-  if (runtime.snapshot === null && runtime.changeLog.length === 0) {
+  if (error !== undefined || computeError !== undefined) {
+    return [formatList, "", `Export failed: ${error ?? computeError}`].join("\n");
+  }
+
+  if (runtime.snapshot === null && runtime.changeLog.length === 0 && body === undefined) {
     return [formatList, "", NO_RUNTIME_MESSAGE].join("\n");
   }
 
-  let output = "";
-  switch (target) {
-    case "graph": {
-      const data = graphDataFromRuntime(runtime);
-      if (data === null) {
-        output = NO_RUNTIME_MESSAGE;
-      } else if (data.nodes.length === 0) {
-        output = exportJson({
-          nodes: [],
-          edges: [],
-          note: "No coordination changes recorded yet.",
-        });
-      } else {
-        output = exportGraphFormat(format, data.nodes, data.edges);
-      }
-      break;
-    }
-    case "petri": {
-      const net = petriNetFromRuntime(runtime);
-      if (net === null) {
-        output = NO_RUNTIME_MESSAGE;
-      } else {
-        output = exportPetriFormat(format, net);
-      }
-      break;
-    }
-    case "trace":
-      output = exportJson(traceExportPayload(runtime.changeLog));
-      break;
-    case "snapshot":
-      output = exportJson(snapshotExportPayload(runtime, viewArgs.ref as string | undefined));
-      break;
-    case "bundle":
-      output = exportJson(bundleExportPayload(runtime));
-      break;
-    case "four-view":
-      output = exportJson(fourViewExportPayload(runtime));
-      break;
-    default:
-      output = exportJson({ target, runtime: runtime.snapshot, changeLog: runtime.changeLog });
-  }
-
-  return [formatList, "", `Export: ${target} (${format})`, "─".repeat(40), output].join("\n");
+  const lines = [
+    formatList,
+    "",
+    `Export: ${target} (${format})`,
+    writtenPath !== undefined ? `Wrote ${writtenPath}` : "Not written — no storagePath",
+    "─".repeat(40),
+    body ?? "",
+  ];
+  return lines.join("\n");
 }
 
 export function ExportView({ store }: ViewProps): React.ReactElement {

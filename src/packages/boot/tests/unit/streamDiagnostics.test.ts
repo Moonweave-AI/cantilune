@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { bootMemoryOS } from "../../src/index.js";
-import type {
-  LlmAdapter,
-  LlmChatResponse,
-  LlmStreamChunk,
-  AgentEvent,
-} from "../../src/types.js";
+import type { LlmAdapter, LlmChatResponse, LlmStreamChunk, AgentEvent } from "../../src/types.js";
 import { mockLlmConfig } from "../support/mockLlmConfig.js";
 
 /**
@@ -105,9 +100,7 @@ describe("consumeStream diagnostics", () => {
   it("still throws when the stream ends without a terminal chunk", async () => {
     // A stream that never yields `done` is a genuine protocol failure and
     // must remain fatal — the tolerance only applies to malformed frames.
-    const adapter = streamingAdapter([
-      { kind: "text_delta", text: "partial" },
-    ]);
+    const adapter = streamingAdapter([{ kind: "text_delta", text: "partial" }]);
 
     const os = bootMemoryOS(adapter, { llm: mockLlmConfig, principalId: "test-agent" });
 
@@ -119,10 +112,7 @@ describe("consumeStream diagnostics", () => {
   });
 
   it("does not emit diagnostics for a fully well-formed stream", async () => {
-    const adapter = streamingAdapter([
-      { kind: "text_delta", text: "Hello" },
-      doneChunk("clean"),
-    ]);
+    const adapter = streamingAdapter([{ kind: "text_delta", text: "Hello" }, doneChunk("clean")]);
 
     const os = bootMemoryOS(adapter, { llm: mockLlmConfig, principalId: "test-agent" });
 

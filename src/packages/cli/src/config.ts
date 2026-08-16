@@ -34,6 +34,22 @@ export interface CliConfig {
   readonly principalId?: string;
   /** Explicitly reviewed legacy epoch aliases for the built-in static schema. */
   readonly compatibleEpochIds?: readonly string[];
+  /** Dedicated goal-contract compiler provider (ADR-0013). */
+  readonly contractProvider?: string;
+  readonly contractModel?: string;
+  /** Dedicated LLM judge provider (ADR-0020). */
+  readonly judgeProvider?: string;
+  readonly judgeModel?: string;
+  /** Additional judge models for quorum (same provider as judgeProvider). */
+  readonly judgeQuorumModels?: readonly string[];
+  /** Mesh host directory path for S4 multi-host swarm. */
+  readonly swarmDirectoryPath?: string;
+  readonly swarmListen?: string;
+  readonly swarmRole?: "supervisor" | "worker";
+  /** MCP server specs. Live `/mcp connect|disconnect` schedules epoch-bound attach. */
+  readonly mcpServers?: readonly string[];
+  /** Web search provider for tools. */
+  readonly searchProvider?: "tavily" | "serper" | "brave" | "none";
 }
 
 export const DEFAULT_CONFIG: CliConfig = {
@@ -89,6 +105,25 @@ export function parseConfig(raw: unknown): CliConfig {
   const theme = raw["theme"];
   const maxTurns = raw["maxTurns"];
   const compatibleEpochIds = readStringArray(raw, "compatibleEpochIds");
+  const contractProvider = readString(raw, "contractProvider");
+  const contractModel = readString(raw, "contractModel");
+  const judgeProvider = readString(raw, "judgeProvider");
+  const judgeModel = readString(raw, "judgeModel");
+  const judgeQuorumModels = readStringArray(raw, "judgeQuorumModels");
+  const swarmDirectoryPath = readString(raw, "swarmDirectoryPath");
+  const swarmListen = readString(raw, "swarmListen");
+  const swarmRoleRaw = readString(raw, "swarmRole");
+  const swarmRole =
+    swarmRoleRaw === "supervisor" || swarmRoleRaw === "worker" ? swarmRoleRaw : undefined;
+  const mcpServers = readStringArray(raw, "mcpServers");
+  const searchProviderRaw = readString(raw, "searchProvider");
+  const searchProvider =
+    searchProviderRaw === "tavily" ||
+    searchProviderRaw === "serper" ||
+    searchProviderRaw === "brave" ||
+    searchProviderRaw === "none"
+      ? searchProviderRaw
+      : undefined;
 
   return {
     provider: readString(raw, "provider") ?? DEFAULT_CONFIG.provider,
@@ -101,6 +136,16 @@ export function parseConfig(raw: unknown): CliConfig {
     ...(typeof maxTurns === "number" && Number.isFinite(maxTurns) ? { maxTurns } : {}),
     ...(principalId !== undefined ? { principalId } : {}),
     ...(compatibleEpochIds !== undefined ? { compatibleEpochIds } : {}),
+    ...(contractProvider !== undefined ? { contractProvider } : {}),
+    ...(contractModel !== undefined ? { contractModel } : {}),
+    ...(judgeProvider !== undefined ? { judgeProvider } : {}),
+    ...(judgeModel !== undefined ? { judgeModel } : {}),
+    ...(judgeQuorumModels !== undefined ? { judgeQuorumModels } : {}),
+    ...(swarmDirectoryPath !== undefined ? { swarmDirectoryPath } : {}),
+    ...(swarmListen !== undefined ? { swarmListen } : {}),
+    ...(swarmRole !== undefined ? { swarmRole } : {}),
+    ...(mcpServers !== undefined ? { mcpServers } : {}),
+    ...(searchProvider !== undefined ? { searchProvider } : {}),
   };
 }
 

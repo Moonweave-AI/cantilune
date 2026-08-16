@@ -8,3 +8,8 @@ export {
   type CantiluneSwarm,
   type SwarmStatus,
 } from "./bootSwarm.js";
+export {
+  bootSwarmWorker,
+  type BootSwarmWorkerConfig,
+  type SwarmWorkerHandle,
+} from "./bootSwarmWorker.js";

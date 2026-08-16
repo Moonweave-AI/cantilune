@@ -12,14 +12,15 @@
 | L4  | `integration/`            | runtime T0→delegate → FourViewBundle                 |
 | L5  | `contract/negative/`      | E1–E7 负向 · invalid_input                           |
 | L6  | —                         | （与 L7 合并：系统级四视图闭包）                     |
-| L7  | `system/complex/`         | stress 80 commits · ultimate 265 commits             |
+| L7  | `system/`                 | stress 80 · ultimate 265 · file-durable observe-cut  |
 
 ## L7 复杂场景
 
 | 文件                    | 规模                         | 验证点                                    |
 | ----------------------- | ---------------------------- | ----------------------------------------- |
-| `stress-mega-four-view` | 50 farm + 15 loop + 50 obs   | 80 commits · E1–E7 · 四 View byEvent 齐   |
-| `ultimate-closure`      | runtime ultimate 265 commits | 全链 fold · cross-view · diagnostic stats |
+| `stress-mega-four-view`     | 50 farm + 15 loop + 50 obs   | 80 commits · E1–E7 · 四 View byEvent 齐   |
+| `ultimate-closure`          | runtime ultimate 265 commits | 全链 fold · cross-view · diagnostic stats |
+| `file-durable-observe-cut`  | file persistence + reopen    | AccessContext · observe-cut · nest/fork   |
 
 ## Harness
 

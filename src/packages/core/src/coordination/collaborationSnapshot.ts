@@ -4,17 +4,24 @@ import type {
   CapabilityId,
   EpochId,
   LinkId,
+  NamespaceId,
   SessionId,
+  TranscriptAccessRequestId,
 } from "../primitives/ids.js";
+import { DEFAULT_NAMESPACE_ID } from "../primitives/ids.js";
 import type { SnapshotRef } from "../primitives/refs.js";
 import type { CollaborationLink, LinkEndpoint } from "../nodes/collaborationLink.js";
+import type { CollaborationNamespace } from "../nodes/collaborationNamespace.js";
+import { DEFAULT_NAMESPACE } from "../nodes/collaborationNamespace.js";
 import type { CommunicationSession } from "../nodes/communicationSession.js";
 import type { EntityTombstone } from "../nodes/entityTombstone.js";
 import type { ObservationEntry } from "../nodes/observationEntry.js";
 import type { ActorRef, Participant } from "../nodes/participant.js";
+import type { ParticipantTranscript } from "../nodes/participantTranscript.js";
 import { emptyPolicyContext as defaultPolicyContext } from "../nodes/policyContext.js";
 import type { ApprovalState, PolicyContext, RetryState } from "../nodes/policyContext.js";
 import type { CapabilityScope, ScopedCapability } from "../nodes/scopedCapability.js";
+import type { TranscriptAccessRequest } from "../nodes/transcriptAccessRequest.js";
 import type { WorkArtifact } from "../nodes/workArtifact.js";
 import type { HeartbeatEntry, HeartbeatLog } from "./heartbeat.js";
 import { clonePlainObject, cloneReadonlyArray, cloneReadonlyMap } from "../primitives/immutable.js";
@@ -40,6 +47,12 @@ export interface CollaborationSnapshot {
   readonly auditTail: readonly ObservationEntry[];
   readonly retiredEntities: readonly EntityTombstone[];
   readonly heartbeatLog: HeartbeatLog;
+  readonly namespaces: ReadonlyMap<NamespaceId, CollaborationNamespace>;
+  readonly transcripts: ReadonlyMap<ActorId, ParticipantTranscript>;
+  readonly transcriptAccessRequests: ReadonlyMap<
+    TranscriptAccessRequestId,
+    TranscriptAccessRequest
+  >;
 }
 
 export interface CollaborationSnapshotInit {
@@ -54,6 +67,12 @@ export interface CollaborationSnapshotInit {
   readonly auditTail?: readonly ObservationEntry[];
   readonly retiredEntities?: readonly EntityTombstone[];
   readonly heartbeatLog?: HeartbeatLog;
+  readonly namespaces?: ReadonlyMap<NamespaceId, CollaborationNamespace>;
+  readonly transcripts?: ReadonlyMap<ActorId, ParticipantTranscript>;
+  readonly transcriptAccessRequests?: ReadonlyMap<
+    TranscriptAccessRequestId,
+    TranscriptAccessRequest
+  >;
 }
 
 function cloneActorRef(ref: ActorRef): ActorRef {
@@ -61,7 +80,12 @@ function cloneActorRef(ref: ActorRef): ActorRef {
 }
 
 function cloneParticipant(value: Participant): Participant {
-  const base = clonePlainObject({ actorId: value.actorId, kind: value.kind, status: value.status });
+  const base = clonePlainObject({
+    actorId: value.actorId,
+    kind: value.kind,
+    status: value.status,
+    namespaceId: value.namespaceId ?? DEFAULT_NAMESPACE_ID,
+  });
   if (value.manifestRef !== undefined) {
     return { ...base, manifestRef: value.manifestRef };
   }
@@ -107,7 +131,45 @@ function cloneCapabilityScope(value: CapabilityScope): CapabilityScope {
   if (value.kind === "artifact") {
     return clonePlainObject({ kind: value.kind, artifactId: value.artifactId });
   }
+  if (value.kind === "transcript") {
+    return clonePlainObject({
+      kind: value.kind,
+      actorId: value.actorId,
+      namespaceId: value.namespaceId,
+    });
+  }
   return clonePlainObject({ kind: value.kind, sessionId: value.sessionId });
+}
+
+function cloneNamespace(value: CollaborationNamespace): CollaborationNamespace {
+  return clonePlainObject({
+    namespaceId: value.namespaceId,
+    displayName: value.displayName,
+    adminPrincipals: cloneReadonlyArray(value.adminPrincipals),
+  });
+}
+
+function cloneTranscript(value: ParticipantTranscript): ParticipantTranscript {
+  return clonePlainObject({
+    actorId: value.actorId,
+    namespaceId: value.namespaceId,
+    revision: value.revision,
+    messages: cloneReadonlyArray(value.messages, (message) => clonePlainObject(message)),
+  });
+}
+
+function cloneTranscriptAccessRequest(value: TranscriptAccessRequest): TranscriptAccessRequest {
+  const base = clonePlainObject({
+    requestId: value.requestId,
+    requester: cloneActorRef(value.requester),
+    subjectActorId: value.subjectActorId,
+    subjectNamespaceId: value.subjectNamespaceId,
+    status: value.status,
+  });
+  if (value.decidedBy !== undefined) {
+    return { ...base, decidedBy: cloneActorRef(value.decidedBy) };
+  }
+  return base;
 }
 
 function cloneScopedCapability(value: ScopedCapability): ScopedCapability {
@@ -174,6 +236,16 @@ function cloneHeartbeatEntry(value: HeartbeatEntry): HeartbeatEntry {
   });
 }
 
+function withDefaultNamespace(
+  namespaces: ReadonlyMap<NamespaceId, CollaborationNamespace> | undefined,
+): Map<NamespaceId, CollaborationNamespace> {
+  const next = new Map(namespaces ?? []);
+  if (!next.has(DEFAULT_NAMESPACE.namespaceId)) {
+    next.set(DEFAULT_NAMESPACE.namespaceId, DEFAULT_NAMESPACE);
+  }
+  return next;
+}
+
 function freezeSnapshot(init: CollaborationSnapshotInit): CollaborationSnapshot {
   return clonePlainObject({
     snapshotRef: init.snapshotRef,
@@ -187,6 +259,12 @@ function freezeSnapshot(init: CollaborationSnapshotInit): CollaborationSnapshot 
     auditTail: cloneReadonlyArray(init.auditTail ?? [], cloneObservationEntry),
     retiredEntities: cloneReadonlyArray(init.retiredEntities ?? [], cloneEntityTombstone),
     heartbeatLog: cloneReadonlyArray(init.heartbeatLog ?? [], cloneHeartbeatEntry),
+    namespaces: cloneReadonlyMap(withDefaultNamespace(init.namespaces), cloneNamespace),
+    transcripts: cloneReadonlyMap(init.transcripts ?? new Map(), cloneTranscript),
+    transcriptAccessRequests: cloneReadonlyMap(
+      init.transcriptAccessRequests ?? new Map(),
+      cloneTranscriptAccessRequest,
+    ),
   });
 }
 
@@ -289,4 +367,31 @@ export function appendHeartbeat(
     ...snapshot,
     heartbeatLog: [...snapshot.heartbeatLog, entry],
   });
+}
+
+export function withNamespace(
+  snapshot: CollaborationSnapshot,
+  namespace: CollaborationNamespace,
+): CollaborationSnapshot {
+  const namespaces = new Map(snapshot.namespaces);
+  namespaces.set(namespace.namespaceId, namespace);
+  return freezeSnapshot({ ...snapshot, namespaces });
+}
+
+export function withTranscript(
+  snapshot: CollaborationSnapshot,
+  transcript: ParticipantTranscript,
+): CollaborationSnapshot {
+  const transcripts = new Map(snapshot.transcripts);
+  transcripts.set(transcript.actorId, transcript);
+  return freezeSnapshot({ ...snapshot, transcripts });
+}
+
+export function withTranscriptAccessRequest(
+  snapshot: CollaborationSnapshot,
+  request: TranscriptAccessRequest,
+): CollaborationSnapshot {
+  const transcriptAccessRequests = new Map(snapshot.transcriptAccessRequests);
+  transcriptAccessRequests.set(request.requestId, request);
+  return freezeSnapshot({ ...snapshot, transcriptAccessRequests });
 }

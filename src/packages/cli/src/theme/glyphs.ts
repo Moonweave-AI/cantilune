@@ -47,6 +47,15 @@ export interface Glyphs {
   /** Combined up/down hint, since the two almost always appear as a pair. */
   readonly upDown: string;
 
+  /** Marker in front of a top-level markdown heading. */
+  readonly headingMarker: string;
+  /** Bullet for an unordered markdown list item. */
+  readonly bullet: string;
+  /** Left bar drawn beside a markdown blockquote. */
+  readonly quoteBar: string;
+  /** Caption marker on a fenced code block. */
+  readonly codeFence: string;
+
   readonly spinner: readonly string[];
 }
 
@@ -72,6 +81,10 @@ const UNICODE: Glyphs = {
   arrowUp: "↑",
   arrowDown: "↓",
   upDown: "↑↓",
+  headingMarker: "▌",
+  bullet: "•",
+  quoteBar: "▌",
+  codeFence: "❯",
   spinner: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
 };
 
@@ -97,6 +110,10 @@ const ASCII: Glyphs = {
   arrowUp: "Up",
   arrowDown: "Dn",
   upDown: "Up/Dn",
+  headingMarker: "#",
+  bullet: "-",
+  quoteBar: "|",
+  codeFence: ">",
   spinner: ["|", "/", "-", "\\"],
 };
 

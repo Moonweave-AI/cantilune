@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { schemaDigest, schemaId, schemaRevisionId, schemaRef } from "@cantilune/core";
 import { validateSealedAdmissionPrepare } from "../../src/engine/sealedAdmissionGate.js";
 import { computeEvidenceDigest } from "../../src/canonical/evidenceDigest.js";
-import {
-  defaultTestReviewerTrustStore,
-  createMemoryCryptoVerifier,
-} from "../../src/adapters/memory/index.js";
+import { createMemoryCryptoVerifier } from "../../src/adapters/memory/index.js";
+import { defaultTestReviewerTrustStore } from "../../src/testing/index.js";
 import { buildReviewedEngineeringAdmissionForTest } from "../../src/testing/index.js";
 import type { ReviewedDecision } from "../../src/lifecycle/sealedDecision.js";
 

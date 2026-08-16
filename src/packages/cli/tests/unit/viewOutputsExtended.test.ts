@@ -98,7 +98,18 @@ describe("view output extended branches", () => {
       changeLog: [],
       epoch: { epochId: "epoch:e1", ordinal: 1, schemaId: "orch-schema-v1" },
     };
-    expect(renderWorldViewOutput("world-diff", {}, sparse)).toContain("snap:sparse");
+    expect(
+      renderWorldViewOutput(
+        "world-diff",
+        {
+          refA: "snap:sparse",
+          refB: "snap:sparse",
+          worldDiffLeft: "snapshot=snap:sparse",
+          worldDiffRight: "snapshot=snap:sparse",
+        },
+        sparse,
+      ),
+    ).toContain("snap:sparse");
     expect(renderWorldViewOutput("world-actors", {}, sparse)).toContain("ID");
   });
 

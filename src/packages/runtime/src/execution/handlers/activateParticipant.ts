@@ -81,12 +81,7 @@ export function activateParticipantHandler(
 
   const after = withParticipant(
     before,
-    participant(
-      participantBinding.actorId,
-      target.kind,
-      "active",
-      manifestRef,
-    ),
+    participant(participantBinding.actorId, target.kind, "active", manifestRef),
   );
 
   return {

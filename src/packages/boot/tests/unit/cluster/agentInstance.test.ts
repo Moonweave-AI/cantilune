@@ -51,8 +51,7 @@ function makeSyscall() {
     useTool: vi.fn().mockResolvedValue({
       ok: true,
       output: "ok",
-      contentRef:
-        "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      contentRef: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     }),
     availableActions: vi.fn().mockResolvedValue([]),
   };
@@ -262,9 +261,14 @@ describe("AgentInstance", () => {
     const systemMsg = capturedMessages[0] as { role: string; content: string };
     expect(systemMsg.role).toBe("system");
     expect(systemMsg.content).toContain("Base prompt here");
-    expect(systemMsg.content).toContain("Experimental Cluster Boundary");
+    expect(systemMsg.content).toContain("Cluster Boundary");
+    // The three committed steps that grow a cluster. `register_participant`
+    // alone launches nothing, so the prompt must name `activate_participant`
+    // too — an agent told only about register cannot start a peer it designed.
+    expect(systemMsg.content).toContain("write_content");
     expect(systemMsg.content).toContain("register_participant");
-    expect(systemMsg.content).toContain("does not itself launch a process");
+    expect(systemMsg.content).toContain("activate_participant");
+    expect(systemMsg.content).toContain("launches nothing");
     expect(systemMsg.content).not.toContain("send_message");
     expect(systemMsg.content).not.toContain("ask_human");
   });
@@ -324,8 +328,7 @@ describe("AgentInstance", () => {
       useTool: vi.fn().mockResolvedValue({
         ok: true,
         output: "ok",
-        contentRef:
-          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        contentRef: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
       }),
       availableActions: vi.fn().mockResolvedValue([]),
     };

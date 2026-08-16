@@ -1354,6 +1354,7 @@ incidence，并证明该精确 incidence 在重索引后仍被保留。这是参
 中央义务已绑定 source commit
 `59a1a6885ef6a2774b2731f487f83228e67d15dc` 与 QA 构建/审计记录。该记录覆盖
 commit-bound 构建续跑、source integrity、placeholder/axiom audit、proved
-manifest 与 strict proved/tree gate。现行技术状态为 `proved / review-pending`；
-独立评审与治理接受仍是外部行为。
+manifest 与 strict proved/tree gate。现行技术状态为 `proved / Owner-accepted`
+（2026-08-16；义务行保持 `proved`；promotion 未走）。这不是 Lean `reviewed`。
+RFC-0002 仍为 FCP open。
 $$

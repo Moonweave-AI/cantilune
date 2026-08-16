@@ -1,0 +1,19 @@
+{
+  "taskId": "T14",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 12,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/town.md",
+    "artifacts/npcs/roster.json",
+    "artifacts/murder.md",
+    "artifacts/clue-graph.md",
+    "artifacts/lie-propagation.md",
+    "artifacts/player-forecast.md"
+  ],
+  "requiredGlobs": ["artifacts/npcs/**"]
+}

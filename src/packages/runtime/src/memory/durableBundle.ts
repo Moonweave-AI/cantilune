@@ -3,7 +3,11 @@ import type { SnapshotWireDto } from "../codec/snapshotCodec.js";
 import type { ChangeWireDto } from "../codec/changeCodec.js";
 import { decodeChangeFromUnknown, encodeChangeWithRecipe } from "../codec/changeCodec.js";
 import { decodeSnapshotFromUnknown, encodeSnapshot } from "../codec/snapshotCodec.js";
-import { parseSchemaBindingWire, serializeSchemaBindingWire, type SchemaBindingWireDto } from "../codec/bindingWire.js";
+import {
+  parseSchemaBindingWire,
+  serializeSchemaBindingWire,
+  type SchemaBindingWireDto,
+} from "../codec/bindingWire.js";
 import type { RuntimeViolation } from "../foundation/errors.js";
 import { runtimeViolation } from "../foundation/errors.js";
 import type { ReplayRecipe } from "../replay/recipe.js";

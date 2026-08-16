@@ -1,7 +1,7 @@
 {
   "name": "@cantilune/runtime",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Cantilune coordination runtime: admission, apply, commit, replay",
   "exports": {
@@ -19,23 +19,34 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "lint": "eslint .",
+    "pretest": "pnpm --filter @cantilune/runtime... build",
     "test": "vitest run",
     "test:types": "vitest run tests/types",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:contract": "vitest run tests/contract",
     "test:system": "vitest run tests/system",
+    "test:postgres-live": "vitest run --config vitest.postgres-live.config.ts",
+    "test:raft-live": "vitest run --config vitest.raft-live.config.ts",
     "test:pack": "node scripts/pack-consumer-smoke.mjs",
+    "pretest:coverage": "pnpm --filter @cantilune/runtime... build",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@cantilune/core": "workspace:*"
+    "@cantilune/core": "workspace:*",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@cantilune/test-fixtures": "workspace:*",
-    "@types/node": "^22.10.0",
+    "@types/node": "^22.13.4",
+    "@types/pg": "^8.21.0",
     "@vitest/coverage-v8": "^3.2.7"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   }
 }

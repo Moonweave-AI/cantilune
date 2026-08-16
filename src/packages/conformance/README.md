@@ -15,7 +15,7 @@ Cantilune 的**产品证据验证、形式化证明绑定、跨 epoch 一致性�
 4. 跨 schema/epoch admission 是否严格单调并与业务 occurrence 精确衔接？
 5. 机器结论是否经可信构建、独立人类复核，且未过期/撤销/被替代？
 
-**不在 TS 中重证 Lean 定理**；只验证产品证据是否满足形式理论已定义的接口。
+验证产品证据是否满足形式理论已定义的接口。
 
 ## 关键概念分离
 
@@ -70,6 +70,6 @@ import { createMemoryConformanceEngine } from "@cantilune/conformance/memory";
 ## 形式理论锚点
 
 证书链 C0–C9 对应 `formal/Cantilune/` 与 `formal/proof-obligations.json`。  
-CENTRAL-01～18 当前为 `proved` / `review-pending`，**不覆盖** TypeScript 产品包。
+CENTRAL-01～18 当前为 `proved` / Owner-accepted（promotion 未走），**不覆盖** TypeScript 产品包。本包是 0.x 生产发布权限（SS-01 已解除）；仍不自动签 Acceptance cert。
 
 详见 [DESIGN-CLOSURE.md](./DESIGN-CLOSURE.md)。

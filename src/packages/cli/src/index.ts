@@ -50,6 +50,8 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
 }
 
 async function main(): Promise<void> {
+  const { loadCwdHostEnv } = await import("./wiring/loadHostEnv.js");
+  loadCwdHostEnv();
   const args = parseCliArgs(process.argv.slice(2));
 
   if (args.mode === "headless") {
@@ -61,28 +63,32 @@ async function main(): Promise<void> {
       ...(args.baseUrl !== undefined ? ["--base-url", args.baseUrl] : []),
     ];
     const code = await headlessRunner(extraArgs);
-    process.exitCode = code;
-    return;
+    // Durable handles (Postgres / etcd) keep the event loop alive after the
+    // run result is written; headless must return the shell the same way `/quit` does.
+    process.exit(code);
   }
 
   if (args.mode === "inspect") {
     const { inspectRunner } = await import("./headless/inspectRunner.js");
     const code = await inspectRunner(args.passthrough.filter((a) => a !== "inspect"));
-    process.exitCode = code;
-    return;
+    process.exit(code);
   }
 
   const { render } = await import("ink");
   const React = await import("react");
   const { App } = await import("./app.js");
 
-  render(
+  const instance = render(
     React.createElement(App, {
       ...(args.provider !== undefined ? { provider: args.provider } : {}),
       ...(args.model !== undefined ? { model: args.model } : {}),
       ...(args.baseUrl !== undefined ? { baseUrl: args.baseUrl } : {}),
     }),
   );
+  await instance.waitUntilExit();
+  // Durable handles (Postgres / etcd) can keep the event loop alive after Ink
+  // unmounts; `/quit` must actually return the terminal.
+  process.exit(0);
 }
 
 try {
@@ -90,7 +96,7 @@ try {
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
+  process.exit(1);
 }
 
 export { createStore } from "./store.js";
@@ -104,3 +110,11 @@ export type {
 } from "./store.js";
 export { createCommandRegistry } from "./commands/registry.js";
 export type { SlashCommand, CommandRegistry, CommandCategory } from "./commands/registry.js";
+export {
+  probeHostCapabilities,
+  assertHostCapabilities,
+  assertRequiredHostCapabilities,
+  formatHostCapabilityReport,
+  hostRequirementsFromEnv,
+  type HostCapabilityReport,
+} from "./wiring/hostCapabilities.js";

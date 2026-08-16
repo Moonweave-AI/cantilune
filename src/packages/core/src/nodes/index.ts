@@ -6,3 +6,6 @@ export * from "./scopedCapability.js";
 export * from "./policyContext.js";
 export * from "./observationEntry.js";
 export * from "./entityTombstone.js";
+export * from "./collaborationNamespace.js";
+export * from "./participantTranscript.js";
+export * from "./transcriptAccessRequest.js";

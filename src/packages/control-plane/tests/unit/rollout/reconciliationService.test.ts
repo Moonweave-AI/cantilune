@@ -9,6 +9,7 @@ import { buildAdmissionHarness } from "../../support/buildAdmissionHarness.js";
 describe("reconciliation service", () => {
   it("creates factory instance", () => {
     expect(createReconciliationService()).toBeInstanceOf(ReconciliationService);
+    expect(createReconciliationService({})).toBeInstanceOf(ReconciliationService);
   });
 
   it("tracks desired bindings and acknowledges runtime instances", () => {

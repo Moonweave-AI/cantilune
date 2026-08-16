@@ -12,6 +12,9 @@ import { registerEvalCommands } from "../../src/commands/evalCommands.js";
 import { registerExportCommands } from "../../src/commands/exportCommands.js";
 import { registerControlCommands } from "../../src/commands/controlCommands.js";
 import { registerSessionCommands } from "../../src/commands/sessionCommands.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createStore } from "../../src/store.js";
 
 function fullRegistry() {
@@ -51,6 +54,8 @@ const sampleArgs: Record<string, Record<string, unknown>> = {
   "/content put": { file: "./task.md" },
   "/content search": { text: "lock" },
   "/schema diff": { epochA: "e0", epochB: "e1" },
+  "/schema admit": { revision: "rev-001" },
+  "/schema commit": { admissionId: "adm-1" },
   "/eval run": { suite: "coord-basic" },
   "/eval report": { runId: "run:1" },
   "/eval compare": { runA: "base", runB: "cand" },
@@ -59,6 +64,7 @@ const sampleArgs: Record<string, Record<string, unknown>> = {
   "/export snapshot": { ref: "snap:t0" },
   "/tools test": { name: "readContent" },
   "/mcp connect": { url: "http://localhost" },
+  "/mcp disconnect": { name: "docs" },
   "/session save": { name: "slot-a" },
   "/session load": { name: "slot-a" },
   "/help command": { command: "/world" },
@@ -72,11 +78,16 @@ describe("slash command handlers", () => {
   });
 
   it("invokes every registered handler against store", async () => {
-    for (const command of registry.getAll()) {
-      const store = createStore();
-      const args = sampleArgs[command.name] ?? {};
-      await command.handler(args, store);
-      expect(store).toBeDefined();
+    const storagePath = mkdtempSync(join(tmpdir(), "cli-session-"));
+    try {
+      for (const command of registry.getAll()) {
+        const store = createStore({ storagePath });
+        const args = sampleArgs[command.name] ?? {};
+        await command.handler(args, store);
+        expect(store).toBeDefined();
+      }
+    } finally {
+      rmSync(storagePath, { recursive: true, force: true });
     }
   });
 

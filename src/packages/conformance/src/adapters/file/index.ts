@@ -1,8 +1,8 @@
 import { createFileEvidenceStore } from "./fileEvidenceStore.js";
 import { createFileDecisionLog } from "./fileDecisionLog.js";
 import { createFileTrustStore } from "./fileTrustStore.js";
-import { createMemoryRevocationStore } from "../memory/memoryRevocationStore.js";
-import { createMemoryVerificationCache } from "../memory/memoryVerificationCache.js";
+import { createFileRevocationStore } from "./fileRevocationStore.js";
+import { createFileVerificationCache } from "./fileVerificationCache.js";
 import { createConformanceEngine } from "../../engine/conformanceEngine.js";
 import type { AuditSink } from "../../ports/auditSink.js";
 import type { DecisionStore } from "../../ports/decisionStore.js";
@@ -26,8 +26,8 @@ export function createFileConformanceEngine(
   const engine = createConformanceEngine({
     evidenceStore,
     trustStore: createFileTrustStore({ dir: options.dir }),
-    revocationStore: createMemoryRevocationStore(),
-    cache: createMemoryVerificationCache(),
+    revocationStore: createFileRevocationStore({ dir: options.dir }),
+    cache: createFileVerificationCache({ dir: options.dir }),
     audit: options.audit,
   });
   return { engine, evidenceStore, decisionLog };
@@ -37,4 +37,6 @@ export { createFileEvidenceStore } from "./fileEvidenceStore.js";
 export { createFileDecisionLog } from "./fileDecisionLog.js";
 export { createFileAuditSink } from "./fileAuditSink.js";
 export { createFileTrustStore } from "./fileTrustStore.js";
+export { createFileRevocationStore } from "./fileRevocationStore.js";
+export { createFileVerificationCache } from "./fileVerificationCache.js";
 export { acquireFileLock, withFileLock } from "./fileLock.js";

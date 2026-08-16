@@ -92,25 +92,35 @@ M3 `Transport` 端口已存在（loopback 是一个实例）。生产在**同一
 
 ## 实现阶段（T0–T4）
 
-| 阶段   | 范围                                                                           | 状态        |
-| ------ | ------------------------------------------------------------------------------ | ----------- |
-| **T0** | `Transport` 端口已存在；`EndpointIdentityVerifier` 端口 + `FileTransport` 骨架 | Not started |
-| **T1** | 文件支撑的 `CommsStore` 原子单元；持久 outbox/inbox journaling                 | Not started |
-| **T2** | `FileTransport` 跨进程交付 + 幂等接收 + L7 崩溃测试                            | Not started |
-| **T3** | `NetTransport` TCP+TLS+mTLS + `EndpointIdentityVerifier` mTLS 路径             | Not started |
-| **T4** | `a2a/0.1` 合规性线束作为 CI 门禁；独立安全评审                                 | Not started |
+| 阶段   | 范围                                                                           | 状态              |
+| ------ | ------------------------------------------------------------------------------ | ----------------- |
+| **T0** | `Transport` 端口已存在；`EndpointIdentityVerifier` 端口 + `FileTransport` 骨架 | 已实现            |
+| **T1** | 文件支撑的 `CommsStore` 原子单元；持久 outbox/inbox journaling                 | 已实现            |
+| **T2** | `FileTransport` 跨进程交付 + 幂等接收 + L7 崩溃测试                            | 已实现            |
+| **T3** | `NetTransport` TCP+TLS+mTLS + `EndpointIdentityVerifier` mTLS 路径             | 已实现            |
+| **T4** | `a2a/0.1` 合规性线束作为 CI 门禁；独立安全评审                                 | 已实现 / 评审待签 |
+
+> 「已实现」指代码落地且自动化测试与覆盖率门禁为绿，**不等于 ADR Acceptance**。T0–T2 此前写作
+> `Not started`，与下方批准段记录的 T1 已实现自相矛盾；此处修正表格，而非弱化批准记录。
 
 ## 测试 / QA 计划
 
-| 层级  | 范围                                                       | 状态           |
-| ----- | ---------------------------------------------------------- | -------------- |
-| L2–L4 | 传输端口、身份校验器、文件 store 的单元/契约测试           | Not started    |
-| L5    | 独立架构 + 安全/威胁模型评审                               | review-pending |
-| L6    | 集成：admission → reconnect → `FileTransport` send/receive | Not started    |
-| L7    | 跨进程 send 中途崩溃；幂等接收；传输 E-Stop                | Not started    |
-| CI    | `a2a/0.1` 合规性线束                                       | Not started    |
+| 层级  | 范围                                                                        | 状态           |
+| ----- | --------------------------------------------------------------------------- | -------------- |
+| L2–L4 | 传输端口、身份校验器、文件 store 的单元/契约测试                            | 已绿           |
+| L5    | 架构 + 安全/威胁模型评审                                                    | Owner-accepted COI 2026-08-16 |
+| L6    | 集成：admission → reconnect → `FileTransport` / `NetTransport` send/receive | 已绿           |
+| L7    | 跨进程 send 中途崩溃；幂等接收；传输 E-Stop（file + net）                   | 已绿           |
+| CI    | `a2a/0.1` 合规性线束（loopback + file + net）                               | 已绿           |
+
+> **跨进程证据更正（2026-08-15）。** L7 一行此前依赖
+> `tests/system/file-transport-cross-process.test.ts`，而该套件以
+> `existsSync(dist/...)` 自我门控、包未构建时**静默跳过**。在 `pnpm test` 下工作区构建与该
+> 套件互相踩踏，两个跨进程用例被报告为 skipped 而非执行 —— 该配置下证据从未真正产生。
+> 现在缺失 `dist/` 会显式失败，且 `@cantilune/comms` 增加了先行构建的
+> `pretest`/`pretest:coverage` 钩子。comms 305 测试全绿，两个跨进程用例真实执行。
 
 ## 批准
 
-**Owner 设计批准**：Joker-of-Gotham —— 2026-08-14（设计已批准；T1 `FileTransport` 已落地并变绿 —— 301 comms 测试，覆盖率门禁 EXIT=0。T3 `NetTransport` + T4 合规性线束尚未启动。）
-**状态**：Proposed。Acceptance 要求：(1) Owner 签名（设计批准见上）；(2) 独立架构评审人签署；(3) 独立安全/威胁模型评审人对 ADR-0008 修订的签署；(4) 合规性线束变绿。Owner 即 DRI（COI）；独立评审须由非 DRI 外部评审人签署。
+**Owner 设计批准**：Joker-of-Gotham —— 2026-08-14（设计已批准；T1 `FileTransport` 已落地。T3 `NetTransport` TCP+TLS 1.3+mTLS + T4 `a2a/0.1` 线束于 2026-08-15 落地 —— 仅为「已实现」。）
+**状态**：Proposed。Acceptance 要求：(1) Owner 签名（设计批准见上）；(2) 独立架构评审人签署；(3) 独立安全/威胁模型评审人对 ADR-0008 修订的签署；(4) 合规性线束变绿（现已实现；线束变绿本身不是安全签署）。Owner 即 DRI（COI）；独立评审须由非 DRI 外部评审人签署。本次更新**不**授权公开 A2A 互操作性主张。

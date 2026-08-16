@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -90,9 +90,18 @@ async function waitForFile(path: string): Promise<void> {
 }
 
 describe("L7 OS process control-plane CAS", () => {
+  // The children import from dist/, which the `pretest`/`pretest:coverage`
+  // hooks guarantee. Building from inside the suite (the previous approach)
+  // spawned a nested `pnpm build` that raced the workspace build already in
+  // flight during `pnpm test`, so this evidence failed for a reason unrelated
+  // to control-plane CAS. Asserting the precondition keeps the failure honest.
   beforeAll(() => {
-    execSync("pnpm build", { cwd: join(packageRoot, "..", "core"), stdio: "ignore" });
-    execSync("pnpm build", { cwd: packageRoot, stdio: "ignore" });
+    if (!existsSync(fileLockModule)) {
+      throw new Error(
+        `L7 cross-process CAS evidence requires a built package: ${fileLockModule} is missing. ` +
+          `Run \`pnpm --filter @cantilune/control-plane... build\` first.`,
+      );
+    }
   });
 
   it("allows exactly one child process to win a parallel binding CAS", async () => {

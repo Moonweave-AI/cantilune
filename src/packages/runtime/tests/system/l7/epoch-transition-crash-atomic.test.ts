@@ -34,8 +34,10 @@ import {
   schemaContentDigest,
   templateAwarePolicyEvaluator,
 } from "../../../src/index.js";
-import { createFileRuntimePersistence, readFileRuntimeActiveBinding } from "../../../src/memory/fileDurablePersistence.js";
-import { MemoryResourceLockTable } from "../../../src/memory/index.js";
+import {
+  createFileRuntimePersistence,
+  readFileRuntimeActiveBinding,
+} from "../../../src/memory/fileDurablePersistence.js";
 import { createDeterministicIdGenerator } from "../../support/deterministicIds.js";
 import { createFixedClock } from "../../support/fixedClock.js";
 import { buildConfigT0 } from "@cantilune/test-fixtures";
@@ -43,7 +45,10 @@ import { buildConfigT0 } from "@cantilune/test-fixtures";
 const here = fileURLToPath(import.meta.url);
 const childScript = resolve(here, "../../../support/epochTransitionChild.mjs");
 
-function initialBindingFor(schema: ReturnType<typeof createDefaultSchema>, runtimeHead: string): SchemaEpochBinding {
+function initialBindingFor(
+  schema: ReturnType<typeof createDefaultSchema>,
+  runtimeHead: string,
+): SchemaEpochBinding {
   return {
     activationDomainId: activationDomainId("default"),
     bindingGeneration: bindingGeneration(1),
@@ -71,15 +76,16 @@ function initialBindingFor(schema: ReturnType<typeof createDefaultSchema>, runti
  * hand the directory to the child process. The child commits an epoch
  * transition to epoch 43 (advancing head + binding atomically) and exits.
  */
-function seedWorld(dir: string): { readonly t0: ReturnType<typeof buildConfigT0>; readonly schema: ReturnType<typeof createDefaultSchema> } {
+function seedWorld(dir: string): {
+  readonly t0: ReturnType<typeof buildConfigT0>;
+  readonly schema: ReturnType<typeof createDefaultSchema>;
+} {
   const t0 = buildConfigT0();
   const schema = createDefaultSchema();
-  const binding = initialBindingFor(schema, t0.snapshotRef);
-  // createFileRuntimePersistence writes the T0 bundle. We then need to also
-  // publish the initial binding so the child's prepareEpochTransition sees a
-  // consistent binding holder. The child constructs its own holders; the
-  // bundle only needs the T0 snapshot. The child seeds the binding in memory
-  // and commits the transition, which writes head+binding atomically.
+  // createFileRuntimePersistence writes the T0 bundle; the bundle only needs
+  // the T0 snapshot. The child constructs its own holders, seeds the initial
+  // binding in memory, and commits the transition, which writes head+binding
+  // atomically.
   createFileRuntimePersistence({ dir, initial: t0 });
   return { t0, schema };
 }

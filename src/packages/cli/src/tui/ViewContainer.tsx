@@ -30,6 +30,8 @@ const VIEW_MODULE_MAP: Record<string, string> = {
   tools: "ToolsView",
   mcp: "McpView",
   config: "ConfigView",
+  session: "SessionView",
+  status: "StatusView",
   export: "ExportView",
   help: "HelpView",
   events: "EventView",

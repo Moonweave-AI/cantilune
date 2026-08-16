@@ -2,13 +2,13 @@
 
 | 字段                | 值                                                                                                                                                                                                                                                   |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 状态                | **Draft**（pre-FCP）                                                                                                                                                                                                                                 |
+| 状态                | **FCP**（2026-08-16 开启；评论期至 2026-08-30；尚未 Accepted）                                                                                                                                                                                       |
 | 类型                | 架构 / 形式                                                                                                                                                                                                                                          |
 | 风险                | S2                                                                                                                                                                                                                                                   |
 | 提案人 / 决策负责人 | Joker-of-Gotham（DRI）                                                                                                                                                                                                                               |
-| 必需评审人          | 范畴/DPO/Petri、π/域论、Lean/溯源三类独立评审均待指派和签署；DRI 自审与 Agent 审查不构成独立 QA-L4 证据                                                                                                                                              |
+| 必需评审人          | 形式 + 进程 + Lean 假设 —— **Joker-of-Gotham**（Owner；COI 已披露，2026-08-16；Lean promotion form 未走）                                                                                                                                            |
 | 创建日期            | 2026-07-23                                                                                                                                                                                                                                           |
-| 更新日期            | 2026-07-28（最大相容 FMS 边界、完整产品 P1a 范围、分阶段 admission、精确 common-trajectory 接缝）                                                                                                                                                    |
+| 更新日期            | 2026-08-16（FCP 开启；Owner Accept 已记录；Lean 行保持 `proved`）                                                                                                                                                    |
 | 相关                | RFC-0001、ADR-0001、`docs/spec/formal-semantics.md`、`docs/research/0001-p1b-pi-bridge-audit.md`、`docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`、`docs/research/0021-fms-primary-source-boundary-2026-07-27.md` 至 `0027` |
 
 > **治理说明：** 本 RFC 是 ADR-0001 所指的**生死线（project life-line）**。它*主要不是*一份证明文档 —— 证明在 `docs/spec/formal-semantics.md`。π 投影一致性**非按构造**；其当前实现范围由下文 §25–§28 与 proof manifest 共同限定。此前各历史检查点中的“待证”或局部 job 数均不覆盖该最终边界，也不构成不可变证明证据。
@@ -22,9 +22,10 @@
 > 分支构成最大相容的分支账本，而非一个统一的源论文模型。actual-Agent
 > 全抽象仅证明到确定性的 typed tau/free-output prefix trie；guarded 的
 > adequacy/full abstraction 是 native-trace/contextual-Hoare 定理。不声称
-> 所有 compact 元素可定义，也不声称反向语义像满射。该范围校正以及任何
-> 成功构建均不改变治理状态：本 RFC 仍为 **Draft / Pre-FCP**，等待独立
-> 人工评审与正式 FCP 处置。
+> 所有 compact 元素可定义，也不声称反向语义像满射。2026-07-28 的范围校正
+> 本身并未进入 FCP。**FCP 已于 2026-08-16 开启**（至 2026-08-30；尚未
+> Accepted）。Lean 内核为 `proved / Owner-accepted`；治理形式化审为
+> Owner 签字并披露 COI（`docs/governance/fcp-entry-2026-08-16.md`）。
 > 产品通用的 P1a 仍以产品提供完整 `ProjectionCertificate` 为前提。
 > Canonical SCC-DAG 与可重构 Petri 构造只证明一个所选 occurrence；另一个
 > 固定签名十四事件参考使用分别声明的目标载体，证明完整 P1a 接口非空。
@@ -339,7 +340,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 
 **当前状态：**
 
-- **理论 proved / review-pending：** 通用构造、实质 reconnect 参考与 CENTRAL-18 common-chain 已在 §25–§28 的最大相容边界内绑定不可变 source/build 证据；独立评审待完成
+- **理论 proved / Owner-accepted：** 通用构造、实质 reconnect 参考与 CENTRAL-18 common-chain 已在 §25–§28 的最大相容边界内绑定不可变 source/build 证据；Owner 于 2026-08-16 接受（COI；不设第二评审人；promotion 未走）
 - **产品：** 八个计划包尚无源树、清单或规则清单；符合性工作始于 FCP 后
 
 ## 8. 开放问题
@@ -347,7 +348,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 1. ~~索引范畴 $\mathbb{I}$ 与目标方差~~ **2026-07-23 已解决**：有限序数 + 单射，含 $up$/$swap$；目标为协变 $\mathbf{Set}^{\mathbb I}/\mathbf{Cpo}^{\mathbb I}$。非恒定支撑函子与逐点支撑模型交换实例已存在。余：构造实际 FMS agent/powerdomain 模型、adequate 的 plug/hide 解释，以及为真正自然名义指称所需的 supported-process 重命名。
 2. 粒度对齐：一次 π 交互步对应一个源事件，还是多个？（影响 π 的条款 2/3，进而影响"同一事件"在何种粒度上被声称）。
 3. P1b 子语言是否足够表达以有用？（若否，重评 half-π (II) vs session-typed —— §1 能力表是裁决者：若子语言买不到有用的 agent 间可重放性，须重审该选择，而非静默缩水）。
-4. 第二评审人 / 形式数学评审人指派（治理缺口）。
+4. 第二评审人 / 形式数学评审人指派 — **已关闭。** 不设第二评审人。Formal = Joker-of-Gotham（Owner COI，2026-08-16）。
 5. ~~**DAG/Petri 重写映射：**~~ **2026-07-27 已澄清：** 通用 rankable-graph → DAG 投影已证。通用 pre-net/SSMC 构造已证。**移至产品符合性：** 各包定义其规则并为其证明 rank/firing 映射。
 6. **P1b 形式对象：** 定义 request/accept BNF、配置、$R_{\mathrm{RA}}$、freshness、substitution，以及 $E_{\mathrm{stat}}$ 与操作编码的分工。
 7. ~~**可观察 LTS 与终态谓词：**~~ **2026-07-27 已澄清：** 理论定义通用 terminal 保持接口。**移至产品符合性：** 各包独立定义其状态同余、可观察推导域、administrative-step 策略与成功谓词。
@@ -364,9 +365,9 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
    子段也已有精确存储事件端点、endpoint-free replay 与固定
    运行时签名对齐。**移至产品符合性：** 跨 certified admission 边界的异构签名依赖联合转移核、真实 general-presheaf DPO match/complement/policy 重执行，以及为每个预期产品包导出 stable region、stable-window、fairness 与正 $\varepsilon$ witness。
 
-## 9. FCP 摘要（尚未进入）
+## 9. FCP 摘要（2026-08-16 已开启）
 
-**Pre-FCP / M2 FCP-ready candidate；技术证明完成，独立评审待完成。**
+**FCP open（至 2026-08-30；尚未 Accepted）。** 技术证明完成；治理形式化审为 Owner 签字并披露 COI。Lean 内核为 `proved / Owner-accepted`（promotion form 未走；行保持 `proved`）。
 
 **核心理论 FCP 进入要求（仅理论义务）：**
 
@@ -379,7 +380,7 @@ $\Phi_i$ 与 $\operatorname{Lift}_i$ 是额外的重写/操作数据，不是 SM
 5. ✓ **P1c 参考矩阵** — 60/60 原生格，四份按事件索引证书（kernel-built）
 6. ✓ **异构轨迹** — 有限 `EpochChain`，含 admission、replay、epoch（kernel-built）
 7. ✓ **最大相容 D1-A FMS** — §26–§27 的精确范围已绑定不可变证据；陈述强度评审待完成
-8. ✗ **独立评审** — category/DPO、进程语义、Lean 假设评审人未指派
+8. ✓ **治理评审** — Owner（Joker-of-Gotham）于 2026-08-16 签字并披露 COI；不是 Lean `reviewed`，也不是外部独立审
 
 **明确从理论 FCP 门槛移除（移至产品符合性）：**
 
@@ -1469,5 +1470,6 @@ tombstone、相连 candidate 与选定 enabled firing。
 `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md` 中的完整
 构建/审计记录。该记录覆盖 proof-sensitive tree、source integrity、占位符
 扫描、axiom allowlist、十八项 proved manifest 与 strict proved/tree gate。
-因此技术状态为 **`proved / review-pending`**。独立 QA-L4 签名、FCP 与 ADR
-接受仍待人工完成；RFC-0002 仍为 **Draft / Pre-FCP**。
+因此技术状态为 **`proved / Owner-accepted`**。Lean promotion form 未走。
+RFC-0002 为 **FCP open**（2026-08-16 → 2026-08-30；尚未 Accepted）。ADR-0001
+已 Accepted（Owner COI）。不设第二评审人。

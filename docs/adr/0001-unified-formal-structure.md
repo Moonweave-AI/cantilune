@@ -2,11 +2,11 @@
 
 | Field           | Value                                                                                                                                                                                                                                    |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status          | **Proposed** (implementation decisions ratified 2026-07-27; human review and final DRI signature pending)                                                                                                                                |
+| Status          | **Accepted** (Owner COI 2026-08-16; not Lean `reviewed`; not RFC FCP-closed)                                                                                                                                                              |
 | Date            | 2026-07-23                                                                                                                                                                                                                               |
-| Last reconciled | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; final admission/common-trajectory seams)                                                                                                                        |
+| Last reconciled | 2026-08-16 (Owner COI Accept during FCP; Lean `proved / Owner-accepted`; promotion unused)                                                                                                                                                    |
 | Decision Owner  | Joker-of-Gotham (DRI)                                                                                                                                                                                                                    |
-| Reviewers       | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation)                                                                        |
+| Reviewers       | Joker-of-Gotham (Owner; Formal + Architecture; COI disclosed, 2026-08-16)                                                                                                                                                                 |
 | Related         | RFC-0001, RFC-0002, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 | Risk            | S2                                                                                                                                                                                                                                       |
 
@@ -28,9 +28,11 @@
 > SCC-DAG/Petri semantic records and the separate fourteen-event
 > fixed-signature reference are not silently identified with one another.
 >
-> This ADR remains **Proposed**. Kernel builds and agent reviews cannot make
-> it Accepted; independent human review, RFC disposition and the final
-> Owner/DRI signature remain required.
+> Historical note (2026-07-28): this ADR was still **Proposed** at that
+> checkpoint. **2026-08-16:** Owner accepted this ADR with disclosed COI
+> during RFC FCP. That Accept does **not** rewrite Lean obligations to
+> `reviewed`, does **not** close FCP, and does **not** instantiate the eight
+> product packages.
 
 ## Context
 
@@ -893,6 +895,10 @@ Until that final act, the strongest permitted status is
 `proved / review-pending`; neither an agent nor a successful build may declare
 this ADR Accepted, the RFC through FCP, or the work independently reviewed.
 
+**2026-08-16 Owner Accept:** this ADR is now **Accepted** (Owner COI; no
+second reviewer). Lean rows stay `proved`. Governance is Owner-accepted.
+The promotion form was not used. RFC-0002 remains FCP-open.
+
 ## 2026-07-27 kernel-backed compatibility correction
 
 This addendum records the consequences of three narrow kernel results and the
@@ -928,8 +934,9 @@ top-level status from **Proposed**.
    inhabitants of the theorem.
 5. **Governance state.** Kernel proofs, builds, and audits can establish
    `proved`; only independent human review and final DRI signature can establish
-   `reviewed`, FCP Passed, QA-L4 complete, or ADR Accepted. Until then the
-   aggregate status is `proved / review-pending`.
+   `reviewed`, FCP Passed, or RFC Accepted. Owner Accept (2026-08-16, COI)
+   records governance acceptance without rewriting rows to `reviewed`. The
+   living aggregate is `proved / Owner-accepted`.
 
 ### Kernel evidence and exact scope
 
@@ -1081,7 +1088,7 @@ The final construction is now bound to source commit
 `59a1a6885ef6a2774b2731f487f83228e67d15dc` and the immutable QA build/audit
 record. Source integrity, placeholder/axiom audit, the proved manifest, and
 the strict proved/tree gate are recorded there. The technical status is
-`proved / review-pending`; it is not `reviewed`, FCP Passed, or ADR Accepted.
+`proved / Owner-accepted`; it is not Lean `reviewed` and RFC-0002 is still FCP-open, not Accepted.
 
 The Petri decision is now implemented across a real signature boundary.
 Legacy declarations form a literal prefix, their incidences are reindexed by

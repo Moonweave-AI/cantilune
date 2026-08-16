@@ -6,6 +6,7 @@
     "rootDir": "../..",
     "noEmit": true,
     "paths": {
+      "@cantilune/core": ["../core/src/index.ts"],
       "@cantilune/syscall": ["../syscall/src/index.ts"]
     }
   },

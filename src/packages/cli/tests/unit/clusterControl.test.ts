@@ -374,4 +374,28 @@ describe("createClusterController", () => {
     expect(result.ok).toBe(false);
     expect(result.message).toContain("no snapshot on the runtime head");
   });
+
+  it("attaches to a sibling swarm instead of opening a second feed watcher", async () => {
+    const siblingStart = vi.fn(() => ({ ok: true as const }));
+    const siblingStop = vi.fn();
+    const siblingActivate = vi.fn(async () => ({ ok: true as const }));
+    const controller = createClusterController(
+      () => ({ contentStore: undefined, syscallRuntime: undefined, storagePath: undefined }),
+      stubLlmAdapter,
+      () => ({
+        start: siblingStart,
+        stop: siblingStop,
+        status: () => ({ running: true, events: [] }),
+        activate: siblingActivate,
+      }),
+    );
+
+    expect(controller.start()).toEqual({ ok: true });
+    expect(siblingStart).toHaveBeenCalledOnce();
+    expect(controller.status().running).toBe(true);
+    await expect(controller.activate("peer-1")).resolves.toEqual({ ok: true });
+    expect(siblingActivate).toHaveBeenCalledWith("peer-1", undefined);
+    controller.stop();
+    expect(siblingStop).toHaveBeenCalledOnce();
+  });
 });

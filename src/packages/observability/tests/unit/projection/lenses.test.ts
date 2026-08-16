@@ -187,4 +187,14 @@ describe("projection lenses", () => {
     );
     expect(delta.step.kind).toBe("box");
   });
+
+  it("communication lens attributes create_session opened sessions from committed change", () => {
+    const before = collaborationSnapshot({ snapshotRef: snapS0, epochId: epochId("42") });
+    const session = communicationSession(sessionId("session-s"), coder, [coder, planner]);
+    const after = withSession(withSnapshotRef(before, snapS1), session);
+    const change = baseChange("create_session", { createdSessionRefs: [session.sessionId] });
+    const opened = interpretCommunicationDelta(eventTagFromChange(change), before, after, change);
+    expect(opened.openedSessions).toHaveLength(1);
+    expect(opened.openedSessions[0]?.sessionId).toBe(session.sessionId);
+  });
 });

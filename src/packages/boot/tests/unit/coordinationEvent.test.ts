@@ -3,11 +3,26 @@ import { contentRef } from "@cantilune/core";
 import type { Syscall } from "@cantilune/syscall";
 import { createTerminationController } from "../../src/termination/index.js";
 import { runAgentLoop } from "../../src/agentLoop.js";
-import type { AgentEvent, LlmAdapter, LlmChatResponse, LlmToolCallResult } from "../../src/types.js";
+import type {
+  AgentEvent,
+  LlmAdapter,
+  LlmChatResponse,
+  LlmToolCallResult,
+} from "../../src/types.js";
 
 const WRITTEN_REF = contentRef(
   "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 );
+
+/**
+ * Own-property probe over an event that may not have been found.
+ *
+ * Returns `undefined` for a missing event so the assertion fails loudly rather
+ * than reporting "no such property" as if the event had been inspected.
+ */
+function hasOwnKey(value: object | undefined, key: string): boolean | undefined {
+  return value === undefined ? undefined : Object.hasOwn(value, key);
+}
 
 function baseSyscall(overrides: Partial<Syscall> = {}): Syscall {
   return {
@@ -42,9 +57,7 @@ function baseSyscall(overrides: Partial<Syscall> = {}): Syscall {
   };
 }
 
-function scriptedAdapter(
-  script: readonly LlmChatResponse[],
-): LlmAdapter {
+function scriptedAdapter(script: readonly LlmChatResponse[]): LlmAdapter {
   let index = 0;
   return {
     async chat(): Promise<LlmChatResponse> {
@@ -109,8 +122,8 @@ describe("agent loop coordination event flag", () => {
     );
     expect(start).toBeDefined();
     expect(end).toBeDefined();
-    expect(start?.hasOwnProperty("coordination")).toBe(false);
-    expect(end?.hasOwnProperty("coordination")).toBe(false);
+    expect(hasOwnKey(start, "coordination")).toBe(false);
+    expect(hasOwnKey(end, "coordination")).toBe(false);
   });
 
   it("omits coordination from write_content tool_start and tool_end", async () => {
@@ -129,8 +142,8 @@ describe("agent loop coordination event flag", () => {
     );
     expect(start).toBeDefined();
     expect(end).toBeDefined();
-    expect(start?.hasOwnProperty("coordination")).toBe(false);
-    expect(end?.hasOwnProperty("coordination")).toBe(false);
+    expect(hasOwnKey(start, "coordination")).toBe(false);
+    expect(hasOwnKey(end, "coordination")).toBe(false);
   });
 
   it("omits coordination from a tool: prefixed external tool", async () => {
@@ -149,17 +162,15 @@ describe("agent loop coordination event flag", () => {
     );
     expect(start).toBeDefined();
     expect(end).toBeDefined();
-    expect(start?.hasOwnProperty("coordination")).toBe(false);
-    expect(end?.hasOwnProperty("coordination")).toBe(false);
+    expect(hasOwnKey(start, "coordination")).toBe(false);
+    expect(hasOwnKey(end, "coordination")).toBe(false);
   });
 
   it("omits coordination from done tool_end", async () => {
     const events = await collectEvents(baseSyscall(), scriptedAdapter([done()]));
-    const doneEnd = events.find(
-      (e) => e.kind === "tool_end" && "name" in e && e.name === "done",
-    );
+    const doneEnd = events.find((e) => e.kind === "tool_end" && "name" in e && e.name === "done");
     expect(doneEnd).toBeDefined();
-    expect(doneEnd?.hasOwnProperty("coordination")).toBe(false);
+    expect(hasOwnKey(doneEnd, "coordination")).toBe(false);
   });
 
   it("marks coordination:true on tool_end even when the coordination action fails", async () => {
@@ -176,7 +187,12 @@ describe("agent loop coordination event flag", () => {
       (e) => e.kind === "tool_end" && "name" in e && e.name === "introduce_artifact",
     );
     expect(end).toEqual(
-      expect.objectContaining({ kind: "tool_end", name: "introduce_artifact", ok: false, coordination: true }),
+      expect.objectContaining({
+        kind: "tool_end",
+        name: "introduce_artifact",
+        ok: false,
+        coordination: true,
+      }),
     );
   });
 });

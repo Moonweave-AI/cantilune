@@ -7,6 +7,7 @@ import type {
   SchemaRef,
   SnapshotRef,
   CollaborationSnapshot,
+  Result,
 } from "@cantilune/core";
 import { err, ok, schemaAdmissionId, validateSnapshotIntegrity } from "@cantilune/core";
 import type { AdmissionRegistry } from "../admission/admissionRegistry.js";
@@ -418,6 +419,108 @@ export function createMemoryEpochAdministration(
     return deps.locks.heldLockCount() === 0;
   }
 
+  /**
+   * Resolve, snapshot, and validate the schema a recovery target binding names.
+   *
+   * Both recovery paths (durable bundle after a crash, in-memory journal in the
+   * same process) need the identical resolve/detach/validate sequence, so it
+   * lives here rather than being written twice inside the branch.
+   */
+  function resolveRecoveryTargetSchema(
+    schemaRef: SchemaRef,
+  ):
+    | { readonly ok: true; readonly schema: ActiveSchemaContext["schema"] }
+    | { readonly ok: false; readonly error: RuntimeViolation } {
+    const resolved = deps.resolveSchema(schemaRef);
+    if (resolved === undefined) {
+      return err(runtimeViolation("template_not_found", "target schema missing during recovery"));
+    }
+    let schema: ActiveSchemaContext["schema"];
+    try {
+      schema = snapshotResolvedSchema(resolved);
+    } catch {
+      return err(runtimeViolation("admission_rejected", "target schema cannot be cached"));
+    }
+    const violation = validateResolvedSchema(schemaRef, schema);
+    if (violation !== undefined) {
+      return err(violation);
+    }
+    return { ok: true, schema };
+  }
+
+  /**
+   * Post-crash recovery (ADR-0014 SS-02): the in-memory journal is gone, but the
+   * durable bundle carries the active binding atomically with the head, so the
+   * holders are reconstructed from the bundle instead of failing. The
+   * `admissionId` must match the durable binding's own id, so a stale or
+   * replayed recovery request cannot adopt a different epoch.
+   */
+  function recoverFromDurableBinding(
+    admissionId: SchemaAdmissionId,
+  ): Result<RuntimeEpochReceipt, RuntimeViolation> {
+    const durableBinding = deps.durable.activeBinding();
+    if (durableBinding === undefined) {
+      return err(runtimeViolation("replay_mismatch", "no committed epoch transition to recover"));
+    }
+    if (durableBinding.admissionId !== admissionId) {
+      return err(
+        runtimeViolation(
+          "replay_mismatch",
+          "durable binding admission id does not match recovery request",
+        ),
+      );
+    }
+    const headRef = deps.durable.head();
+    const head = headRef === undefined ? undefined : deps.durable.get(headRef);
+    if (head === undefined || head.epochId !== durableBinding.epochId) {
+      return err(
+        runtimeViolation("replay_mismatch", "durable binding epoch is not the active head epoch"),
+      );
+    }
+    const target = resolveRecoveryTargetSchema(durableBinding.schemaRef);
+    if (!target.ok) return target;
+
+    deps.schemaHolder.set(
+      createActiveSchemaContext(target.schema, durableBinding.epochId, durableBinding),
+    );
+    deps.bindingHolder.set(durableBinding);
+    return ok(
+      snapshotRuntimeEpochReceipt({
+        admissionId: durableBinding.admissionId,
+        beforeSnapshotRef: durableBinding.runtimeHead,
+        afterSnapshotRef: headRef as SnapshotRef,
+        fromBinding: durableBinding,
+        toBinding: durableBinding,
+      }),
+    );
+  }
+
+  /** Same-process recovery: the committed journal entry is still in memory. */
+  function recoverFromJournal(
+    entry: CommittedJournalEntry,
+  ): Result<RuntimeEpochReceipt, RuntimeViolation> {
+    const headRef = deps.durable.head();
+    const head = headRef === undefined ? undefined : deps.durable.get(headRef);
+    if (head === undefined || head.epochId !== entry.receipt.toBinding.epochId) {
+      return err(runtimeViolation("replay_mismatch", "committed epoch snapshot is not active"));
+    }
+    const target = resolveRecoveryTargetSchema(entry.receipt.toBinding.schemaRef);
+    if (!target.ok) return target;
+    if (!schemasEqual(target.schema, entry.targetSchema)) {
+      return err(runtimeViolation("admission_rejected", "target schema changed before recovery"));
+    }
+
+    deps.schemaHolder.set(
+      createActiveSchemaContext(
+        entry.targetSchema,
+        entry.receipt.toBinding.epochId,
+        entry.receipt.toBinding,
+      ),
+    );
+    deps.bindingHolder.set(entry.receipt.toBinding);
+    return ok(snapshotRuntimeEpochReceipt(entry.receipt));
+  }
+
   return {
     async inspectActivationPoint(domainId) {
       pruneExpiredPreparations();
@@ -638,98 +741,9 @@ export function createMemoryEpochAdministration(
 
     async recoverEpochTransition(admissionId) {
       const entry = committed.get(admissionId);
-      if (entry === undefined) {
-        // Post-crash path (ADR-0014 SS-02): the in-memory journal is gone, but
-        // the durable bundle carries the active binding atomically with the
-        // head. Reconstruct the holders from the bundle instead of failing.
-        // The admissionId must match the durable binding's admissionId so a
-        // stale or replayed recovery request cannot adopt a different epoch.
-        const durableBinding = deps.durable.activeBinding();
-        if (durableBinding === undefined) {
-          return err(
-            runtimeViolation("replay_mismatch", "no committed epoch transition to recover"),
-          );
-        }
-        if (durableBinding.admissionId !== admissionId) {
-          return err(
-            runtimeViolation(
-              "replay_mismatch",
-              "durable binding admission id does not match recovery request",
-            ),
-          );
-        }
-        const headRef = deps.durable.head();
-        const head = headRef === undefined ? undefined : deps.durable.get(headRef);
-        if (head === undefined || head.epochId !== durableBinding.epochId) {
-          return err(
-            runtimeViolation("replay_mismatch", "durable binding epoch is not the active head epoch"),
-          );
-        }
-        const resolvedTargetSchema = deps.resolveSchema(durableBinding.schemaRef);
-        if (resolvedTargetSchema === undefined) {
-          return err(
-            runtimeViolation("template_not_found", "target schema missing during recovery"),
-          );
-        }
-        let targetSchema: ActiveSchemaContext["schema"];
-        try {
-          targetSchema = snapshotResolvedSchema(resolvedTargetSchema);
-        } catch {
-          return err(runtimeViolation("admission_rejected", "target schema cannot be cached"));
-        }
-        const schemaViolation = validateResolvedSchema(durableBinding.schemaRef, targetSchema);
-        if (schemaViolation !== undefined) {
-          return err(schemaViolation);
-        }
-        const targetContext = createActiveSchemaContext(
-          targetSchema,
-          durableBinding.epochId,
-          durableBinding,
-        );
-        deps.schemaHolder.set(targetContext);
-        deps.bindingHolder.set(durableBinding);
-        const receipt: RuntimeEpochReceipt = {
-          admissionId: durableBinding.admissionId,
-          beforeSnapshotRef: durableBinding.runtimeHead,
-          afterSnapshotRef: headRef as SnapshotRef,
-          fromBinding: durableBinding,
-          toBinding: durableBinding,
-        };
-        return ok(snapshotRuntimeEpochReceipt(receipt));
-      }
-      const headRef = deps.durable.head();
-      const head = headRef === undefined ? undefined : deps.durable.get(headRef);
-      if (head === undefined || head.epochId !== entry.receipt.toBinding.epochId) {
-        return err(runtimeViolation("replay_mismatch", "committed epoch snapshot is not active"));
-      }
-      const resolvedTargetSchema = deps.resolveSchema(entry.receipt.toBinding.schemaRef);
-      if (resolvedTargetSchema === undefined) {
-        return err(runtimeViolation("template_not_found", "target schema missing during recovery"));
-      }
-      let targetSchema: ActiveSchemaContext["schema"];
-      try {
-        targetSchema = snapshotResolvedSchema(resolvedTargetSchema);
-      } catch {
-        return err(runtimeViolation("admission_rejected", "target schema cannot be cached"));
-      }
-      const schemaViolation = validateResolvedSchema(
-        entry.receipt.toBinding.schemaRef,
-        targetSchema,
-      );
-      if (schemaViolation !== undefined) {
-        return err(schemaViolation);
-      }
-      if (!schemasEqual(targetSchema, entry.targetSchema)) {
-        return err(runtimeViolation("admission_rejected", "target schema changed before recovery"));
-      }
-      const targetContext = createActiveSchemaContext(
-        entry.targetSchema,
-        entry.receipt.toBinding.epochId,
-        entry.receipt.toBinding,
-      );
-      deps.schemaHolder.set(targetContext);
-      deps.bindingHolder.set(entry.receipt.toBinding);
-      return ok(snapshotRuntimeEpochReceipt(entry.receipt));
+      return entry === undefined
+        ? recoverFromDurableBinding(admissionId)
+        : recoverFromJournal(entry);
     },
   };
 }

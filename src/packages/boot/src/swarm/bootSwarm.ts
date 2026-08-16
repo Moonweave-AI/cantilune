@@ -23,9 +23,10 @@
  * seeded already-expired and retired on the first staleness tick.
  *
  * Comms (ADR-0019 §6): the supervisor allocates/deallocates a mesh transport per
- * agent on `startAgent`/`signal_done`/`retire`. With ADR-0018 this can be a real
- * `FileTransport`/`NetTransport`; the supervisor's `SharedResources` already
- * carries a `MeshTransportRouter`. This module adds no new comms authority.
+ * agent on `startAgent`/`signal_done`/`retire`. Same-host production uses
+ * `createFileMeshRouter` (`FileTransport`). Cross-host uses `createNetMeshRouter`
+ * (`NetTransport`, ADR-0018 T3) injected via {@link BootSwarmDeps.meshTransport}.
+ * This module adds no new comms authority.
  */
 import type { ActorId, AgentManifest } from "@cantilune/core";
 import { createSyscall, createStaticSchemaProvider } from "@cantilune/syscall";
@@ -40,6 +41,9 @@ import {
   type LlmAdapterFactory,
   type AgentFactory,
   type SwarmAgentHandle,
+  type SchedulerSnapshot,
+  type SwarmSchedulerPolicyInput,
+  type MeshTransportRouter,
 } from "../cluster/index.js";
 import type { ConditionEvaluatorRegistry } from "@cantilune/runtime";
 import { bootCantilune, DEFAULT_TEMPLATES } from "../bootCantilune.js";
@@ -69,6 +73,14 @@ export interface BootSwarmDeps {
   readonly staleThresholdMultiplier?: number;
   readonly livenessGraceFactor?: number;
   /**
+   * Admission, fairness, and budget limits for the agent pool. Anything omitted
+   * keeps its bounded default, so an unconfigured swarm cannot spawn without
+   * limit or wait forever on an unsatisfiable start condition.
+   */
+  readonly schedulerPolicy?: SwarmSchedulerPolicyInput;
+  /** Poll interval for `waitForCompletion`; kept small in tests. */
+  readonly completionPollMs?: number;
+  /**
    * Dedicated LLM adapter for goal-contract compilation per agent. Mirrors
    * `BootConfig.contractLlm`: when absent each agent's controller compiles the
    * default system contract with no LLM call. Must not share the loop adapter.
@@ -80,14 +92,35 @@ export interface BootSwarmDeps {
    * (ρ=0.3, fail-closed) and makes no judge LLM call.
    */
   readonly judgeLlm?: LlmAdapter;
+  /**
+   * Mesh used when the supervisor starts an agent. Defaults to in-process
+   * loopback. Pass `createFileMeshRouter(dir)` or `createNetMeshRouter()`.
+   */
+  readonly meshTransport?: MeshTransportRouter;
+  /** Multi-host directory (ADR-0019 S4). */
+  readonly meshHostDirectory?: import("../cluster/meshHostDirectory.js").MeshHostDirectory;
+  readonly swarmRole?: "supervisor" | "worker";
 }
 
 /** Snapshot of the swarm's live state for the CLI view. */
 export interface SwarmStatus {
+  /** Whether the supervisor is started and its timers are live. */
   readonly running: boolean;
   readonly agents: ReadonlyMap<string, { readonly status: string; readonly heartbeat: unknown }>;
+  /** Supervisor events observed since boot, oldest first. */
   readonly events: readonly ClusterEvent[];
+  /** Queue, concurrency, and budget state driving dispatch decisions. */
+  readonly scheduler: SchedulerSnapshot;
 }
+
+/**
+ * Cap on the retained event log.
+ *
+ * The log feeds a scrollback view, not an audit trail — the durable feed is the
+ * audit trail — so a long-running swarm keeps the most recent window rather
+ * than growing without bound.
+ */
+const MAX_RETAINED_EVENTS = 500;
 
 /**
  * A booted multi-agent swarm: a `ClusterSupervisor` (ADR-0015) bound to one
@@ -120,12 +153,29 @@ export interface CantiluneSwarm {
  * contract. The single-Agent `bootCantilune` path is unchanged.
  */
 export function bootSwarm(deps: BootSwarmDeps): CantiluneSwarm {
+  const swarmEvents: ClusterEvent[] = [];
+  // Tee the supervisor's event stream into the retained log before forwarding
+  // it to the caller's listener, so `status().events` reflects what actually
+  // happened instead of the empty array it used to return.
+  const eventListener: ClusterEventListener = (event) => {
+    swarmEvents.push(event);
+    if (swarmEvents.length > MAX_RETAINED_EVENTS) {
+      swarmEvents.splice(0, swarmEvents.length - MAX_RETAINED_EVENTS);
+    }
+    deps.eventListener?.(event);
+  };
+
   const shared = createSharedResources({
     runtime: deps.runtime,
     contentStore: deps.contentStore,
     storagePath: deps.storagePath,
     ...(deps.humanInterface !== undefined ? { humanInterface: deps.humanInterface } : {}),
-    ...(deps.eventListener !== undefined ? { eventListener: deps.eventListener } : {}),
+    eventListener,
+    ...(deps.meshTransport !== undefined ? { meshTransport: deps.meshTransport } : {}),
+    ...(deps.meshHostDirectory !== undefined
+      ? { meshHostDirectory: deps.meshHostDirectory }
+      : {}),
+    ...(deps.swarmRole !== undefined ? { swarmRole: deps.swarmRole } : {}),
   });
 
   const agentFactory: AgentFactory = {
@@ -149,7 +199,9 @@ export function bootSwarm(deps: BootSwarmDeps): CantiluneSwarm {
     conditionRegistry: deps.conditionRegistry,
     llmAdapterFactory: deps.llmAdapterFactory,
     ...(deps.humanInterface !== undefined ? { humanInterface: deps.humanInterface } : {}),
-    ...(deps.eventListener !== undefined ? { eventListener: deps.eventListener } : {}),
+    eventListener,
+    ...(deps.schedulerPolicy !== undefined ? { schedulerPolicy: deps.schedulerPolicy } : {}),
+    ...(deps.completionPollMs !== undefined ? { completionPollMs: deps.completionPollMs } : {}),
     ...(deps.supervisorPrincipal !== undefined
       ? { supervisorPrincipal: deps.supervisorPrincipal }
       : {}),
@@ -168,28 +220,36 @@ export function bootSwarm(deps: BootSwarmDeps): CantiluneSwarm {
     agentFactory,
   });
 
-  const swarmEvents: ClusterEvent[] = [];
+  let started = false;
   return {
     supervisor,
     start(): void {
       supervisor.start();
+      started = true;
     },
     stop(): void {
       supervisor.stop();
+      started = false;
     },
     status(): SwarmStatus {
       const status = supervisor.getStatus();
       return {
-        running: true,
+        running: started,
         agents: status.agents,
         events: [...swarmEvents],
+        scheduler: supervisor.getSchedulerSnapshot(),
       };
     },
     async waitForCompletion(): Promise<ClusterResult> {
       return supervisor.waitForCompletion();
     },
     async shutdown(): Promise<void> {
+      // `stop()` aborts every in-flight agent handle, which is what releases
+      // the per-agent OS pool: each handle's abort() shuts down its CantilunOS
+      // and clears its heartbeat timer.
       supervisor.stop();
+      started = false;
+      await Promise.resolve();
     },
   };
 }
@@ -245,6 +305,11 @@ export function createCantiluneOsAgent(
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
   let runPromise: Promise<RunResult> | undefined;
   let aborted = false;
+  // The run must observe the E-Stop, not just be shut down behind it.
+  // `os.shutdown()` alone tears down the OS while the in-flight `os.run()` keeps
+  // going, so a stopped supervisor could still see a late turn commit. Passing
+  // the signal matches AgentInstance, which has always cancelled this way.
+  const abortController = new AbortController();
 
   function stopHeartbeat(): void {
     if (heartbeatTimer !== undefined) {
@@ -266,7 +331,7 @@ export function createCantiluneOsAgent(
 
   return {
     get isRunning(): boolean {
-      return runPromise !== undefined && !aborted;
+      return runPromise !== undefined && !aborted && !abortController.signal.aborted;
     },
     start(): Promise<RunResult> {
       if (runPromise !== undefined) return runPromise;
@@ -282,12 +347,17 @@ export function createCantiluneOsAgent(
             // surface as an unhandled rejection — it would tear down the agent.
           });
       }, manifest.heartbeatIntervalMs);
-      runPromise = os.run(manifest.assignedTask).finally(stopHeartbeat);
+      runPromise = os
+        .run(manifest.assignedTask, { signal: abortController.signal })
+        .finally(stopHeartbeat);
       return runPromise;
     },
     abort(): void {
       aborted = true;
       stopHeartbeat();
+      // Cancel the run before tearing down the OS it runs on, so the loop stops
+      // issuing turns rather than being shut down from under an in-flight one.
+      abortController.abort();
       void os.shutdown();
     },
   };

@@ -1,0 +1,6 @@
+﻿{
+  "package": "@cantilune/observability",
+  "inventorySchemaVersion": 1,
+  "artifacts": [],
+  "notes": "Evidence inventory scaffold for verify-package (P6). Digests are filled by CI artifact collection; empty inventory must fail verifyPackageEvidence."
+}

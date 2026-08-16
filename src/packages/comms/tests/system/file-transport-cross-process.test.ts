@@ -22,22 +22,26 @@ const childScript = join(packageRoot, "tests", "support", "fileTransportDispatch
 const distCodec = join(packageRoot, "dist", "codec", "strictWireCodec.js");
 const repoRoot = join(packageRoot, "..", "..");
 
-// The cross-process tests are only meaningful when the package has been built
-// (the child imports from dist/). When dist is absent they skip rather than
-// fabricate a pass — this is the unverified-marker convention.
-const distBuilt = existsSync(distCodec);
-const describeOrSkip = distBuilt ? describe : describe.skip;
+// The child imports from dist/, so the suite needs a built package. The
+// `pretest`/`pretest:coverage` hooks guarantee that. A silent skip here would
+// let CI drop the cross-process evidence without anyone noticing, so a missing
+// dist fails loudly instead.
+if (!existsSync(distCodec)) {
+  throw new Error(
+    `FileTransport cross-process evidence requires a built package: ${distCodec} is missing. ` +
+      `Run \`pnpm --filter @cantilune/comms... build\` first.`,
+  );
+}
 
 function spawnDispatchChild(
   outboxDir: string,
   messageId: string,
 ): Promise<{ readonly code: number; readonly stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn(
-      process.execPath,
-      [childScript, outboxDir, messageId],
-      { cwd: repoRoot, stdio: ["ignore", "ignore", "pipe"] },
-    );
+    const child = spawn(process.execPath, [childScript, outboxDir, messageId], {
+      cwd: repoRoot,
+      stdio: ["ignore", "ignore", "pipe"],
+    });
     let stderr = "";
     child.stderr.on("data", (chunk) => {
       stderr += String(chunk);
@@ -49,7 +53,7 @@ function spawnDispatchChild(
   });
 }
 
-describeOrSkip("FileTransport cross-process delivery", () => {
+describe("FileTransport cross-process delivery", () => {
   let dir: string;
 
   beforeAll(() => {

@@ -33,16 +33,16 @@ import type {
   SnapshotRef,
 } from "@cantilune/core";
 import { actorRef, coordinationIntent, matchBinding, operationTypeId } from "@cantilune/core";
-import type { ConditionEvaluatorRegistry, ConditionEvaluationContext } from "@cantilune/runtime";
+import type { ConditionEvaluatorRegistry } from "@cantilune/runtime";
 import { createSyscall, createStaticSchemaProvider } from "@cantilune/syscall";
 import type { RunResult } from "../types.js";
 import { DEFAULT_TEMPLATES } from "../bootCantilune.js";
 import { AgentInstance } from "./agentInstance.js";
-import type { AgentInstanceConfig } from "./agentInstance.js";
 import type {
   ClusterEvent,
   ClusterEventListener,
   ClusterResult,
+  ClusterTerminationReason,
   AgentRunResult,
   LivenessEntry,
   HumanInterface,
@@ -51,9 +51,25 @@ import type {
   SwarmAgentHandle,
 } from "./clusterTypes.js";
 import type { SharedResources } from "./sharedResources.js";
-import { deserializeManifest } from "@cantilune/core";
+import { deserializeManifest, manifestPriority } from "@cantilune/core";
+import { SwarmScheduler, type SchedulerSnapshot } from "./swarmScheduler.js";
+import type { SwarmSchedulerPolicyInput } from "./schedulerPolicy.js";
+import { SignalHandlerRegistry } from "./signalHandlerRegistry.js";
+import { createAgentCommsServices, type AgentCommsHandle } from "./commsRuntimeBridge.js";
+import { startAgentCommsPump, type AgentCommsPump } from "./agentCommsPump.js";
+import { RemoteAgentHandle } from "./remoteAgentHandle.js";
+import { createRemoteRuntimeProxy } from "./remoteRuntimeProxy.js";
 
 const DEFAULT_FEED_DRAIN_MS = 500;
+const DEFAULT_COMPLETION_POLL_MS = 1000;
+
+/** One-line summary for each way a cluster run can end. */
+function summarizeTermination(reason: ClusterTerminationReason, agentCount: number): string {
+  if (reason === "completed") return `Cluster execution completed (${agentCount} agents)`;
+  if (reason === "stalled") return "Cluster stalled: no agent can make further progress";
+  if (reason === "budget_exhausted") return "Cluster stopped: swarm budget exhausted";
+  return "Cluster stopped before completion";
+}
 const DEFAULT_HEARTBEAT_CHECK_MS = 15_000;
 const DEFAULT_STALE_MULTIPLIER = 2;
 const DEFAULT_GRACE_FACTOR = 2;
@@ -84,6 +100,18 @@ export interface ClusterSupervisorDeps {
    * adapter for the swarm's liveness contract.
    */
   readonly agentFactory?: AgentFactory;
+  /**
+   * Admission, fairness, and budget limits for the agent pool. Anything omitted
+   * keeps its bounded default (see `DEFAULT_SCHEDULER_POLICY`).
+   */
+  readonly schedulerPolicy?: SwarmSchedulerPolicyInput;
+  /** Injectable clock for the scheduler; tests drive aging deterministically. */
+  readonly now?: () => number;
+  /**
+   * Poll interval for `waitForCompletion`. Kept small in tests so a completion
+   * or stall verdict is observed promptly.
+   */
+  readonly completionPollMs?: number;
 }
 
 /**
@@ -100,8 +128,8 @@ export class ClusterSupervisor {
   private readonly agents = new Map<string, SwarmAgentHandle>();
   private readonly agentResults = new Map<string, AgentRunResult>();
   private readonly livenessTable = new Map<string, LivenessEntry>();
+  private readonly agentComms = new Map<string, { handle: AgentCommsHandle; pump: AgentCommsPump }>();
   private readonly shared: SharedResources;
-  private readonly conditionRegistry: ConditionEvaluatorRegistry;
   private readonly llmAdapterFactory: LlmAdapterFactory;
   private readonly humanInterface: HumanInterface | undefined;
   private readonly staleMultiplier: number;
@@ -112,16 +140,21 @@ export class ClusterSupervisor {
   private readonly supervisorPrincipal:
     (() => { actorId: ActorId; kind: string } | undefined) | undefined;
   private readonly agentFactory: AgentFactory | undefined;
+  private readonly scheduler: SwarmScheduler;
+  private readonly completionPollMs: number;
+  private readonly signals = new SignalHandlerRegistry();
 
   private feedDrainTimer: ReturnType<typeof setInterval> | undefined;
   private staleDetectorTimer: ReturnType<typeof setInterval> | undefined;
   private lastObservedHead: SnapshotRef | undefined;
   private running = false;
   private draining = false;
+  private dispatching = false;
+  /** Set once a stall or budget verdict has ended the run; drives the result. */
+  private terminal: { reason: ClusterTerminationReason; detail: string } | undefined;
 
   constructor(deps: ClusterSupervisorDeps) {
     this.shared = deps.shared;
-    this.conditionRegistry = deps.conditionRegistry;
     this.llmAdapterFactory = deps.llmAdapterFactory;
     this.humanInterface = deps.humanInterface;
     this.staleMultiplier = deps.staleThresholdMultiplier ?? DEFAULT_STALE_MULTIPLIER;
@@ -131,6 +164,29 @@ export class ClusterSupervisor {
     this.eventListener = deps.eventListener;
     this.supervisorPrincipal = deps.supervisorPrincipal;
     this.agentFactory = deps.agentFactory;
+    this.completionPollMs = deps.completionPollMs ?? DEFAULT_COMPLETION_POLL_MS;
+    this.scheduler = new SwarmScheduler({
+      conditionRegistry: deps.conditionRegistry,
+      ...(deps.schedulerPolicy !== undefined ? { policy: deps.schedulerPolicy } : {}),
+      ...(deps.now !== undefined ? { now: deps.now } : {}),
+    });
+    this.signals.register(operationTypeId("activate_participant"), (change) =>
+      this.onParticipantActivated(change),
+    );
+    this.signals.register(operationTypeId("emit_heartbeat"), async (change) => {
+      this.onHeartbeatChange(change);
+    });
+    this.signals.register(operationTypeId("signal_done"), async (change) => {
+      this.onSignalDoneChange(change);
+    });
+    this.signals.register(operationTypeId("retire_participant"), async (change) => {
+      this.onRetireChange(change);
+    });
+  }
+
+  /** Scheduler projection for the CLI swarm view and for result diagnostics. */
+  getSchedulerSnapshot(): SchedulerSnapshot {
+    return this.scheduler.snapshot();
   }
 
   /**
@@ -243,7 +299,15 @@ export class ClusterSupervisor {
     await this.processChange(change);
   }
 
-  /** Drain the committed-change feed since the last observed head. */
+  /**
+   * Drain the committed-change feed since the last observed head, then give the
+   * scheduler a chance to dispatch.
+   *
+   * The dispatch pass runs on every drain, including drains that found no
+   * changes. That is deliberate: a pending agent's start condition is a
+   * predicate over the committed world, and re-asking it each tick is what
+   * makes fan-in, conditional start, and feedback loops fire at all.
+   */
   async drainFeed(): Promise<void> {
     if (!this.running || this.draining) return;
     this.draining = true;
@@ -252,33 +316,78 @@ export class ClusterSupervisor {
       for (const change of changes) {
         await this.processChange(change);
         this.lastObservedHead = change.afterRef;
+        this.scheduler.noteWorldMovement();
       }
     } finally {
       this.draining = false;
     }
+    await this.dispatchPending();
+  }
+
+  /**
+   * Start every pending agent the scheduler clears against the current world.
+   *
+   * Re-entrancy is guarded because `startAgent` is async and a drain may be
+   * triggered from inside agent completion; without the guard the same cleared
+   * agent could be started twice before `onStarted` moved it out of pending.
+   */
+  async dispatchPending(): Promise<void> {
+    if (!this.running || this.dispatching) return;
+    this.dispatching = true;
+    try {
+      const head = this.shared.runtime.getHead() as CollaborationSnapshot | undefined;
+      for (const decision of this.scheduler.selectDispatchable(head)) {
+        // Claim the slot here, not inside startAgent: the claim must happen at
+        // the dispatch site so it holds even when startAgent is overridden, and
+        // so an await inside startAgent cannot let a second pass reuse the slot.
+        this.scheduler.onStarted(decision.agentId);
+        try {
+          await this.startAgent(decision.agentId, decision.manifest);
+        } catch (error) {
+          this.scheduler.releaseSlot(decision.agentId);
+          throw error;
+        }
+        this.emitEvent({ kind: "condition_met", actorId: decision.agentId });
+      }
+      this.reportBudgetIfExhausted();
+    } finally {
+      this.dispatching = false;
+    }
+  }
+
+  /** Emit a one-shot budget event and record the terminal verdict. */
+  private reportBudgetIfExhausted(): void {
+    if (this.terminal !== undefined) return;
+    const budget = this.scheduler.budget();
+    if (budget.kind !== "exhausted") return;
+    this.terminal = { reason: "budget_exhausted", detail: budget.detail };
+    this.emitEvent({
+      kind: "budget_exhausted",
+      limit: budget.limit,
+      detail: budget.detail,
+    });
   }
 
   /** Process one committed change from the feed. */
   private async processChange(change: CoordinationChange): Promise<void> {
-    const op = change.operationTypeId as string;
-    if (op === "activate_participant") {
-      await this.onParticipantActivated(change);
-    } else if (op === "emit_heartbeat") {
-      this.onHeartbeatChange(change);
-    } else if (op === "signal_done") {
-      this.onSignalDoneChange(change);
-    } else if (op === "retire_participant") {
-      this.onRetireChange(change);
-    }
+    await this.signals.dispatch(change.operationTypeId, change);
   }
 
-  /** An `activate_participant` change: the trigger for `startAgent`. */
+  /**
+   * An `activate_participant` change: admit the agent to the scheduler queue.
+   *
+   * Activation no longer decides whether the agent starts. It used to evaluate
+   * `startCondition` once, here, and drop the agent forever if the condition
+   * was false — which silently broke every topology whose condition is false at
+   * activation time by construction (fan-in, conditional start, feedback
+   * loops). Admission records the agent; `dispatchPending` re-asks the
+   * condition against the committed world on every tick until it holds.
+   */
   private async onParticipantActivated(change: CoordinationChange): Promise<void> {
     const participantBinding = change.matchBindings.find((b) => b.role === "participant");
     if (participantBinding?.role !== "participant") return;
     const agentId = participantBinding.actorId;
-    const agentKey = agentId as string;
-    if (this.agents.has(agentKey)) return;
+    if (this.agents.has(agentId as string)) return;
 
     const head = this.shared.runtime.getHead() as CollaborationSnapshot | undefined;
     if (head === undefined) return;
@@ -286,16 +395,46 @@ export class ClusterSupervisor {
     if (participantEntry === undefined) return;
 
     const manifest = await this.resolveManifest(agentId, participantEntry.manifestRef);
-    if (manifest === undefined) return;
-
-    const ctx: ConditionEvaluationContext = {
-      snapshot: head,
-      targetAgent: agentId,
-    };
-    if (this.conditionRegistry.evaluate(manifest.startCondition, ctx)) {
-      await this.startAgent(agentId, manifest);
-      this.emitEvent({ kind: "condition_met", actorId: agentId });
+    if (manifest === undefined) {
+      this.onManifestUnresolved(agentId);
+      return;
     }
+
+    if (this.scheduler.admit(agentId, manifest)) {
+      this.emitEvent({
+        kind: "agent_queued",
+        actorId: agentId,
+        priority: manifestPriority(manifest),
+      });
+    }
+  }
+
+  /**
+   * An activated participant whose manifest cannot be resolved.
+   *
+   * Without this the participant sits `active` forever with no agent: it is not
+   * in the scheduler queue (so the stall detector, which requires something
+   * pending, never fires), not in the liveness table (so the expiry tick never
+   * fires), and not `done` (so cluster completion never holds) — the swarm
+   * hangs with no diagnosis. Seeding an already-expired liveness entry routes it
+   * through the ADR-0015 §5 retirement path the orphan case already uses,
+   * rather than inventing a second way to retire a participant.
+   */
+  private onManifestUnresolved(agentId: ActorId): void {
+    const agentKey = agentId as string;
+    if (this.livenessTable.has(agentKey)) return;
+    this.emitEvent({
+      kind: "manifest_unresolved",
+      actorId: agentId,
+      detail:
+        "The bound manifest is missing, unparseable, or names a different agentId; " +
+        "the participant will be retired by the liveness tick.",
+    });
+    this.livenessTable.set(agentKey, {
+      lastHeartbeatTime: Number.NEGATIVE_INFINITY,
+      sequenceNo: 0,
+      heartbeatIntervalMs: this.heartbeatCheckMs,
+    });
   }
 
   /** Start an agent instance. */
@@ -303,7 +442,52 @@ export class ClusterSupervisor {
     const agentKey = agentId as string;
     if (this.agents.has(agentKey)) return;
 
-    this.shared.meshTransport.allocate(agentId);
+    const transport = this.shared.meshTransport.allocate(agentId);
+    const commsHandle = createAgentCommsServices({
+      shared: this.shared,
+      agentId,
+      transport,
+    });
+    const pump = startAgentCommsPump({
+      shared: this.shared,
+      agentId,
+      handle: commsHandle,
+    });
+    this.agentComms.set(agentKey, { handle: commsHandle, pump });
+
+    const remoteEntry = this.shared.meshHostDirectory?.get(agentId);
+    const isRemoteWorker =
+      remoteEntry !== undefined &&
+      remoteEntry.role === "worker" &&
+      this.shared.swarmRole === "supervisor";
+
+    if (isRemoteWorker && remoteEntry !== undefined) {
+      // S4: supervisor does not run the LLM loop. Proxy runtime ports for the
+      // worker's saga commits; liveness comes from world heartbeats.
+      createRemoteRuntimeProxy({
+        actorId: agentId,
+        runtime: this.shared.runtime as never,
+      });
+      const instance = new RemoteAgentHandle({
+        actorId: agentId,
+        hostEntry: remoteEntry,
+        onAbort: () => {
+          pump.stop();
+        },
+      });
+      this.agents.set(agentKey, instance);
+      this.scheduler.onStarted(agentId);
+      this.livenessTable.set(agentKey, {
+        lastHeartbeatTime: Date.now(),
+        sequenceNo: 0,
+        heartbeatIntervalMs: manifest.heartbeatIntervalMs,
+      });
+      this.emitEvent({ kind: "agent_started", actorId: agentId });
+      const resultPromise = instance.start();
+      void resultPromise.then((result) => this.onAgentComplete(agentId, result, manifest));
+      return;
+    }
+
     const llmAdapter = this.llmAdapterFactory(manifest);
 
     const schemaProvider = createStaticSchemaProvider(DEFAULT_TEMPLATES);
@@ -334,6 +518,9 @@ export class ClusterSupervisor {
           })
         : this.agentFactory.create(agentId, manifest, this.shared, llmAdapter, syscall);
     this.agents.set(agentKey, instance);
+    // Claim the concurrency slot before the run starts, so a dispatch pass
+    // triggered while this agent is booting cannot oversubscribe the ceiling.
+    this.scheduler.onStarted(agentId);
 
     this.livenessTable.set(agentKey, {
       lastHeartbeatTime: Date.now(),
@@ -345,6 +532,16 @@ export class ClusterSupervisor {
 
     const resultPromise = instance.start();
     void resultPromise.then((result) => this.onAgentComplete(agentId, result, manifest));
+  }
+
+  private stopAgentComms(agentId: ActorId): void {
+    const key = agentId as string;
+    const entry = this.agentComms.get(key);
+    if (entry !== undefined) {
+      entry.pump.stop();
+      this.agentComms.delete(key);
+    }
+    this.shared.meshTransport.deallocate(agentId);
   }
 
   /** Get the current cluster status. */
@@ -363,26 +560,60 @@ export class ClusterSupervisor {
     return { agents: result };
   }
 
-  /** Wait for all required agents to complete. */
+  /**
+   * Wait until the swarm reaches a terminal state.
+   *
+   * There are four ways out and the caller can tell them apart from
+   * `result.reason`: every participant finished, the swarm stalled (nothing
+   * running, nothing startable, world standing still), a budget ran out, or the
+   * supervisor was stopped. The previous implementation only recognised the
+   * first and polled forever otherwise, so an unsatisfiable start condition
+   * hung the process with no diagnosis.
+   */
   async waitForCompletion(): Promise<ClusterResult> {
     const startTime = Date.now();
 
-    while (this.running) {
-      if (this.isClusterComplete()) break;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    while (this.running && this.terminal === undefined && !this.isClusterComplete()) {
+      await new Promise((resolve) => setTimeout(resolve, this.completionPollMs));
+      this.reportBudgetIfExhausted();
     }
 
+    const reason = this.resolveTerminationReason();
     const totalTurns = [...this.agentResults.values()].reduce((sum, r) => sum + r.result.turns, 0);
 
     this.emitEvent({ kind: "cluster_complete" });
 
+    const everyAgentOk = [...this.agentResults.values()].every((r) => r.result.ok);
     return {
-      ok: [...this.agentResults.values()].every((r) => r.result.ok),
-      summary: "Cluster execution completed",
+      // Only a genuine completion can be ok: a stalled or budget-exhausted
+      // swarm has unfinished participants, so reporting success would be the
+      // vacuous-success defect the swarm gate exists to prevent.
+      ok: reason.reason === "completed" && everyAgentOk,
+      summary: summarizeTermination(reason.reason, this.agentResults.size),
       agentResults: new Map([...this.agentResults.entries()].map(([k, v]) => [k as ActorId, v])),
       totalElapsedMs: Date.now() - startTime,
       totalTurns,
+      reason: reason.reason,
+      diagnostic: reason.detail,
     };
+  }
+
+  /** Classify how the wait ended. */
+  private resolveTerminationReason(): {
+    reason: ClusterTerminationReason;
+    detail: string;
+  } {
+    if (this.isClusterComplete()) return { reason: "completed", detail: "" };
+    if (this.terminal !== undefined) return this.terminal;
+    if (!this.running) {
+      return {
+        reason: "stopped",
+        detail: "Supervisor stopped before every participant reached a terminal status.",
+      };
+    }
+    // Reached only if the loop exits without a verdict, which the loop
+    // condition forbids; classify as stalled rather than reporting success.
+    return { reason: "stalled", detail: this.scheduler.observeStall().detail };
   }
 
   /**
@@ -427,7 +658,10 @@ export class ClusterSupervisor {
 
     this.agents.delete(agentKey);
     this.livenessTable.delete(agentKey);
-    this.shared.meshTransport.deallocate(agentId);
+    this.stopAgentComms(agentId);
+    // Release the concurrency slot and charge the turns before the drain below,
+    // so a pending agent waiting on this one can be dispatched in the same pass.
+    this.scheduler.onCompleted(agentId, result.turns);
 
     this.emitEvent({
       kind: "agent_done",
@@ -483,7 +717,7 @@ export class ClusterSupervisor {
     });
   }
 
-  /** Resolve the principal the supervisor commits lifecycle intents as. */
+  /** Resolve the principal the supervisor commits lifecycle intents as. @internal */
   private resolveSupervisorPrincipal(): { actorId: ActorId; kind: string } | undefined {
     if (this.supervisorPrincipal !== undefined) {
       return this.supervisorPrincipal();
@@ -509,7 +743,8 @@ export class ClusterSupervisor {
     if (this.agents.has(agentKey)) {
       this.agents.delete(agentKey);
       this.livenessTable.delete(agentKey);
-      this.shared.meshTransport.deallocate(fromBinding.actorId);
+      this.stopAgentComms(fromBinding.actorId);
+      this.scheduler.onCompleted(fromBinding.actorId, 0);
     }
   }
 
@@ -542,9 +777,14 @@ export class ClusterSupervisor {
     if (instance !== undefined) {
       instance.abort();
       this.agents.delete(agentKey);
+      this.scheduler.onCompleted(agentId, 0);
     }
+    // A participant retired before it ever started must leave the queue, or the
+    // scheduler would keep re-evaluating a condition for an agent the world has
+    // already given up on and report the swarm as blocked on it.
+    this.scheduler.discard(agentId);
     this.livenessTable.delete(agentKey);
-    this.shared.meshTransport.deallocate(agentId);
+    this.stopAgentComms(agentId);
     this.emitEvent({ kind: "agent_retired", actorId: agentId });
   }
 
@@ -557,7 +797,22 @@ export class ClusterSupervisor {
   private startStaleDetector(): void {
     this.staleDetectorTimer = setInterval(() => {
       this.checkStaleAgents();
+      this.checkStall();
     }, this.heartbeatCheckMs);
+  }
+
+  /**
+   * Deadlock convergence: when nothing runs, something is still queued, and the
+   * world has stopped moving for several consecutive checks, the swarm can make
+   * no further progress. Record it as terminal so `waitForCompletion` returns a
+   * diagnosed failure instead of polling forever.
+   */
+  private checkStall(): void {
+    if (this.terminal !== undefined) return;
+    const verdict = this.scheduler.observeStall();
+    if (!verdict.stalled) return;
+    this.terminal = { reason: "stalled", detail: verdict.detail };
+    this.emitEvent({ kind: "swarm_stalled", detail: verdict.detail });
   }
 
   /**

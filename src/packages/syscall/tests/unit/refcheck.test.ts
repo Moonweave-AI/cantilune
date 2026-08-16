@@ -14,7 +14,13 @@ const key: ToolInvocationKey = {
 describe("ref check", () => {
   it("completed ref with vs without outputRef", () => {
     const withoutOut = intentRef(key, "completed");
-    const withOut = intentRef(key, "completed", contentRef("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") as ContentRef);
+    const withOut = intentRef(
+      key,
+      "completed",
+      contentRef(
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      ) as ContentRef,
+    );
     console.log("without outputRef:", String(withoutOut));
     console.log("with outputRef:   ", String(withOut));
     expect(withoutOut).not.toEqual(withOut);

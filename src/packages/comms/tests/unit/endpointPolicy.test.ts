@@ -8,13 +8,15 @@ import {
   PermissiveEndpointPolicy,
 } from "../../src/security/endpointPolicy.js";
 import type { EndpointPolicy } from "../../src/security/identityVerifier.js";
-import { buildTestPeerDescriptor } from "../support/envelopeFixtures.js";
+import { buildTestPeerDescriptor, stubPeerDirectory } from "../support/envelopeFixtures.js";
 import { CommsPeerService } from "../../src/engine/commsPeerService.js";
 import { descriptorRef } from "../../src/foundation/messageId.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createCommsServices } from "../../src/engine/createCommsServices.js";
 import { denyByDefaultAuthorizer } from "../../src/security/denyByDefaultAuthorizer.js";
-import { testRuntimeCommitPort } from "../../src/engine/testRuntimeCommitPort.js";
-import { defaultTestQuiescence, defaultTestSessionAuthority } from "../support/envelopeFixtures.js";
+import { productionCommsDeps } from "../support/productionCommsDeps.js";
 
 function resolveEndpointPolicy(
   mode: "test" | "production",
@@ -104,29 +106,26 @@ describe("createCommsServices endpoint policy defaults", () => {
   });
 
   it("wires production createCommsServices without throwing", () => {
-    const services = createCommsServices({
-      mode: "production",
-      bindingResolver: { getActiveBinding: () => undefined },
-      sessionAuthority: defaultTestSessionAuthority,
-      quiescence: defaultTestQuiescence,
-      runtimeCommit: testRuntimeCommitPort(),
-      observation: {
-        observe: async () => ({ ok: true as const, value: { snapshotRef: "snap-1" as never } }),
-      },
-      identity: {
-        verifyPeer: async () => ({
-          ok: false as const,
-          error: {
-            code: "identity_unverified" as const,
-            phase: "authenticate" as const,
-            message: "no",
-            retryable: false,
-          },
+    const dir = mkdtempSync(join(tmpdir(), "comms-policy-prod-"));
+    try {
+      const services = createCommsServices({
+        ...productionCommsDeps(dir, {
+          verifyPeer: async () => ({
+            ok: false as const,
+            error: {
+              code: "identity_unverified" as const,
+              phase: "authenticate" as const,
+              message: "no",
+              retryable: false,
+            },
+          }),
         }),
-      },
-      authorizer: denyByDefaultAuthorizer(),
-    });
-    expect(services.peer).toBeDefined();
+        authorizer: denyByDefaultAuthorizer(),
+      });
+      expect(services.peer).toBeDefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -144,7 +143,7 @@ describe("CommsPeerService with allowlist policy", () => {
       ],
     });
     const service = new CommsPeerService({
-      directory: { resolve: async () => descriptor, register: () => undefined },
+      directory: stubPeerDirectory(async () => descriptor),
       identity: {
         verifyPeer: async () => ({
           ok: false,

@@ -30,8 +30,13 @@ describe("A2ATransportAdapter", () => {
     expect(sent).toHaveLength(1);
   });
 
-  it("rejects dispatch without sendFrame handler", async () => {
-    const adapter = new A2ATransportAdapter({ remoteEndpoint: "https://agent.example/a2a" });
+  it("uses default HTTP sendFrame and fails closed when the endpoint is unreachable", async () => {
+    const adapter = new A2ATransportAdapter({
+      remoteEndpoint: "https://agent.example/a2a",
+      fetchImpl: (async () => {
+        throw new Error("network down");
+      }) as typeof fetch,
+    });
     const verified = sealVerifiedEnvelope({
       envelope: buildTestEnvelope(),
       verifiedAt: "2026-08-11T16:00:00Z",

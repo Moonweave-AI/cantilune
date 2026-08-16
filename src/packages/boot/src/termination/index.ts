@@ -4,6 +4,10 @@ import { createJudgeAuditJournal } from "./judgeAudit.js";
 import type { JudgeAuditJournal } from "./judgeAudit.js";
 import { createJudgeVerifier } from "./judgeVerifier.js";
 import type { JudgeVerifier } from "./judgeVerifier.js";
+import {
+  createJudgeBudgetPolicy,
+  type JudgeBudgetLimits,
+} from "./judgeBudget.js";
 import { computeResidual } from "./semanticResidual.js";
 import { decide } from "./terminationStateMachine.js";
 import type {
@@ -46,6 +50,12 @@ export { createJudgeVerifier, LLM_JUDGE_VERIFIER_ID } from "./judgeVerifier.js";
 export type { JudgeVerifier, JudgeVerifierOptions, JudgeCache } from "./judgeVerifier.js";
 export { createJudgeAuditJournal } from "./judgeAudit.js";
 export type { JudgeAuditJournal } from "./judgeAudit.js";
+export {
+  createJudgeBudgetPolicy,
+  type JudgeBudgetPolicy,
+  type JudgeBudgetLimits,
+  type JudgeBudgetSnapshot,
+} from "./judgeBudget.js";
 export { frozenCalibrationSamples, runCalibration } from "./judgeCalibration.js";
 export type { JudgeCalibrationSample, JudgeCalibrationReport } from "./judgeCalibration.js";
 
@@ -91,6 +101,11 @@ export interface TerminationControllerOptions {
    * additional members. Empty (default) means single-judge or placeholder.
    */
   readonly judgeQuorum?: readonly LlmAdapter[];
+  /**
+   * ADR-0020 J4: ceilings on judge calls. When exhausted with hardKillEnabled,
+   * further judge pre-passes are skipped (fail-closed placeholder remains).
+   */
+  readonly judgeBudget?: JudgeBudgetLimits;
 }
 
 export function createTerminationController(
@@ -105,6 +120,8 @@ export function createTerminationController(
   };
   let contractCache: GoalContract | undefined;
   let tickCounter = 0;
+  const judgeBudget =
+    options.judgeBudget !== undefined ? createJudgeBudgetPolicy(options.judgeBudget) : undefined;
 
   // ADR-0020: construct the LLM judge (if an adapter is provided) and register
   // it as an additional verifier. The judge never replaces the structured_rubric
@@ -158,7 +175,23 @@ export function createTerminationController(
     // reads synchronously. A judge failure is caught inside the pre-pass and
     // leaves the cache empty → the judge verifier fails closed (ρ=0.3).
     if (judge !== undefined) {
-      await judge.cache.prepass(contract, input.state);
+      if (judgeBudget?.isHardKilled() === true) {
+        // Hard-kill: skip judge LLM; soft criteria fall back to placeholder ρ.
+      } else {
+        const reservation = judgeBudget?.reserve({ tokens: 512, costUsd: 0.01 });
+        if (reservation === undefined || reservation.ok) {
+          const started = Date.now();
+          await judge.cache.prepass(contract, input.state);
+          if (reservation !== undefined && reservation.ok) {
+            judgeBudget?.reconcile({
+              reservationId: reservation.reservation.reservationId,
+              actualTokens: 512,
+              actualCostUsd: 0.01,
+              wallMs: Date.now() - started,
+            });
+          }
+        }
+      }
     }
     const evaluations = evaluateAll(contract, input.state);
     const residualResult = await computeResidual(contract, input.state, options.embedder);

@@ -13,6 +13,9 @@ describe("package exports", () => {
     expect(typeof core.disjoint).toBe("function");
     expect(typeof core.validateCollaborationWorld).toBe("function");
     expect(typeof core.matchBinding).toBe("function");
+    expect(typeof core.visibleTranscript).toBe("function");
+    expect(typeof core.participantTranscript).toBe("function");
+    expect(typeof core.collaborationNamespace).toBe("function");
   });
 
   it("exposes subpath entry points", () => {
@@ -21,5 +24,9 @@ describe("package exports", () => {
     expect(typeof structure.deriveDiagnosticSummary).toBe("function");
     expect(typeof structure.deriveCompositionView).toBe("function");
     expect(typeof consistency.validateSnapshotIntegrity).toBe("function");
+  });
+
+  it("does not export the tests-only simulateCommit harness", () => {
+    expect("simulateCommit" in core).toBe(false);
   });
 });

@@ -17,6 +17,10 @@ export type EpochId = Brand<string, "EpochId">;
 export type OperationTypeId = Brand<string, "OperationTypeId">;
 export type CompositionId = Brand<string, "CompositionId">;
 export type EvidenceId = Brand<string, "EvidenceId">;
+export type NamespaceId = Brand<string, "NamespaceId">;
+export type TranscriptAccessRequestId = Brand<string, "TranscriptAccessRequestId">;
+
+export const DEFAULT_NAMESPACE_ID = asBrand<string, "NamespaceId">("default");
 
 export const actorId = (value: string): ActorId => asBrand(value);
 export const changeId = (value: string): ChangeId => asBrand(value);
@@ -28,3 +32,6 @@ export const epochId = (value: string): EpochId => asBrand(value);
 export const operationTypeId = (value: string): OperationTypeId => asBrand(value);
 export const compositionId = (value: string): CompositionId => asBrand(value);
 export const evidenceId = (value: string): EvidenceId => asBrand(value);
+export const namespaceId = (value: string): NamespaceId => asBrand(value);
+export const transcriptAccessRequestId = (value: string): TranscriptAccessRequestId =>
+  asBrand(value);

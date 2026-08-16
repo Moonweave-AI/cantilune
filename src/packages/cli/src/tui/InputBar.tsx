@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Text, useInput, type Key } from "ink";
 import type { SlashCommand } from "../commands/registry.js";
 import { acceptSuggestion, suggestCommands, type SuggestResult } from "../commands/suggest.js";
 import { useTheme } from "../theme/themeContext.js";
 import { border, fg } from "../theme/theme.js";
 import { CommandPalette } from "./CommandPalette.js";
+import { estimatePaletteOverlayRows } from "./layoutBudget.js";
 import * as buf from "./textBuffer.js";
 import type { TextBuffer } from "./textBuffer.js";
 
@@ -18,6 +19,8 @@ export interface InputBarProps {
   readonly placeholder?: string;
   /** Suggestion rows shown at once before scrolling. */
   readonly suggestionRows?: number;
+  /** Reports overlay height so the app can keep the frame inside the terminal. */
+  readonly onOverlayRows?: (rows: number) => void;
 }
 
 /** Caret movements, keyed by the letter pressed with Ctrl. */
@@ -84,7 +87,7 @@ function hintLine(
   if (state.overlayOpen) {
     return `${glyphs.upDown} select ${sep} Tab complete ${sep} Enter run ${sep} Esc dismiss`;
   }
-  return `/ commands ${sep} ${glyphs.arrowUp} history ${sep} Ctrl+O observe`;
+  return `/ commands ${sep} ${glyphs.arrowUp} history ${sep} Ctrl+T tools ${sep} Ctrl+O observe`;
 }
 
 export function InputBar({
@@ -95,6 +98,7 @@ export function InputBar({
   commands = [],
   placeholder,
   suggestionRows = 8,
+  onOverlayRows,
 }: InputBarProps): React.ReactElement {
   const theme = useTheme();
   const [buffer, setBuffer] = useState<TextBuffer>(buf.EMPTY_BUFFER);
@@ -131,6 +135,24 @@ export function InputBar({
   // Kept open even with nothing to show, so a mistyped command says so instead
   // of silently offering nothing.
   const overlayOpen = !disabled && !dismissed && commandLike;
+
+  useEffect(() => {
+    onOverlayRows?.(
+      estimatePaletteOverlayRows(
+        overlayOpen,
+        suggest.suggestions.length,
+        suggestionRows,
+        suggest.usage !== null,
+      ),
+    );
+  }, [onOverlayRows, overlayOpen, suggest.suggestions.length, suggest.usage, suggestionRows]);
+
+  useEffect(() => {
+    return () => {
+      onOverlayRows?.(0);
+    };
+  }, [onOverlayRows]);
+
   const safeSelected =
     suggest.suggestions.length === 0 ? 0 : Math.min(selected, suggest.suggestions.length - 1);
   const active = suggest.suggestions[safeSelected];
@@ -183,6 +205,20 @@ export function InputBar({
     submit(buffer.text);
   };
 
+  const handleVertical = (key: Key): boolean => {
+    if (key.ctrl || (!key.upArrow && !key.downArrow)) return false;
+    // The arrows drive the suggestion list while it is open, and history recall
+    // otherwise. Multiline text keeps its own navigation. Ctrl+Up / Ctrl+Down
+    // belong to transcript scrolling and are ignored here.
+    if (overlayOpen && suggest.suggestions.length > 0) {
+      const limit = suggest.suggestions.length - 1;
+      setSelected(key.upArrow ? Math.max(0, safeSelected - 1) : Math.min(limit, safeSelected + 1));
+    } else if (!buffer.text.includes("\n")) {
+      recallHistory(key.upArrow ? -1 : 1);
+    }
+    return true;
+  };
+
   const handleArrow = (key: Key): boolean => {
     if (key.leftArrow) {
       setBuffer(key.meta ? buf.moveWordLeft : buf.moveLeft);
@@ -192,17 +228,7 @@ export function InputBar({
       setBuffer(key.meta ? buf.moveWordRight : buf.moveRight);
       return true;
     }
-    if (!key.upArrow && !key.downArrow) return false;
-
-    // The arrows drive the suggestion list while it is open, and history recall
-    // otherwise. Multiline text keeps its own navigation.
-    if (overlayOpen && suggest.suggestions.length > 0) {
-      const limit = suggest.suggestions.length - 1;
-      setSelected(key.upArrow ? Math.max(0, safeSelected - 1) : Math.min(limit, safeSelected + 1));
-    } else if (!buffer.text.includes("\n")) {
-      recallHistory(key.upArrow ? -1 : 1);
-    }
-    return true;
+    return handleVertical(key);
   };
 
   /**
@@ -292,13 +318,14 @@ export function InputBar({
   const footer = hintLine(glyphs, { disabled, overlayOpen, lineCount });
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" width={width} flexShrink={0}>
       {overlayOpen ? (
         <CommandPalette
           suggestions={suggest.suggestions}
           usage={suggest.usage}
           selected={safeSelected}
           visibleRows={suggestionRows}
+          width={width}
         />
       ) : null}
 

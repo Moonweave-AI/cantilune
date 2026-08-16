@@ -17,12 +17,12 @@
 
 ## 四工程读角 lens
 
-| 读角                   | Lens                | 单测                   | 集成/L7                     |
-| ---------------------- | ------------------- | ---------------------- | --------------------------- |
-| dependency             | `dependencyLens`    | linkFilters · lenses   | ultimate                    |
-| resource               | `resourceLens`      | lenses                 | stress · ultimate           |
-| communication          | `communicationLens` | lenses                 | stress · ultimate           |
-| coordination-structure | `structureLens`     | lenses (nest/fork/box) | ultimate serial composition |
+| 读角                   | Lens                | 单测                   | 集成/L7                              |
+| ---------------------- | ------------------- | ---------------------- | ---------------------------------- |
+| dependency             | `dependencyLens`    | linkFilters · lenses   | ultimate · file-durable observe-cut |
+| resource               | `resourceLens`      | lenses                 | stress · ultimate · file-durable   |
+| communication          | `communicationLens` | lenses (create_session) | stress · ultimate · file-durable  |
+| coordination-structure | `structureLens`     | lenses (nest/fork/box) | ultimate · file-durable nest/fork  |
 
 ## STRESS / ULTIMATE 档位
 
@@ -40,11 +40,16 @@
 | tests typecheck | `tsconfig.tests.json` · `pnpm typecheck`                |
 | coverage        | `vitest.config.ts` thresholds · CI `test:coverage`      |
 
+## 已闭包（本轮）
+
+| 项                              | 落点                                                                                         |
+| ------------------------------- | -------------------------------------------------------------------------------------------- |
+| `ObservationAccessContext`      | 生产 SDK `requireAccessContext: true`；L7 file-durable observe-cut 带 context                |
+| L7 file durable observe-cut     | `system/file-durable-observe-cut.test.ts`（file persistence + 同目录 reopen；缺 dist 失败） |
+| nest/fork/create_session        | 生产 `diagnosticStepFromChange` + communication `createdSessionRefs`；L7 实 commit 投影     |
+
 ## OPEN（诚实未闭包）
 
-| 项                              | 原因                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------- |
-| `ProjectionCertificate` 形式化  | 归 `@cantilune/conformance`；observability 仅 `ReadModelDerivationEvidence`                 |
-| `ObservationAccessContext`      | ADR-0005 推迟至生产读侧；M2–M3 为 trusted internal API                                      |
-| L7 file durable / 冷启动 / 并发 | 需 runtime+observability 联合场景；当前 L7 为内存规模 smoke                                 |
-| nest/fork runtime apply         | observability 只投影已 commit 事实；无 create_session handler 时长链仅含 introduce/delegate |
+| 项                             | 原因                                                                        |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| `ProjectionCertificate` 形式化 | 归 `@cantilune/conformance`；observability 仅 `ReadModelDerivationEvidence` |

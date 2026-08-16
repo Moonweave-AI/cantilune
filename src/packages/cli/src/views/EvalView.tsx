@@ -27,6 +27,21 @@ export interface PrefetchedEvalData {
   readonly attemptsB?: readonly RunAttempt[];
   readonly runA?: string;
   readonly runB?: string;
+  readonly analysis?: {
+    readonly estimate: { readonly pointEstimate: number; readonly method: string };
+    readonly negativeResults: readonly string[];
+    readonly confidenceOrCredibleInterval?: { readonly lower: number; readonly upper: number };
+  };
+  readonly report?: {
+    readonly status?: string;
+    readonly summary?: { readonly decisionStatus?: string };
+    readonly limitations?: readonly string[];
+  };
+  readonly theoryOracles?: {
+    readonly passedCount?: number;
+    readonly premiseMissingCount?: number;
+    readonly blocksClaimSupport?: boolean;
+  };
   readonly notice?: { readonly level: "info" | "warn" | "error"; readonly text: string };
 }
 
@@ -134,17 +149,30 @@ export function renderEvalViewOutput(
     case "eval-report": {
       const runs = data.runs ?? [];
       const attempts = data.attempts ?? [];
+      const report = data.report;
+      const interval = data.analysis?.confidenceOrCredibleInterval;
       return [
         `Run: ${str(data.lastRunId, "—")}`,
         "",
         runTable(runs),
         "",
         attemptTable(attempts),
+        "",
+        `Report status: ${str(report?.status, "draft")}`,
+        `Decision (analysis-only): ${str(report?.summary?.decisionStatus, "inconclusive")}`,
+        interval === undefined
+          ? "No preregistered interval"
+          : `Primary CI: [${String(interval.lower)}, ${String(interval.upper)}]`,
+        ...(report?.limitations ?? []).map((row) => `  limitation: ${row}`),
+        data.theoryOracles === undefined
+          ? ""
+          : `Theory oracles: passed=${String(data.theoryOracles.passedCount ?? 0)} premiseMissing=${String(data.theoryOracles.premiseMissingCount ?? 0)} blocksSupport=${String(data.theoryOracles.blocksClaimSupport ?? true)}`,
       ].join("\n");
     }
     case "eval-compare": {
       const a = data.attemptsA ?? [];
       const b = data.attemptsB ?? [];
+      const delta = data.analysis?.estimate.pointEstimate;
       return [
         `Compare ${str(data.runA, "baseline")} vs ${str(data.runB, "current")}`,
         "",
@@ -152,6 +180,10 @@ export function renderEvalViewOutput(
         `Attempts B: ${b.length}`,
         `Tokens A: ${a.reduce((s, x) => s + x.tokenUsage.totalTokens, 0)}`,
         `Tokens B: ${b.reduce((s, x) => s + x.tokenUsage.totalTokens, 0)}`,
+        delta === undefined
+          ? "No paired analysis (both run ids required)"
+          : `Paired delta (succeeded attempts B-A): ${String(delta)} via ${data.analysis?.estimate.method ?? "compareEvaluationRuns"}`,
+        ...(data.analysis?.negativeResults ?? []).map((row) => `  ${row}`),
       ].join("\n");
     }
     default:

@@ -1,0 +1,22 @@
+{
+  "taskId": "T19",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "data/graph-slice.json",
+    "adversary/round-1.md",
+    "adversary/round-2.md",
+    "artifacts/anomalies.md",
+    "artifacts/graph-findings.md",
+    "artifacts/strategy-v1.md",
+    "artifacts/strategy-v2.md",
+    "artifacts/arbitration.md",
+    "artifacts/balance.md"
+  ],
+  "requiredGlobs": []
+}

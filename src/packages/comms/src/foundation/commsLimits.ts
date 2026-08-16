@@ -15,4 +15,9 @@ export const COMMS_LIMITS = {
 
 export const COMMS_WIRE_VERSION_V1 = 1 as const;
 export const COMMS_REGISTRY_VERSION_V1 = 1 as const;
+/** Pinned regression profile for the ADR-0018 T4 harness. */
 export const A2A_PROFILE_PINNED = "a2a/0.1" as const;
+/** A2A Protocol 1.0.0 Major.Minor (ADR-0027). Patch is not negotiated. */
+export const A2A_PROTOCOL_VERSION_V1 = "1.0" as const;
+/** Public A2A 1.0.0 profile string — distinct from the a2a/0.1 regression pin. */
+export const A2A_PROFILE_V1 = "a2a/1.0" as const;

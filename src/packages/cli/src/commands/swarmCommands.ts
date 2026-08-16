@@ -40,6 +40,16 @@ export function registerSwarmCommands(): SlashCommand[] {
       },
     },
     {
+      name: "/swarm schedule",
+      description: "Show the dispatch queue, concurrency ceiling, and swarm budget",
+      category: view,
+      handler: (_args: Record<string, unknown>, store: AppStore, services): void => {
+        store.mode = "view";
+        store.activeView = "swarm-schedule";
+        store.viewArgs = prefetchSwarmStatus(services);
+      },
+    },
+    {
       name: "/swarm start",
       description: "Start the swarm supervisor (boots the CantilunOS pool)",
       category: operation,
@@ -120,13 +130,80 @@ export function registerSwarmCommands(): SlashCommand[] {
           return;
         }
         const result = await controller.waitForCompletion();
+        // A non-completed run carries the reason it ended and which agents were
+        // blocked; surfacing only the summary would hide the actionable half.
+        const failure =
+          result.diagnostic.length > 0
+            ? `swarm ${result.reason} — ${result.summary}: ${result.diagnostic}`
+            : `swarm ${result.reason} — ${result.summary}`;
         notify(
           store,
           services,
           result.ok ? "info" : "warn",
-          result.ok ? `swarm complete — ${result.summary}` : `swarm incomplete — ${result.summary}`,
+          result.ok ? `swarm complete — ${result.summary}` : failure,
         );
         store.viewArgs = prefetchSwarmStatus(services);
+      },
+    },
+    {
+      name: "/swarm hosts",
+      description: "List mesh host directory entries (ADR-0019 S4)",
+      category: view,
+      handler: (_args: Record<string, unknown>, store: AppStore, services): void => {
+        const controller = services?.swarmControl?.() as
+          | { readonly listHosts?: () => readonly unknown[] }
+          | undefined;
+        const hosts = controller?.listHosts?.() ?? [];
+        store.mode = "view";
+        store.activeView = "swarm-status";
+        store.viewArgs = { ...prefetchSwarmStatus(services), meshHosts: hosts };
+        notify(
+          store,
+          services,
+          "info",
+          hosts.length === 0
+            ? "mesh host directory empty (configure swarmDirectoryPath)"
+            : `${hosts.length} mesh host(s)`,
+        );
+      },
+    },
+    {
+      name: "/swarm join",
+      description: "Publish this process into the mesh directory: /swarm join <host:port>",
+      category: operation,
+      args: [
+        {
+          name: "listen",
+          description: "host:port to advertise",
+          required: true,
+          type: "string",
+        },
+      ],
+      handler: (args: Record<string, unknown>, store: AppStore, services): void => {
+        const controller = services?.swarmControl?.() as
+          | {
+              readonly joinMesh?: (listen: string) => {
+                readonly ok: boolean;
+                readonly message?: string;
+              };
+            }
+          | undefined;
+        if (controller?.joinMesh === undefined) {
+          notify(store, services, "warn", "swarm mesh directory not configured");
+          return;
+        }
+        const listen = typeof args.listen === "string" ? args.listen.trim() : "";
+        if (listen.length === 0) {
+          notify(store, services, "warn", "usage: /swarm join <host:port>");
+          return;
+        }
+        const result = controller.joinMesh(listen);
+        notify(
+          store,
+          services,
+          result.ok ? "info" : "warn",
+          result.message ?? (result.ok ? `joined mesh at ${listen}` : "join failed"),
+        );
       },
     },
   ];

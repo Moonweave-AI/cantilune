@@ -6,6 +6,7 @@ import {
   PARTICIPATION_STATUSES as PARTICIPATION_STATUS_VALUES,
   RETIRED_ENTITY_KINDS as RETIRED_ENTITY_KIND_VALUES,
   SESSION_VISIBILITIES as SESSION_VISIBILITY_VALUES,
+  TRANSCRIPT_ACCESS_STATUSES as TRANSCRIPT_ACCESS_STATUS_VALUES,
   targetsFromMatchBindings,
 } from "@cantilune/core";
 import type { MatchBinding } from "@cantilune/core";
@@ -397,9 +398,9 @@ function parseTemplateRefField(
 
 function parseMatchWitnessField(
   value: unknown,
-): CodecParseResult<ChangeWireDto["matchWitness"] | undefined> {
+): CodecParseResult<NonNullable<ChangeWireDto["matchWitness"]>> {
   if (value === undefined) {
-    return { ok: true, value: undefined };
+    return fail("change.matchWitness", "matchWitness is required on Change wire");
   }
   if (!isRecord(value)) {
     return fail("change.matchWitness", "expected matchWitness object");
@@ -493,7 +494,7 @@ function parseOptionalScalarInputs(
 
 function parseChangeOptionalFields(input: Record<string, unknown>): CodecParseResult<{
   readonly templateRef: ChangeWireDto["templateRef"] | undefined;
-  readonly matchWitness: ChangeWireDto["matchWitness"] | undefined;
+  readonly matchWitness: NonNullable<ChangeWireDto["matchWitness"]>;
   readonly complementTag: number | undefined;
   readonly freshLinkRefs: readonly string[] | undefined;
   readonly inputContentRefs: readonly string[] | undefined;
@@ -611,8 +612,8 @@ export function parseChangeWire(input: unknown): CodecParseResult<ChangeWireDto>
     external: evidence.value.external,
     createdSessionRefs: evidence.value.createdSessionRefs,
     visibility: evidence.value.visibility,
+    matchWitness,
     ...(templateRef !== undefined ? { templateRef } : {}),
-    ...(matchWitness !== undefined ? { matchWitness } : {}),
     ...(complementTag !== undefined ? { complementTag } : {}),
     ...(freshLinkRefs !== undefined ? { freshLinkRefs } : {}),
     ...(inputContentRefs !== undefined ? { inputContentRefs } : {}),
@@ -634,6 +635,12 @@ const CAPABILITY_KINDS: ReadonlySet<string> = new Set<string>(CAPABILITY_KIND_VA
 const SESSION_VISIBILITIES: ReadonlySet<string> = new Set<string>(SESSION_VISIBILITY_VALUES);
 
 const RETIRED_ENTITY_KINDS: ReadonlySet<string> = new Set<string>(RETIRED_ENTITY_KIND_VALUES);
+
+const TRANSCRIPT_ACCESS_STATUSES: ReadonlySet<string> = new Set<string>(
+  TRANSCRIPT_ACCESS_STATUS_VALUES,
+);
+
+const TRANSCRIPT_ROLES: ReadonlySet<string> = new Set(["system", "user", "assistant", "tool"]);
 
 function parseParticipantWire(
   value: unknown,
@@ -662,11 +669,16 @@ function parseParticipantWire(
       return fail(`${path}.manifestRef`, "invalid manifest reference");
     }
   }
+  const namespaceId = value.namespaceId;
+  if (namespaceId !== undefined && (typeof namespaceId !== "string" || namespaceId.length === 0)) {
+    return fail(`${path}.namespaceId`, "invalid namespace id");
+  }
   const result: {
     actorId: string;
     kind: SnapshotWireDto["participants"][number]["kind"];
     status: SnapshotWireDto["participants"][number]["status"];
     manifestRef?: string;
+    namespaceId?: string;
   } = {
     actorId: actorId.value,
     kind: kind as SnapshotWireDto["participants"][number]["kind"],
@@ -674,6 +686,9 @@ function parseParticipantWire(
   };
   if (manifestRef !== undefined) {
     result.manifestRef = manifestRef;
+  }
+  if (typeof namespaceId === "string") {
+    result.namespaceId = namespaceId;
   }
   return { ok: true, value: result as SnapshotWireDto["participants"][number] };
 }
@@ -863,6 +878,29 @@ function parseScopedCapabilityWire(
       } as SnapshotWireDto["capabilities"][number],
     };
   }
+  if (scopeKind === "transcript") {
+    const actorId = requireString(value.scope, "actorId", `${path}.scope`);
+    if (!actorId.ok) {
+      return actorId;
+    }
+    const namespaceId = requireString(value.scope, "namespaceId", `${path}.scope`);
+    if (!namespaceId.ok) {
+      return namespaceId;
+    }
+    return {
+      ok: true,
+      value: {
+        capabilityId: capabilityId.value,
+        kind: kind as SnapshotWireDto["capabilities"][number]["kind"],
+        holder: holder.value,
+        scope: {
+          kind: "transcript",
+          actorId: actorId.value,
+          namespaceId: namespaceId.value,
+        },
+      } as SnapshotWireDto["capabilities"][number],
+    };
+  }
   return fail(`${path}.scope.kind`, "invalid capability scope kind");
 }
 
@@ -1021,6 +1059,202 @@ function parseEntityArray<T>(
   return { ok: true, value: items };
 }
 
+function parseNamespaceWire(
+  value: unknown,
+  path: string,
+): CodecParseResult<NonNullable<SnapshotWireDto["namespaces"]>[number]> {
+  if (!isRecord(value)) {
+    return fail(path, "expected namespace object");
+  }
+  const namespaceId = requireString(value, "namespaceId", path);
+  if (!namespaceId.ok) {
+    return namespaceId;
+  }
+  const displayName = requireString(value, "displayName", path);
+  if (!displayName.ok) {
+    return displayName;
+  }
+  const adminPrincipals = parseStringArray(value.adminPrincipals ?? [], `${path}.adminPrincipals`);
+  if (!adminPrincipals.ok) {
+    return adminPrincipals;
+  }
+  return {
+    ok: true,
+    value: {
+      namespaceId: namespaceId.value,
+      displayName: displayName.value,
+      adminPrincipals: adminPrincipals.value,
+    } as NonNullable<SnapshotWireDto["namespaces"]>[number],
+  };
+}
+
+function parseTranscriptMessageWire(
+  value: unknown,
+  path: string,
+): CodecParseResult<NonNullable<SnapshotWireDto["transcripts"]>[number]["messages"][number]> {
+  if (!isRecord(value)) {
+    return fail(path, "expected transcript message object");
+  }
+  const role = value.role;
+  if (typeof role !== "string" || !TRANSCRIPT_ROLES.has(role)) {
+    return fail(`${path}.role`, "invalid transcript message role");
+  }
+  const rawContent = value.content;
+  if (typeof rawContent !== "string") {
+    return fail(`${path}.content`, "expected string at content");
+  }
+  if (role === "tool") {
+    const toolCallId = requireString(value, "toolCallId", path);
+    if (!toolCallId.ok) {
+      return toolCallId;
+    }
+    return {
+      ok: true,
+      value: { role: "tool", toolCallId: toolCallId.value, content: rawContent },
+    };
+  }
+  if (role === "assistant") {
+    const toolCalls = parseTranscriptToolCalls(value.toolCalls, `${path}.toolCalls`);
+    if (!toolCalls.ok) {
+      return toolCalls;
+    }
+    return {
+      ok: true,
+      value: {
+        role: "assistant",
+        content: rawContent,
+        ...(toolCalls.value !== undefined ? { toolCalls: toolCalls.value } : {}),
+      } as NonNullable<SnapshotWireDto["transcripts"]>[number]["messages"][number],
+    };
+  }
+  return {
+    ok: true,
+    value: { role: role as "system" | "user", content: rawContent },
+  };
+}
+
+function parseTranscriptToolCalls(
+  value: unknown,
+  path: string,
+): CodecParseResult<
+  readonly { readonly id: string; readonly name: string; readonly arguments: string }[] | undefined
+> {
+  if (value === undefined) {
+    return { ok: true, value: undefined };
+  }
+  if (!Array.isArray(value)) {
+    return fail(path, "expected toolCalls array");
+  }
+  const calls: { readonly id: string; readonly name: string; readonly arguments: string }[] = [];
+  for (const [index, entry] of value.entries()) {
+    if (!isRecord(entry)) {
+      return fail(`${path}[${index}]`, "expected tool call object");
+    }
+    const id = requireString(entry, "id", `${path}[${index}]`);
+    const name = requireString(entry, "name", `${path}[${index}]`);
+    const args = entry.arguments;
+    if (!id.ok) {
+      return id;
+    }
+    if (!name.ok) {
+      return name;
+    }
+    if (typeof args !== "string") {
+      return fail(`${path}[${index}].arguments`, "expected string at arguments");
+    }
+    calls.push({ id: id.value, name: name.value, arguments: args });
+  }
+  return { ok: true, value: calls };
+}
+
+function parseTranscriptWire(
+  value: unknown,
+  path: string,
+): CodecParseResult<NonNullable<SnapshotWireDto["transcripts"]>[number]> {
+  if (!isRecord(value)) {
+    return fail(path, "expected transcript object");
+  }
+  const actorId = requireString(value, "actorId", path);
+  if (!actorId.ok) {
+    return actorId;
+  }
+  const namespaceId = requireString(value, "namespaceId", path);
+  if (!namespaceId.ok) {
+    return namespaceId;
+  }
+  const revision = value.revision;
+  if (typeof revision !== "number" || !Number.isInteger(revision) || revision < 0) {
+    return fail(`${path}.revision`, "expected non-negative integer revision");
+  }
+  const messages = parseEntityArray(value.messages, `${path}.messages`, parseTranscriptMessageWire);
+  if (!messages.ok) {
+    return messages;
+  }
+  return {
+    ok: true,
+    value: {
+      actorId: actorId.value,
+      namespaceId: namespaceId.value,
+      revision,
+      messages: messages.value,
+    } as NonNullable<SnapshotWireDto["transcripts"]>[number],
+  };
+}
+
+function parseTranscriptAccessRequestWire(
+  value: unknown,
+  path: string,
+): CodecParseResult<NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number]> {
+  if (!isRecord(value)) {
+    return fail(path, "expected transcript access request object");
+  }
+  const requestId = requireString(value, "requestId", path);
+  if (!requestId.ok) {
+    return requestId;
+  }
+  const requester = parseActorRef(value.requester, `${path}.requester`);
+  if (!requester.ok) {
+    return requester;
+  }
+  const subjectActorId = requireString(value, "subjectActorId", path);
+  if (!subjectActorId.ok) {
+    return subjectActorId;
+  }
+  const subjectNamespaceId = requireString(value, "subjectNamespaceId", path);
+  if (!subjectNamespaceId.ok) {
+    return subjectNamespaceId;
+  }
+  const status = value.status;
+  if (typeof status !== "string" || !TRANSCRIPT_ACCESS_STATUSES.has(status)) {
+    return fail(`${path}.status`, "invalid transcript access status");
+  }
+  const result: {
+    requestId: string;
+    requester: NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number]["requester"];
+    subjectActorId: string;
+    subjectNamespaceId: string;
+    status: NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number]["status"];
+    decidedBy?: NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number]["requester"];
+  } = {
+    requestId: requestId.value,
+    requester: requester.value,
+    subjectActorId: subjectActorId.value,
+    subjectNamespaceId: subjectNamespaceId.value,
+    status: status as NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number]["status"],
+  };
+  if (value.decidedBy !== undefined) {
+    const decidedBy = parseActorRef(value.decidedBy, `${path}.decidedBy`);
+    if (!decidedBy.ok) {
+      return decidedBy;
+    }
+    result.decidedBy = decidedBy.value;
+  }
+  return {
+    ok: true,
+    value: result as NonNullable<SnapshotWireDto["transcriptAccessRequests"]>[number],
+  };
+}
+
 export function parseSnapshotWire(input: unknown): CodecParseResult<SnapshotWireDto> {
   if (!isRecord(input)) {
     return fail("snapshot", "expected snapshot wire object");
@@ -1096,6 +1330,30 @@ export function parseSnapshotWire(input: unknown): CodecParseResult<SnapshotWire
   if (!heartbeatLog.ok) {
     return heartbeatLog;
   }
+  const namespaces = parseEntityArray(
+    input.namespaces ?? [],
+    "snapshot.namespaces",
+    parseNamespaceWire,
+  );
+  if (!namespaces.ok) {
+    return namespaces;
+  }
+  const transcripts = parseEntityArray(
+    input.transcripts ?? [],
+    "snapshot.transcripts",
+    parseTranscriptWire,
+  );
+  if (!transcripts.ok) {
+    return transcripts;
+  }
+  const transcriptAccessRequests = parseEntityArray(
+    input.transcriptAccessRequests ?? [],
+    "snapshot.transcriptAccessRequests",
+    parseTranscriptAccessRequestWire,
+  );
+  if (!transcriptAccessRequests.ok) {
+    return transcriptAccessRequests;
+  }
 
   return {
     ok: true,
@@ -1111,6 +1369,9 @@ export function parseSnapshotWire(input: unknown): CodecParseResult<SnapshotWire
       auditTail: auditTail.value,
       retiredEntities: retiredEntities.value,
       heartbeatLog: heartbeatLog.value,
+      namespaces: namespaces.value,
+      transcripts: transcripts.value,
+      transcriptAccessRequests: transcriptAccessRequests.value,
     },
   };
 }

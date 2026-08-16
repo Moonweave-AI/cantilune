@@ -29,6 +29,34 @@ const services = createCommsServices({
 });
 ```
 
+Optional HMAC identity (A34): if `CANTILUNE_COMMS_HMAC_KEY` or `{storeDir}/hmac.key`
+is present, production `createCommsServices` uses `HmacIdentityVerifier` and
+ignores a weaker injected verifier. Keys are operator-supplied — never hardcoded.
+Absent key material keeps the caller-supplied verifier (boot defaults to ActorId pin).
+
+### NetTransport (ADR-0018 T3)
+
+Cross-host delivery is TCP + TLS 1.3 + mTLS on the same `CommunicationTransport`
+port. Callers supply leaf PEMs and receipt-pinned peer certificate fingerprints
+(`issueSelfSignedMtlsPair` is the localhost/private-swarm issuer; production
+multi-host should use operator-supplied material). An unpinned peer requires
+`provenanceUnavailable` and must not carry publishable superiority claims.
+
+```typescript
+import { connectNetTransportPair, runA2AConformanceHarness } from "@cantilune/comms";
+
+const [local, remote] = await connectNetTransportPair();
+```
+
+A2A Protocol **1.0.0** (ADR-0027) is implemented in `@cantilune/comms` as Agent Card,
+Task/Message/Part/Artifact, Send/Stream/Get/List/Cancel, Get Agent Card, and push,
+with JSON-RPC 2.0, HTTP/REST, SSE, and the official gRPC service
+`lf.a2a.v1.A2AService` (`@grpc/grpc-js` + vendored `specification/a2a.proto`).
+The public claim is **A2A 1.0.0 compliant**, not every future draft.
+
+The pinned `a2a/0.1` harness (`pnpm --filter @cantilune/comms test:a2a-conformance`)
+remains the ADR-0018 T4 regression gate.
+
 ### Test / local harness
 
 ```typescript
@@ -49,10 +77,13 @@ Use `tests/support/commsTestHelpers.ts` (`sealTestAuthContext`, `withIntegrityDi
 | `@cantilune/comms`         | Core types + services                         |
 | `@cantilune/comms/memory`  | In-memory store / loopback (non-production)   |
 | `@cantilune/comms/runtime` | Runtime observe/commit ports                  |
-| `@cantilune/comms/a2a`     | **Experimental** A2A wire adapter             |
+| `@cantilune/comms/a2a`     | A2A 1.0.0 bindings + pinned `a2a/0.1` adapter |
 | `@cantilune/comms/file`    | File-backed store (fail-closed on corruption) |
+| `@cantilune/comms/net`     | `NetTransport` (TCP + TLS 1.3 + mTLS)         |
 
-Stubs (`testRuntimeCommitPort`), test brokers, and permissive defaults are **not** re-exported from the root entry.
+Stubs (`testRuntimeCommitPort`), test brokers, and permissive defaults are **not**
+re-exported from the root entry or from `./memory`. Tests import them from
+`src/engine/testRuntimeCommitPort.ts` / `src/integration/a2aExternalAgentHarness.ts`.
 
 ## Ingress pipeline
 

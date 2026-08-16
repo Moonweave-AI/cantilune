@@ -118,7 +118,7 @@ function buildEventEvidence(
     communication: angleEvidence(
       true,
       storedCommunication,
-      interpretCommunicationDelta(event.eventTag, before, after),
+      interpretCommunicationDelta(event.eventTag, before, after, event.change),
     ),
     structure: angleEvidence(
       true,

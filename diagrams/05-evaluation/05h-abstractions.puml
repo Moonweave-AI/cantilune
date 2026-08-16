@@ -9,7 +9,7 @@ skinparam roundcorner 12
 skinparam ArrowColor #77716B
 
 title 图 05H · @cantilune/evaluation 八层评估抽象
-caption <color:#6E6963>evaluation = 离线可证伪评估系统（E0–E1 原型）。NEVER 修改 runtime world / control-plane policy。已落地 src/packages/evaluation/。</color>
+caption <color:#6E6963>evaluation = 离线可证伪评估系统（E1–E8 工程已落地，非 Acceptance）。NEVER 修改 runtime world / control-plane policy。已落地 src/packages/evaluation/。</color>
 
 top to bottom direction
 

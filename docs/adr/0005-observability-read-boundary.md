@@ -2,8 +2,9 @@
 
 | Field          | Value                                                                                                                                 |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted** (M2–M3 engineering prototype scope)                                                                                      |
+| Status         | **Accepted** (0.x; ObservationAccessContext + platform export landed, ADR-0025)                                                       |
 | Date           | 2026-08-11                                                                                                                            |
+| Revised        | 2026-08-16 — production-facing ObservationAccessContext required; OTel/AG-UI/OTLP platform (ADR-0025)                                 |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                 |
 | Reviewers      | Joker-of-Gotham (DRI，兼任 Architecture second reader；COI 见 `reviewer-assignments.md`)；形式化 ProjectionCertificate 独立审查仍开放 |
 | Related        | RFC-0001 §7, RFC-0002, ADR-0002, ADR-0003, `docs/spec/observable-lts-policies.md`, `@cantilune/observability`                         |
@@ -27,7 +28,7 @@ This ADR records the **observability-local read boundary** for M2–M3 prototype
 | Output immutability | Returned `FourViewBundle` MUST be deep-cloned + frozen at the package boundary (see `immutableBoundary.ts`) |
 | Evidence            | `ReadModelDerivationEvidence` is optional engineering self-check; **not** a formal projection certificate   |
 
-**Future (post-M3 / production-facing):** introduce `ObservationAccessContext` on the stable facade:
+**Production-facing (landed 2026-08-15 / ADR-0025):** `ObservationAccessContext` is required on the stable facade. The package is the **observability platform** (committed-world four views + OTel OTLP + AG-UI). `ProjectionCertificate` remains owned by `@cantilune/conformance`; this package holds only a digest.
 
 ```typescript
 interface ObservationAccessContext {
@@ -82,7 +83,7 @@ Frozen FourViewBundle (consumer MUST NOT mutate)
 
 ### Negative / deferred
 
-- External/multi-tenant dashboards cannot rely on observability alone for redaction until `ObservationAccessContext` lands.
+- Formal `ProjectionCertificate` verification stays in `@cantilune/conformance` (observability holds digest only).
 - Administrative filtering policy is not yet user-configurable at the public API surface.
 - L7 durable/cross-process observe-cut tests remain runtime+observability joint work.
 
@@ -93,8 +94,8 @@ Frozen FourViewBundle (consumer MUST NOT mutate)
 - [x] Atomic observation cut + since→head closure
 - [x] Immutable bundle boundary
 - [x] Administrative visibility filter in read angles
-- [ ] `ObservationAccessContext` on public API (deferred)
-- [ ] `@cantilune/conformance` owns formal `ProjectionCertificate` (deferred)
+- [x] `ObservationAccessContext` on public API (2026-08-15)
+- [x] `@cantilune/conformance` owns formal `ProjectionCertificate`; observability holds digest (ADR-0025)
 
 ## Approval
 

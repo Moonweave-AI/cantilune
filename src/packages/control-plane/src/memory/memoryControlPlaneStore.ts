@@ -6,12 +6,14 @@ import {
   type ActivationDomainId,
   type IdempotencyKey,
   type PreparedAdmissionId,
+  type RuntimeInstanceId,
   type SchemaAdmissionId,
   type SchemaAdmissionReceipt,
   type SchemaEpochBinding,
   type SchemaRef,
   type StoreSequence,
 } from "@cantilune/core";
+import type { RuntimeBinding } from "../rollout/runtimeBinding.js";
 import { snapshotSchemaEpochBinding } from "@cantilune/runtime";
 import type {
   ControlPlaneEventEnvelope,
@@ -55,6 +57,7 @@ export class MemoryControlPlaneStore implements ControlPlaneStore {
     IdempotencyKey,
     { readonly digest: string; readonly resultRef: string }
   >();
+  private readonly fleetBindings = new Map<RuntimeInstanceId, RuntimeBinding>();
   private events: ControlPlaneEventEnvelope[] = [];
   private sequence = 0;
   private frozen = false;
@@ -247,6 +250,17 @@ export class MemoryControlPlaneStore implements ControlPlaneStore {
     return this.frozen;
   }
 
+  getFleetBindings(): ReadonlyMap<RuntimeInstanceId, RuntimeBinding> {
+    return new Map([...this.fleetBindings].map(([id, binding]) => [id, detachedValue(binding)]));
+  }
+
+  replaceFleetBindings(bindings: Iterable<readonly [RuntimeInstanceId, RuntimeBinding]>): void {
+    this.fleetBindings.clear();
+    for (const [id, binding] of bindings) {
+      this.fleetBindings.set(id, detachedValue(binding));
+    }
+  }
+
   snapshot(): ControlPlaneSnapshot {
     return {
       revisions: new Map(
@@ -279,6 +293,9 @@ export class MemoryControlPlaneStore implements ControlPlaneStore {
       events: this.events.map(detachedValue),
       frozen: this.frozen,
       lastSequence: storeSequence(this.sequence),
+      fleetBindings: new Map(
+        [...this.fleetBindings].map(([id, binding]) => [id, detachedValue(binding)]),
+      ),
     };
   }
 
@@ -291,6 +308,7 @@ export class MemoryControlPlaneStore implements ControlPlaneStore {
     this.commitDecisions.clear();
     this.commitReceipts.clear();
     this.idempotency.clear();
+    this.fleetBindings.clear();
     this.events = [];
     this.sequence = 0;
     this.frozen = snapshot.frozen;
@@ -320,6 +338,11 @@ export class MemoryControlPlaneStore implements ControlPlaneStore {
     }
     this.events = snapshot.events.map(detachedValue);
     this.sequence = snapshot.lastSequence as number;
+    if (snapshot.fleetBindings !== undefined) {
+      for (const [id, binding] of snapshot.fleetBindings) {
+        this.fleetBindings.set(id, detachedValue(binding));
+      }
+    }
   }
 
   nextEvent(

@@ -18,11 +18,13 @@ import {
   initialMarking,
   isDeadMarking,
   placeInvariants,
+  transitionInvariants,
   reachable,
   type FireResult,
   type Marking,
   type PetriNet,
   type PlaceInvariant,
+  type TransitionInvariant,
 } from "@cantilune/petri";
 import type { RuntimeState } from "../store.js";
 
@@ -72,9 +74,10 @@ export interface PetriReachSnapshot {
   readonly dead: boolean;
 }
 
-/** The result of a /petri invariants command: computed S-invariant basis. */
+/** The result of a /petri invariants command: computed S- and T-invariant bases. */
 export interface PetriInvariantsSnapshot {
   readonly invariants: readonly PlaceInvariant[];
+  readonly transitionInvariants: readonly TransitionInvariant[];
   readonly changeChainNonEmpty: boolean;
 }
 
@@ -229,12 +232,13 @@ export function reachability(
   };
 }
 
-/** Execute a /petri invariants: compute the S-invariant basis. */
+/** Execute a /petri invariants: compute S- and T-invariant bases. */
 export function invariantsFor(runtime: RuntimeState): PetriInvariantsSnapshot | null {
   const snapshot = projectPetriNet(runtime);
   if (snapshot === null) return null;
   return {
     invariants: placeInvariants(snapshot.net),
+    transitionInvariants: transitionInvariants(snapshot.net),
     changeChainNonEmpty: runtime.changeLog.length > 0,
   };
 }

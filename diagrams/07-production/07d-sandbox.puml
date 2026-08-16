@@ -1,0 +1,80 @@
+@startuml 07d-sandbox
+' 图 07D：Hyper-V / gVisor 沙箱与 fail-closed。列式网格；字段用 \\t 缩进。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam packageBorderColor #AAA39C
+skinparam note {
+  BackgroundColor #F7F3EC
+  BorderColor #B8B0A7
+}
+
+title 图 07D · OsSandbox：win32 Hyper-V / linux gVisor / 探测失败关闭
+caption <color:#6E6963>ADR-0024。不可信 shell / filesystem / MCP 子进程必须进沙箱。禁止静默降级到宿主进程。</color>
+
+legend top right
+  |= 颜色 |= 含义 |
+  | <back:#E5ECEE>　</back> | 探测与端口 |
+  | <back:#E8EEF5>　</back> | win32 Hyper-V 列 |
+  | <back:#E5EDE5>　</back> | linux gVisor 列 |
+  | <back:#F3E5DC>　</back> | fail-closed |
+  | <color:#8E9E8A>━━</color> | 主脊：探测通过后执行 |
+  | <color:#B57D68>┄┄</color> | 拒绝 / 不可用 |
+endlegend
+
+top to bottom direction
+
+frame "不可信工具执行 · 平台两列" #F8F5F0 {
+
+  package "探测" #E5ECEE {
+
+    rectangle "<b>OsSandbox.probe</b>\n\tplatform=win32 | linux | other\n\tisAvailable · isolation · reason" as Probe #E5ECEE
+
+  }
+
+  package "win32 列" #E8EEF5 {
+
+    rectangle "<b>isolation=hyperv</b>\n\tdocker run --isolation=hyperv\n\timage=nanoserver:ltsc2022\n\t或等价 HCS Hyper-V isolate" as Win #F8FAFD
+
+    rectangle "<b>wrapSpawn / run</b>\n\tcommand+args 只进容器 argv\n\tMCP 长驻 stdio 同样 wrap" as WinRun #FFFDFC
+
+  }
+
+  package "linux 列" #E5EDE5 {
+
+    rectangle "<b>isolation=runsc</b>\n\tdocker run --runtime=runsc\n\timage=alpine:3.20\n\t用户态内核，非进程拒绝列表" as Lin #F9FCF8
+
+    rectangle "<b>wrapSpawn / run</b>\n\tcommand+args 只进 runsc 容器\n\tMCP 长驻 stdio 同样 wrap" as LinRun #FFFDFC
+
+  }
+
+  package "失败关闭" #F3E5DC {
+
+    rectangle "<b>isolation=unsupported</b>\n\tplatform 非 win32/linux\n\t或 docker/runtime 探测失败" as Unsup #FFF9F6
+
+    rectangle "<b>拒绝宿主执行</b>\n\tisAvailable=false\n\tUNAVAILABLE_MESSAGE\n\t<b>不</b>回落 host process" as Deny #F3E5DC
+
+  }
+
+  Probe -[#8E9E8A,thickness=2]down-> Win
+  Probe -[#8E9E8A,thickness=2]down-> Lin
+  Probe -[#B57D68,dashed]down-> Unsup
+
+  Win -[#8E9E8A,thickness=2]down-> WinRun
+  Lin -[#8E9E8A,thickness=2]down-> LinRun
+  Unsup -[#B57D68,dashed]down-> Deny
+
+  Win -[#B57D68,dashed]right-> Deny
+  Lin -[#B57D68,dashed]right-> Deny
+}
+
+note bottom of Deny
+  <b>评测隔离仍属 ADR-0020</b>
+  本图只覆盖运维工具执行。缺 Hyper-V / gVisor 时对应能力关闭，不是假装已隔离。
+end note
+
+footer <color:#6E6963>代码锚点：tools/src/sandbox/osSandbox.ts · isolationForPlatform · wrapSpawn</color>
+@enduml

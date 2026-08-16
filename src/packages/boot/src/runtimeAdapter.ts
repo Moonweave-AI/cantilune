@@ -1,4 +1,10 @@
-import type { ActorRef, ContentRef, CoordinationChange, CoordinationIntent, SnapshotRef } from "@cantilune/core";
+import type {
+  ActorRef,
+  ContentRef,
+  CoordinationChange,
+  CoordinationIntent,
+  SnapshotRef,
+} from "@cantilune/core";
 import { describeRejectReason } from "@cantilune/runtime";
 import type { AdmissionRejectReason, CoordinationRuntime } from "@cantilune/runtime";
 import type { SyscallRuntime, ObserveResult, ProposeResult } from "@cantilune/syscall";

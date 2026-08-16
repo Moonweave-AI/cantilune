@@ -29,6 +29,8 @@ import { MessagingSagaCoordinator } from "../recovery/messagingSagaCoordinator.j
 import {
   type CommunicationTransport,
   type MessageConsumer,
+  type PeerDirectory,
+  type FreshEndpointAllocator,
 } from "../ports/communicationTransport.js";
 import {
   createObservabilityCommsEventSink,
@@ -38,6 +40,7 @@ import { type CommsStore } from "../ports/commsStore.js";
 import { createFileCommsStore } from "../file/fileCommsStore.js";
 import { testRuntimeCommitPort } from "./testRuntimeCommitPort.js";
 import { denyByDefaultAuthorizer } from "../security/denyByDefaultAuthorizer.js";
+import { composeProductionIdentityVerifier } from "../security/composeProductionIdentity.js";
 import {
   denyByDefaultEndpointPolicy,
   permissiveEndpointPolicy,
@@ -47,6 +50,7 @@ import {
   type CommsAuthorizer,
   type ReplayProtector,
   type EndpointPolicy,
+  type EStopGate,
 } from "../security/identityVerifier.js";
 import {
   type RuntimeObservationPort,
@@ -54,6 +58,7 @@ import {
   type SessionAuthority,
   type RuntimeCommitPort,
   type QuiescenceProbe,
+  type EventSink,
 } from "../ports/runtimePorts.js";
 import { commsViolation, type CommsViolation } from "../foundation/commsViolation.js";
 import {
@@ -105,11 +110,18 @@ class MemoryReplayProtector {
 
 class MemoryPeerDirectory {
   private readonly peers = new Map<string, PeerDescriptor>();
+  private readonly pins = new Map<string, readonly string[]>();
   resolve(ref: DescriptorRef) {
     return Promise.resolve(this.peers.get(ref as string));
   }
   register(descriptor: PeerDescriptor): void {
     this.peers.set(descriptor.descriptorRef as string, descriptor);
+  }
+  getPinnedFingerprints(peerRef: string): readonly string[] {
+    return this.pins.get(peerRef) ?? [];
+  }
+  setPinnedFingerprints(peerRef: string, fingerprints: readonly string[]): void {
+    this.pins.set(peerRef, fingerprints);
   }
 }
 
@@ -138,7 +150,7 @@ export interface CommsServices {
   readonly reconnect: ReconnectCoordinator;
   readonly close: CloseCoordinator;
   readonly receiptResolver: AdmissionReceiptResolver;
-  readonly events: MemoryEventSink;
+  readonly events: EventSink;
   readonly transport: CommunicationTransport;
   readonly recovery: {
     readonly outbox: OutboxDispatcher;
@@ -148,6 +160,7 @@ export interface CommsServices {
   };
   readonly messagingSaga: MessagingSagaCoordinator;
   readonly observabilityBridge: ObservabilityCommsEventBridge;
+  readonly eStop: EStopGate;
 }
 
 export interface CommsServicesDeps {
@@ -168,31 +181,77 @@ export interface CommsServicesDeps {
   readonly authorizer?: CommsAuthorizer;
   readonly replay?: ReplayProtector;
   readonly runtimeConsumer?: MessageConsumer;
+  /** Required in production — no silent MemoryEStopGate. */
+  readonly eStop?: EStopGate;
+  /** Required in production — no silent MemoryEventSink. */
+  readonly events?: EventSink;
+  /** Required in production — no silent MemoryPeerDirectory. */
+  readonly peerDirectory?: PeerDirectory;
+  /** Required in production — no silent MemoryFreshAllocator. */
+  readonly freshAllocator?: FreshEndpointAllocator;
 }
 
 export function createCommsServices(deps: CommsServicesDeps): CommsServices {
   const mode = deps.mode ?? "production";
+  const hmacIdentity =
+    mode === "production"
+      ? composeProductionIdentityVerifier({
+          ...(deps.storeDir !== undefined ? { storeDir: deps.storeDir } : {}),
+          ...(deps.clock !== undefined ? { clock: deps.clock } : {}),
+        })
+      : undefined;
+  const hasIdentity = deps.identity !== undefined || hmacIdentity !== undefined;
   if (
     mode === "production" &&
     (deps.runtimeCommit === undefined ||
       deps.observation === undefined ||
-      deps.identity === undefined ||
-      deps.authorizer === undefined)
+      !hasIdentity ||
+      deps.authorizer === undefined ||
+      deps.eStop === undefined ||
+      deps.events === undefined ||
+      deps.peerDirectory === undefined ||
+      deps.freshAllocator === undefined ||
+      deps.storeDir === undefined)
   ) {
     throw new Error(
-      "createCommsServices(production) requires identity, authorizer, observation, and runtimeCommit",
+      "createCommsServices(production) requires identity (or HMAC key), authorizer, observation, runtimeCommit, eStop, events, peerDirectory, freshAllocator, and storeDir",
     );
   }
 
   const memory = new MemoryCommsStore();
   const store: CommsStore =
     deps.storeDir !== undefined ? createFileCommsStore(deps.storeDir, memory) : memory;
-  const eStop = new MemoryEStopGate();
-  const events = new MemoryEventSink();
+  const eStop: EStopGate =
+    deps.eStop ??
+    (mode === "test"
+      ? new MemoryEStopGate()
+      : (() => {
+          throw new Error("createCommsServices(production) requires eStop");
+        })());
+  const events: EventSink =
+    deps.events ??
+    (mode === "test"
+      ? new MemoryEventSink()
+      : (() => {
+          throw new Error("createCommsServices(production) requires events");
+        })());
   const observabilitySink = createObservabilityCommsEventSink();
   const observabilityBridge = new ObservabilityCommsEventBridge(observabilitySink);
   const clock = deps.clock ?? { now: () => new Date().toISOString() };
-  const directory = new MemoryPeerDirectory();
+  const directory: PeerDirectory =
+    deps.peerDirectory ??
+    (mode === "test"
+      ? new MemoryPeerDirectory()
+      : (() => {
+          throw new Error("createCommsServices(production) requires peerDirectory");
+        })());
+  const freshAllocator: FreshEndpointAllocator =
+    deps.freshAllocator ??
+    (mode === "test"
+      ? new MemoryFreshAllocator()
+      : (() => {
+          throw new Error("createCommsServices(production) requires freshAllocator");
+        })());
   const transport = deps.transport ?? new LoopbackTransport();
   const receiptResolver = createAdmissionReceiptResolver();
   const runtimeCommit =
@@ -224,6 +283,7 @@ export function createCommsServices(deps: CommsServicesDeps): CommsServices {
         });
 
   const identity: IdentityVerifier =
+    hmacIdentity ??
     deps.identity ??
     (mode === "test"
       ? {
@@ -338,7 +398,7 @@ export function createCommsServices(deps: CommsServicesDeps): CommsServices {
     }),
     mobility: new CommsMobilityService({
       store,
-      allocator: new MemoryFreshAllocator(),
+      allocator: freshAllocator,
       sessionAuthority: deps.sessionAuthority,
       eStop,
       clock,
@@ -358,6 +418,7 @@ export function createCommsServices(deps: CommsServicesDeps): CommsServices {
     },
     messagingSaga,
     observabilityBridge,
+    eStop,
   };
 }
 

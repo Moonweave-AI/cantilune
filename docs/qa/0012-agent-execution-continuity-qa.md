@@ -422,8 +422,9 @@ controller (no LLM). Coverage: petri package 53 tests,
   `petriView.test.ts` (8 tests). typecheck/lint/prettier/build clean on both
   packages.
 
-**Remaining for CLI #4 lift (unverified):** independent Architecture +
-Security review for QA-L5 exit (shared with the SS-01/02/03 review gate).
+**Remaining for CLI #4 lift:** independent Architecture + Security review
+(Owner C2, _unassigned_) **and** the A23–A26 / A45–A53 residuals recorded in
+`docs/plans/cli4-advanced-commands.md`. Do not read this as “only review left.”
 
 ## Follow-up decisions (D1/D2/C2) — all implemented & green (2026-08-14)
 
@@ -432,8 +433,8 @@ three further design gaps (D1 inter-agent transport surface, D2 multi-agent
 CLI boot, C2 soft-criterion LLM judge). The Owner approved "全部实现（推荐）"
 (implement all three) via AskUserQuestion. ADRs 0018/0019/0020 (Proposed; Owner
 design-approved 2026-08-14) record the decisions. Implementation realized and
-green; independent Architecture + Security review remains the single shared
-QA-L5 exit gate.
+green; independent Architecture + Security review is Owner C2 (_unassigned_),
+not a claim that A1–A56 are closed.
 
 ### D1: inter-agent transport — FileTransport realized (ADR-0018, T1)
 
@@ -454,8 +455,10 @@ silently decoding to wrong bytes) → byte-length>0; acknowledge = peek + unlink
 cross-process (2, real child process). **Comms gate:** 301 tests,
 `fileTransport.ts` 98.86 statements / 90.9 branches / 100 functions / 98.86
 lines; package branches 88.31% (≥88%), exit 0. typecheck/lint/prettier/build
-green. **T3 `NetTransport` (TCP+TLS+mTLS) + T4 `a2a/0.1` conformance harness not
-yet started** (recorded in the ADR stage table).
+green. **T3 `NetTransport` (TCP+TLS 1.3+mTLS) + T4 `a2a/0.1` conformance harness
+implemented 2026-08-15** (`NetTransport`, `EndpointIdentityVerifier`,
+`runA2AConformanceHarness` CI gate on loopback/file/net). Independent
+Security/Threat-Model review remains pending — not ADR Acceptance.
 
 ### D2: multi-agent CLI boot — bootSwarm realized (ADR-0019, S0–S3)
 
@@ -497,8 +500,10 @@ loop.
 
 **Gates:** boot 456 tests, coverage statements 94.27 / branches 88.31 /
 functions 98.02 / lines 94.27, exit 0; cli 584 tests, branches 88.11, exit 0.
-typecheck/lint(touched files)/prettier/build green. **S4 `NetTransport`-backed
-multi-host swarm not yet started** (depends on ADR-0018 T3/T4).
+typecheck/lint(touched files)/prettier/build green. **S4 directory / worker /
+CLI exist** (`meshHostDirectory`, `bootSwarmWorker`, `remoteRuntimeProxy`,
+`/swarm hosts|join`, headless `--swarm-directory`). Two-physical-host operator
+runbook is not a CI gate and is not S4 Acceptance. Public A2A remains C6.
 
 ### C2: soft-criterion LLM judge — realized (ADR-0020, J1–J3)
 
@@ -519,14 +524,122 @@ fixture, diagnostic-only) are wired in `termination/index.ts`.
 the 456-test / exit-0 gate above. typecheck/lint/prettier/build green. **J4
 BudgetPolicy integration not yet started** (recorded in the ADR stage table).
 
-### Summary: the single remaining gate
+## Repository-gate audit (2026-08-15)
 
-SS-01/02/03 + CLI #4 + D1/D2/C2 are all implemented and green (real production
-code, real L6/L7 crash tests, coverage gates exit 0). **The only remaining
-gate across the entire QA-0012 packet is the independent QA-L5 Architecture +
-Security review.** The Owner is the DRI (COI) and cannot self-attest; the review
-must be signed by non-DRI external reviewers. ADRs 0014–0020 remain Proposed
-until that review and the Owner Acceptance signature. No merge/deploy proceeds
+An audit that actually executed the gates — rather than reading the records
+above — found that three of them did not pass on a clean checkout. The records
+above were written from partial runs; the corrections are recorded here.
+
+### G-01: a clean checkout could not build
+
+`@cantilune/core` declared `@cantilune/runtime` and `@cantilune/test-fixtures`
+as devDependencies (for one cross-package integration test), while both depend
+on core. That cycle defeats pnpm's topological ordering, so `pnpm -r run build`
+launched `core` and `runtime` concurrently and `runtime` failed with
+`TS2307: Cannot find module '@cantilune/core'`. Reproduced deterministically
+twice from an empty `dist/`. `.github/workflows/ecosystem.yml` had already been
+written with a hand-ordered build sequence, which is the workaround this defect
+forced; `repo-gate.yml` calls plain `pnpm build` and was therefore red or flaky.
+
+**Fix.** The cross-package case moved to
+`src/packages/runtime/tests/integration/core-runtime-bridge.test.ts` (runtime
+already depends on core), and core's two devDependency edges were removed. The
+workspace graph is now acyclic and `pnpm build` orders correctly from cold.
+
+### G-02: `pnpm test:static` failed
+
+21 lint errors across `runtime` (5), `boot` (15), `content` (1), `syscall` (5),
+and `tools` (1) — unused symbols, two `no-prototype-builtins` clusters, a
+`no-base-to-string` on an object diagnostic, and four cognitive-complexity
+overruns. Only the first was visible at a time, because `pnpm -r run lint` stops
+at the first failing package, so each fix uncovered the next. Prettier had also
+drifted in files never reached by the gate.
+
+**Fix.** All 21 resolved. Three of the four complexity overruns were resolved by
+extracting a real seam (`collectBindingFields`, `recoverFromDurableBinding` /
+`recoverFromJournal`, `readShardEntry`, `recoverDispatchedInvocation`) rather
+than by raising the threshold. `.gitattributes` now pins `* text=auto eol=lf`:
+without it a Windows checkout materializes CRLF while Prettier writes LF, so
+`pnpm format` reported ~1,350 spurious modifications and `format:check` could
+never pass on Windows.
+
+### G-03: cross-process L7 evidence was not running
+
+Five suites built the workspace from inside the test process
+(`execSync("pnpm build")` in `beforeAll` or a Vitest `globalSetup`). Under
+`pnpm test` that nested build raced the workspace build already in flight and
+deleted `dist/` out from under sibling suites reading it. Observed effects:
+`@cantilune/syscall` reported 5 failed ADR-0016 crash-boundary tests whose child
+processes never started; `@cantilune/control-plane` failed its L7 CAS suite with
+`Error: Command failed: pnpm build`; `@cantilune/runtime` timed out its L7
+parallel-CAS hook. Separately, `@cantilune/comms` and `@cantilune/boot` gated
+their cross-process suites on `existsSync(dist/…)` and **skipped silently** when
+it was absent, and `@cantilune/conformance` gated 15 CLI cases on a
+`cliBuilt()` probe the same way. The QA records above cite these as green; in
+this configuration they did not execute.
+
+**Fix.** The nested builds are gone; each suite asserts its `dist/` precondition
+with an actionable message, and `runtime`, `observability`, `comms`,
+`conformance`, `control-plane`, `boot`, and `syscall` gained
+`pretest`/`pretest:coverage` hooks that build the package first. Every silent
+skip is now a loud failure. `rmSync('dist')` was also lifted out of the eight
+`build` scripts that carried it into a separate `clean` script (root:
+`pnpm clean`, `pnpm build:fresh`), so a build no longer opens a window in which
+`dist/` is missing for a concurrent reader.
+
+**Result.** `@cantilune/syscall` 125/125 (was 120/125 with 5 failing);
+`@cantilune/comms` 305/305 with both cross-process cases genuinely executing
+(was 303 + 2 silently skipped); `@cantilune/control-plane` 175/175 (was 173 + 2
+skipped); `@cantilune/runtime` 442/442.
+
+### G-04: swarm dispatch dropped conditional agents
+
+Recorded in full in ADR-0019 §S5. `ClusterSupervisor` evaluated a manifest's
+`startCondition` once at activation and never again, so fan-in, conditional
+start, and feedback-loop topologies were unreachable and `waitForCompletion()`
+polled forever with no timeout or diagnosis. A `SwarmScheduler` now re-evaluates
+pending conditions on every drain and adds a concurrency ceiling, spawn/turn/
+wall-clock budgets, priority with anti-starvation aging, and stall convergence.
+`ClusterResult` gained a `reason` and a `diagnostic`; only `completed` can
+report `ok: true`.
+
+`bootSwarm.status()` also returned a permanently empty event log (the array was
+declared and never written) and hard-coded `running: true`. Both are fixed and
+covered.
+
+### Gate results after the audit
+
+Executed on 2026-08-15 from a cleaned `dist/`:
+
+- `pnpm build` from cold: pass (topological order restored);
+- `pnpm test:static`: pass (encoding, lint, format, typecheck across 15 packages);
+- `pnpm test:coverage`: every package meets the 90/88/90/90 floor.
+
+`@cantilune/core` needed new unit tests to hold its floor: the moved bridge test
+had been covering core's own code by driving it through the runtime, which
+masked genuine gaps in `agentManifest`, `heartbeat`, `startCondition`, and the
+detached collection views. Core is now 175 tests at 91.69 statements / 92.29
+branches / 98.05 functions / 91.69 lines, up from 142 tests at 90.67 / 91.51 /
+91.21 / 90.67 — the coverage is now core's own rather than borrowed.
+
+None of the above is an independent security or architecture review signature.
+
+### Summary: engineering vs Owner gates (honest)
+
+SS-01/02/03 + CLI #4 + D1/D2/C2 have **engineering** implementations and
+automated tests. That is **not** “only independent review left.”
+
+- **P1–P4 engineering done** (hub, File owner+pid, S4 directory/worker/CLI,
+  JudgeBudget + CLI contract/judge adapters).
+- **P5–P7 engineering in progress / done**, with CLI residuals still present
+  (A23–A26 / A45–A53 mixed — see `docs/plans/cli4-advanced-commands.md`).
+- **C1–C8 Owner gates remain open** (ADR 0012–0020 Acceptance; independent
+  Architecture + Security; conformance L5; RFC FCP + Q1–Q6; formal
+  `proved / review-pending`; public A2A; HSM/npm; RFC-0004 §12 AI-Eval claims).
+- **D1–D8 stay out of scope.**
+
+The Owner is the DRI (COI) and cannot self-attest. Independent reviewers stay
+_unassigned_. ADRs 0014–0020 remain **Proposed**. No merge/deploy proceeds
 until Acceptance.
 
 ## QA gate conclusion
@@ -538,7 +651,7 @@ until Acceptance.
 | Q2 integration/contract       | Pass for history, content, completion, identity, epoch preflight                                                                           |
 | Q3 system/restart             | World/content/private history pass; SS-01/02/03 + CLI #4 + D1/D2/C2 implementation closed, independent review pending                      |
 | Q4 coverage                   | Pass; every affected package meets the repository threshold                                                                                |
-| Q5 independent review/release | **Fail / Stop-Ship** — SS-01/02/03 + CLI #4 + D1/D2/C2 all implemented & green; await independent Architecture + Security review for QA-L5 |
+| Q5 independent review/release | **Fail / Stop-Ship** — engineering may be landed; C1–C8 Owner gates unsigned; A-item CLI residuals remain; independent reviewers _unassigned_ |
 
 ## Owner decisions required
 
@@ -548,10 +661,9 @@ until Acceptance.
 3. Choose durable epoch journal versus authenticated recovery input. — **DONE**
    (ADR-0014, Owner design-approved 2026-08-14).
 4. Assign independent Architecture and Security reviewers for S3/QA-L5 exit. —
-   **OPEN.** All implementation is realized and green; the Owner is the DRI
-   (COI) and cannot self-attest. This is the single remaining gate. A review
-   package + checklist is prepared at `docs/qa/qa-0012-l5-review-package.md`
-   for assignment to non-DRI external reviewers.
+   **OPEN.** Reviewers stay _unassigned_. This is **one** Owner gate (C2), not
+   the only remaining work: C1–C8 are unsigned and some A-item CLI residuals
+   remain. Review package: `docs/qa/qa-0012-l5-review-package.md`.
 5. Choose the durable external invocation journal and executor idempotency/status contract. —
    **DONE** (ADR-0016, Owner design-approved 2026-08-14).
 6. **(Added) D1/D2/C2 follow-up** — **DONE** (ADR-0018/0019/0020, Owner

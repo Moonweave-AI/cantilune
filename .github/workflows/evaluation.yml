@@ -74,3 +74,34 @@ jobs:
           cd src/packages/evaluation
           pnpm pack
           ls -la *.tgz
+
+  frozen-protocol:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Build dependencies
+        run: |
+          pnpm --filter @cantilune/core build
+          pnpm --filter @cantilune/conformance build
+          pnpm --filter @cantilune/evaluation build
+      - name: Frozen protocol and Owner COI quorum
+        run: >
+          pnpm --filter @cantilune/evaluation exec vitest run
+          tests/unit/claimRegistry.test.ts
+          tests/unit/opaqueTokens.test.ts
+          tests/unit/evaluationClaim.test.ts
+          tests/unit/analyzeMetricObservations.test.ts
+          tests/unit/ownerCoiPublicClaim.test.ts
+      - name: Refuse auto-signed Acceptance certificate
+        run: |
+          echo "frozen-protocol job validates freeze + analysis-never-supported + Owner COI quorum."
+          echo "It does not sign Acceptance or release certificates."
+

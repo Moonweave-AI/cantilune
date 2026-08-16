@@ -367,7 +367,9 @@ describe("ClusterSupervisor — coverage paths", () => {
       participants: participantMap,
     });
 
-    const runtime = createMockRuntime(snap, [activateChange(actorId("stale-test"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("stale-test"), actorId("init"), "s2"),
+    ]);
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
 
     // Use TestableSupervisor to avoid running real agent loop
@@ -655,7 +657,9 @@ describe("ClusterSupervisor — coverage paths", () => {
       participants: participantMap,
     });
 
-    const runtime = createMockRuntime(snap, [activateChange(actorId("fast-agent"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("fast-agent"), actorId("init"), "s2"),
+    ]);
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
 
     // Use TestableSupervisor so startAgent is stubbed but onAgentComplete is real.
@@ -706,7 +710,9 @@ describe("ClusterSupervisor — coverage paths", () => {
       participants: participantMap,
     });
 
-    const runtime = createMockRuntime(snap, [activateChange(actorId("busy"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("busy"), actorId("init"), "s2"),
+    ]);
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
 
     const supervisor = new TestableSupervisor({
@@ -750,7 +756,9 @@ describe("ClusterSupervisor — coverage paths", () => {
       participants: participantMap,
     });
 
-    const runtime = createMockRuntime(snap, [activateChange(actorId("sig-done"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("sig-done"), actorId("init"), "s2"),
+    ]);
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
 
     const supervisor = new TestableSupervisor({
@@ -869,7 +877,9 @@ describe("ClusterSupervisor — coverage paths", () => {
     });
 
     let proposeCalls = 0;
-    const runtime = createMockRuntime(snap, [activateChange(actorId("custom-prin"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("custom-prin"), actorId("init"), "s2"),
+    ]);
     // Wrap proposeAndCommit to count calls.
     const originalPropose = runtime.proposeAndCommit.bind(runtime);
     runtime.proposeAndCommit = (intent: unknown, options?: unknown) => {
@@ -927,7 +937,9 @@ describe("ClusterSupervisor — coverage paths", () => {
       participants: participantMap,
     });
 
-    const runtime = createMockRuntime(snap, [activateChange(actorId("no-prin"), actorId("init"), "s2")]);
+    const runtime = createMockRuntime(snap, [
+      activateChange(actorId("no-prin"), actorId("init"), "s2"),
+    ]);
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
 
     const supervisor = new TestableSupervisor({
@@ -957,7 +969,11 @@ describe("ClusterSupervisor — coverage paths", () => {
 
     // Separate case: head is undefined → resolveSupervisorPrincipal returns undefined.
     const runtime2 = createMockRuntime(undefined);
-    const shared2 = createSharedResources({ runtime: runtime2, contentStore: store, storagePath: "/tmp" });
+    const shared2 = createSharedResources({
+      runtime: runtime2,
+      contentStore: store,
+      storagePath: "/tmp",
+    });
     const supervisor2 = new TestableSupervisor({
       shared: shared2,
       conditionRegistry: createDefaultConditionRegistry(),
@@ -1075,9 +1091,7 @@ describe("ClusterSupervisor — coverage paths", () => {
     const snap1 = collaborationSnapshot({
       snapshotRef: snapshotRef("s2"),
       epochId: epochId("e1"),
-      participants: new Map([
-        [actorId("init"), participant(actorId("init"), "agent", "done")],
-      ]),
+      participants: new Map([[actorId("init"), participant(actorId("init"), "agent", "done")]]),
     });
 
     let callCount = 0;
@@ -1144,16 +1158,12 @@ describe("ClusterSupervisor — coverage paths", () => {
     const snap0 = collaborationSnapshot({
       snapshotRef: snapshotRef("s1"),
       epochId: epochId("e1"),
-      participants: new Map([
-        [actorId("reg"), participant(actorId("reg"), "agent", "registered")],
-      ]),
+      participants: new Map([[actorId("reg"), participant(actorId("reg"), "agent", "registered")]]),
     });
     const snap1 = collaborationSnapshot({
       snapshotRef: snapshotRef("s2"),
       epochId: epochId("e1"),
-      participants: new Map([
-        [actorId("reg"), participant(actorId("reg"), "agent", "done")],
-      ]),
+      participants: new Map([[actorId("reg"), participant(actorId("reg"), "agent", "done")]]),
     });
 
     let callCount = 0;

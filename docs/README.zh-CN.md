@@ -7,9 +7,9 @@
   <p><sub>Compose intent into visible, evolvable coordination.</sub></p>
 
   <p>
-    <img alt="状态：pre-alpha" src="https://img.shields.io/badge/status-pre--alpha-D97706">
-    <img alt="形式理论：proved / review-pending" src="https://img.shields.io/badge/formal%20theory-proved%20%2F%20review--pending-4F46E5">
-    <img alt="运行时：尚未发布" src="https://img.shields.io/badge/runtime-not%20released-64748B">
+    <img alt="状态：0.x" src="https://img.shields.io/badge/status-0.x-D97706">
+    <img alt="形式理论：proved / Owner-reviewed (COI)" src="https://img.shields.io/badge/formal%20theory-proved%20%2F%20Owner--reviewed%20(COI)-4F46E5">
+    <img alt="工程发布：0.x Owner-accepted" src="https://img.shields.io/badge/engineering-0.x%20Owner--accepted-0F766E">
     <a href="https://github.com/Moonweave-AI/cantilune/actions/workflows/formal.yml?query=branch%3Acodex%2Ftheory-foundation">
       <img alt="形式理论 CI" src="https://github.com/Moonweave-AI/cantilune/actions/workflows/formal.yml/badge.svg?branch=codex%2Ftheory-foundation">
     </a>
@@ -19,9 +19,12 @@
 </div>
 
 > [!IMPORTANT]
-> **Cantilune 处于 pre-alpha 阶段。**它是形式语义与编排研究项目，尚不是
-> 已发布的运行时、SDK、调度器或 agent 产品。下文标为 `†` 的能力是架构和
-> 理论目标，不代表已经发布、达到功能对等或在性能上优于其他项目。
+> **Cantilune 是 0.x。** Owner 已接受本轮工程发布（Apache-2.0，npm 0.x）。
+> **没有**稳定 API / schema / 兼容承诺。Lean 内核为 `proved / Owner-accepted`
+> （义务行保持 `proved`；未走 promotion form）。Owner 已以 COI 签署治理形式化 /
+> QA-L5 / AI-Eval。不设第二评审人。`@cantilune/conformance` 为 0.x 生产发布权限。
+> RFC-0001–0004 处于 **FCP open**（2026-08-16 → 2026-08-30），不是 Accepted。
+> 下文标为 `†` 的能力是形式目标，不是已测优越性。
 
 ## 项目目标
 
@@ -191,24 +194,26 @@ agents · 编码 agents · 工具 · MCP/A2A 服务 · 人员 · 外部系统
 | **Chorus**   | 顺序、并行、层级、投票、合并与收敛结构              |
 | **Reprise**  | 证据驱动的修订、重路由、升级与改进                  |
 
-目前尚无任何能力包发布；该能力族描述的是计划中的公开分解，而非安装承诺。
+14 个生产包已在 `src/packages/` 落地并由覆盖率门禁约束。对外仍是 SemVer 0.x，
+没有稳定 API。该能力族不是安装承诺。
 
 ## 形式边界与当前状态
 
 通用核心理论与一个非空、实质性的参考执行包已经完成不可变证据绑定。这里的
-**`proved / review-pending`** 是精确状态：Lean 内核证据已经形成，但独立人工
-审查、FCP 决议和 ADR 接受尚未完成。
+**`proved / Owner-accepted`** 是精确状态：Lean 内核行保持 `proved`；Owner 于
+2026-08-16 接受该内核（COI；不设第二评审人；promotion form 未走）。这不是
+Lean `reviewed`，也不是 RFC Accepted。
 
 | 项目                      | 当前事实                                                                                                                                                    |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 技术状态                  | `proved / review-pending`                                                                                                                                   |
+| 技术状态                  | `proved / Owner-accepted`（义务行 `proved`；promotion 未走）                                                                                                 |
 | 源提交（S）               | `59a1a6885ef6a2774b2731f487f83228e67d15dc`                                                                                                                  |
 | 证据提交（E）             | `ed26cb74c4425b0d3025521f939695fd3fb8dee5`                                                                                                                  |
 | 指针与 manifest 提交（P） | `0382b74074c546abe1bf3f37f3c03d7e4d2c3611`                                                                                                                  |
 | 内核检查范围              | 565 个 Lean 源文件/模块；1,624 个声明完成公理依赖审计                                                                                                       |
-| 中央义务                  | 18/18 为 `proved`；独立审查字段仍为空                                                                                                                       |
+| 中央义务                  | 18/18 为 `proved`；`ownerAccept` 已记录；不设第二评审人                                                                                                     |
 | 合并请求                  | [PR #1](https://github.com/Moonweave-AI/cantilune/pull/1) 已打开并指向 `main`；实时 workflow badge 与 PR checks 为准，当前 PR-head run 成功前不宣称远端通过 |
-| 治理状态                  | RFC-0002 仍为 Draft / pre-FCP；ADR-0001 仍为 Proposed；独立 QA-L4 审查待完成                                                                                |
+| 治理状态                  | RFC-0001–0004 为 FCP open（至 2026-08-30）；ADR-0001 Accepted（Owner COI）；QA-L5 Owner 签字；SS-01 已解除                                                |
 
 本地验证完成后，`formal/.lake/`、根目录 `.lake/` 以及不再需要的原始运行日志、
 bundle 和 agent 临时目录已经从交付工作区移除；它们不属于 PR。Lean 源码、测试、
@@ -229,8 +234,8 @@ bundle 和 agent 临时目录已经从交付工作区移除；它们不属于 PR
   可以定义每个 $\omega$-CPO 的每个元素。实际的 full-abstraction 与 definability
   结论只覆盖已声明的 D1-A bottom/Hoare 观察、guarded/contextual 范围和确定性
   typed prefix-trie 子语言；内核 no-go 结果明确划定了更强主张的边界。
-- 形式语义规范仍为 **Draft**。提交绑定的内核证明不等于独立 QA-L4 审查，不等于
-  FCP Passed，也不能自动把 ADR-0001 改为 Accepted。
+- 提交绑定的内核证明不等于 Lean `reviewed`，也不等于 RFC Accepted。ADR-0001
+  已由 Owner COI Accept。FCP 评论期至 2026-08-30。
 
 权威细节见[形式语义规范](spec/formal-semantics.md)、
 [投影一致性 RFC](rfc/0002-projection-consistency.md)以及
@@ -259,19 +264,18 @@ Cantilune 计划与既有边界互操作，而非取代它们：
 [Open-π/FMS 相容性边界](research/0022-open-pi-wiring-and-fms-compatibility-boundary-2026-07-27.md)
 开始阅读。
 
-- **状态：**pre-alpha 的研究与契约设计；尚无稳定 API、schema、兼容性承诺或运行时发布。
-- **形式理论：**通用核心与参考执行包为 `proved / review-pending`；[PR #1](https://github.com/Moonweave-AI/cantilune/pull/1)
-  的实时 checks 是远端 CI 的权威状态，当前 PR-head run 成功前不宣称远端通过。
-- **待完成治理：**独立 QA-L4 审查、RFC-0002 FCP 决议与 ADR-0001 接受仍待人工完成；
-  八个生产包属于后续 Product Conformance，而非本次证明已经实例化的对象。
+- **状态：** **0.x** 工程发布；无稳定 API、schema 或兼容承诺。Owner 已接受。
+- **形式理论：**通用核心与参考执行包为 `proved / Owner-accepted`；[PR #1](https://github.com/Moonweave-AI/cantilune/pull/1)
+  的实时 checks 是远端 CI 的权威状态。
+- **治理：**不设第二评审人。QA-L5 / Formal / AI-Eval 为 Owner 签字并披露 COI。
+  RFC FCP 仍开放。`@cantilune/conformance` 为 0.x 生产发布权限（不自动签 cert）。
 - **Owner：**Moonweave AI；当前 DRI 与审查状态记录在形式文档中。
 - **贡献：**对契约、协议、schema 或状态语义的改动需要遵循相应 RFC/ADR 流程；贡献应明确说明证据与范围。
 - **对比复核：**框架能力变化很快；项目定位变化时应重新检查上方链接的官方资料。
 
 ## 许可证
 
-Cantilune 计划以开源方式发布。适用许可证将在首次公开代码发布前写入仓库的
-`LICENSE` 文件。
+Cantilune 以 [Apache License 2.0](../LICENSE) 发布。
 
 ---
 

@@ -1,6 +1,7 @@
 import {
   type CollaborationSnapshot,
   type CommunicationSession,
+  type CoordinationChange,
   type SessionId,
 } from "@cantilune/core";
 import { type EventTag } from "../../foundation/eventTag.js";
@@ -18,14 +19,32 @@ function sessionChanged(before: CommunicationSession, after: CommunicationSessio
   );
 }
 
+/**
+ * Read-only communication delta from committed session maps.
+ * `create_session` is attributed via opened sessions (snapshot diff + createdSessionRefs).
+ * `fork_branch` does not open sessions; topology lands on the structure lens.
+ * Not a scheduler input.
+ */
 export function interpretCommunicationDelta(
   eventTag: EventTag,
   before: CollaborationSnapshot,
   after: CollaborationSnapshot,
+  change?: CoordinationChange,
 ): CommunicationDelta {
   const openedSessions = [...after.sessions.values()].filter(
     (session) => !before.sessions.has(session.sessionId),
   );
+  if (change?.operationTypeId === "create_session") {
+    for (const sessionId of change.createdSessionRefs) {
+      const session = after.sessions.get(sessionId);
+      if (
+        session !== undefined &&
+        !openedSessions.some((opened) => opened.sessionId === sessionId)
+      ) {
+        openedSessions.push(session);
+      }
+    }
+  }
   const closedSessionIds: SessionId[] = [];
   for (const sessionId of before.sessions.keys()) {
     if (!after.sessions.has(sessionId)) {

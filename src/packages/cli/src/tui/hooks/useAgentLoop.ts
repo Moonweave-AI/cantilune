@@ -8,6 +8,13 @@ import {
   missingApiKeyVar,
   type CliRuntimeHandle,
 } from "../../runtimeSync.js";
+import type { ToolApprover } from "@cantilune/syscall";
+import { createCliToolApprover } from "../../wiring/toolApproval.js";
+import { createCliToolSet } from "../../wiring/cliToolSet.js";
+import { applyPendingMcpAttach } from "../../wiring/mcpAttach.js";
+import { getControlPlaneController } from "../../wiring/controlPlaneControl.js";
+import type { ToolSet } from "@cantilune/tools";
+import type { ApprovalChoice, CliToolApprover } from "../../wiring/toolApproval.js";
 import type { RuntimeResetResult } from "../../commands/registry.js";
 import type { ChatMessage, LifecycleLine, ReactiveStore, ToolCallDisplay } from "../../store.js";
 import { createEmptySession } from "../../store.js";
@@ -16,6 +23,8 @@ import {
   sessionWorldBindingsEqual,
   type SessionWorldBinding,
 } from "./useSession.js";
+import { planRunSummary } from "../planRunSummary.js";
+import { describeToolCard, firstNonEmptyLine } from "../formatToolCard.js";
 
 export interface UseAgentLoopOptions {
   readonly store: ReactiveStore;
@@ -44,6 +53,11 @@ export interface UseAgentLoopResult {
   /** Fail-closed boundary used when persistence detects replacement or CAS conflict. */
   readonly isolateSession: (message: string) => Promise<void>;
   /**
+   * Boot the coordination runtime without a user instruction so cluster/swarm
+   * supervisors can attach before the first prompt.
+   */
+  readonly prepare: () => Promise<boolean>;
+  /**
    * Live backends of the current runtime handle. `contentStore` powers the
    * /content views; `syscallRuntime` + `storagePath` power /cluster start.
    * Absent before the first successful boot or after shutdown.
@@ -52,6 +66,10 @@ export interface UseAgentLoopResult {
     readonly contentStore: ContentStore | undefined;
     readonly syscallRuntime: ReturnType<CliRuntimeHandle["syscallRuntime"]> | undefined;
     readonly storagePath: string | undefined;
+    readonly coordinationRuntime: ReturnType<CliRuntimeHandle["coordinationRuntime"]> | undefined;
+    readonly getSnapshot:
+      ((ref: string) => import("@cantilune/core").CollaborationSnapshot | undefined) | undefined;
+    readonly headSnapshotRef: (() => string | undefined) | undefined;
   };
 }
 
@@ -203,12 +221,31 @@ function bootedFileWorldChanged(input: {
   return input.hasPrivateSeed && !sessionWorldBindingsEqual(input.seedAuthority, input.bootedWorld);
 }
 
+function cliLoopBudgets(maxTurns: number | undefined): {
+  readonly maxTurns: number;
+  readonly maxTimeMs: number;
+  readonly maxContextMessages: number;
+} {
+  return { maxTurns: maxTurns ?? 200, maxTimeMs: 3_600_000, maxContextMessages: 80 };
+}
+
+function optionalDedicatedAdapter(
+  provider: string | undefined,
+  model: string | undefined,
+  baseUrl: string | undefined,
+): ReturnType<typeof createAdapter> | undefined {
+  if (provider === undefined || model === undefined) return undefined;
+  return createAdapter(buildLlmConfig(provider, model, baseUrl));
+}
+
 function bootHandle(
   state: ReturnType<ReactiveStore["get"]>,
   initialMessages: readonly LlmMessage[],
   history?: AgentLoopHistory,
   onHistoryCheckpoint?: (history: AgentLoopHistory) => void | Promise<void>,
-): CliRuntimeHandle {
+  toolApprover?: ToolApprover,
+  onBeforeTurn?: (turn: number) => void | Promise<void>,
+): { readonly handle: CliRuntimeHandle; readonly toolSet: ToolSet } {
   const llmConfig = buildLlmConfig(state.provider, state.model, state.baseUrl);
   const adapter = createAdapter(llmConfig);
   // The embedder is the controller's optional semantic sensor. Built from the
@@ -217,28 +254,45 @@ function bootHandle(
   // and the residual engine falls back to Jaccard when it returns undefined
   // (native providers) or throws.
   const embedder = createEmbedder(llmConfig);
-  // contractLlm is left undefined: the default zero-config path compiles the
-  // system contract with no LLM call, which the ADR-0013 design names as the
-  // safe default. A dedicated contract model would require a config field that
-  // does not yet exist; until then, no contract adapter is wired here.
-  return createCliRuntimeBoot(
+  // Dedicated contract/judge adapters (ADR-0013 / ADR-0020): never reuse the
+  // loop adapter object. Absent config ⇒ no LLM call (safe defaults).
+  const contractLlm = optionalDedicatedAdapter(
+    state.contractProvider,
+    state.contractModel,
+    state.baseUrl,
+  );
+  const judgeLlm = optionalDedicatedAdapter(state.judgeProvider, state.judgeModel, state.baseUrl);
+  const toolSet = createCliToolSet({
+    workingDirectory: process.cwd(),
+    ...(state.mcpServers !== undefined ? { mcpServers: state.mcpServers } : {}),
+    ...(state.searchProvider !== undefined ? { searchProvider: state.searchProvider } : {}),
+  });
+  const handle = createCliRuntimeBoot(
     adapter,
     {
       durable: state.durable,
       contentStore: state.durable === "file" ? "file" : "memory",
       llm: llmConfig,
+      tools: [toolSet.tools],
+      ...cliLoopBudgets(state.maxTurns),
       ...(state.storagePath !== undefined ? { storagePath: state.storagePath } : {}),
       ...(state.principalId !== undefined ? { principalId: state.principalId } : {}),
       ...(state.compatibleEpochIds !== undefined
         ? { compatibleEpochIds: state.compatibleEpochIds }
         : {}),
-      ...(state.maxTurns !== undefined ? { maxTurns: state.maxTurns } : {}),
       initialMessages,
       ...(history === undefined ? {} : { history }),
       ...(onHistoryCheckpoint === undefined ? {} : { onHistoryCheckpoint }),
+      ...(onBeforeTurn === undefined ? {} : { onBeforeTurn }),
     },
-    { ...(embedder !== undefined ? { embedder } : {}) },
+    {
+      ...(embedder !== undefined ? { embedder } : {}),
+      ...(contractLlm !== undefined ? { contractLlm } : {}),
+      ...(judgeLlm !== undefined ? { judgeLlm } : {}),
+      ...(toolApprover !== undefined ? { toolApprover } : {}),
+    },
   );
+  return { handle, toolSet: toolSet.tools };
 }
 
 /**
@@ -274,6 +328,34 @@ export function useAgentLoop({
 }: UseAgentLoopOptions): UseAgentLoopResult {
   const [running, setRunning] = useState(false);
   const runtimeHandleRef = useRef<CliRuntimeHandle | null>(null);
+  const toolSetRef = useRef<ToolSet | null>(null);
+  /**
+   * Authorization gate for side-effecting tools.
+   *
+   * One approver per hook instance, so "allow for this run" is scoped to the
+   * session that granted it. It presents the request through the store and
+   * resolves on the operator's keypress; the syscall layer holds the dispatch
+   * meanwhile, so nothing has executed when a denial arrives.
+   */
+  const toolApproverRef = useRef<CliToolApprover | null>(null);
+  const unattended = process.env.CANTILUNE_UNATTENDED === "1";
+  if (!unattended) {
+    toolApproverRef.current ??= createCliToolApprover({
+      prompt: (request) =>
+        new Promise<ApprovalChoice>((resolve) => {
+          store.set({
+            mode: "approve",
+            pendingApproval: {
+              request,
+              decide: (choice) => {
+                store.set({ pendingApproval: null, mode: "chat" });
+                resolve(choice);
+              },
+            },
+          });
+        }),
+    });
+  }
   const detachedHistoryRef = useRef<AgentLoopHistory | null>(null);
   /** File-world generation against which the cached OS was actually booted. */
   const runtimeWorldRef = useRef<SessionWorldBinding | null>(null);
@@ -353,6 +435,7 @@ export function useAgentLoop({
     async (message: string): Promise<void> => {
       const cached = runtimeHandleRef.current;
       runtimeHandleRef.current = null;
+      toolSetRef.current = null;
       detachedHistoryRef.current = null;
       detachedHistoryWorldRef.current = null;
       runtimeSignatureRef.current = null;
@@ -379,6 +462,32 @@ export function useAgentLoop({
     },
     [onSessionSeedInvalidated, store],
   );
+
+  const applyPendingToolSurface = useCallback(async () => {
+    const toolSet = toolSetRef.current;
+    if (toolSet === null) return;
+    const state = store.get();
+    const result = applyPendingMcpAttach({
+      store: state,
+      toolSet,
+      services: {
+        controlPlane: () =>
+          getControlPlaneController({
+            ephemeral: state.durable === "memory",
+            ...(state.storagePath !== undefined ? { storagePath: state.storagePath } : {}),
+          }),
+      },
+    });
+    if (result.applied) {
+      store.set({
+        pendingToolSurface: null,
+        notice: {
+          level: "info",
+          text: "Applied pending MCP tool surface for this turn",
+        },
+      });
+    }
+  }, [store]);
 
   const invalidateGeneration = useCallback(
     async (message: string): Promise<never> => {
@@ -454,12 +563,15 @@ export function useAgentLoop({
     }
 
     const checkpointWorld = currentWorld;
-    const handle = bootHandle(
+    const { handle, toolSet } = bootHandle(
       state,
       exactHistory === null ? initialMessages : [],
       exactHistory ?? undefined,
       checkpointHandlerFor(state.durable, checkpointWorld),
+      toolApproverRef.current ?? undefined,
+      applyPendingToolSurface,
     );
+    toolSetRef.current = toolSet;
 
     // First boot may create a previously absent file world. Conversely, a
     // concurrent replacement can occur between the preflight read and boot.
@@ -487,6 +599,7 @@ export function useAgentLoop({
     store.set({ connected: true, runtime: handle.syncRuntime() });
     return handle;
   }, [
+    applyPendingToolSurface,
     awaitHealthyLifecycle,
     checkpointHandlerFor,
     invalidateGeneration,
@@ -648,8 +761,16 @@ export function useAgentLoop({
         timestamp: Date.now(),
         turn: event.turn,
       });
-      store.appendTimelineEntry(event.turn, "tool_start", `▶ ${event.name}`);
-      appendLifecycle("tool_start", event.name, { coordination });
+      const preview = describeToolCard(card);
+      store.appendTimelineEntry(
+        event.turn,
+        "tool_start",
+        preview.headline.length > 0 ? `▶ ${event.name}: ${preview.headline}` : `▶ ${event.name}`,
+      );
+      appendLifecycle("tool_start", event.name, {
+        coordination,
+        ...(preview.headline.length > 0 ? { detail: preview.headline } : {}),
+      });
     },
     [appendLifecycle, store],
   );
@@ -678,10 +799,27 @@ export function useAgentLoop({
         };
       });
       syncRuntime();
-      store.appendTimelineEntry(event.turn, "tool_end", `${event.ok ? "✓" : "✗"} ${event.name}`);
+      const finished = store
+        .get()
+        .session.messages.flatMap((message) => message.toolCalls ?? [])
+        .find((card) => card.id === event.toolCallId);
+      const preview = describeToolCard(
+        finished ?? {
+          id: event.toolCallId,
+          name: event.name,
+          args: {},
+          status: event.ok ? "done" : "error",
+          result: { ok: event.ok, output: event.output },
+        },
+      );
+      const resultLine = firstNonEmptyLine(preview.body || preview.headline, 80);
+      const mark = event.ok ? "✓" : "✗";
+      const endLabel =
+        resultLine.length > 0 ? `${mark} ${event.name}: ${resultLine}` : `${mark} ${event.name}`;
+      store.appendTimelineEntry(event.turn, "tool_end", endLabel);
       appendLifecycle("tool_end", event.name, {
         coordination,
-        ...(event.ok ? {} : { detail: event.output }),
+        ...(resultLine.length > 0 ? { detail: resultLine } : {}),
       });
     },
     [appendLifecycle, store, syncRuntime],
@@ -907,12 +1045,15 @@ export function useAgentLoop({
         store.set({ runtime: handle.syncRuntime(), phase: { kind: "idle" } });
         store.setSession({ turnCount: result.turns });
 
-        // Only surface the summary when it adds something beyond the streamed prose.
-        const last = store.get().session.messages.at(-1);
-        if (last?.role !== "assistant" || last.content.trim() !== result.summary.trim()) {
+        // The run summary is a completion claim, not a second reply. Fill an
+        // empty assistant bubble; never append a duplicate that hides prose.
+        const plan = planRunSummary(store.get().session.messages, result.summary, result.ok);
+        if (plan.action === "fill") {
+          store.updateLastAssistant((message) => ({ ...message, content: plan.content }));
+        } else if (plan.action === "append") {
           store.appendMessage({
-            role: result.ok ? "assistant" : "error",
-            content: result.summary,
+            role: plan.role,
+            content: plan.content,
             timestamp: Date.now(),
           });
         }
@@ -974,6 +1115,7 @@ export function useAgentLoop({
         detachedHistoryWorldRef.current = null;
       }
       runtimeHandleRef.current = null;
+      toolSetRef.current = null;
       runtimeSignatureRef.current = null;
       runtimeWorldRef.current = null;
       abortRef.current = null;
@@ -993,6 +1135,28 @@ export function useAgentLoop({
     [shutdownHandle, store],
   );
 
+  const prepare = useCallback(async (): Promise<boolean> => {
+    const missingKey = missingApiKeyVar(store.get().provider);
+    if (missingKey !== null) {
+      store.set({
+        notice: {
+          level: "warn",
+          text: `${missingKey} is not set — cluster/swarm wait until a key is available`,
+        },
+      });
+      return false;
+    }
+    try {
+      const handle = await ensureRuntime();
+      store.set({ connected: true, runtime: handle.syncRuntime() });
+      return true;
+    } catch (error) {
+      const text = error instanceof Error ? error.message : String(error);
+      store.set({ notice: { level: "error", text } });
+      return false;
+    }
+  }, [ensureRuntime, store]);
+
   const sessionWorld = useCallback(
     (): SessionWorldBinding | null =>
       runtimeWorldRef.current ?? detachedHistoryWorldRef.current ?? sessionSeedWorld,
@@ -1009,15 +1173,32 @@ export function useAgentLoop({
     readonly contentStore: ContentStore | undefined;
     readonly syscallRuntime: ReturnType<CliRuntimeHandle["syscallRuntime"]> | undefined;
     readonly storagePath: string | undefined;
+    readonly coordinationRuntime: ReturnType<CliRuntimeHandle["coordinationRuntime"]> | undefined;
+    readonly getSnapshot:
+      ((ref: string) => import("@cantilune/core").CollaborationSnapshot | undefined) | undefined;
+    readonly headSnapshotRef: (() => string | undefined) | undefined;
   } => {
     const handle = runtimeHandleRef.current;
     if (handle === null) {
-      return { contentStore: undefined, syscallRuntime: undefined, storagePath: undefined };
+      return {
+        contentStore: undefined,
+        syscallRuntime: undefined,
+        storagePath: undefined,
+        coordinationRuntime: undefined,
+        getSnapshot: undefined,
+        headSnapshotRef: undefined,
+      };
     }
     return {
       contentStore: handle.contentStore(),
       syscallRuntime: handle.syscallRuntime(),
       storagePath: handle.storagePath(),
+      coordinationRuntime: handle.coordinationRuntime(),
+      getSnapshot: (ref) => handle.getSnapshot(ref),
+      headSnapshotRef: () => {
+        const head = handle.coordinationRuntime().getHead();
+        return head === undefined ? undefined : String(head.snapshotRef);
+      },
     };
   }, []);
 
@@ -1029,6 +1210,7 @@ export function useAgentLoop({
     sessionWorld,
     privateHistory,
     isolateSession,
+    prepare,
     runtimeBackends,
   };
 }

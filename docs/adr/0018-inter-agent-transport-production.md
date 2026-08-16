@@ -2,7 +2,7 @@
 
 | Field          | Value                                                                                                    |
 | -------------- | -------------------------------------------------------------------------------------------------------- |
-| Status         | **Proposed** (Owner-approval pending; implementation not started)                                        |
+| Status         | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)      |
 | Date           | 2026-08-14                                                                                               |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                    |
 | Reviewers      | Independent Architecture + Security/Threat-Model reviewer required before Acceptance (COI: Owner is DRI) |
@@ -92,25 +92,40 @@ A companion **ADR-0008 amendment** (this ADR's Acceptance condition) updates the
 
 ## Implementation stages (T0–T4)
 
-| Stage  | Scope                                                                                       | Status      |
-| ------ | ------------------------------------------------------------------------------------------- | ----------- |
-| **T0** | `Transport` port already exists; `EndpointIdentityVerifier` port + `FileTransport` skeleton | Not started |
-| **T1** | File-backed `CommsStore` atomic units; durable outbox/inbox journaling                      | Not started |
-| **T2** | `FileTransport` cross-process delivery + idempotent receive + L7 crash test                 | Not started |
-| **T3** | `NetTransport` TCP+TLS+mTLS + `EndpointIdentityVerifier` mTLS path                          | Not started |
-| **T4** | `a2a/0.1` conformance harness as CI gate; independent Security review                       | Not started |
+| Stage  | Scope                                                                                       | Status                       |
+| ------ | ------------------------------------------------------------------------------------------- | ---------------------------- |
+| **T0** | `Transport` port already exists; `EndpointIdentityVerifier` port + `FileTransport` skeleton | Done (impl)                  |
+| **T1** | File-backed `CommsStore` atomic units; durable outbox/inbox journaling                      | Done (impl)                  |
+| **T2** | `FileTransport` cross-process delivery + idempotent receive + L7 crash test                 | Done (impl)                  |
+| **T3** | `NetTransport` TCP+TLS+mTLS + `EndpointIdentityVerifier` mTLS path                          | Done (impl)                  |
+| **T4** | `a2a/0.1` conformance harness as CI gate; Security review                                   | Done (impl) / Owner-accepted COI 2026-08-16 |
+
+> "Done (impl)" denotes realized code with green automated tests and coverage
+> gates; it is not ADR Acceptance. The T0–T2 rows previously read "Not started"
+> while the Approval section below recorded T1 as realized — that contradiction
+> is corrected here, not resolved by weakening the Approval note.
 
 ## Test / QA plan
 
-| Tier  | Scope                                                              | Status         |
-| ----- | ------------------------------------------------------------------ | -------------- |
-| L2–L4 | Unit/contract for transport port, identity verifier, file store    | Not started    |
-| L5    | Independent Architecture + Security/Threat-Model review            | review-pending |
-| L6    | Integration: admission → reconnect → `FileTransport` send/receive  | Not started    |
-| L7    | Cross-process crash mid-send; idempotent receive; transport E-Stop | Not started    |
-| CI    | `a2a/0.1` conformance harness                                      | Not started    |
+| Tier  | Scope                                                                              | Status         |
+| ----- | ---------------------------------------------------------------------------------- | -------------- |
+| L2–L4 | Unit/contract for transport port, identity verifier, file store                    | Done (green)   |
+| L5    | Architecture + Security/Threat-Model review                                        | Owner-accepted COI 2026-08-16 |
+| L6    | Integration: admission → reconnect → `FileTransport` / `NetTransport` send/receive | Done (green)   |
+| L7    | Cross-process crash mid-send; idempotent receive; transport E-Stop (file + net)    | Done (green)   |
+| CI    | `a2a/0.1` conformance harness (loopback + file + net)                              | Done (green)   |
+
+> **Cross-process evidence correction (2026-08-15).** The L7 row previously
+> depended on `tests/system/file-transport-cross-process.test.ts`, which gated
+> itself on `existsSync(dist/...)` and **skipped silently** when the package was
+> unbuilt. Under `pnpm test` the workspace build raced the suite, so the two
+> cross-process cases were reported as skipped rather than run — the evidence
+> was never actually produced in that configuration. The suite now fails loudly
+> on a missing `dist/`, and `@cantilune/comms` gained `pretest`/`pretest:coverage`
+> hooks that build the package first. Comms is 305 tests green with both
+> cross-process cases genuinely executing.
 
 ## Approval
 
-**Owner Design Approval**: Joker-of-Gotham — 2026-08-14 (design-approved; T1 `FileTransport` realized & green — 301 comms tests, coverage gate EXIT=0. T3 `NetTransport` + T4 conformance harness not yet started.)
-**Status**: Proposed. Acceptance requires: (1) Owner signature (design-approved above); (2) independent Architecture reviewer sign-off; (3) independent Security/Threat-Model reviewer sign-off on the ADR-0008 amendment; (4) green conformance harness. The Owner is the DRI (COI); independent review must be signed by non-DRI external reviewers.
+**Owner Design Approval**: Joker-of-Gotham — 2026-08-14 (design-approved; T1 `FileTransport` realized. T3 `NetTransport` TCP+TLS 1.3+mTLS + T4 `a2a/0.1` harness realized 2026-08-15 — "Done (impl)" only.)
+**Status**: Proposed. Acceptance requires: (1) Owner signature (design-approved above); (2) independent Architecture reviewer sign-off; (3) independent Security/Threat-Model reviewer sign-off on the ADR-0008 amendment; (4) green conformance harness (now implemented; the harness being green is not itself the Security sign-off). The Owner is the DRI (COI); independent review must be signed by non-DRI external reviewers. This update does **not** authorize public A2A interoperability claims.

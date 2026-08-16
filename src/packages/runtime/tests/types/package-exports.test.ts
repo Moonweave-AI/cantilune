@@ -17,5 +17,16 @@ describe("runtime package exports", () => {
     expect(typeof memory.MemoryResourceLockTable).toBe("function");
     expect(typeof memory.readFileRuntimeIdentity).toBe("function");
     expect(typeof memory.readFileRuntimeActiveBinding).toBe("function");
+    expect(typeof memory.createPostgresDurableCoordinator).toBe("function");
+    expect(typeof memory.createDurableCoordinatorFromEnv).toBe("function");
+    expect(typeof memory.resolveProductionDurable).toBe("function");
+    expect(typeof memory.createPostgresSqlExecutor).toBe("function");
+    expect(typeof memory.probePostgresHa).toBe("function");
+    expect(typeof memory.assertPostgresHa).toBe("function");
+    expect(typeof memory.createRaftDurableCoordinator).toBe("function");
+    expect(typeof memory.createMemoryRaftKv).toBe("function");
+    expect(typeof memory.createRaftDurableFromEnv).toBe("function");
+    expect(typeof memory.probeRaftCluster).toBe("function");
+    expect(typeof memory.assertRaftCluster).toBe("function");
   });
 });

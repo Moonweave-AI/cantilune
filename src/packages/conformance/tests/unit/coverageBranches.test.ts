@@ -54,18 +54,16 @@ import {
   createMemoryEvidenceStore,
   createMemoryRevocationStore,
   createMemoryTrustStore,
-  defaultTestReviewerTrustStore,
 } from "../../src/adapters/memory/index.js";
-import {
-  createTestReviewerTrustStore,
-  TEST_REVIEWER_KEY_ID,
-  TEST_REVIEWER_PUBLIC_KEY,
-} from "../../src/adapters/memory/testReviewerTrustStore.js";
 import { DEFAULT_VERIFICATION_POLICY } from "../../src/policy/verificationPolicy.js";
 import { initialConformanceStatus } from "../../src/foundation/conformanceStatus.js";
 import {
   buildReviewedEngineeringAdmissionForTest,
+  createTestReviewerTrustStore,
+  defaultTestReviewerTrustStore,
+  TEST_REVIEWER_KEY_ID,
   TEST_REVIEWER_PRIVATE_KEY,
+  TEST_REVIEWER_PUBLIC_KEY,
 } from "../../src/testing/index.js";
 import {
   computeLeanBuildAttestationDigest,
@@ -73,7 +71,7 @@ import {
 } from "../../src/evidence/leanBuildAttestation.js";
 import { canonicalJsonBytes } from "../../src/canonical/canonicalEncoding.js";
 import { domainSeparatedPayload } from "../../src/canonical/signatureDomain.js";
-import { parseLeanAttestationFixture } from "../../src/adapters/lean/leanAttestationFixture.js";
+import { parseLeanAttestationFixture } from "../../src/testing/leanAttestationFixture.js";
 import { createConformanceEngine } from "../../src/engine/conformanceEngine.js";
 import {
   createNoopAuditSink,

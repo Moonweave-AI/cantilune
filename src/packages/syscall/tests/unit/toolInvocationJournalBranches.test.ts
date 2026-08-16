@@ -17,12 +17,7 @@ import { createMemoryContentStore } from "@cantilune/content/memory";
 import { createContentHasher } from "@cantilune/content";
 import type { ContentRef } from "@cantilune/core";
 import { createSyscall } from "../../src/createSyscall.js";
-import {
-  intentRef,
-  readIntent,
-  strictIntent,
-  useTool,
-} from "../../src/act.js";
+import { intentRef, readIntent, strictIntent } from "../../src/act.js";
 import type {
   SyscallRuntime,
   SyscallPrincipal,
@@ -72,12 +67,11 @@ describe("strictIntent rejection arms", () => {
     };
     expect(strictIntent(almost)).not.toBeUndefined();
     // Remove one field → rejected
-    const { toolName, ...withoutToolName } = almost;
+    const { toolName: _toolName, ...withoutToolName } = almost;
     expect(strictIntent(withoutToolName)).toBeUndefined();
     // Add an unexpected field → rejected (exact keys)
     const extra = { ...almost, surprise: 1 };
     expect(strictIntent(extra)).toBeUndefined();
-    void toolName;
   });
 
   it("accepts a completed entry that omits outputRef (output since lost)", () => {
@@ -125,7 +119,9 @@ describe("strictIntent rejection arms", () => {
       status: "dispatched",
     };
     expect(strictIntent(base)).toBeUndefined();
-    expect(strictIntent({ ...base, principal: { actorId: "p", kind: "k", extra: 1 } })).toBeUndefined();
+    expect(
+      strictIntent({ ...base, principal: { actorId: "p", kind: "k", extra: 1 } }),
+    ).toBeUndefined();
   });
 
   it("rejects wrong-typed scalar fields", () => {
@@ -195,13 +191,20 @@ describe("readIntent defensive arms (via fake store)", () => {
       | {
           ref: ContentRef;
           bytes: Uint8Array;
-          metadata: { size: number; mimeType: string; createdAt: string; createdBy: string | undefined };
+          metadata: {
+            size: number;
+            mimeType: string;
+            createdAt: string;
+            createdBy: string | undefined;
+          };
         }
       | undefined,
   ): SyscallContentStore {
     return {
       async put(_content, _opts) {
-        return contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef;
+        return contentRef(
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ) as ContentRef;
       },
       async get(_ref) {
         return blob;
@@ -213,9 +216,14 @@ describe("readIntent defensive arms (via fake store)", () => {
   }
 
   /** Craft a blob with correct mime/creator/size and a given payload. */
-  function intentBlob(bytes: Uint8Array, opts?: { mimeType?: string; createdBy?: string; size?: number }) {
+  function intentBlob(
+    bytes: Uint8Array,
+    opts?: { mimeType?: string; createdBy?: string; size?: number },
+  ) {
     return {
-      ref: contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef,
+      ref: contentRef(
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      ) as ContentRef,
       bytes,
       metadata: {
         size: opts?.size ?? bytes.length,
@@ -229,7 +237,9 @@ describe("readIntent defensive arms (via fake store)", () => {
   it("returns undefined when contentStore.get throws", async () => {
     const throwing: SyscallContentStore = {
       async put() {
-        return contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef;
+        return contentRef(
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ) as ContentRef;
       },
       async get() {
         throw new Error("transient");
@@ -238,11 +248,25 @@ describe("readIntent defensive arms (via fake store)", () => {
         return false;
       },
     };
-    expect(await readIntent(throwing, contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef)).toBeUndefined();
+    expect(
+      await readIntent(
+        throwing,
+        contentRef(
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ) as ContentRef,
+      ),
+    ).toBeUndefined();
   });
 
   it("returns undefined when the blob is absent", async () => {
-    expect(await readIntent(fakeStore(undefined), contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef)).toBeUndefined();
+    expect(
+      await readIntent(
+        fakeStore(undefined),
+        contentRef(
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ) as ContentRef,
+      ),
+    ).toBeUndefined();
   });
 
   it("returns undefined when the metadata mime / creator is wrong", async () => {
@@ -261,7 +285,9 @@ describe("readIntent defensive arms (via fake store)", () => {
 
   it("returns undefined when the blob hash does not match the ref", async () => {
     // Correct mime/creator/size, but bytes that hash to a DIFFERENT ref.
-    const wrongRef = contentRef("sha256:0000000000000000000000000000000000000000000000000000000000000000") as ContentRef;
+    const wrongRef = contentRef(
+      "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    ) as ContentRef;
     const bytes = new TextEncoder().encode('{"x":1}');
     const blob = intentBlob(bytes);
     expect(await readIntent(fakeStore(blob), wrongRef)).toBeUndefined();
@@ -355,11 +381,19 @@ describe("useTool recovery semantics (ADR-0016 §4, corrected)", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const first = await syscall.useTool({ callId: "clean-1", toolName: "write_file", args: { path: "/z" } });
+    const first = await syscall.useTool({
+      callId: "clean-1",
+      toolName: "write_file",
+      args: { path: "/z" },
+    });
     expect(first.ok).toBe(true);
     expect(executeCalls).toBe(1);
     // Second identical call: dispatched entry found → reconcile(known) → reuse.
-    const restart = await syscall.useTool({ callId: "clean-1", toolName: "write_file", args: { path: "/z" } });
+    const restart = await syscall.useTool({
+      callId: "clean-1",
+      toolName: "write_file",
+      args: { path: "/z" },
+    });
     expect(restart.ok).toBe(true);
     expect(restart.output).toBe("first-output");
     expect(executeCalls).toBe(1); // NOT re-executed
@@ -391,16 +425,23 @@ describe("useTool recovery semantics (ADR-0016 §4, corrected)", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const first = await syscall.useTool({ callId: "ni-clean", toolName: "shell", args: { cmd: "rm" } });
+    const first = await syscall.useTool({
+      callId: "ni-clean",
+      toolName: "shell",
+      args: { cmd: "rm" },
+    });
     expect(first.ok).toBe(true);
     expect(executeCalls).toBe(1);
-    const restart = await syscall.useTool({ callId: "ni-clean", toolName: "shell", args: { cmd: "rm" } });
+    const restart = await syscall.useTool({
+      callId: "ni-clean",
+      toolName: "shell",
+      args: { cmd: "rm" },
+    });
     expect(restart.ok).toBe(false);
     expect(restart.disposition).toBe("ambiguous");
     expect(executeCalls).toBe(1); // NOT re-dispatched
   });
 });
-
 
 describe("useTool tiered boundary branches", () => {
   it("non-idempotent default tier (no tier declared) executes once", async () => {
@@ -422,7 +463,11 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const result = await syscall.useTool({ callId: "default-tier", toolName: "shell", args: { cmd: "ls" } });
+    const result = await syscall.useTool({
+      callId: "default-tier",
+      toolName: "shell",
+      args: { cmd: "ls" },
+    });
     expect(result.ok).toBe(true);
     expect(result.output).toBe("default-tier");
     expect(executeCalls).toBe(1);
@@ -451,7 +496,11 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec,
     });
-    const result = await syscall.useTool({ callId: "tool-fail", toolName: "write_file", args: { path: "/f" } });
+    const result = await syscall.useTool({
+      callId: "tool-fail",
+      toolName: "write_file",
+      args: { path: "/f" },
+    });
     expect(result.ok).toBe(false);
     expect(result.output).toBe("tool said no");
     expect(executeCalls).toBe(1);
@@ -471,13 +520,6 @@ describe("useTool tiered boundary branches", () => {
       },
       // reconcile intentionally omitted
     } as unknown as ToolExecutor;
-    const syscall = createSyscall({
-      runtime: runtime(),
-      contentStore: store,
-      principal: principal(),
-      schemaProvider: { getTemplates: () => [] },
-      toolExecutor: exec,
-    });
     // First call: executes (no prior dispatched entry). Second identical call
     // sees the completed entry and reuses — so we need a crash between. Simulate
     // by planting a dispatched-only entry via a throw-on-execute first call.
@@ -498,7 +540,11 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    await crashSyscall.useTool({ callId: "no-recon", toolName: "write_file", args: { path: "/x" } });
+    await crashSyscall.useTool({
+      callId: "no-recon",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
     // Now the dispatched entry exists, no completed, executor has no reconcile
     // → ambiguous on restart.
     const restart = createSyscall({
@@ -508,10 +554,17 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: exec, // idempotent, NO reconcile
     });
-    const retried = await restart.useTool({ callId: "no-recon", toolName: "write_file", args: { path: "/x" } });
+    const retried = await restart.useTool({
+      callId: "no-recon",
+      toolName: "write_file",
+      args: { path: "/x" },
+    });
     expect(retried.ok).toBe(false);
     expect(retried.disposition).toBe("ambiguous");
     expect(retried.output).toContain("no reconcile");
+    // The ambiguous verdict must come without a second dispatch: only the
+    // crashed first call reached execute.
+    expect(executeCalls).toBe(1);
   });
 
   it("reconcile throws → ambiguous (not a re-dispatch)", async () => {
@@ -532,7 +585,11 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: crashExec,
     });
-    await crashSyscall.useTool({ callId: "recon-throw", toolName: "write_file", args: { path: "/t" } });
+    await crashSyscall.useTool({
+      callId: "recon-throw",
+      toolName: "write_file",
+      args: { path: "/t" },
+    });
 
     const throwingReconcile = {
       tier: "idempotent" as const,
@@ -553,7 +610,11 @@ describe("useTool tiered boundary branches", () => {
       schemaProvider: { getTemplates: () => [] },
       toolExecutor: throwingReconcile,
     });
-    const retried = await restart.useTool({ callId: "recon-throw", toolName: "write_file", args: { path: "/t" } });
+    const retried = await restart.useTool({
+      callId: "recon-throw",
+      toolName: "write_file",
+      args: { path: "/t" },
+    });
     expect(retried.ok).toBe(false);
     expect(retried.disposition).toBe("ambiguous");
     expect(retried.output).toContain("reconcile raised an error");
@@ -584,7 +645,11 @@ describe("useTool tiered boundary branches", () => {
     // safe). Execute is called twice — read tier idempotency is by nature, not
     // by suppression.
     await syscall.useTool({ callId: "read-1", toolName: "read_file", args: { path: "/r" } });
-    const second = await syscall.useTool({ callId: "read-1", toolName: "read_file", args: { path: "/r" } });
+    const second = await syscall.useTool({
+      callId: "read-1",
+      toolName: "read_file",
+      args: { path: "/r" },
+    });
     expect(second.ok).toBe(true);
     expect(second.output).toBe("read-result");
     expect(executeCalls).toBe(2);

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { execSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -106,9 +106,16 @@ async function waitForFile(path: string): Promise<void> {
 }
 
 describe("L7 fleet multi-process durable CAS", () => {
+  // dist/ is guaranteed by the `pretest`/`pretest:coverage` hooks. Building
+  // from inside the suite spawned a nested `pnpm build` that raced the
+  // workspace build already running under `pnpm test`.
   beforeAll(() => {
-    execSync("pnpm build", { cwd: join(packageRoot, "..", "core"), stdio: "ignore" });
-    execSync("pnpm build", { cwd: packageRoot, stdio: "ignore" });
+    if (!existsSync(fileLockModule)) {
+      throw new Error(
+        `L7 fleet CAS evidence requires a built package: ${fileLockModule} is missing. ` +
+          `Run \`pnpm --filter @cantilune/conformance... build\` first.`,
+      );
+    }
   });
 
   it("parallel fleet workers persist disjoint evidence and monotonic decision log", async () => {

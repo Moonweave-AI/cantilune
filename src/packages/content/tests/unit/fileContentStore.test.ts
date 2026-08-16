@@ -343,7 +343,10 @@ describe("FileContentStore", () => {
     const store = createFileContentStore(rootDir);
     const ref = await store.put("real");
     await mkdir(join(rootDir, "zz"), { recursive: true });
-    await writeFile(join(rootDir, "zz", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef.blob"), "x");
+    await writeFile(
+      join(rootDir, "zz", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef.blob"),
+      "x",
+    );
     await mkdir(join(rootDir, "ab"), { recursive: true });
     await writeFile(join(rootDir, "ab", "not-a-blob.txt"), "noise");
 
@@ -403,7 +406,10 @@ describe("FileContentStore", () => {
     const metaPath = join(dir, `${hex}.meta.json`);
     // Valid JSON but an invalid metadata shape: parseStoredMetadata throws a
     // non-SyntaxError corruption Error, which list must rethrow (not skip).
-    await writeFile(metaPath, JSON.stringify({ size: 999, mimeType: "text/plain", createdAt: "not-iso" }));
+    await writeFile(
+      metaPath,
+      JSON.stringify({ size: 999, mimeType: "text/plain", createdAt: "not-iso" }),
+    );
 
     await expect(store.list()).rejects.toThrow("stored metadata is invalid");
   });

@@ -9,6 +9,7 @@ vi.mock("node:child_process", () => ({
 }));
 
 import { createMcpClient, formatMcpToolResult } from "../../src/mcp/mcpBridge.js";
+import { createOsSandbox } from "../../src/sandbox/osSandbox.js";
 import type { McpConfig } from "../../src/types.js";
 
 const baseConfig: McpConfig = {
@@ -259,6 +260,76 @@ describe("createMcpClient stdio transport", () => {
     await client.connect();
     const result = await client.callTool("ping", {});
     expect(result.isError).toBe(true);
+    client.disconnect();
+  });
+
+  it("spawns MCP through OsSandbox wrapSpawn and never host-falls-back", async () => {
+    const { stdin, stdout } = createFakeProcess();
+    autoRespond(stdin, stdout);
+    const sandbox = createOsSandbox({
+      platform: "linux",
+      runner: {
+        async run(argv) {
+          if (argv[0] === "info") {
+            return { stdout: "runsc", stderr: "", exitCode: 0 };
+          }
+          return { stdout: "", stderr: "", exitCode: 0 };
+        },
+      },
+    });
+    const client = createMcpClient(baseConfig, { sandbox });
+    await client.connect();
+    expect(spawnMock).toHaveBeenCalledWith(
+      "docker",
+      expect.arrayContaining(["--runtime=runsc", "node", "server.js"]),
+      expect.objectContaining({ stdio: ["pipe", "pipe", "pipe"] }),
+    );
+    client.disconnect();
+  });
+
+  it("fail-closes MCP connect when probe reports unavailable without a reason", async () => {
+    const sandbox = {
+      isAvailable: false,
+      platform: "linux",
+      isolation: "runsc" as const,
+      async probe() {
+        return { isAvailable: false, platform: "linux", isolation: "runsc" as const };
+      },
+      async run() {
+        throw new Error("unused");
+      },
+      wrapSpawn() {
+        throw new Error("unused");
+      },
+    };
+    const client = createMcpClient(baseConfig, { sandbox });
+    await expect(client.connect()).rejects.toThrow(/fail-closed/);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("fail-closes MCP connect when the sandbox cannot probe", async () => {
+    const sandbox = createOsSandbox({
+      platform: "linux",
+      runner: {
+        async run() {
+          throw new Error("no docker");
+        },
+      },
+    });
+    const client = createMcpClient(baseConfig, { sandbox });
+    await expect(client.connect()).rejects.toThrow(/fail-closed/);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("ignores JSON-RPC lines that are not objects or have unknown ids", async () => {
+    const { stdin, stdout } = createFakeProcess();
+    autoRespond(stdin, stdout);
+    const client = createMcpClient(baseConfig);
+    await client.connect();
+    stdout.write("null\n");
+    stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: 999, result: {} })}\n`);
+    const tools = await client.listTools();
+    expect(tools[0]?.name).toBe("ping");
     client.disconnect();
   });
 

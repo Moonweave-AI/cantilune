@@ -31,8 +31,18 @@ function cosine(a: readonly number[], b: readonly number[]): number {
 
 /** Token Jaccard fallback for when no embedding adapter is available. */
 function jaccard(a: string, b: string): number {
-  const sa = new Set(a.toLowerCase().split(/\s+/).filter((w) => w.length > 0));
-  const sb = new Set(b.toLowerCase().split(/\s+/).filter((w) => w.length > 0));
+  const sa = new Set(
+    a
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 0),
+  );
+  const sb = new Set(
+    b
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 0),
+  );
   if (sa.size === 0 || sb.size === 0) return 0;
   let inter = 0;
   for (const w of sa) if (sb.has(w)) inter++;
@@ -58,7 +68,11 @@ function evidenceTexts(state: AgentState): { text: string; ref: string }[] {
  * claimed by a higher-scoring goal. Residual per goal = 1 - best_match (0 if no
  * evidence matched). Returns the residual vector `r_t` and mean distance `D_sem`.
  */
-function constrainedMatch(cost: number[][], m: number, n: number): {
+function constrainedMatch(
+  cost: number[][],
+  m: number,
+  n: number,
+): {
   residual: number[];
   totalCost: number;
 } {

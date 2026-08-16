@@ -1,0 +1,127 @@
+@startuml 07f-a2a
+' 图 07F：A2A 1.0.0 操作与三绑定。公开主张钉死 1.0.0，不是未来草案。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+
+title 图 07F · A2A Protocol 1.0.0：数据模型 + 操作 + 绑定
+caption <color:#6E6963>ADR-0027。a2a/0.1 harness 保留为回归。不可信网络控制仍走 ADR-0008（mTLS、钉扎、默认拒绝）。</color>
+
+legend top right
+  |= 颜色 |= 层 |
+  | <back:#EDE8F0>　</back> | 数据模型 |
+  | <back:#E5EDE5>　</back> | 操作引擎 |
+  | <back:#E8EEF5>　</back> | JSON-RPC / REST / SSE / gRPC |
+  | <back:#F5F1EB>　</back> | 回归 profile |
+endlegend
+
+frame "@cantilune/comms · A2A 1.0.0" #F8F5F0 {
+
+  package "数据模型" #EDE8F0 {
+
+    class "A2AAgentCard\n发现面" as Card #FFFDFC {
+      +name: string
+      .. 例：cantilune-peer ..
+      +version: string
+      .. 例：1.0.0 ..
+      +supportedInterfaces: List<A2AAgentInterface>
+      .. JSONRPC / GRPC / HTTP+JSON ..
+      +capabilities: A2AAgentCapabilities
+      +skills: List<A2AAgentSkill>
+      +defaultInputModes / defaultOutputModes
+    }
+
+    class "A2ATask\n任务" as Task #FFFDFC {
+      +id: string
+      .. 例：task-0a2a ..
+      +status: A2ATaskStatus
+      .. submitted / working / completed / canceled / ... ..
+      +contextId: string
+      .. optional ..
+      +artifacts: List<A2AArtifact>
+      +history: List<A2AMessage>
+    }
+
+    class "A2AMessage\n消息" as Msg #FFFDFC {
+      +role: ROLE_USER | ROLE_AGENT
+      +parts: List<A2APart>
+      .. text / file / data；无 Change payload ..
+      +taskId / contextId
+    }
+  }
+
+  package "操作" #E5EDE5 {
+
+    class "A2AOperationName\n1.0.0 操作集" as Ops #F9FCF8 {
+      +SendMessage / SendStreamingMessage
+      +GetTask / ListTasks / CancelTask
+      +SubscribeToTask
+      +GetAgentCard / GetExtendedAgentCard
+      +Create/Get/List/Delete TaskPushNotificationConfig
+    }
+
+    class "A2AOperationEngine\ndispatch" as Eng #F8FBFB {
+      +agentCard: A2AAgentCard
+      +processor: A2ATaskProcessor
+      +session: SessionTransportBinding
+      .. 频道委派另见 ADR-0028 收据 ..
+      +dispatchA2AOperation(name, params)
+    }
+  }
+
+  package "绑定" #E8EEF5 {
+
+    class "JSON-RPC 2.0" as Rpc #FFFDFC {
+      +jsonrpc: 2.0
+      +method: A2AJsonRpcMethod
+      .. 与操作同名 ..
+    }
+
+    class "HTTP/REST + SSE" as Rest #FFFDFC {
+      +POST /message:send · /message:stream
+      +GET /tasks · /tasks/{id}
+      +POST /tasks/{id}:cancel · :subscribe
+      +pushNotificationConfigs CRUD
+      +GET /.well-known/agent-card.json
+      +SSE: text/event-stream
+    }
+
+    class "gRPC 语义映射" as Grpc #FFFDFC {
+      +service: a2a.v1.A2AService
+      +methods: 与操作同名
+      .. 按规范 proto 语义；宿主自带传输 ..
+    }
+  }
+
+  package "回归" #F5F1EB {
+
+    class "a2a/0.1 harness\nCI 门禁" as Old #FFFDFC {
+      +profile: a2a/0.1
+      .. 公开主张不是此 profile ..
+    }
+  }
+
+  Card --> Ops
+  Task --> Ops
+  Msg --> Ops
+  Eng --> Ops
+  Eng --> Card
+  Rpc ..> Eng
+  Rest ..> Eng
+  Grpc ..> Eng
+  Old ..> Eng : 回归，非公开主张
+}
+
+footer <color:#6E6963>代码锚点：comms/src/transports/a2a/v1/a2aOperations.ts · *Binding.ts · agentCard.ts</color>
+@enduml

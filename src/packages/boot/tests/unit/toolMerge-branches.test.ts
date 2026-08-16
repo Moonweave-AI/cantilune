@@ -46,6 +46,28 @@ describe("mergeToolExecutors branch coverage", () => {
     const merged = mergeToolExecutors([exec]);
     expect(merged.executors).toHaveLength(1);
   });
+
+  it("rebuilds the execute index when listTools sees a new tool", async () => {
+    let tools = [{ name: "t1", description: "T1", parameters: {} }];
+    const exec: ToolExecutor = {
+      async execute(name) {
+        return { ok: true, output: name };
+      },
+      async listTools() {
+        return tools;
+      },
+    };
+    const merged = mergeToolExecutors([exec]);
+    await merged.execute("t1", {});
+    tools = [
+      { name: "t1", description: "T1", parameters: {} },
+      { name: "t2", description: "T2", parameters: {} },
+    ];
+    await merged.listTools();
+    const result = await merged.execute("t2", {});
+    expect(result.ok).toBe(true);
+    expect(result.output).toBe("t2");
+  });
 });
 
 describe("invalidateToolIndex", () => {

@@ -1,9 +1,12 @@
 {
   "name": "cantilune",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
+    "clean": "pnpm -r run clean",
     "build": "pnpm -r run build",
+    "build:fresh": "pnpm clean && pnpm build",
     "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
     "typecheck": "pnpm -r run typecheck",
@@ -11,7 +14,18 @@
     "format": "prettier --write \"src/packages/**/*.{ts,tsx,json,md}\" \"diagrams/**/*.md\" \"docs/**/*.md\"",
     "format:check": "prettier --check \"src/packages/**/*.{ts,tsx,json,md}\" \"diagrams/**/*.md\" \"docs/**/*.md\"",
     "check:encoding": "node scripts/checkEncoding.mjs",
-    "test:static": "pnpm check:encoding && pnpm lint && pnpm format:check && pnpm typecheck"
+    "check:0x": "node scripts/check-0x-versions.mjs",
+    "test:static": "pnpm check:encoding && pnpm check:0x && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:host",
+    "prepare": "node scripts/host/prefetch-host.mjs",
+    "host:prefetch": "node scripts/host/prefetch-host.mjs",
+    "test:host": "node --test scripts/host/*.test.mjs",
+    "host:provision": "node scripts/host/provision-host.mjs",
+    "host:verify": "node scripts/verify-host.mjs",
+    "cantilune": "node src/packages/cli/dist/index.js",
+    "soak:8h": "node scripts/soak-24h.mjs",
+    "soak:24h": "node scripts/soak-24h.mjs",
+    "soak:publish-summary": "node scripts/publish-soak-summary.mjs",
+    "eval:l7-20": "node scripts/eval-cantilune-l7-20.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

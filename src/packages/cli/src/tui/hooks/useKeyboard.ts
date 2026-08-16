@@ -5,6 +5,8 @@ export interface KeyboardHandlers {
   readonly onAbort?: () => void;
   readonly onScroll?: (delta: number) => void;
   readonly onScrollReset?: () => void;
+  /** Expand or collapse the newest turn's tool / lifecycle stack. */
+  readonly onToggleActivity?: () => void;
   readonly enabled?: boolean;
 }
 
@@ -40,10 +42,24 @@ export function useKeyboard(store: ReactiveStore, handlers: KeyboardHandlers = {
       store.set({ layout: state.layout === "focus" ? "observe" : "focus" });
       return true;
     }
+    // Ctrl+T expands the newest turn's activity. Ctrl+E is line-end in the
+    // input bar (emacs), so it must not be claimed here.
+    if (input === "t") {
+      handlers.onToggleActivity?.();
+      return true;
+    }
     return false;
   };
 
   const handlePaging = (key: Key): boolean => {
+    if (key.ctrl && key.upArrow) {
+      handlers.onScroll?.(1);
+      return true;
+    }
+    if (key.ctrl && key.downArrow) {
+      handlers.onScroll?.(-1);
+      return true;
+    }
     if (key.pageUp) {
       handlers.onScroll?.(5);
       return true;

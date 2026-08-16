@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { verifyLeanBuildAttestation } from "../../src/verifier/leanAttestationVerifier.js";
-import { parseLeanAttestationFixture } from "../../src/adapters/lean/leanAttestationFixture.js";
+import { parseLeanAttestationFixture } from "../../src/testing/leanAttestationFixture.js";
 import {
   computeLeanBuildAttestationDigest,
   bindLeanAttestationToProofManifest,

@@ -64,7 +64,12 @@ function createMockContentStore(): SyscallContentStore {
       return {
         ref,
         bytes,
-        metadata: { size: bytes.length, mimeType: "application/json", createdAt: "", createdBy: undefined },
+        metadata: {
+          size: bytes.length,
+          mimeType: "application/json",
+          createdAt: "",
+          createdBy: undefined,
+        },
       };
     },
     async exists(ref: ContentRef) {
@@ -139,21 +144,23 @@ describe("ClusterSupervisor — submitLifecycleIntent retire / resolveSupervisor
     });
     // Wrap to inspect the committed intent + principal the retire path used.
     const base = runtime.proposeAndCommit.bind(runtime);
-    (runtime as unknown as { proposeAndCommit: typeof runtime.proposeAndCommit }).proposeAndCommit = (
-      intent: unknown,
-      options?: { principal?: { actorId: ActorId } },
-    ) => {
-      const op = (intent as { operationTypeId?: string }).operationTypeId;
-      lastIntentOperation = op;
-      lastPrincipalActor = options?.principal?.actorId;
-      return base(intent, options);
-    };
+    (runtime as unknown as { proposeAndCommit: typeof runtime.proposeAndCommit }).proposeAndCommit =
+      (intent: unknown, options?: { principal?: { actorId: ActorId } }) => {
+        const op = (intent as { operationTypeId?: string }).operationTypeId;
+        lastIntentOperation = op;
+        lastPrincipalActor = options?.principal?.actorId;
+        return base(intent, options);
+      };
 
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
       // The callback path: resolveSupervisorPrincipal returns this principal.
       supervisorPrincipal: () => ({ actorId: actorId("custom-supervisor"), kind: "agent" }),
     });
@@ -182,7 +189,11 @@ describe("ClusterSupervisor — submitLifecycleIntent retire / resolveSupervisor
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
       // No supervisorPrincipal callback → resolveSupervisorPrincipal reads getHead(),
       // which is undefined → returns undefined → submitLifecycleIntent returns early.
     });
@@ -217,7 +228,11 @@ describe("ClusterSupervisor — submitLifecycleIntent retire / resolveSupervisor
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
     });
     supervisor.start();
     seedStaleAgent(supervisor, "stale-no-active");
@@ -247,19 +262,21 @@ describe("ClusterSupervisor — submitLifecycleIntent retire / resolveSupervisor
       return { ok: true, after: snap };
     });
     const base = runtime.proposeAndCommit.bind(runtime);
-    (runtime as unknown as { proposeAndCommit: typeof runtime.proposeAndCommit }).proposeAndCommit = (
-      intent: unknown,
-      options?: { principal?: { actorId: ActorId } },
-    ) => {
-      lastPrincipalActor = options?.principal?.actorId;
-      return base(intent, options);
-    };
+    (runtime as unknown as { proposeAndCommit: typeof runtime.proposeAndCommit }).proposeAndCommit =
+      (intent: unknown, options?: { principal?: { actorId: ActorId } }) => {
+        lastPrincipalActor = options?.principal?.actorId;
+        return base(intent, options);
+      };
 
     const shared = createSharedResources({ runtime, contentStore: store, storagePath: "/tmp" });
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
     });
     supervisor.start();
     seedStaleAgent(supervisor, "stale-target");
@@ -284,7 +301,11 @@ describe("ClusterSupervisor — submitLifecycleIntent retire / resolveSupervisor
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
-      llmAdapterFactory: () => ({ async chat() { return { text: "", toolCalls: [], finishReason: "stop" as const }; } }),
+      llmAdapterFactory: () => ({
+        async chat() {
+          return { text: "", toolCalls: [], finishReason: "stop" as const };
+        },
+      }),
     });
     supervisor.start();
 

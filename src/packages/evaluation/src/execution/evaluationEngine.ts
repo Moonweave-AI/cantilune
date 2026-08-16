@@ -65,8 +65,15 @@ export interface EvaluationEngine {
 }
 
 export function createEvaluationEngine(ports: EvaluationEnginePorts): EvaluationEngine {
-  const { runStore, clock, budgetLedger, certificateResolver, candidateRunner, suiteRegistry } =
-    ports;
+  const {
+    runStore,
+    clock,
+    budgetLedger,
+    certificateResolver,
+    candidateRunner,
+    suiteRegistry,
+    leaseCoordinator,
+  } = ports;
 
   return {
     async admitRun(
@@ -247,11 +254,40 @@ export function createEvaluationEngine(ports: EvaluationEnginePorts): Evaluation
       const now = clock.now();
       const aid = runAttemptId(generateUUID());
       const wid = workerId(generateUUID());
-      const lid = leaseId(generateUUID());
-      const ft = fencingToken(generateUUID());
+
+      let lid = leaseId(generateUUID());
+      let ft = fencingToken(generateUUID());
+      if (leaseCoordinator !== undefined) {
+        const grant = await leaseCoordinator.acquireLease(wid, config.timeoutMs);
+        if (!grant.ok) {
+          return violations([
+            violation(
+              "run_lease_expired",
+              "lease.acquire",
+              grant.violations[0]?.message ?? "Failed to acquire evaluation lease",
+            ),
+          ]);
+        }
+        lid = grant.value.leaseId;
+        ft = grant.value.fencingToken;
+        const fencingOk = await leaseCoordinator.validateFencingToken(lid, ft);
+        if (!fencingOk) {
+          return violations([
+            violation(
+              "run_fencing_token_stale",
+              "fencingToken",
+              "Lease fencing token failed validation before attempt execution",
+            ),
+          ]);
+        }
+      }
 
       const runnerResult = await candidateRunner.execute(config);
       const endedAt = clock.now();
+
+      if (leaseCoordinator !== undefined) {
+        await leaseCoordinator.releaseLease(lid, ft);
+      }
 
       if (!runnerResult.ok) {
         const failedAttempt: RunAttempt = {

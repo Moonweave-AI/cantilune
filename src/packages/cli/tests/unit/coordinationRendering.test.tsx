@@ -51,7 +51,8 @@ describe("coordination and lifecycle rendering", () => {
         }}
       />,
     );
-    expect(container.textContent).toContain("read_content");
+    expect(container.textContent).toContain("Read");
+    expect(container.textContent).toContain("sha256:x");
   });
 
   it("renders a LifecycleRail with turn header and stage labels", () => {

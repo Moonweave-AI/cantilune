@@ -2,7 +2,7 @@
 
 | Field              | Value                                                                                                                                                              |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Status             | **Proposed** (Owner review requested; lifts SS-02 of QA-0012)                                                                                                      |
+| Status             | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)                                                                |
 | Created            | 2026-08-14                                                                                                                                                         |
 | Updated            | 2026-08-14                                                                                                                                                         |
 | Decision Owner     | Joker-of-Gotham                                                                                                                                                    |

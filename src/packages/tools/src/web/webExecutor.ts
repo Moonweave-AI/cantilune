@@ -18,7 +18,11 @@ export function createWebExecutor(config: WebConfig): ToolExecutor {
     async execute(
       toolName: string,
       args: Record<string, unknown>,
+      options?: { readonly signal?: AbortSignal },
     ): Promise<{ ok: boolean; output: string }> {
+      if (options?.signal?.aborted === true) {
+        return { ok: false, output: "skipped: aborted before web dispatch" };
+      }
       try {
         switch (toolName) {
           case "web_search": {
@@ -38,6 +42,7 @@ export function createWebExecutor(config: WebConfig): ToolExecutor {
                 ...(args.maxResults !== undefined
                   ? { maxResults: requireNumber(args, "maxResults") }
                   : {}),
+                ...(options?.signal !== undefined ? { signal: options.signal } : {}),
               },
               searchConfig,
             );
@@ -51,6 +56,7 @@ export function createWebExecutor(config: WebConfig): ToolExecutor {
                 ...(args.maxLength !== undefined
                   ? { maxLength: requireNumber(args, "maxLength") }
                   : {}),
+                ...(options?.signal !== undefined ? { signal: options.signal } : {}),
               },
               config,
             );

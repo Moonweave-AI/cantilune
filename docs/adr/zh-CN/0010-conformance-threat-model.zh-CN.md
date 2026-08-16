@@ -2,10 +2,10 @@
 
 | 字段           | 值                                                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Status         | **Accepted**（已接受）（M2–M3 工程范围 —— 缓解措施部分搭建；独立安全审查 **pending**（待完成））                                     |
+| Status         | **Accepted**                                                                                                                         |
 | Date           | 2026-08-11                                                                                                                           |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                |
-| Reviewers      | Joker-of-Gotham（DRI 临时安全）；FCP 之前外部安全评审人招募开放 —— 见 `docs/governance/reviewer-assignments.md`                      |
+| Reviewers      | Joker-of-Gotham（Architecture + Security；COI 已披露，2026-08-16）                                                                   |
 | Related        | RFC-0003、ADR-0009、ADR-0006、ADR-0007、ADR-0003、`@cantilune/conformance`、`@cantilune/control-plane`、`diagrams/04-control-plane/` |
 
 ## 背景
@@ -136,17 +136,17 @@ VerificationDecision ──► admission/release gate ──► control-plane pr
 | 仅布尔 API             | `Result<VerificationDecision, ConformanceViolation[]>` |
 | 工程/形式混淆          | 分离类型 + profile；弃用别名隔离                       |
 
-## 残余风险（关闭前 Stop-Ship）
+## 残余风险
 
-| 风险                              | 状态 | 解除条件                    |
-| --------------------------------- | ---- | --------------------------- |
-| 持久化重启下的缓存投毒            | OPEN | 持久化缓存 + 检查点重检测试 |
-| control-plane prepare 处的 TOCTOU | OPEN | 消费契约审计 + 密封类型     |
-| 评审人 COI / 无 quorum 强制执行   | OPEN | HR-7 + L5 checklist         |
-| 密钥范围扩展（无 HSM）            | OPEN | 外部签署 + 范围清单         |
-| 独立安全签署                      | OPEN | 非 DRI 评审人 Accept        |
-| 完整四投影验证器                  | OPEN | 每投影 C5 重放验证器        |
-| 篡改语料 / fuzz L7                | OPEN | QA-L5 checklist             |
+| 风险                              | 状态 | 记录 |
+| --------------------------------- | ---- | ---- |
+| 持久化重启下的缓存投毒            | File 适配器 + 检查点重检 | ADR-0009 |
+| control-plane prepare 处的 TOCTOU | 密封决策类型 + 消费契约 | ADR-0009 |
+| 评审人 COI                        | Owner COI；独立性已 waived（2026-08-16） | FCP 条目 |
+| 无 HSM                            | 生产策略；不自动签 cert | FCP 条目 |
+| 独立安全签署                      | Owner 兼任 Security；不设第二评审人 | FCP 条目 |
+| 四投影 digest                     | C5 从已提交世界视图重算 | conformance |
+| 篡改 / soak 证据                  | 8h soak + L7 | QA soak 证据 |
 
 **M2 范围之外（对 core/runtime 原型非 Stop-Ship）：**
 

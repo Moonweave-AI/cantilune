@@ -35,11 +35,6 @@ describe("cluster event translation", () => {
     expect(t?.color).toBe("danger");
   });
 
-  it("translates agent_restarted to the cluster accent", () => {
-    const t = translateClusterEvent({ kind: "agent_restarted", actorId: "a5" as never });
-    expect(t?.color).toBe("accentAlt");
-  });
-
   it("translates condition_met to the cluster accent", () => {
     const t = translateClusterEvent({ kind: "condition_met", actorId: "a6" as never });
     expect(t?.color).toBe("accentAlt");
@@ -60,15 +55,59 @@ describe("cluster event translation", () => {
     expect(t).toBeUndefined();
   });
 
+  it("translates agent_queued with priority detail", () => {
+    const t = translateClusterEvent({
+      kind: "agent_queued",
+      actorId: "a8" as never,
+      priority: 3,
+    });
+    expect(t?.color).toBe("muted");
+    expect(t?.detail).toContain("3");
+  });
+
+  it("translates manifest_unresolved to danger", () => {
+    const t = translateClusterEvent({
+      kind: "manifest_unresolved",
+      actorId: "a9" as never,
+      detail: "wrong agentId",
+    });
+    expect(t?.color).toBe("danger");
+    expect(t?.detail).toBe("wrong agentId");
+  });
+
+  it("translates swarm_stalled and budget_exhausted", () => {
+    const stalled = translateClusterEvent({ kind: "swarm_stalled", detail: "no progress" });
+    expect(stalled?.color).toBe("danger");
+    const budget = translateClusterEvent({
+      kind: "budget_exhausted",
+      limit: "turns",
+      detail: "max turns",
+    });
+    expect(budget?.color).toBe("warning");
+    expect(budget?.label).toContain("turns");
+  });
+
+  it("omits agent_done detail when the summary is empty", () => {
+    const t = translateClusterEvent({
+      kind: "agent_done",
+      actorId: "a10" as never,
+      summary: "",
+    });
+    expect(t?.detail).toBeUndefined();
+  });
+
   it("every translated event surfaces as a diagnostic stage for the lifecycle rail", () => {
     const events: ClusterEvent[] = [
       { kind: "agent_started", actorId: "x" as never },
       { kind: "agent_done", actorId: "x" as never, summary: "" },
       { kind: "agent_stale", actorId: "x" as never, lastHeartbeatMs: 1 },
-      { kind: "agent_restarted", actorId: "x" as never },
       { kind: "agent_retired", actorId: "x" as never },
       { kind: "condition_met", actorId: "x" as never },
       { kind: "heartbeat_received", actorId: "x" as never, seq: 1 },
+      { kind: "agent_queued", actorId: "x" as never, priority: 1 },
+      { kind: "manifest_unresolved", actorId: "x" as never, detail: "bad" },
+      { kind: "swarm_stalled", detail: "stuck" },
+      { kind: "budget_exhausted", limit: "agents", detail: "cap" },
     ];
     for (const e of events) {
       const t = translateClusterEvent(e);

@@ -5,7 +5,7 @@ import type * as RunCommandModule from "../../src/shell/runCommand.js";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import * as mcpBridge from "../../src/mcp/mcpBridge.js";
 import { clearMcpDiscoveryCache } from "../../src/mcp/mcpDiscovery.js";
-import { createToolSet } from "../../src/createToolSet.js";
+import { createHostToolSet } from "../support/hostToolSet.js";
 
 vi.mock("../../src/shell/runCommand.js", async (importOriginal) => {
   const original = await importOriginal<typeof RunCommandModule>();
@@ -62,7 +62,7 @@ describe("createToolSet integration", () => {
   });
 
   it("routes execute to correct executor after listTools warms cache", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
       shell: { enabled: true },
@@ -86,7 +86,7 @@ describe("createToolSet integration", () => {
   });
 
   it("lazy-routes tools when execute called before listTools", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true, rootDir: tempDir },
     });
@@ -103,7 +103,7 @@ describe("createToolSet integration", () => {
   });
 
   it("uses workingDirectory as filesystem root when rootDir omitted", async () => {
-    const toolSet = createToolSet({
+    const toolSet = createHostToolSet({
       workingDirectory: tempDir,
       filesystem: { enabled: true },
     });

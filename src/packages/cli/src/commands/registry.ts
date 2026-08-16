@@ -6,6 +6,9 @@ import type { SwarmController } from "../wiring/swarmControl.js";
 import type { ControlPlaneController } from "../wiring/controlPlaneControl.js";
 import type { EvalController } from "../wiring/evalControl.js";
 import type { PetriController } from "../wiring/petriControl.js";
+import type { ObserveController } from "../wiring/observeControl.js";
+import type { ReplayController } from "../wiring/replayControl.js";
+import type { CollaborationSnapshot } from "@cantilune/core";
 
 /**
  * Side-effect channel for commands that must do more than mutate view state:
@@ -55,8 +58,9 @@ export interface CommandServices {
   /**
    * The read-only control-plane service controller (ADR-0006), bootstrapped
    * once with a genesis schema revision + active binding. /schema * handlers
-   * prefetch through this and stash results in store.viewArgs. The CLI does
-   * not submit or approve schema admissions (governance territory).
+   * prefetch through this and stash results in store.viewArgs. Schema
+   * `/schema commit` still does not self-sign FourView certificates.
+   * `/mcp connect|disconnect` commits a same-schema tool-surface epoch.
    */
   readonly controlPlane?: () => ControlPlaneController | undefined;
   /**
@@ -75,6 +79,32 @@ export interface CommandServices {
    * render real fire/enable/reachability/invariant results.
    */
   readonly petriControl?: () => PetriController | undefined;
+  /**
+   * Observability controller — `/observe*` calls `@cantilune/observability`
+   * `observeCommitted` and stashes a FourViewBundle projection in viewArgs.
+   */
+  readonly observeControl?: () => ObserveController | undefined;
+  /**
+   * Replay controller — `/replay*` calls `CoordinationRuntime.replay` and
+   * stashes the verification result in viewArgs (fail-closed on mismatch).
+   */
+  readonly replayControl?: () => ReplayController | undefined;
+  /**
+   * Load a committed CollaborationSnapshot by ref from durable storage.
+   * Used by `/world diff` (two independent loads; fail-closed when missing).
+   */
+  readonly getSnapshot?: (ref: string) => CollaborationSnapshot | undefined;
+  /** Current durable head snapshot ref, when a runtime is connected. */
+  readonly headSnapshotRef?: () => string | undefined;
+  /**
+   * Optional LLM summarizer for `/compact`. Absent ⇒ honest truncation
+   * (omitted), never a fake "summarize" label.
+   */
+  readonly summarizeCompact?: (droppedText: string) => Promise<string | undefined>;
+  /** Injected tool executor catalog for `/tools` / `/tools test`. */
+  readonly listInjectedTools?: () => Promise<readonly { name: string; description: string }[]>;
+  /** Host capability probe for `/status` (injectable so unit tests stay offline). */
+  readonly probeHost?: () => Promise<import("../wiring/hostCapabilities.js").HostCapabilityReport>;
 }
 
 export interface RuntimeResetResult {

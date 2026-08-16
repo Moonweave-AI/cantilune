@@ -1,23 +1,25 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   sampleInventory,
   sampleManifest,
   SAMPLE_OBSERVED,
   FIXTURE_ARTIFACT_DIGESTS,
 } from "../support/conformanceFixtures.js";
-import { cliBuilt, runCli } from "../support/runCli.js";
+import { requireCliBuilt, runCli } from "../support/runCli.js";
 
 describe("L6 pack + CLI smoke", () => {
-  it.skipIf(!cliBuilt())("runs built CLI entry after package build", () => {
+  beforeAll(requireCliBuilt);
+
+  it("runs built CLI entry after package build", () => {
     const help = runCli(["help"]);
     expect(help.exitCode).toBe(0);
     expect(help.stdout).toContain("verify-package");
   });
 
-  it.skipIf(!cliBuilt())("verify-package end-to-end via node dist/cli/main.js", () => {
+  it("verify-package end-to-end via node dist/cli/main.js", () => {
     const dir = mkdtempSync(join(tmpdir(), "conformance-pack-"));
     try {
       const manifestPath = join(dir, "manifest.json");
@@ -54,7 +56,10 @@ describe("L6 pack + CLI smoke", () => {
     const { readFileSync, existsSync } = await import("node:fs");
     const { fileURLToPath } = await import("node:url");
     const packageRoot = join(fileURLToPath(new URL(".", import.meta.url)), "../..");
-    execSync("pnpm build", { cwd: packageRoot, stdio: "ignore" });
+    // The `pretest` hook already built the package. Building again from inside
+    // the suite spawns a nested `pnpm build` that races the workspace build in
+    // flight during `pnpm test`, and it deletes dist out from under sibling
+    // suites that are reading it.
     expect(existsSync(join(packageRoot, "dist/cli/main.js"))).toBe(true);
     const output = execSync("npm pack --dry-run 2>&1", {
       cwd: packageRoot,

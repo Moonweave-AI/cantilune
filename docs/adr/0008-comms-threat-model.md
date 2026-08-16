@@ -2,9 +2,10 @@
 
 | Field   | Value                                                                                    |
 | ------- | ---------------------------------------------------------------------------------------- |
-| Status  | **Draft** — M2–M3 prototype; external Security review **required** before production FCP |
+| Status  | **Accepted** (0.x engineering; Owner + independent Security: Joker-of-Gotham, COI disclosed). FCP still not entered. |
 | Date    | 2026-08-11                                                                               |
-| Related | ADR-0004, ADR-0003, RFC-0001                                                             |
+| Revised | 2026-08-16 — public A2A 1.0.0 (ADR-0027); C2 signed for this 0.x release (COI)           |
+| Related | ADR-0004, ADR-0003, ADR-0018, RFC-0001                                                   |
 
 ## Threat actors
 
@@ -20,27 +21,45 @@
 - Strict wire codec (SHA-256 integrity, field validation) — **landed**
 - Ingress fail-closed pipeline (identity → expiry → replay → authz → inbox) — **landed**
 - Opaque sealed auth / verified envelope capabilities — **landed**
-- ReplayProtector digest window — partial (memory; durable replay TBD)
+- ReplayProtector digest window — process/file adapters injectable (no silent Memory default in production `createCommsServices`)
 - SessionAuthority controller/member checks on send — **landed**
 - E-Stop on ingress/send/reconnect — **landed**
-- HmacIdentityVerifier (timing-safe, empty-actor reject) — **landed**
+- HmacIdentityVerifier (timing-safe, empty-actor reject) — **landed** (optional boot pin; ActorId verifier is mesh default)
 - FileCommsStore fail-closed on corrupt snapshot — **landed**
-- MessagingSagaCoordinator + delivery state updates — **in progress**
-- A2A adapter — **experimental in-process only**
+- MessagingSagaCoordinator + delivery state updates — **landed**; privileged DLQ replay still residual (A20)
+- LoopbackTransport — **landed**
+- FileTransport + EndpointIdentityVerifier (`file-owner-pid`) — **landed** (see STRIDE delta)
+- NetTransport TLS 1.3 + mTLS + fingerprint pin — **landed** (ADR-0018 T3)
+- A2A `a2a/0.1` conformance harness — **CI gate**; public interop claim is **A2A 1.0.0** (ADR-0027, Owner C6 authorized 2026-08-15)
 
-## Residual risks (Stop-Ship until closed)
+## Production transport STRIDE delta (2026-08-15)
 
-- No live external A2A interop oracle
-- Saga phase not fully durable in store
-- Production composition without full runtime/control-plane wiring
-- Independent Security reviewer sign-off — **OPEN**
-- CommsProductCertificate via `@cantilune/conformance`
+### FileTransport (same-host cross-process)
 
-## Residual risks
+| STRIDE | Threat | Mitigation |
+| ------ | ------ | ---------- |
+| Spoofing | Attacker writes a forged `endpoint-identity.json` (fake pid/owner) under a peer store | Verifier requires `record.owner === resolveStoreOwner(storeRoot)` and presented owner matches; forged owner fail-closes and freezes E-Stop before peek |
+| Tampering | Inbox frame rewrite / reorder | At-least-once file frames + ingress replay protector + idempotent claim |
+| Repudiation | Deny send/receive | Occurrence / event sink adapters (process/file) required in production composition |
+| Information disclosure | Reading another agent's outbox | OS directory ACL + distinct outbox/inbox roots per endpoint; identity binds ActorRef↔owner+pid |
+| Denial of service | Flood frames / lock files | maxFrameBytes; E-Stop freeze on identity failure |
+| Elevation of privilege | Claim another ActorRef via sidecar | `actorRef` must match expected peer; owner must match FS truth |
 
-- No production TLS/mTLS yet
-- Stub IdentityVerifier in default wiring
-- Memory store only — no cross-process CAS
-- A2A interop not independently certified
+**Residual (File):** pid liveness / OS ACL enforcement is host-dependent; not a substitute for Net mTLS across hosts.
 
-**DRI Signature**: Joker-of-Gotham — 2026-08-11
+### NetTransport (cross-host)
+
+| STRIDE | Threat | Mitigation |
+| ------ | ------ | ---------- |
+| Spoofing | Fake peer certificate | TLS 1.3 + mTLS + `EndpointIdentityVerifier` fingerprint pin |
+| Tampering | Wire rewrite | TLS record layer + strict net frame codec |
+| Elevation | Directory publish without fingerprint | `MeshHostDirectory.publish` fail-closed when fingerprint empty (ADR-0019 S4) |
+
+## Residual risks (Stop-Ship / Owner)
+
+- Privileged DLQ replay authorization path — engineering residual A20
+- Independent Security for this 0.x release — **C2 signed** by Joker-of-Gotham (COI disclosed, 2026-08-15). External Security still required before FCP.
+- CommsProductCertificate via `@cantilune/conformance` — not auto-signed (G11)
+- Dual-process mTLS adversarial suites are the CI stand-in for dual-machine LAN (G12)
+
+**DRI Signature**: Joker-of-Gotham (2026-08-15; COI disclosed). This is 0.x engineering Acceptance, not FCP.

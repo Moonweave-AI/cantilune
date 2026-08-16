@@ -6,7 +6,7 @@ skinparam shadowing false
 skinparam defaultFontName "Microsoft YaHei"
 
 title 图 06F · 工程证据链 C0–C9 ↔ Core Theory
-caption <color:#6E6963>TS 不重证 Lean；只验证产品证据满足 theory 接口。06C · formal/proof-obligations.json。</color>
+caption <color:#6E6963>产品证据满足 theory 接口。06C · formal/proof-obligations.json。</color>
 
 rectangle "Core Theory (Lean)\nformal/Cantilune/" #E5EDE5 {
   card "CENTRAL-06\nevent_replay_unique" as T06

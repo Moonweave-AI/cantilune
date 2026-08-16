@@ -2,7 +2,7 @@
 
 | Field              | Value                                                                                                             |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Status             | **Proposed** (Owner review requested)                                                                             |
+| Status             | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)               |
 | Created            | 2026-08-14                                                                                                        |
 | Updated            | 2026-08-14                                                                                                        |
 | Last reviewed      | 2026-08-14                                                                                                        |

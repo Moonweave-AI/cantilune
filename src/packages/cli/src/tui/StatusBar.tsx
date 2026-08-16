@@ -141,7 +141,7 @@ export function StatusBar({
   const peers = `${participants} agent${participants === 1 ? "" : "s"}`;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" flexShrink={0}>
       <Box paddingX={1} justifyContent="space-between">
         <Box>
           <Text {...(connected ? text.success : text.muted)}>

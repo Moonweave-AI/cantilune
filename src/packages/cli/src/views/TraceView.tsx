@@ -72,6 +72,40 @@ function filterEntries(
   return filtered;
 }
 
+/** Validate changeLog chain integrity; fail closed when digest/ref material is missing. */
+function validateTraceIntegrity(runtime: RuntimeState): string {
+  const issues: string[] = [];
+  if (runtime.changeLog.length === 0) {
+    issues.push("changeLog empty — nothing to validate");
+  }
+  for (let i = 0; i < runtime.changeLog.length; i += 1) {
+    const entry = runtime.changeLog[i]!;
+    if (!entry.changeId) issues.push(`entry[${i}] missing changeId`);
+    if (!entry.beforeRef) issues.push(`entry[${i}] missing beforeRef digest`);
+    if (!entry.afterRef) issues.push(`entry[${i}] missing afterRef digest`);
+    if (!entry.operationTypeId) issues.push(`entry[${i}] missing operationTypeId`);
+    if (i > 0) {
+      const prev = runtime.changeLog[i - 1]!;
+      if (prev.afterRef && entry.beforeRef && prev.afterRef !== entry.beforeRef) {
+        issues.push(
+          `chain break at ${entry.changeId}: prev.afterRef=${prev.afterRef} ≠ beforeRef=${entry.beforeRef}`,
+        );
+      }
+    }
+  }
+  const head = runtime.snapshot?.snapshotRef;
+  const last = runtime.changeLog.at(-1);
+  if (head && last?.afterRef && head !== last.afterRef) {
+    issues.push(`head snapshotRef ${head} ≠ last afterRef ${last.afterRef}`);
+  }
+  if (issues.length > 0) {
+    return [`Validation FAILED (${issues.length} issue(s))`, ...issues.map((i) => `- ${i}`)].join(
+      "\n",
+    );
+  }
+  return `Validation OK: chain intact, ${runtime.changeLog.length} commits, ${runtime.snapshot?.auditTail.length ?? 0} observations`;
+}
+
 export function renderTraceViewOutput(
   activeView: ViewType,
   viewArgs: Record<string, unknown>,
@@ -84,7 +118,7 @@ export function renderTraceViewOutput(
 
   const filtered = filterEntries(activeView, entries, viewArgs);
   if (activeView === "trace-validate") {
-    return `Validation: chain intact, ${entries.length} entries, replay digest pending`;
+    return validateTraceIntegrity(runtime);
   }
   if (filtered.length === 0) {
     return "No trace entries match the current filters.";
@@ -124,16 +158,8 @@ export function TraceView({ store }: ViewProps): React.ReactElement {
           title="Trace Validation"
           sections={[
             {
-              heading: "Chain Integrity",
-              content: `${store.runtime.changeLog.length} committed changes in runtime changeLog.`,
-            },
-            {
-              heading: "Replay Digest",
-              content: "Connect runtime and replay bundle to verify digest.",
-            },
-            {
-              heading: "Observation Ordering",
-              content: `${store.runtime.snapshot?.auditTail.length ?? 0} auditTail entries on current snapshot.`,
+              heading: "Result",
+              content: validateTraceIntegrity(store.runtime),
             },
           ]}
         />

@@ -46,10 +46,17 @@ export function mergeToolExecutors(executors: readonly ToolExecutor[]): Composit
 
     async listTools(): Promise<ToolSchema[]> {
       const all: ToolSchema[] = [];
+      const idx = new Map<string, ToolExecutor>();
       for (const executor of executors) {
         const tools = await executor.listTools();
-        all.push(...tools);
+        for (const tool of tools) {
+          all.push(tool);
+          if (!idx.has(tool.name)) {
+            idx.set(tool.name, executor);
+          }
+        }
       }
+      indexCacheStore.set(composite, idx);
       return all;
     },
   };

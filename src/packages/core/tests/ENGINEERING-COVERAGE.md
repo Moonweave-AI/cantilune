@@ -46,7 +46,7 @@
 
 | 项                                     | 原因                                                         |
 | -------------------------------------- | ------------------------------------------------------------ |
-| core `story-t0-to-delegate`            | 仍用 `simulateCommit`；canonical E2E 在 `@cantilune/runtime` |
-| matchWitness 持久化                    | recipe 内存有；Change wire 未强制写入 witness                |
-| derive 结构投影                        | 仅 diagnostic summary，非调度投影                            |
+| core `story-t0-to-delegate`            | 非 L6：recipe 单测 + `simulateCommit` harness；canonical E2E 在 `@cantilune/runtime` |
+| matchWitness 持久化                    | Change wire 必填 `matchWitness`；缺字段 codec 拒绝           |
+| derive 结构投影                        | 只读结构投影已落地（ADR-0002 follow-up）；禁止用于 SwarmScheduler |
 | 外置 observability/control-plane/comms | 图 02G；非 runtime 包                                        |

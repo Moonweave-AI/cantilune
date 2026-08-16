@@ -2,17 +2,18 @@
 
 | 字段           | 值                                                                                                                                  |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted**（工程原型范围）                                                                                                        |
+| Status         | **Accepted**（0.x 工程；Owner + 独立 Architecture/Security：Joker-of-Gotham，COI 已披露）                                           |
 | Date           | 2026-08-10                                                                                                                          |
+| Revised        | 2026-08-16 — Postgres HA（ADR-0023）与官方 etcd Raft（ADR-0029）；file 仍为单宿主默认                                               |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                               |
-| Reviewers      | Joker-of-Gotham (DRI，兼任 Security + Architecture second reader；COI 见 `reviewer-assignments.md`)；FCP 前外部 Security 招募仍开放 |
-| Related        | RFC-0001 §9、ADR-0002、`@cantilune/runtime`、`diagrams/02-runtime/`                                                                 |
+| Reviewers      | Joker-of-Gotham (DRI，兼任 Security + Architecture second reader；COI 见 `reviewer-assignments.md`)                                 |
+| Related        | RFC-0001 §9、ADR-0002、ADR-0023、ADR-0029、`@cantilune/runtime`、`diagrams/02-runtime/`                                              |
 
 ## 背景
 
 RFC-0001 §9 要求在 runtime/comms/network 实现之前具备威胁模型。一次 2026-08-10 的代码评审发现 `@cantilune/runtime` 无法充当受信任的权限边界：伪造准入票据、绑定上的 TOCTOU、非原子提交、浅层重放验证，以及对历史快照引用的观察改写。
 
-本 ADR 记录 M2 工程原型范围的**运行时局部威胁模型**与权限矩阵。Comms/A2A/网络侧面在后续 ADR 之前仍属范围之外。
+本 ADR 记录**运行时局部威胁模型**与权限矩阵。Comms/A2A/网络侧面见 ADR-0008 / ADR-0018 / ADR-0027。Cantilune 不实现 Raft：多机耐久消费运维 **Postgres HA**（ADR-0023）或官方 **etcd**（ADR-0029）。`CANTILUNE_HOST_MODE=multi` 两者都无则 fail-closed。
 
 ## 威胁角色与资产
 
@@ -32,7 +33,8 @@ PolicyEvaluator (default deny; templateAware for M2) ◄┘
                                                       │
 Internal registry (AdmittedRecord) ◄── ticket resolves ──► Committer ──► DurableCoordinator
 ObserveInput ──► principal must match source ──► ingestObservation ──► head CAS
-FileResourceLockTable ──► cross-process footprint exclusion (same dir as bundle)
+FileResourceLockTable ──► 单宿主足迹互斥（file durable）
+RaftResourceLockTable ──► 多宿主足迹互斥（etcd CAS）
 ```
 
 | 边界              | 规则                                                                                |
@@ -43,7 +45,7 @@ FileResourceLockTable ──► cross-process footprint exclusion (same dir as b
 | 足迹              | 仅从规范化后的 `matchBindings` 派生；绝不通过隔离范围拓宽拓扑                       |
 | Apply             | 处理器对 `(before, recipe)` 是纯的；新实体引用在配方中预分配                        |
 | 持久化            | 单次 `DurableCoordinator.commit(expectedHead, …)` CAS；观察分配新 `snapshotRef`     |
-| 跨进程锁          | `FileResourceLockTable` 与 bundle 共享锁文件目录；仅不相交足迹                      |
+| 跨进程锁          | file：`FileResourceLockTable`。etcd：`RaftResourceLockTable`（集群 CAS）            |
 
 ## 权限矩阵（M2）
 
@@ -71,7 +73,7 @@ FileResourceLockTable ──► cross-process footprint exclusion (same dir as b
 | 票据 ID 冲突       | 每个 gateway 实例的单调 admitted-id 序列                         |
 | 观察源伪造         | `validateObservePrincipal`；`runtime.observe` 上要求 principal   |
 | 非 controller 转移 | 准入 schema 处的 `session.controller_matches`                    |
-| 跨进程锁缺口       | `FileResourceLockTable` + `createFileRuntimePersistence().locks` |
+| 跨进程锁           | `FileResourceLockTable`（file）/ `RaftResourceLockTable`（etcd） |
 | 浅层快照编解码器   | 严格的 `parseSnapshotWire` 实体验证                              |
 | 默认策略缺口       | 可选策略 → deny-by-default；导出 `templateAwarePolicyEvaluator`  |
 
@@ -79,7 +81,7 @@ FileResourceLockTable ──► cross-process footprint exclusion (same dir as b
 
 | 风险                      | 状态            | 备注                                                                         |
 | ------------------------- | --------------- | ---------------------------------------------------------------------------- |
-| 异步/多进程存储 + 锁      | **Closed (M2)** | `FileDurableCoordinator` + `FileResourceLockTable` + L7 cross-process/worker |
+| 异步/多进程存储 + 锁      | **Closed**      | file / Postgres HA / 官方 etcd Raft（ADR-0023 / ADR-0029）                   |
 | 模板/处理器版本重放       | Closed          | 带版本注册表 + 测试                                                          |
 | 编解码器严格验证          | Closed          | `parseChangeWire` + `parseSnapshotWire`                                      |
 | Pack 消费者冒烟           | Closed          | CI `test:pack`                                                               |

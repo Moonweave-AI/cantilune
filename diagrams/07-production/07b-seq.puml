@@ -1,0 +1,120 @@
+@startuml 07b-seq
+' 图 07B：跨 Namespace 申请 / 批准 / 观察。通用占位，多轮多分支。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 72
+skinparam BoxPadding 10
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBorderColor #B8AFA6
+skinparam SequenceGroupBackgroundColor #F7F3EC
+skinparam ParticipantBorderColor #77716B
+skinparam NoteBackgroundColor #F7F3EC
+skinparam NoteBorderColor #B8B0A7
+
+title 图 07B · 跨 Namespace：申请、主体批准、观察脱敏
+caption <color:#6E6963>主脊=已提交 Change；Obs 回环=外部信号入 auditTail；虚线=拒绝/摘要。占位符：requester / subject / ns-A / ns-B。</color>
+
+mainframe <b>写入纪律</b> · 申请是世界状态；只有被看历史的 Actor 可裁决；观察走 visibleTranscript
+hide footbox
+
+box "Namespace ns-B · 申请方" #F5F1EB
+  participant "Requester\nActor" as Req #FFFDFC
+end box
+
+box "编排运行时" #E5ECEE
+  control "Runtime\nadmit / commit" as RT #F8FBFB
+  database "CollaborationStore\nSnapshot + transcripts" as Store #F8FBFB
+end box
+
+box "Namespace ns-A · 被看方" #E5EDE5
+  participant "Subject\nActor" as Subj #F9FCF8
+end box
+
+box "只读观察" #EDE8F0
+  control "Observability\nredactFourViewBundle" as Obs #F8FBFB
+end box
+
+== 0 · 同 NS 观察：无需申请 ==
+
+Req -> Obs : observe(reader=peer-in-ns-A, subject)
+activate Obs #EDE8F0
+Obs -> Store : visibleTranscript
+Store --> Obs : kind=full
+Obs --> Req : 全文 transcript
+deactivate Obs
+
+== 1 · 跨 NS 默认：元数据 + 摘要 ==
+
+Req -> Obs : observe(reader=requester, subject)
+activate Obs #EDE8F0
+Obs -> Store : visibleTranscript
+Store --> Obs : kind=summary
+Obs --> Req : summarizeTranscript
+deactivate Obs
+
+== 2 · 申请进入世界（可多轮） ==
+
+Req -> RT : CoordinationIntent · request transcript access
+activate RT #E5ECEE
+RT -> Store : commit TranscriptAccessRequest\nstatus=requested
+Store --> Subj : 待裁决申请
+deactivate RT
+
+== 3 · 仅主体裁决 ==
+
+alt 非主体试图批准
+  Req -> RT : decide(approved)
+  activate RT #E5ECEE
+  RT --> Req : 拒绝 · canDecide=false
+  note right of RT #F3E5DC
+    超管 / fleet 控制台
+    <b>不能</b>代替 subject 批准。
+  end note
+  deactivate RT
+else subject 拒绝
+  Subj -> RT : decide(denied)
+  activate RT #E5ECEE
+  RT -> Store : status=denied
+  Store --> Req : 仍为摘要
+  deactivate RT
+else subject 批准
+  Subj -> RT : decide(approved)
+  activate RT #E5ECEE
+  RT -> Store : status=approved\n+ ScopedCapability transcript_read
+  Store --> Req : 授权已物化
+  deactivate RT
+end
+
+== 4 · 批准后观察；可撤销再申请 ==
+
+Req -> Obs : observe(reader=requester, subject)
+activate Obs #EDE8F0
+Obs -> Store : visibleTranscript
+alt 持有 transcript_read 或 approved 申请
+  Store --> Obs : kind=full
+  Obs --> Req : 全文
+else 已撤销 / 已拒绝 / 无授权
+  Store --> Obs : kind=summary
+  Obs --> Req : 摘要
+end
+deactivate Obs
+
+Subj -> RT : decide(revoked)
+activate RT #E5ECEE
+RT -> Store : status=revoked · capability 失效
+deactivate RT
+
+note over Req, Obs #F7F3EC
+  <b>工程边界</b>
+  · Transcript 是 Snapshot 字段，不是 ObservationEntry，也不是平行会话身份。
+  · 同 namespaceId → 全文；跨 NS → 摘要，除非 subject 批准。
+  · 下一轮可再申请；历史申请只追加，不覆盖。
+end note
+
+footer <color:#6E6963>代码锚点：visibleTranscript · decideTranscriptAccess · redactFourViewBundle</color>
+@enduml

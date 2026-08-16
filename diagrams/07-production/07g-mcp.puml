@@ -1,0 +1,91 @@
+@startuml 07g-mcp
+' 图 07G：MCP 热挂受 epoch 约束。当前回合保持旧工具面。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 72
+skinparam BoxPadding 10
+skinparam ArrowColor #77716B
+skinparam SequenceGroupBorderColor #B8AFA6
+skinparam SequenceGroupBackgroundColor #F7F3EC
+skinparam ParticipantBorderColor #77716B
+skinparam NoteBackgroundColor #F7F3EC
+skinparam NoteBorderColor #B8B0A7
+
+title 图 07G · MCP connect/disconnect：准入新 epoch，下一回合生效
+caption <color:#6E6963>ADR-0026。MCP 2026-07-28 无协议会话。HTTP MCP 默认拒绝。占位符：operator / current-turn / next-turn。</color>
+
+mainframe <b>单调性</b> · 热挂必须带着 SchemaAdmissionReceipt；当前 LLM 回合不换工具面
+hide footbox
+
+box "操作面" #F5F1EB
+  actor "Operator\nCLI /mcp" as Op #FFFDFC
+end box
+
+box "治理" #EDE8F0
+  control "ControlPlane\nschema admission" as CP #F8FBFB
+end box
+
+box "工具面" #E5ECEE
+  control "applyMcpAttach\nepoch-bound surface" as Attach #F8FBFB
+  participant "Discover cache\nlist/tools" as Cache #FFFDFC
+end box
+
+box "Agent 循环" #E5EDE5
+  participant "Current turn\nold tool surface" as Cur #F9FCF8
+  participant "Next turn\nnew epoch" as Next #F9FCF8
+end box
+
+== 0 · 存活 OS 允许 connect / disconnect ==
+
+Op -> CP : /mcp connect | disconnect
+activate CP #EDE8F0
+CP -> CP : submit schema admission
+alt HTTP MCP 且 schema 未准入
+  CP --> Op : 拒绝 · deny-by-default
+  note right of CP #F3E5DC
+    httpAdmitted !== true
+    则拒绝 http(s) command。
+  end note
+else 准入可提交
+  CP -> CP : prepare / commit → 新 epoch
+  CP --> Attach : SchemaAdmissionReceipt
+end
+deactivate CP
+
+== 1 · 收据绑定当前 epoch ==
+
+Attach -> Attach : fromBinding.epochId == currentEpoch\ntoBinding.epochId 必须前进
+alt 无收据 / epoch 不前进 / 不匹配
+  Attach --> Op : 拒绝 · fail-closed
+else 收据有效
+  Attach -> Cache : clearMcpDiscoveryCache
+  Attach --> Op : McpToolSurface(epochId=to, admissionId)
+end
+
+== 2 · 当前回合不切换；下一回合用新面 ==
+
+Cur -> Cur : 继续旧工具面
+note right of Cur #F5F1EB
+  回合中途改工具集会破坏准入单调性。
+end note
+
+Cur --> Next : turn 边界
+Next -> Attach : 采用新 McpToolSurface
+Next -> Cache : discover/list 按新 epoch
+
+== 3 · 可再挂一轮 ==
+
+Op -> CP : 下一轮 connect | disconnect
+note over Op, Next #F7F3EC
+  <b>工程边界</b>
+  · 热挂不是静默改 syscall 表；必须经 control-plane epoch。
+  · 当前 turn 结束后生效；多轮挂卸各发一份收据。
+end note
+
+footer <color:#6E6963>代码锚点：tools/src/mcp/mcpEpochAttach.ts · cli/src/wiring/mcpAttach.ts</color>
+@enduml

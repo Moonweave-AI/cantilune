@@ -21,12 +21,16 @@ export type {
   ToolExecutionTier,
   ToolInvocationKey,
   ToolReconcileResult,
+  ToolApprover,
+  ToolApprovalRequest,
+  ToolApprovalDecision,
   OperationSchemaProvider,
   AvailableTemplate,
   ContentRefInputDeclaration,
   ScalarInputDeclaration,
   ScalarInputType,
 } from "./syscall.js";
+export { DEFAULT_APPROVAL_TIERS } from "./syscall.js";
 export { createSyscall } from "./createSyscall.js";
 export { perceive } from "./perceive.js";
 export { act, retryToolObservation, toolArgumentsDigest, useTool } from "./act.js";

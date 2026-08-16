@@ -2,7 +2,7 @@
 
 | 字段       | 值                                                                                                             |
 | ---------- | -------------------------------------------------------------------------------------------------------------- |
-| 状态       | **Proposed**（待 Owner 批准；实现未启动）                                                                      |
+| 状态       | **Proposed**（Owner Acceptance 待定；工程 S0–S4 已落地 — 目录 + 远端 handle + CLI flags）                       |
 | 日期       | 2026-08-14                                                                                                     |
 | 决策负责人 | Joker-of-Gotham (DRI)                                                                                          |
 | 评审人     | Acceptance 前需独立架构 + 安全评审人（COI：Owner 为 DRI）                                                      |
@@ -84,27 +84,86 @@ ADR-0015 在运行时/监督者层使生产 swarm 真实化：`activate_particip
 
 ## 实现阶段（S0–S4）
 
-| 阶段   | 范围                                                                                    | 状态        |
-| ------ | --------------------------------------------------------------------------------------- | ----------- |
-| **S0** | `bootSwarm` 入口；`CantiluneSwarm` 类型；复用 ADR-0015 `ClusterSupervisor` 的监督者接线 | Done (impl) |
-| **S1** | 每个 agent 的 `CantilunOS` 构造，共享 store + 不同私有历史                              | Done (impl) |
-| **S2** | CLI `/swarm` 命令族 + headless `--swarm` 模式                                           | Done (impl) |
-| **S3** | `FileTransport` 支撑的单宿主 swarm + L7 跨进程崩溃测试                                  | Done (impl) |
-| **S4** | `NetTransport` 支撑的多宿主 swarm（依赖 ADR-0018 T3/T4）                                | Not started |
+| 阶段   | 范围                                                                                    | 状态           |
+| ------ | --------------------------------------------------------------------------------------- | -------------- |
+| **S0** | `bootSwarm` 入口；`CantiluneSwarm` 类型；复用 ADR-0015 `ClusterSupervisor` 的监督者接线 | Done (impl)    |
+| **S1** | 每个 agent 的 `CantilunOS` 构造，共享 store + 不同私有历史                              | Done (impl)    |
+| **S2** | CLI `/swarm` 命令族 + headless `--swarm` 模式                                           | Done (impl)    |
+| **S3** | `FileTransport` 支撑的单宿主 swarm + L7 跨进程崩溃测试                                  | Done (impl)    |
+| **S4** | `NetTransport` 支撑的多宿主 swarm：`meshHostDirectory` + `bootSwarmWorker` + `remoteRuntimeProxy` + CLI `/swarm hosts\|join` + headless `--swarm-directory` / `--swarm-listen` / `--swarm-role` | Done (impl)    |
+| **S5** | 派发调度器：条件重求值、并发上限、预算、停滞收敛                                        | Done (impl)    |
 
-> "Done (impl)" 仅表示实现 + 自动化测试/覆盖率门禁已变绿。ADR 仍为 **Proposed** —— Acceptance 仍需 Owner 签名加独立架构 + 安全评审（COI：Owner 即 DRI）。S0–S3 状态反映已落地的代码/测试，而非 ADR Acceptance。
+> "Done (impl)" 仅表示实现 + 自动化测试/覆盖率门禁已变绿。ADR 仍为 **Proposed** —— Acceptance 仍需 Owner 签名加独立架构 + 安全评审（COI：Owner 即 DRI）。S0–S5 状态反映已落地的代码/测试，而非 ADR Acceptance。S4 目录 / worker / CLI 已存在（`meshHostDirectory.ts`、`bootSwarmWorker.ts`、`remoteRuntimeProxy.ts`、`/swarm hosts|join`）。两台物理主机的 operator 手册不是 CI 门禁，不宣称 S4 Acceptance。公开 A2A 仍为 Owner C6。
 
 ## 测试 / QA 计划
 
 | 层级  | 范围                                                           | 状态           |
 | ----- | -------------------------------------------------------------- | -------------- |
 | L2–L4 | `bootSwarm`、`CantiluneSwarm`、监督者接线的单元/契约测试       | Done (green)   |
-| L5    | 独立架构 + 安全评审                                            | review-pending |
+| L5    | 架构 + 安全评审                                                | Owner-accepted COI 2026-08-16 |
 | L6    | 集成：`bootSwarm` → activate → startAgent → signal_done → done | Done (green)   |
 | L7    | 跨进程监督者崩溃；孤立退役；无重复启动                         | Done (green)   |
 | CI    | boot + cli + runtime 的 `pnpm test:coverage`                   | Done (green)   |
 
 > 自动化层级（L2–L4、L6、L7、CI）已落地并变绿（boot：456 测试，覆盖率门禁 EXIT=0 —— stmt 94.27 / branch 88.31 / func 98.02 / line 94.27；cli：584 测试，branch 88.11 EXIT=0）。L5 是剩余的独立架构 + 安全评审，DRI 不能自证（COI）。ADR 保持 **Proposed** 直到该评审与 Owner 签名完成。
+
+## S5 —— 派发调度器（2026-08-15）
+
+### S0–S3 遗留的缺陷
+
+`ClusterSupervisor.onParticipantActivated` 只在 `activate_participant` 变更到达那一刻求值一次
+manifest 的 `startCondition`，条件为假即丢弃该 agent，代码库中没有任何路径会重新求值。因此有三类
+拓扑在构造上不可达 —— 它们的条件按定义在激活时就是假：
+
+- **扇入 / 汇聚** —— `a`、`b` 尚在激活过程中，`agentsDone: [a, b]` 不可能成立；
+- **条件启动** —— artifact 尚不存在时 `artifactPublished` 不可能成立；
+- **反馈环** —— 重入条件依赖更晚的修订版本。
+
+失效会叠加：`isClusterComplete()` 把 `active`/`registered`/`waiting` 判为未完成，于是被丢弃的
+agent 让世界永久处于未完成态，`waitForCompletion()` 以一秒间隔无限轮询，既无超时也无诊断。
+
+既有拓扑套件看不到这一点：`tests/system/cluster/topologies.test.ts` 的每个用例都把世界预置成终态
+再 drain 一次，测的是「给定这个世界，谁可启动」，而非「世界变了，它现在可启动吗」。
+
+### 决策
+
+派发移到 `SwarmScheduler`（`src/packages/boot/src/cluster/swarmScheduler.ts`）之后。激活只做
+**准入入队**；supervisor 的每次 drain 都对已提交世界重新求值全部待启动条件，并派发世界现已满足的
+那些。调度器负责准入、排序与预算；supervisor 保留 feed、manifest 绑定、principal 与 runtime ——
+它仍是唯一触碰 runtime 的组件。
+
+| 关注点    | 规则                                                                                    |
+| --------- | --------------------------------------------------------------------------------------- |
+| 重新求值  | 每次 drain（包括没有变更的 drain）都重新询问全部待启动条件                              |
+| 并发上限  | `maxConcurrentAgents`（默认 8）；超出的合格 agent 以 `slot_unavailable` 入队            |
+| 生成预算  | `maxTotalAgents`（默认 256）限制自注册失控；派发批次同时受剩余配额约束                  |
+| 轮次/时钟 | `maxTotalTurns`（10,000）与 `maxWallClockMs`（1 小时），从 swarm 启动计时，空转也会终止 |
+| 排序      | manifest `priority` 降序，其次按准入顺序                                                |
+| 防饿死    | 每等待一个 `agingIntervalMs`（30 秒）有效优先级提升一级                                 |
+| 停滞收敛  | 无运行 + 有待启动 + 世界无移动，连续 `stallTicksBeforeDeadlock`（3）次                  |
+| 终止原因  | `ClusterResult.reason` ∈ `completed`/`stalled`/`budget_exhausted`/`stopped`，附诊断信息 |
+
+只有 `completed` 能报 `ok: true`。停滞或预算耗尽的 swarm 仍有未完成参与者，报成功正是 SS-01 门禁
+要防的虚假成功。
+
+`AgentManifest` 新增可选 `priority`；在此变更之前写的 manifest 调度行为完全不变
+（`DEFAULT_AGENT_PRIORITY = 0`）。优先级只排序队列，绝不绕过启动条件或任何准入规则。非正或 NaN 的
+策略值失败关闭回落到默认值，因为零上限会让 swarm 死锁。
+
+### 已落地产物（S5，未评审）
+
+- `swarmScheduler.ts`、`schedulerPolicy.ts`。
+- `ClusterSupervisor`：`dispatchPending`、`checkStall`、`getSchedulerSnapshot`、
+  `ClusterResult` 上的 `ClusterTerminationReason`，以及 `agent_queued`/`swarm_stalled`/
+  `budget_exhausted` 三个集群事件。
+- `bootSwarm`：`status()` 现在报告真实 `running` 状态、保留事件日志（此前是声明后从未写入的数组，
+  日志恒为空）与调度器快照；`shutdown()` 如文档所述释放 agent 池；`abort()` 现在把 AbortSignal
+  传入 `os.run()`，此前仅 `os.shutdown()` 会让进行中的运行继续跑。
+- CLI：`/swarm schedule` 视图、`SwarmControllerStatus` 中的调度器状态，以及会说明终止原因与被阻塞
+  agent 的 `/swarm wait` 提示。
+- 测试：`swarmScheduler.test.ts`（22）、`schedulingDynamics.test.ts`（7 —— 拓扑套件无法表达的时序
+  用例），外加 6 个 `bootSwarm` 状态/生命周期用例。boot：490 测试，覆盖率
+  94.52 / 88.5 / 98.48 / 94.52，EXIT=0；`src/cluster` 为 99.3 / 96.44 / 100。
 
 ## 批准
 

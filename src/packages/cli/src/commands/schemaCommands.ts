@@ -1,44 +1,56 @@
 /**
- * Schema commands for the TUI — /schema and sub-views.
- *
- * Handlers prefetch real control-plane data through services.controlPlane()
- * (ADR-0006) and stash it in store.viewArgs.schemaData so the (synchronous)
- * SchemaView renders from prefetched service results. With no control-plane
- * controller (headless/inspect), the view falls back to the runtime epoch
- * projection. The CLI only reads the control plane — it does not submit or
- * approve schema admissions (governance territory).
+ * Schema commands — prefetch real control-plane revisions and monotone plans.
+ * `/schema admit` submits prepare only. `/schema commit` is fail-closed without
+ * independent attestation. `/schema rollout` reads the durable fleet journal.
  */
 import type { SlashCommand, CommandCategory } from "./registry.js";
 import type { AppStore, ViewType } from "../store.js";
 import type { ControlPlaneController } from "../wiring/controlPlaneControl.js";
-import type { PrefetchedSchemaData } from "../views/SchemaView.js";
+import type { PrefetchedSchemaData, SchemaOperationRow } from "../views/SchemaView.js";
 
 async function prefetchSchemaDataAsync(
   services: { readonly controlPlane?: () => ControlPlaneController | undefined } | undefined,
+  viewArgs: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const controller = services?.controlPlane?.();
   if (controller === undefined) return {};
-  const data = await buildSchemaDataAsync(controller);
+  const data = await buildSchemaDataAsync(controller, viewArgs);
   return data === undefined ? {} : { schemaData: data };
 }
 
-/**
- * Build prefetched schema data from the control-plane controller. The
- * MemoryControlPlaneStore resolves its promises synchronously, but the service
- * API is async, so the handler awaits before stashing in viewArgs. This keeps
- * the SchemaView a pure synchronous renderer of prefetched data (matching the
- * content/cluster pattern).
- */
+function operationRows(revision: {
+  readonly schema: {
+    readonly operationTypes: ReadonlyMap<
+      string,
+      {
+        readonly requiredRoles: readonly string[];
+        readonly defaultVisibility: string;
+        readonly mayCreateSessions: boolean;
+      }
+    >;
+  };
+}): readonly SchemaOperationRow[] {
+  return [...revision.schema.operationTypes.entries()].map(([id, declaration]) => ({
+    id: id as string,
+    roles: [...declaration.requiredRoles],
+    visibility: declaration.defaultVisibility,
+    mayCreateSessions: declaration.mayCreateSessions,
+  }));
+}
+
 async function buildSchemaDataAsync(
   controller: ControlPlaneController,
+  viewArgs: Record<string, unknown>,
 ): Promise<PrefetchedSchemaData | undefined> {
   const service = controller.service;
   const revisions = await service.listSchemaRevisions();
   const binding = await service.getActiveBinding(controller.genesisBinding.activationDomainId);
   let revisionDetail: PrefetchedSchemaData["revisionDetail"] | undefined;
+  let operations: readonly SchemaOperationRow[] = [];
   if (binding !== undefined) {
     const revision = await service.getSchemaRevision(binding.schemaRef);
     if (revision !== undefined) {
+      operations = operationRows(revision);
       revisionDetail = {
         schemaRef: {
           schemaId: revision.schemaRef.schemaId as string,
@@ -54,20 +66,49 @@ async function buildSchemaDataAsync(
   }
   const events = await service.readEvents();
 
-  // Compute the monotone extension plan for schema-diff / schema-validate.
-  const extensionPlan =
-    binding !== undefined && revisionDetail !== undefined
-      ? {
-          // Self-extension (genesis vs genesis) is trivially monotone; this is
-          // the CLI local-mode verdict. A real diff would resolve epochA/epochB
-          // revisions and run the validator against their schemas.
-          ok: true as const,
-          addedObjectTypeIds: [] as readonly string[],
-          addedOperationTypeIds: [] as readonly string[],
-        }
-      : undefined;
+  const epochA = typeof viewArgs.epochA === "string" ? viewArgs.epochA : undefined;
+  const epochB = typeof viewArgs.epochB === "string" ? viewArgs.epochB : undefined;
+  let extensionPlan: PrefetchedSchemaData["extensionPlan"];
+  if (epochA !== undefined && epochB !== undefined) {
+    const from = await controller.resolveRevision(epochA);
+    const to = await controller.resolveRevision(epochB);
+    if (from === undefined || to === undefined) {
+      extensionPlan = {
+        ok: false,
+        message: `cannot resolve epoch/revision pair ${epochA} → ${epochB}`,
+      };
+    } else {
+      const plan = controller.monotoneExtension(from.schema, to.schema, from.schemaRef, to.schemaRef);
+      if (plan.ok) {
+        extensionPlan = {
+          ok: true,
+          addedObjectTypeIds: plan.value.addedObjectTypeIds.map((id) => id as string),
+          addedOperationTypeIds: plan.value.addedOperationTypeIds.map((id) => id as string),
+        };
+      } else {
+        const violation = plan.error as { readonly message?: string };
+        extensionPlan = {
+          ok: false,
+          message: violation.message ?? "non-monotone extension",
+        };
+      }
+    }
+  } else if (binding !== undefined && revisionDetail !== undefined) {
+    const self = await service.getSchemaRevision(binding.schemaRef);
+    if (self !== undefined) {
+      const plan = controller.monotoneExtension(self.schema, self.schema, self.schemaRef, self.schemaRef);
+      extensionPlan = plan.ok
+        ? {
+            ok: true,
+            addedObjectTypeIds: plan.value.addedObjectTypeIds.map((id) => id as string),
+            addedOperationTypeIds: plan.value.addedOperationTypeIds.map((id) => id as string),
+          }
+        : { ok: false, message: (plan.error as { message?: string }).message ?? "rejected" };
+    }
+  }
 
-  const base: Omit<PrefetchedSchemaData, "extensionPlan"> = {
+  const report = controller.reconciliation.report();
+  const base: PrefetchedSchemaData = {
     revisions: revisions.map((r) => ({
       schemaRef: {
         schemaId: r.schemaRef.schemaId as string,
@@ -92,17 +133,22 @@ async function buildSchemaDataAsync(
             activatedAt: binding.activatedAt,
           },
     revisionDetail,
+    operations,
     events: events.map((e) => ({
       sequence: e.storeSequence as number,
       kind: e.kind,
       recordedAt: e.occurredAt,
     })),
+    rollout: report,
+    ephemeral: controller.ephemeral,
+    ...(extensionPlan !== undefined ? { extensionPlan } : {}),
   };
-  return extensionPlan === undefined ? base : { ...base, extensionPlan };
+  return base;
 }
 
 export function registerSchemaCommands(): SlashCommand[] {
   const view = "view" as CommandCategory;
+  const operation = "operation" as CommandCategory;
   const make = (
     name: string,
     description: string,
@@ -116,7 +162,7 @@ export function registerSchemaCommands(): SlashCommand[] {
     handler: async (a: Record<string, unknown>, store: AppStore, services) => {
       store.mode = "view";
       store.activeView = viewName;
-      const prefetched = await prefetchSchemaDataAsync(services);
+      const prefetched = await prefetchSchemaDataAsync(services, a);
       store.viewArgs = { ...a, ...prefetched };
     },
   });
@@ -126,9 +172,66 @@ export function registerSchemaCommands(): SlashCommand[] {
     make("/schema epoch", "Show current schema epoch", "schema-epoch"),
     make("/schema epoch history", "Epoch transition timeline", "schema-epoch-history"),
     make("/schema diff", "Diff two schema epochs", "schema-diff", [
-      { name: "epochA", description: "First epoch id", required: true, type: "string" },
-      { name: "epochB", description: "Second epoch id", required: true, type: "string" },
+      { name: "epochA", description: "First epoch or revision id", required: true, type: "string" },
+      { name: "epochB", description: "Second epoch or revision id", required: true, type: "string" },
     ]),
     make("/schema validate", "Validate schema against runtime binding", "schema-validate"),
+    {
+      name: "/schema admit",
+      description: "Submit schema admission (prepare only; no TUI self-sign)",
+      category: operation,
+      args: [
+        {
+          name: "revision",
+          description: "Candidate revision or epoch id",
+          required: true,
+          type: "string",
+        },
+      ],
+      handler: async (args, store, services) => {
+        const controller = services?.controlPlane?.();
+        store.mode = "view";
+        store.activeView = "schema-admit";
+        if (controller === undefined) {
+          store.viewArgs = { ...args, schemaData: { admitResult: { ok: false, message: "no control plane" } } };
+          return;
+        }
+        const revision = typeof args.revision === "string" ? args.revision : "";
+        const admitResult = await controller.admitCandidate(revision);
+        const prefetched = await prefetchSchemaDataAsync(services, args);
+        store.viewArgs = { ...args, ...prefetched, schemaData: { ...(prefetched.schemaData as object), admitResult } };
+        services?.notify?.(admitResult.ok ? "info" : "error", admitResult.message);
+      },
+    },
+    {
+      name: "/schema commit",
+      description: "Commit an approved admission (fail-closed without attestation)",
+      category: operation,
+      args: [
+        { name: "admissionId", description: "Admission id", required: true, type: "string" },
+      ],
+      handler: async (args, store, services) => {
+        const controller = services?.controlPlane?.();
+        store.mode = "view";
+        store.activeView = "schema-commit";
+        if (controller === undefined) {
+          store.viewArgs = {
+            ...args,
+            schemaData: { commitResult: { ok: false, message: "no control plane" } },
+          };
+          return;
+        }
+        const admissionId = typeof args.admissionId === "string" ? args.admissionId : "";
+        const commitResult = await controller.commitAdmission(admissionId);
+        const prefetched = await prefetchSchemaDataAsync(services, args);
+        store.viewArgs = {
+          ...args,
+          ...prefetched,
+          schemaData: { ...(prefetched.schemaData as object), commitResult },
+        };
+        services?.notify?.(commitResult.ok ? "info" : "warn", commitResult.message);
+      },
+    },
+    make("/schema rollout", "Show fleet rollout report from durable journal", "schema-rollout"),
   ];
 }

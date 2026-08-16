@@ -1,6 +1,11 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CollaborationSnapshot, CoordinationChange, SchemaEpochBinding, SnapshotRef } from "@cantilune/core";
+import type {
+  CollaborationSnapshot,
+  CoordinationChange,
+  SchemaEpochBinding,
+  SnapshotRef,
+} from "@cantilune/core";
 import type {
   DurableCommitInput,
   DurableCommitResult,
@@ -103,9 +108,7 @@ export function readFileRuntimeIdentity(dir: string): FileRuntimeIdentity | unde
  * under the correct epoch after a crash that left the in-memory holders gone
  * but the durable head+binding intact.
  */
-export function readFileRuntimeActiveBinding(
-  dir: string,
-): SchemaEpochBinding | undefined {
+export function readFileRuntimeActiveBinding(dir: string): SchemaEpochBinding | undefined {
   try {
     const loaded = readBundle(dir);
     return loaded.durable.activeBinding();

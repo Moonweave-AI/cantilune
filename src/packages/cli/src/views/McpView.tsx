@@ -4,6 +4,7 @@ import type { AppStore, ViewType } from "../store.js";
 import { useAppStore } from "../storeContext.js";
 import { ViewFrame } from "./ViewFrame.js";
 import { str } from "./viewStr.js";
+import { parseMcpServerSpec } from "../wiring/cliToolSet.js";
 
 export interface ViewProps {
   readonly store: AppStore;
@@ -12,38 +13,70 @@ export interface ViewProps {
 export function renderMcpViewOutput(
   activeView: ViewType,
   viewArgs: Record<string, unknown>,
+  mcpServers: readonly string[] | undefined = undefined,
 ): string {
   if (activeView === "mcp-connect") {
-    const url = str(viewArgs["url"]);
+    const spec = str(viewArgs["url"]);
+    const parsed = parseMcpServerSpec(spec);
+    if (parsed.rejected !== undefined) {
+      return [`Requested: ${spec}`, "", `Rejected: ${parsed.rejected}`].join("\n");
+    }
+    const transport =
+      parsed.config?.command.startsWith("http://") === true ||
+      parsed.config?.command.startsWith("https://") === true
+        ? "HTTP"
+        : "stdio";
     return [
-      `Requested connection: ${url}`,
+      `Requested ${transport} MCP: ${parsed.config?.name} → ${parsed.config?.command}`,
       "",
-      "MCP servers are wired at boot time through BootConfig.tools, not from the TUI.",
-      "To connect this server, add it to your boot configuration:",
+      viewArgs.scheduled === true
+        ? "Wrote CliConfig.mcpServers and scheduled epoch-bound attach after the current turn."
+        : viewArgs.persisted === true
+          ? "Wrote CliConfig.mcpServers."
+          : "Call /mcp connect from the TUI to persist and schedule attach.",
+    ].join("\n");
+  }
+
+  if (activeView === "mcp-disconnect") {
+    const name = str(viewArgs["name"]);
+    if (viewArgs.error !== undefined) {
+      return [`Disconnect ${name}`, "", `Rejected: ${str(viewArgs["error"])}`].join("\n");
+    }
+    return [
+      `Disconnect ${name}`,
       "",
-      '  import { createMcpToolExecutor } from "@cantilune/tools";',
+      viewArgs.scheduled === true
+        ? "Scheduled epoch-bound detach after the current turn. The in-flight turn keeps the old tool surface."
+        : "Call /mcp disconnect <name> to schedule detach.",
+    ].join("\n");
+  }
+
+  const servers = mcpServers ?? [];
+  if (servers.length === 0) {
+    return [
+      "MCP server connections",
       "",
-      "  bootFileOS(adapter, {",
-      '    storagePath: "./.cantilune",',
-      "    llm: config,",
-      `    tools: [createMcpToolExecutor({ url: "${url}" })],`,
-      "  });",
-      "",
-      "Runtime MCP attachment is not supported: tool availability is part of the",
-      "admission schema, and changing it mid-run would invalidate the epoch.",
+      "No servers in CliConfig.mcpServers.",
+      "Use /mcp connect <name=command args> or an http(s) URL to persist a server and schedule attach.",
+      "Hot-attach is epoch-bound: the current turn keeps the old tool surface.",
     ].join("\n");
   }
 
   return [
-    "MCP server connections",
+    "MCP server connections (from CliConfig; hot-attach is epoch-bound)",
     "",
-    "No servers attached to this session.",
-    "",
-    "MCP is provided by @cantilune/tools and injected at boot via BootConfig.tools.",
-    "The TUI boots with a bare runtime (no external tools) so that runs stay",
-    "reproducible; use a custom boot script to attach servers.",
-    "",
-    "Run /mcp connect <url> to see the wiring snippet for a specific server.",
+    ...servers.map((spec) => {
+      const parsed = parseMcpServerSpec(spec);
+      if (parsed.rejected !== undefined) {
+        return `  ${spec} — rejected: ${parsed.rejected}`;
+      }
+      const transport =
+        parsed.config?.command.startsWith("http://") === true ||
+        parsed.config?.command.startsWith("https://") === true
+          ? "http"
+          : "stdio";
+      return `  ${parsed.config?.name} ${transport} ${parsed.config?.command}`;
+    }),
   ].join("\n");
 }
 
@@ -52,15 +85,19 @@ export function McpView({
   activeView,
 }: ViewProps & { readonly activeView: ViewType }): React.ReactElement {
   const output = useMemo(
-    () => renderMcpViewOutput(activeView, store.viewArgs),
-    [activeView, store.viewArgs],
+    () => renderMcpViewOutput(activeView, store.viewArgs, store.mcpServers),
+    [activeView, store],
   );
 
+  const title =
+    activeView === "mcp-connect"
+      ? "MCP — Connect"
+      : activeView === "mcp-disconnect"
+        ? "MCP — Disconnect"
+        : "MCP — Servers";
+
   return (
-    <ViewFrame
-      title={activeView === "mcp-connect" ? "MCP — Connect" : "MCP — Servers"}
-      tone="accent"
-    >
+    <ViewFrame title={title} tone="accent">
       <Text>{output}</Text>
     </ViewFrame>
   );

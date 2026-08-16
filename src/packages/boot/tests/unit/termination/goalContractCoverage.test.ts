@@ -10,7 +10,10 @@
  * than throw or inject an unverifiable condition.
  */
 import { describe, it, expect } from "vitest";
-import { compileGoalContract, defaultSystemContract } from "../../../src/termination/goalContract.js";
+import {
+  compileGoalContract,
+  defaultSystemContract,
+} from "../../../src/termination/goalContract.js";
 import { createDefaultVerifierRegistry, VerifierRegistry } from "../../../src/termination/index.js";
 import type { LlmAdapter, LlmChatResponse, LlmToolCallResult } from "../../../src/types.js";
 
@@ -44,7 +47,12 @@ function toolCall(name: string, args: unknown): LlmToolCallResult {
 describe("compileGoalContract — fallback branches", () => {
   it("falls back to default contract when the LLM returns no tool calls and no text", async () => {
     const llm = makeLlm({ text: undefined, toolCalls: [] });
-    const contract = await compileGoalContract("do a thing", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "do a thing",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
     expect(contract.criteria).toHaveLength(1);
     expect(contract.criteria[0]!.verifierId).toBe("no_infinite_loop");
@@ -54,34 +62,59 @@ describe("compileGoalContract — fallback branches", () => {
     const llm = makeLlm({
       toolCalls: [toolCall("some_other_tool", { criteria: [] })],
     });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
   it("falls back when tool-call arguments are not a plain object (e.g. a string)", async () => {
     // arguments as a raw JSON string, not a parsed object — isPlainObject is false.
     const llm = makeLlm({
-      toolCalls: [toolCall("propose_contract", "{\"criteria\":[]}")],
+      toolCalls: [toolCall("propose_contract", '{"criteria":[]}')],
     });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
   it("falls back when text has no JSON object match", async () => {
     const llm = makeLlm({ text: "I cannot help with that.", toolCalls: [] });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
   it("falls back when text JSON parses to a non-object (e.g. a bare array)", async () => {
     const llm = makeLlm({ text: "[1, 2, 3]", toolCalls: [] });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
   it("falls back when text JSON is malformed (unparseable)", async () => {
     const llm = makeLlm({ text: "{ not valid json {{{", toolCalls: [] });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
@@ -93,7 +126,14 @@ describe("compileGoalContract — fallback branches", () => {
       toolCalls: [
         toolCall("propose_contract", {
           criteria: [
-            { id: "c1", description: "desc", kind: "hard", weight: 1, threshold: 1, verifierId: "no_such_verifier" },
+            {
+              id: "c1",
+              description: "desc",
+              kind: "hard",
+              weight: 1,
+              threshold: 1,
+              verifierId: "no_such_verifier",
+            },
           ],
         }),
       ],
@@ -104,12 +144,22 @@ describe("compileGoalContract — fallback branches", () => {
 
   it("falls back when the LLM throws during chat", async () => {
     const llm = throwingLlm(new Error("network down"));
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
   });
 
   it("falls back to default when no LLM adapter is provided (undefined)", async () => {
-    const contract = await compileGoalContract("x", undefined, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      undefined,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("system");
     // The default contract must equal defaultSystemContract for the same instruction.
     const direct = defaultSystemContract("x", FROZEN_AT);
@@ -121,13 +171,32 @@ describe("compileGoalContract — fallback branches", () => {
       toolCalls: [
         toolCall("propose_contract", {
           criteria: [
-            { id: "deliver", description: "produce an artifact", kind: "hard", weight: 1, threshold: 1, verifierId: "task_artifact_exists" },
-            { id: "progress", description: "make coordination progress", kind: "soft", weight: 0.5, threshold: 0.5, verifierId: "coordination_progress" },
+            {
+              id: "deliver",
+              description: "produce an artifact",
+              kind: "hard",
+              weight: 1,
+              threshold: 1,
+              verifierId: "task_artifact_exists",
+            },
+            {
+              id: "progress",
+              description: "make coordination progress",
+              kind: "soft",
+              weight: 0.5,
+              threshold: 0.5,
+              verifierId: "coordination_progress",
+            },
           ],
         }),
       ],
     });
-    const contract = await compileGoalContract("build a report", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "build a report",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("llm");
     expect(contract.criteria).toHaveLength(2);
     expect(contract.criteria[0]!.id).toBe("deliver");
@@ -142,12 +211,23 @@ describe("compileGoalContract — fallback branches", () => {
         toolCall("propose_contract", {
           criteria: [
             // weight as a string "0.4", threshold omitted → clamp + default.
-            { id: "softy", description: "qualitative", kind: "soft", weight: "0.4", verifierId: "structured_rubric" },
+            {
+              id: "softy",
+              description: "qualitative",
+              kind: "soft",
+              weight: "0.4",
+              verifierId: "structured_rubric",
+            },
           ],
         }),
       ],
     });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("llm");
     expect(contract.criteria[0]!.weight).toBe(0.4);
     expect(contract.criteria[0]!.threshold).toBe(1);
@@ -159,7 +239,12 @@ describe("compileGoalContract — fallback branches", () => {
       text: 'Sure! Here is the contract: {"criteria":[{"id":"p","description":"progress","kind":"hard","weight":1,"threshold":1,"verifierId":"coordination_progress"}]}',
       toolCalls: [],
     });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     expect(contract.compiledBy).toBe("llm");
     expect(contract.criteria[0]!.id).toBe("p");
   });
@@ -169,12 +254,24 @@ describe("compileGoalContract — fallback branches", () => {
       toolCalls: [
         toolCall("propose_contract", {
           criteria: [
-            { id: "bad", description: "desc", kind: "mandatory", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+            {
+              id: "bad",
+              description: "desc",
+              kind: "mandatory",
+              weight: 1,
+              threshold: 1,
+              verifierId: "no_infinite_loop",
+            },
           ],
         }),
       ],
     });
-    const contract = await compileGoalContract("x", llm, createDefaultVerifierRegistry(), FROZEN_AT);
+    const contract = await compileGoalContract(
+      "x",
+      llm,
+      createDefaultVerifierRegistry(),
+      FROZEN_AT,
+    );
     // The one criterion normalizes to undefined (bad kind) → empty → fall back.
     expect(contract.compiledBy).toBe("system");
   });

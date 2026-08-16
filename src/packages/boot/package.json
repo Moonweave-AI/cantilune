@@ -1,7 +1,7 @@
 {
   "name": "@cantilune/boot",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Minimal bootstrap: boot Cantilune OS, connect LLM, run the agent loop",
   "exports": {
@@ -14,24 +14,32 @@
     "dist"
   ],
   "scripts": {
-    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "lint": "eslint .",
+    "pretest": "pnpm --filter @cantilune/boot... build",
     "test": "vitest run",
     "test:pack": "node ../../../scripts/packConsumerSmoke.mjs boot",
+    "pretest:coverage": "pnpm --filter @cantilune/boot... build",
     "test:coverage": "vitest run --coverage",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "test:static": "pnpm lint && pnpm format:check && pnpm typecheck"
+    "test:static": "pnpm lint && pnpm format:check && pnpm typecheck",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
     "@cantilune/core": "workspace:*",
     "@cantilune/runtime": "workspace:*",
     "@cantilune/content": "workspace:*",
     "@cantilune/syscall": "workspace:*",
-    "@cantilune/comms": "workspace:*"
+    "@cantilune/comms": "workspace:*",
+    "@cantilune/control-plane": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^22.13.4",
     "@vitest/coverage-v8": "^3.2.7"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   }
 }

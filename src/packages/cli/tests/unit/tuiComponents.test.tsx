@@ -36,6 +36,10 @@ import { ConfirmDialog } from "../../src/tui/ConfirmDialog.js";
 import { InputBar } from "../../src/tui/InputBar.js";
 import { PickerPanel } from "../../src/tui/PickerPanel.js";
 import { ViewContainer } from "../../src/tui/ViewContainer.js";
+import {
+  sampleObserveProjection,
+  sampleReplayProjection,
+} from "../support/sampleObserveReplay.js";
 
 describe("ink view and tui components", () => {
   beforeEach(() => {
@@ -85,7 +89,7 @@ describe("ink view and tui components", () => {
     }> = [
       { view: "world" },
       { view: "world-tasks" },
-      { view: "world-diff", args: { refA: "a", refB: "b" } },
+      { view: "world-diff", args: { refA: "a", refB: "b", worldDiffLeft: "a", worldDiffRight: "b" } },
       { view: "graph", args: { depth: 2, actor: "coder" } },
       { view: "graph-forks" },
       { view: "graph-path", args: { refA: "chg:obs-001", refB: "chg:commit-004" } },
@@ -104,9 +108,9 @@ describe("ink view and tui components", () => {
       { view: "content-stats" },
       { view: "content-search", args: { text: "write_lock" } },
       { view: "content-gc" },
-      { view: "observe" },
-      { view: "observe-dependency" },
-      { view: "observe-diagnostic" },
+      { view: "observe", args: { observeProjection: sampleObserveProjection } },
+      { view: "observe-dependency", args: { observeProjection: sampleObserveProjection } },
+      { view: "observe-diagnostic", args: { observeProjection: sampleObserveProjection } },
       { view: "schema" },
       { view: "schema-ops" },
       { view: "schema-diff", args: { epochA: "e0", epochB: "e1" } },
@@ -115,9 +119,12 @@ describe("ink view and tui components", () => {
       { view: "eval-run", args: { suite: "coord-basic" } },
       { view: "eval-compare", args: { runA: "a", runB: "b" } },
       { view: "eval-report", args: { runId: "run:1" } },
-      { view: "replay" },
-      { view: "replay-bundle" },
-      { view: "replay-recipe", args: { changeId: "chg:1" } },
+      { view: "replay", args: { replayProjection: sampleReplayProjection } },
+      { view: "replay-bundle", args: { replayProjection: sampleReplayProjection } },
+      {
+        view: "replay-recipe",
+        args: { changeId: "chg:1", replayProjection: sampleReplayProjection },
+      },
     ];
 
     for (const spec of views) {

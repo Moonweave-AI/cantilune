@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   createCommsServices,
   executeAdmissionReconnect,
 } from "../../src/engine/createCommsServices.js";
 import { defaultTestQuiescence, defaultTestSessionAuthority } from "../support/envelopeFixtures.js";
 import { denyByDefaultAuthorizer } from "../../src/security/denyByDefaultAuthorizer.js";
-import { testRuntimeCommitPort } from "../../src/engine/testRuntimeCommitPort.js";
+import { productionCommsDeps } from "../support/productionCommsDeps.js";
 
 describe("executeAdmissionReconnect failures", () => {
   it("returns propose error for expired plan", async () => {
@@ -53,28 +56,27 @@ describe("executeAdmissionReconnect failures", () => {
   });
 
   it("createCommsServices production uses denyByDefault authorizer", () => {
-    const services = createCommsServices({
-      mode: "production",
-      bindingResolver: { getActiveBinding: () => undefined },
-      sessionAuthority: defaultTestSessionAuthority,
-      quiescence: defaultTestQuiescence,
-      runtimeCommit: testRuntimeCommitPort(),
-      observation: { observe: async () => ({ ok: true, value: { snapshotRef: "snap" as never } }) },
-      identity: {
-        verifyPeer: async () => ({
-          ok: false,
-          error: {
-            code: "identity_unverified",
-            phase: "authenticate",
-            message: "no",
-            retryable: false,
-          },
+    const dir = mkdtempSync(join(tmpdir(), "comms-prod-deny-"));
+    try {
+      const services = createCommsServices({
+        ...productionCommsDeps(dir, {
+          verifyPeer: async () => ({
+            ok: false,
+            error: {
+              code: "identity_unverified",
+              phase: "authenticate",
+              message: "no",
+              retryable: false,
+            },
+          }),
         }),
-      },
-      authorizer: denyByDefaultAuthorizer(),
-    });
-    expect(services.admin.isFrozen()).toBe(false);
-    services.admin.setFrozen(true);
-    expect(services.admin.isFrozen()).toBe(true);
+        authorizer: denyByDefaultAuthorizer(),
+      });
+      expect(services.admin.isFrozen()).toBe(false);
+      services.admin.setFrozen(true);
+      expect(services.admin.isFrozen()).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

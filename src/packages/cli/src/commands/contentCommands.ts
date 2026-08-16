@@ -20,13 +20,22 @@ function openContentView(
   };
 }
 
-/** Referenced content refs from the runtime audit tail (the live world). */
+/** Referenced content refs from the live world (audit + artifacts + sessions). */
 function referencedRefs(store: AppStore): Set<string> {
   const snapshot = store.runtime.snapshot;
   if (snapshot === null) return new Set();
   const refs = new Set<string>();
   for (const entry of snapshot.auditTail) {
     refs.add(entry.payloadRef);
+  }
+  for (const artifact of snapshot.artifacts) {
+    const contentRef = (artifact as { contentRef?: string }).contentRef;
+    if (typeof contentRef === "string" && contentRef.length > 0) refs.add(contentRef);
+  }
+  for (const session of snapshot.sessions) {
+    const s = session as { manifestRef?: string; contentRef?: string };
+    if (typeof s.manifestRef === "string" && s.manifestRef.length > 0) refs.add(s.manifestRef);
+    if (typeof s.contentRef === "string" && s.contentRef.length > 0) refs.add(s.contentRef);
   }
   return refs;
 }
@@ -113,8 +122,29 @@ export function registerContentCommands(): SlashCommand[] {
       category: view,
       args: [{ name: "text", description: "Search text", required: true, type: "string" }],
       async handler(args, store, services) {
-        const entries = await fetchEntries(services);
-        openContentView("content-search", { entries })(args, store);
+        const query = typeof args.text === "string" ? args.text.trim() : "";
+        if (query.length === 0) {
+          openContentView("content-search", {
+            entries: [],
+            text: "",
+            error: "empty query is fail-closed",
+          })(args, store);
+          return;
+        }
+        const contentStore = services?.contentStore?.();
+        const all = await fetchEntries(services);
+        const matched: ContentEntry[] = [];
+        if (contentStore !== undefined) {
+          for (const entry of all) {
+            const blob = await contentStore.get(entry.ref as Parameters<ContentStore["get"]>[0]);
+            if (blob === undefined) continue;
+            const text = Buffer.from(blob.bytes).toString("utf8");
+            if (text.includes(query) || (entry.ref as string).includes(query)) {
+              matched.push(entry);
+            }
+          }
+        }
+        openContentView("content-search", { entries: matched, text: query })(args, store);
       },
     },
     {

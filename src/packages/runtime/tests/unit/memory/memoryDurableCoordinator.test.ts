@@ -237,10 +237,12 @@ describe("MemoryDurableCoordinator active binding (ADR-0014)", () => {
 
     // Now a CAS with a stale expected head must fail and leave the binding.
     const stale = { ...after, snapshotRef: snapshotRef("snap-E1"), epochId: epochId("43") };
-    expect(durable.compareAndSwapHeadWithBinding(snapshotRef("snap-wrong"), stale, {
-      ...existing,
-      epochId: epochId("43"),
-    })).toBe(false);
+    expect(
+      durable.compareAndSwapHeadWithBinding(snapshotRef("snap-wrong"), stale, {
+        ...existing,
+        epochId: epochId("43"),
+      }),
+    ).toBe(false);
     expect(durable.activeBinding()?.epochId).toBe(t0.epochId);
   });
 

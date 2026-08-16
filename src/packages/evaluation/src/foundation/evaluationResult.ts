@@ -27,6 +27,7 @@ export type EvaluationViolationCode =
   | "run_not_admitted"
   | "run_budget_exhausted"
   | "run_lease_expired"
+  | "run_lease_held"
   | "run_fencing_token_stale"
   | "attempt_already_completed"
   | "attempt_retry_limit"

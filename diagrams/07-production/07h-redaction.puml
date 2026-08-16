@@ -1,0 +1,70 @@
+@startuml 07h-redaction
+' 图 07H：fleet 控制台脱敏层。超管不能绕过。列式分层。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+
+title 图 07H · Fleet 控制台六层脱敏（定锚）
+caption <color:#6E6963>ADR-0022/0025。租户 = Namespace + RBAC。跨租户默认元数据+摘要。超管无自动全文。</color>
+
+legend top right
+  |= 层 |= 抽象 |
+  | <back:#E5EDE5>　</back> | L0 已提交世界 |
+  | <back:#EDE8F0>　</back> | L1 Namespace 归属 |
+  | <back:#E8EEF5>　</back> | L2 RBAC 角色 |
+  | <back:#F3E5DC>　</back> | L3 主体批准 |
+  | <back:#E5ECEE>　</back> | L4 visibleTranscript |
+  | <back:#F5F1EB>　</back> | L5 控制台投影 |
+endlegend
+
+top to bottom direction
+
+rectangle "L0 · 已提交世界\nCollaborationSnapshot" #E5EDE5 {
+  card "namespaces · participants\ntranscripts · capabilities\ntranscriptAccessRequests" as L0
+}
+
+rectangle "L1 · Namespace 归属" #EDE8F0 {
+  card "Participant.namespaceId\n缺省 default\n同 NS 全文 / 跨 NS 默认摘要" as L1
+}
+
+rectangle "L2 · 控制面 RBAC" #E8EEF5 {
+  card "每 Namespace：admin / member / observer\nAdministrationContext.roles + scopes\n角色 ≠ transcript 授权" as L2
+}
+
+rectangle "L3 · 仅主体可批准" #F3E5DC {
+  card "TranscriptAccessRequest\nsubjectActor 批准 / 拒绝 / 撤销\n物化 transcript_read capability" as L3
+}
+
+rectangle "L4 · 读函数" #E5ECEE {
+  card "visibleTranscript(snapshot, reader, subject)\nfull | summary | absent\nredactFourViewBundle 剥明文" as L4
+}
+
+rectangle "L5 · Fleet 控制台投影" #F5F1EB {
+  card "跨 NS：元数据 + summarizeTranscript\n超管 / fleet 视图不绕过 L4\nOTLP / AG-UI 只导出已脱敏面" as L5
+}
+
+L0 --> L1
+L1 --> L2
+L2 --> L3
+L3 --> L4
+L4 --> L5
+
+note right of L2
+  <b>RBAC 不管正文</b>
+  admin 可管 Namespace
+  不能代替 subject 批准历史
+end note
+
+note right of L5
+  <b>导出纪律</b>
+  SIEM 只收 OTLP
+  证书 digest 仍属 conformance
+end note
+
+footer <color:#6E6963>代码锚点：transcriptVisibility.ts · redactFourViewBundle.ts · administrationContext.ts</color>
+@enduml

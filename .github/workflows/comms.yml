@@ -35,8 +35,10 @@ jobs:
       - run: pnpm --filter @cantilune/runtime build
       - run: pnpm --filter @cantilune/conformance build
       - run: pnpm --filter @cantilune/comms build
+      - run: pnpm --filter @cantilune/comms test:a2a-conformance
       - run: pnpm --filter @cantilune/comms typecheck
       - run: pnpm --filter @cantilune/comms test
+      - run: pnpm --filter @cantilune/comms test:a2a-conformance
       - run: pnpm --filter @cantilune/comms test:coverage
       - run: pnpm --filter @cantilune/comms test:fuzz
       - run: pnpm --filter @cantilune/comms test:mutation

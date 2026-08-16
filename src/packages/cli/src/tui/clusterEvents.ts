@@ -65,13 +65,6 @@ export function translateClusterEvent(event: ClusterEvent): TranslatedClusterEve
         glyph: "⚠",
         detail: `last heartbeat ${event.lastHeartbeatMs}ms ago`,
       };
-    case "agent_restarted":
-      return {
-        label: `Agent ${event.actorId} restarted`,
-        color: "accentAlt",
-        stage: "diagnostic",
-        glyph: "↻",
-      };
     case "agent_retired":
       return {
         label: `Agent ${event.actorId} retired`,
@@ -92,6 +85,38 @@ export function translateClusterEvent(event: ClusterEvent): TranslatedClusterEve
         color: "info",
         stage: "diagnostic",
         glyph: "♥",
+      };
+    case "agent_queued":
+      return {
+        label: `Agent ${event.actorId} queued`,
+        color: "muted",
+        stage: "diagnostic",
+        glyph: "⋯",
+        detail: `priority ${event.priority}, waiting on its start condition`,
+      };
+    case "manifest_unresolved":
+      return {
+        label: `Agent ${event.actorId} has an unresolvable manifest`,
+        color: "danger",
+        stage: "diagnostic",
+        glyph: "✗",
+        detail: event.detail,
+      };
+    case "swarm_stalled":
+      return {
+        label: "Swarm stalled",
+        color: "danger",
+        stage: "diagnostic",
+        glyph: "⊘",
+        detail: event.detail,
+      };
+    case "budget_exhausted":
+      return {
+        label: `Swarm ${event.limit} budget exhausted`,
+        color: "warning",
+        stage: "diagnostic",
+        glyph: "⌛",
+        detail: event.detail,
       };
     case "cluster_complete":
       // The cluster completion is surfaced by the owning turn's close; no

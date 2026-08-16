@@ -6,6 +6,7 @@ export interface WebSearchConfig {
 export interface WebSearchArgs {
   readonly query: string;
   readonly maxResults?: number;
+  readonly signal?: AbortSignal;
 }
 
 export interface WebSearchResult {
@@ -49,11 +50,11 @@ async function searchWithProvider(
 
   switch (provider) {
     case "tavily":
-      return searchTavily(apiKey, args.query, maxResults);
+      return searchTavily(apiKey, args.query, maxResults, args.signal);
     case "serper":
-      return searchSerper(apiKey, args.query, maxResults);
+      return searchSerper(apiKey, args.query, maxResults, args.signal);
     case "brave":
-      return searchBrave(apiKey, args.query, maxResults);
+      return searchBrave(apiKey, args.query, maxResults, args.signal);
     default:
       return [];
   }
@@ -63,12 +64,14 @@ async function searchTavily(
   apiKey: string,
   query: string,
   maxResults: number,
+  signal?: AbortSignal,
 ): Promise<WebSearchResult[]> {
   const response = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    ...(signal !== undefined ? { signal } : {}),
     body: JSON.stringify({
       api_key: apiKey,
       query,
@@ -95,6 +98,7 @@ async function searchSerper(
   apiKey: string,
   query: string,
   maxResults: number,
+  signal?: AbortSignal,
 ): Promise<WebSearchResult[]> {
   const response = await fetch("https://google.serper.dev/search", {
     method: "POST",
@@ -102,6 +106,7 @@ async function searchSerper(
       "Content-Type": "application/json",
       "X-API-KEY": apiKey,
     },
+    ...(signal !== undefined ? { signal } : {}),
     body: JSON.stringify({ q: query, num: maxResults }),
   });
 
@@ -124,6 +129,7 @@ async function searchBrave(
   apiKey: string,
   query: string,
   maxResults: number,
+  signal?: AbortSignal,
 ): Promise<WebSearchResult[]> {
   const url = new URL("https://api.search.brave.com/res/v1/web/search");
   url.searchParams.set("q", query);
@@ -135,6 +141,7 @@ async function searchBrave(
       Accept: "application/json",
       "X-Subscription-Token": apiKey,
     },
+    ...(signal !== undefined ? { signal } : {}),
   });
 
   if (!response.ok) {

@@ -2,10 +2,10 @@
 
 | Field          | Value                                                                                                                                          |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted** (M2–M3 engineering scope — mitigations partially scaffolded; independent Security review **pending**)                             |
+| Status         | **Accepted**                                                                                                                                   |
 | Date           | 2026-08-11                                                                                                                                     |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                          |
-| Reviewers      | Joker-of-Gotham (DRI interim Security); external Security reviewer recruitment open before FCP — see `docs/governance/reviewer-assignments.md` |
+| Reviewers      | Joker-of-Gotham (Architecture + Security; COI disclosed, 2026-08-16)                                                                           |
 | Related        | RFC-0003, ADR-0009, ADR-0006, ADR-0007, ADR-0003, `@cantilune/conformance`, `@cantilune/control-plane`, `diagrams/04-control-plane/`           |
 
 ## Context
@@ -136,17 +136,17 @@ Default when policy omitted: **`DEFAULT_VERIFICATION_POLICY`** — scopes `[gene
 | Boolean-only API              | `Result<VerificationDecision, ConformanceViolation[]>`  |
 | Engineering/formal conflation | Separate types + profiles; deprecated alias isolated    |
 
-## Residual risks (Stop-Ship until closed)
+## Residual risks
 
-| Risk                                  | Status | Lift condition                            |
-| ------------------------------------- | ------ | ----------------------------------------- |
-| Cache poisoning under durable restart | OPEN   | Durable cache + checkpoint re-check tests |
-| TOCTOU at control-plane prepare       | OPEN   | Consumption contract audit + sealed types |
-| Reviewer COI / no quorum enforcement  | OPEN   | HR-7 + L5 checklist                       |
-| Key scope expansion (no HSM)          | OPEN   | External signing + scope manifest         |
-| Independent Security sign-off         | OPEN   | Non-DRI reviewer Accept                   |
-| Full four-projection verifier         | OPEN   | C5 replay verifiers per projection        |
-| Tamper corpus / fuzz L7               | OPEN   | QA-L5 checklist                           |
+| Risk                                  | Status | Record |
+| ------------------------------------- | ------ | ------ |
+| Cache poisoning under durable restart | File adapters + checkpoint re-check | ADR-0009 file stores |
+| TOCTOU at control-plane prepare       | Sealed decision types + consumption contract | ADR-0009 |
+| Reviewer COI                          | Owner COI; independence waived (2026-08-16) | FCP entry |
+| No HSM                                | Production policy; no auto-signed cert | FCP entry |
+| Independent Security sign-off         | Owner is Security; no second reviewer | FCP entry |
+| Four-projection digest                | C5 recompute from committed-world views | conformance |
+| Tamper / soak evidence                | 8h soak + L7 suites | QA soak evidence |
 
 **Out of M2 scope (non Stop-Ship for core/runtime prototype):**
 

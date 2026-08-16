@@ -20,8 +20,9 @@
  * crashed process) and ZERO times on restart; `signal_done` was recorded zero
  * times (the crash preceded it).
  *
- * `describeOrSkip` gates the suite on the built dist (the child imports from
- * `dist/`); run `pnpm --filter @cantilune/boot build` first. Same convention as
+ * The child imports from `dist/`, which the `pretest`/`pretest:coverage` hooks
+ * guarantee. A missing dist fails loudly rather than skipping, so CI cannot
+ * silently drop this evidence. Same convention as
  * `file-transport-cross-process.test.ts`.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -34,9 +35,14 @@ import { fileURLToPath } from "node:url";
 const here = fileURLToPath(import.meta.url);
 const childScript = join(here, "..", "..", "..", "support", "bootSwarmChild.mjs");
 const bootDist = join(here, "..", "..", "..", "..", "dist");
-const distBuilt = existsSync(join(bootDist, "swarm", "bootSwarm.js"));
+const bootSwarmDist = join(bootDist, "swarm", "bootSwarm.js");
 
-const describeOrSkip = distBuilt ? describe : describe.skip;
+if (!existsSync(bootSwarmDist)) {
+  throw new Error(
+    `L7 cross-process swarm evidence requires a built package: ${bootSwarmDist} is missing. ` +
+      `Run \`pnpm --filter @cantilune/boot... build\` first.`,
+  );
+}
 
 function runChild(worldDir: string, mode: string, logFile: string) {
   return spawnSync(process.execPath, [childScript, worldDir, mode, logFile], {
@@ -55,7 +61,7 @@ function readLog(logFile: string): Array<Record<string, unknown>> {
     .map((l) => JSON.parse(l) as Record<string, unknown>);
 }
 
-describeOrSkip("L7 — cross-process bootSwarm crash-and-restart (ADR-0019 §5)", () => {
+describe("L7 — cross-process bootSwarm crash-and-restart (ADR-0019 §5)", () => {
   let dir: string;
   let logFile: string;
 

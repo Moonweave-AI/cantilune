@@ -142,6 +142,10 @@ function renderContentSearchOutput(
   viewArgs: Record<string, unknown>,
   runtime: RuntimeState,
 ): string {
+  const error = typeof viewArgs.error === "string" ? viewArgs.error : undefined;
+  if (error !== undefined) {
+    return `Search failed: ${error}`;
+  }
   const query = str(viewArgs.text);
   const entries = resolveEntries(viewArgs, runtime);
   return `Search "${query}": ${entries.length} refs`;

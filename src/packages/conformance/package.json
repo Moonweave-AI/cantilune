@@ -1,7 +1,7 @@
 {
   "name": "@cantilune/conformance",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Cantilune conformance — product evidence verification, formal proof binding, and release gates",
   "exports": {
@@ -69,17 +69,20 @@
     "dist"
   ],
   "scripts": {
-    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "lint": "eslint .",
+    "pretest": "pnpm --filter @cantilune/conformance... build",
     "test": "vitest run",
+    "pretest:coverage": "pnpm --filter @cantilune/conformance... build",
     "test:coverage": "vitest run --coverage",
     "test:mutation": "node scripts/mutation-gate.mjs",
     "sbom": "node scripts/generate-sbom.mjs",
     "provenance": "node scripts/generate-provenance.mjs",
     "verify:trust-rotation": "node scripts/verify-trust-rotation.mjs",
     "verify:formal-manifest": "node scripts/verify-formal-manifest.mjs",
-    "verify:release-gate": "node scripts/verify-release-gate.mjs"
+    "verify:release-gate": "node scripts/verify-release-gate.mjs",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
     "@cantilune/core": "workspace:*"
@@ -89,5 +92,9 @@
     "@cantilune/test-fixtures": "workspace:*",
     "@types/node": "^22.13.4",
     "@vitest/coverage-v8": "^3.2.7"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   }
 }

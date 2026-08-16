@@ -21,6 +21,10 @@ export {
   recoverForwardCommit,
 } from "./engine/commitAdmissionTransaction.js";
 export {
+  commitToolSurfaceEpoch,
+  type CommitToolSurfaceEpochInput,
+} from "./engine/commitToolSurfaceEpoch.js";
+export {
   decodeSubmitSchemaAdmissionWire,
   decodeApproveSchemaAdmissionWire,
   decodeRegisterSchemaRevisionWire,
@@ -36,7 +40,21 @@ export {
   createReconciliationService,
   ReconciliationService,
 } from "./rollout/reconciliationService.js";
+export type { ReconciliationServiceOptions } from "./rollout/reconciliationService.js";
 export type { RuntimeBinding, RolloutPlan } from "./rollout/runtimeBinding.js";
+export {
+  ControlPlaneAdminSession,
+  createControlPlaneAdminSession,
+  decodeControlPlaneAdminEnvelope,
+  encodeControlPlaneAdminEnvelope,
+  CONTROL_PLANE_ADMIN_OPERATIONS,
+} from "./admin/controlPlaneAdminSession.js";
+export type {
+  ControlPlaneAdminEnvelope,
+  ControlPlaneAdminHandler,
+  ControlPlaneAdminOperation,
+  ControlPlaneAdminSessionOptions,
+} from "./admin/controlPlaneAdminSession.js";
 export {
   createHandlerManifest,
   validateHandlerManifestAgainstSchema,
@@ -67,3 +85,37 @@ export type {
 } from "./admission/schemaAdmissionRequest.js";
 export type { SchemaAdmissionState } from "./admission/schemaAdmissionState.js";
 export type { ControlPlaneEventEnvelope } from "./ports/controlPlaneStore.js";
+export type { AdministrationContext } from "./administration/administrationContext.js";
+export {
+  createNamespaceRegistry,
+  isNamespaceRbacRole,
+  namespaceRoleAtLeast,
+  NAMESPACE_RBAC_ROLES,
+} from "./namespace/namespaceRegistry.js";
+export type {
+  AssignNamespaceRoleInput,
+  NamespaceMembership,
+  NamespaceRbacRole,
+  NamespaceRecord,
+  NamespaceRegistry,
+  RegisterNamespaceInput,
+} from "./namespace/namespaceRegistry.js";
+export {
+  createTranscriptAccessWorkflow,
+  decideTranscriptAccess,
+  requestTranscriptAccess,
+} from "./namespace/transcriptAccessWorkflow.js";
+export type {
+  DecideTranscriptAccessInput,
+  RequestTranscriptAccessInput,
+  TranscriptAccessDecision,
+  TranscriptAccessWorkflow,
+  TranscriptAccessWorkflowOptions,
+  TranscriptReadCapabilityDescription,
+} from "./namespace/transcriptAccessWorkflow.js";
+export { fleetVisibleTranscript, projectFleetConsole } from "./fleet/fleetConsoleProjection.js";
+export type {
+  FleetConsoleProjection,
+  FleetNamespaceProjection,
+  FleetTranscriptProjection,
+} from "./fleet/fleetConsoleProjection.js";

@@ -17,6 +17,7 @@ function validChangeWire(overrides: Record<string, unknown> = {}) {
     external: [],
     createdSessionRefs: [],
     visibility: "external",
+    matchWitness: { domainSize: 1, codomainSize: 1, embedding: [0] },
     ...overrides,
   };
 }
@@ -265,5 +266,36 @@ describe("wireValidation extended branches", () => {
         }),
       ).ok,
     ).toBe(true);
+  });
+
+  it("accepts tool-call-only assistant transcript rows with empty content", () => {
+    const parsed = parseSnapshotWire(
+      validSnapshotWire({
+        transcripts: [
+          {
+            actorId: "planner-p",
+            namespaceId: "default",
+            revision: 1,
+            messages: [
+              {
+                role: "assistant",
+                content: "",
+                toolCalls: [{ id: "tc-1", name: "write_content", arguments: '{"content":"x"}' }],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) {
+      return;
+    }
+    const message = parsed.value.transcripts?.[0]?.messages[0];
+    expect(message).toEqual({
+      role: "assistant",
+      content: "",
+      toolCalls: [{ id: "tc-1", name: "write_content", arguments: '{"content":"x"}' }],
+    });
   });
 });

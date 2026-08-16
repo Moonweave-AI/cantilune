@@ -1,4 +1,4 @@
-import { parseLeanAttestationFixture } from "../adapters/lean/leanAttestationFixture.js";
+import { parseLeanAttestationFixture } from "../testing/leanAttestationFixture.js";
 import { computeLeanBuildAttestationDigest } from "../evidence/leanBuildAttestation.js";
 import { verifyLeanBuildAttestation } from "../verifier/leanAttestationVerifier.js";
 import { conformanceViolation } from "../foundation/conformanceViolation.js";

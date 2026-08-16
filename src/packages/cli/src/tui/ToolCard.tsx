@@ -2,15 +2,19 @@ import React from "react";
 import { Box, Text } from "ink";
 import type { ToolCallDisplay } from "../store.js";
 import { useTheme } from "../theme/themeContext.js";
-import { border, fg, type Color, type Theme } from "../theme/theme.js";
+import { border, fg, type Color, type TextStyle, type Theme } from "../theme/theme.js";
 import { Spinner, formatDuration } from "./Spinner.js";
+import { describeToolCard, type ToolCardModel, type ToolFamily } from "./formatToolCard.js";
 
 export interface ToolCardProps {
   readonly toolCall: ToolCallDisplay;
-  /** `focus` collapses to a single line; `observe` shows args and full output. */
+  /** `focus` caps the body; `observe` shows a longer excerpt. */
   readonly detail?: "focus" | "observe";
   readonly width?: number;
 }
+
+const FOCUS_BODY_LINES = 16;
+const OBSERVE_BODY_LINES = 40;
 
 function statusColor(theme: Theme, status: ToolCallDisplay["status"]): Color {
   switch (status) {
@@ -36,58 +40,46 @@ function statusGlyph(theme: Theme, status: ToolCallDisplay["status"]): string {
   }
 }
 
-/** Clip to `budget` columns, marking the cut with the theme's ellipsis. */
-function clip(value: string, budget: number, ellipsis: string): string {
-  if (value.length <= budget) return value;
-  return `${value.slice(0, Math.max(0, budget - ellipsis.length))}${ellipsis}`;
-}
-
-/** Condense arguments into a single readable line: `key=value key=value`. */
-function summarizeArgs(args: Record<string, unknown>, budget: number, ellipsis: string): string {
-  const parts: string[] = [];
-  for (const [key, value] of Object.entries(args)) {
-    const rendered = typeof value === "string" ? value : JSON.stringify(value);
-    const flat = rendered.replace(/\s+/g, " ").trim();
-    parts.push(`${key}=${flat}`);
-  }
-  return clip(parts.join(" "), budget, ellipsis);
-}
-
-function firstLine(text: string, budget: number, ellipsis: string): string {
-  return clip(text.split("\n", 1)[0] ?? "", budget, ellipsis);
-}
-
-/**
- * Resolve the marker tint: coordination tools take the cluster accent
- * (`accentAlt`) so cluster activity is visually distinct from ordinary
- * read/write/`tool:` dispatches; everything else uses its status colour.
- */
 function markerTint(theme: Theme, toolCall: ToolCallDisplay): Color {
   if (toolCall.coordination === true) return theme.colors.accentAlt;
   return statusColor(theme, toolCall.status);
 }
 
-/**
- * Resolve the expanded-card border colour: a failure always wins (danger),
- * otherwise a coordination tool uses the cluster accent, else the default.
- */
 function borderTint(theme: Theme, failed: boolean, coordination: boolean): Color {
   if (failed) return theme.colors.danger;
   if (coordination) return theme.colors.accentAlt;
   return theme.colors.border;
 }
 
+function prefixFor(family: ToolFamily): string {
+  return family === "shell" ? "$ " : "";
+}
+
+function headlineStyle(theme: Theme, family: ToolFamily): TextStyle {
+  return family === "shell" ? theme.text.accent : theme.text.heading;
+}
+
+function clipBody(
+  text: string,
+  maxLines: number,
+): { readonly lines: readonly string[]; readonly hidden: number } {
+  if (text.length === 0) return { lines: [], hidden: 0 };
+  const all = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  if (all.length <= maxLines) return { lines: all, hidden: 0 };
+  return { lines: all.slice(0, maxLines), hidden: all.length - maxLines };
+}
+
+function clip(value: string, budget: number, ellipsis: string): string {
+  if (value.length <= budget) return value;
+  return `${value.slice(0, Math.max(0, budget - ellipsis.length))}${ellipsis}`;
+}
+
 /**
  * One tool invocation in the transcript.
  *
- * Collapsed to a single dim line by default so a long tool chain reads as a
- * quiet checklist rather than drowning the conversation. Failures always
- * expand — a collapsed error is the thing users most need to see.
- *
- * Coordination (cluster-affecting) tools render in the secondary accent
- * (purple) so cluster activity is visually distinct from ordinary
- * read/write/`tool:` dispatches — the colour is the signal that this call
- * changed the coordination world, not just the content store.
+ * Successful calls show the command/query and the real result — not a
+ * collapsed `key=json` line. `done` stays a single completion claim.
+ * Failures always expand and tint danger.
  */
 export function ToolCard({
   toolCall,
@@ -95,17 +87,18 @@ export function ToolCard({
   width = 100,
 }: ToolCardProps): React.ReactElement {
   const theme = useTheme();
-  const { ellipsis } = theme.glyphs;
+  const model = describeToolCard(toolCall);
   const coordination = toolCall.coordination === true;
   const tint = markerTint(theme, toolCall);
   const running = toolCall.status === "running";
+  const failed = toolCall.status === "error" || toolCall.result?.ok === false;
   const duration =
     toolCall.startedAt !== undefined && toolCall.endedAt !== undefined
       ? formatDuration(toolCall.endedAt - toolCall.startedAt)
       : undefined;
-
-  const failed = toolCall.status === "error" || toolCall.result?.ok === false;
-  const expanded = detail === "observe" || failed;
+  const inner = Math.max(24, width - 4);
+  const maxLines = detail === "observe" ? OBSERVE_BODY_LINES : FOCUS_BODY_LINES;
+  const compact = model.compact && !failed && !running;
 
   const marker = running ? (
     <Spinner color={tint} />
@@ -113,13 +106,17 @@ export function ToolCard({
     <Text {...fg(tint)}>{statusGlyph(theme, toolCall.status)}</Text>
   );
 
-  if (!expanded) {
-    const budget = Math.max(20, width - toolCall.name.length - 16);
+  if (compact) {
     return (
       <Box>
         {marker}
-        <Text {...fg(tint)}> {toolCall.name}</Text>
-        <Text {...theme.text.muted}> {summarizeArgs(toolCall.args, budget, ellipsis)}</Text>
+        <Text {...fg(tint)}> {model.title}</Text>
+        {model.headline.length > 0 ? (
+          <Text {...theme.text.muted}>
+            {" "}
+            {clip(model.headline, Math.max(16, inner - 12), theme.glyphs.ellipsis)}
+          </Text>
+        ) : null}
         {duration !== undefined ? (
           <Text {...theme.text.muted}>
             {" "}
@@ -127,21 +124,6 @@ export function ToolCard({
           </Text>
         ) : null}
       </Box>
-    );
-  }
-
-  // Successful output is clipped to one line; failures print in full and in red.
-  const result = toolCall.result;
-  let resultLine: React.ReactElement | null = null;
-  if (result !== undefined) {
-    const resultTint = result.ok ? undefined : theme.colors.danger;
-    const body = result.ok
-      ? firstLine(result.output, Math.max(60, width - 4), ellipsis)
-      : result.output;
-    resultLine = (
-      <Text {...fg(resultTint)} wrap="wrap">
-        {body}
-      </Text>
     );
   }
 
@@ -156,7 +138,7 @@ export function ToolCard({
         {marker}
         <Text bold {...fg(tint)}>
           {" "}
-          {toolCall.name}
+          {model.title}
         </Text>
         {duration !== undefined ? (
           <Text {...theme.text.muted}>
@@ -164,15 +146,57 @@ export function ToolCard({
             {theme.glyphs.sep} {duration}
           </Text>
         ) : null}
+        {running ? <Text {...theme.text.muted}> running</Text> : null}
       </Box>
 
-      {Object.keys(toolCall.args).length > 0 ? (
-        <Text {...theme.text.muted} wrap="truncate-end">
-          {summarizeArgs(toolCall.args, Math.max(40, width - 4), ellipsis)}
+      {model.headline.length > 0 ? (
+        <Text {...headlineStyle(theme, model.family)}>
+          {prefixFor(model.family)}
+          {model.headline}
         </Text>
       ) : null}
 
-      {resultLine}
+      {model.fields.map((field) => (
+        <Text key={field.label} {...theme.text.muted}>
+          {field.label}
+          {theme.glyphs.sep} {field.value}
+        </Text>
+      ))}
+
+      <ToolBody model={model} failed={failed} maxLines={maxLines} />
+    </Box>
+  );
+}
+
+function ToolBody({
+  model,
+  failed,
+  maxLines,
+}: {
+  readonly model: ToolCardModel;
+  readonly failed: boolean;
+  readonly maxLines: number;
+}): React.ReactElement | null {
+  const theme = useTheme();
+  if (model.body.length === 0) return null;
+  const { lines, hidden } = clipBody(model.body, maxLines);
+  const style = failed ? theme.text.danger : theme.text.muted;
+
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={model.headline.length > 0 || model.fields.length > 0 ? 1 : 0}
+    >
+      {lines.map((line, index) => (
+        <Text key={index} {...style} wrap="wrap">
+          {line.length === 0 ? " " : line}
+        </Text>
+      ))}
+      {hidden > 0 ? (
+        <Text {...theme.text.muted}>
+          {theme.glyphs.ellipsis} {hidden} more line{hidden === 1 ? "" : "s"}
+        </Text>
+      ) : null}
     </Box>
   );
 }

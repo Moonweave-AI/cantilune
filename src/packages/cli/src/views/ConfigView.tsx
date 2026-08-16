@@ -31,7 +31,8 @@ export function renderConfigViewOutput(store: AppStore): string {
     ["api key", keyState],
     ["layout", store.layout],
     ["theme", store.theme ?? "auto (detected)"],
-    ["runtime", store.connected ? "connected (memory)" : "not started"],
+    ["runtime", store.connected ? `connected (${store.durable})` : "not started"],
+    ["storage", store.durable === "file" ? (store.storagePath ?? "(unset)") : "in-memory (dev)"],
     ["config file", configPath()],
   ];
 

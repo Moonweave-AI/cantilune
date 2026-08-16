@@ -30,7 +30,7 @@ import { schemasFromTemplates, mergeWithToolSchemas } from "./toolSchema.js";
  * All intelligence is on the LLM side. All governance is in runtime admission.
  */
 export function createSyscall(deps: SyscallDependencies): Syscall {
-  const { runtime, contentStore, principal, schemaProvider, toolExecutor } = deps;
+  const { runtime, contentStore, principal, schemaProvider, toolExecutor, toolApprover } = deps;
 
   return {
     async perceive(): Promise<PerceptionResult> {
@@ -70,7 +70,7 @@ export function createSyscall(deps: SyscallDependencies): Syscall {
     },
 
     async useTool(call: ToolCall): Promise<ToolResult> {
-      return useTool(runtime, contentStore, principal, toolExecutor, call);
+      return useTool(runtime, contentStore, principal, toolExecutor, call, toolApprover);
     },
 
     async retryToolObservation(

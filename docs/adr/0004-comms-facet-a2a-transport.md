@@ -54,15 +54,23 @@ Caller MUST NOT supply free-form `targetEpochId`; epoch/binding come from commit
 | Sanitized CommsEvent envelope    | ✅     |
 | L3–L5 tests                      | ✅     |
 
-### Deferred (network Stop-Ship)
+### Network / transport follow-up (2026-08-15)
 
-- File-backed CommsStore + cross-process L7
-- Production IdentityVerifier / TLS / mTLS
-- Pinned A2A interop certification harness
-- Full send/receive/ack runtime consumer integration
-- DLQ replay privileged workflow
-- Observability package wiring
-- Product Conformance certificates
+ADR-0018 **T0–T4 engineering is landed**: loopback, `FileTransport` (owner+pid
+identity), `NetTransport` (TLS 1.3 + mTLS fingerprint pin), and the pinned
+`a2a/0.1` harness (CI gate). Boot now calls production `createCommsServices`
+(no silent Memory\* defaults) with hub routing and session pumps. P1–P2
+(A1–A5) are therefore **not** listed as open engineering gaps.
+
+**Still open (not T0–T4):**
+
+- Public A2A interoperability marketing claim — Owner C6; harness ≠ authorization
+- Product Conformance certificate — not Owner-signed
+- Independent Security / threat-model sign-off on ADR-0008 / ADR-0018 — Owner C2
+- Partition / reconnect-storm suites still expanding (see COMMS-DESIGN-CLOSURE)
+
+DLQ authorized replay (`dlqAuthorizedReplay`) and observability comms bridging
+are engineering-present; they do not lift C2/C6.
 
 ## Threat model summary
 

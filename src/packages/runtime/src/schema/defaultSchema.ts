@@ -107,7 +107,8 @@ const REGISTER_PARTICIPANT: OperationTemplate = {
 const ACTIVATE_PARTICIPANT: OperationTemplate = {
   operationTypeId: operationTypeId("activate_participant"),
   templateRef: operationTemplateRef("activate_participant", "1"),
-  description: "Admit a registered participant to active and bind its content-addressed manifest (ADR-0015)",
+  description:
+    "Admit a registered participant to active and bind its content-addressed manifest (ADR-0015)",
   requiredRoles: ["from", "participant"],
   requires: [{ kind: "participant.registered", bindings: { participant: "participant" } }],
   ensures: [{ kind: "participant.registered", bindings: { participant: "participant" } }],
@@ -137,6 +138,17 @@ const RETIRE_PARTICIPANT: OperationTemplate = {
   mayCreateSessions: false,
 };
 
+const COMMIT_TRANSCRIPT: OperationTemplate = {
+  operationTypeId: operationTypeId("commit_transcript"),
+  templateRef: operationTemplateRef("commit_transcript", "1"),
+  description: "Commit this participant's LLM transcript onto the shared world (ADR-0021)",
+  requiredRoles: ["from"],
+  requires: [{ kind: "participant.registered", bindings: { participant: "from" } }],
+  ensures: [{ kind: "participant.registered", bindings: { participant: "from" } }],
+  defaultVisibility: "internal",
+  mayCreateSessions: false,
+};
+
 const EMIT_HEARTBEAT: OperationTemplate = {
   operationTypeId: operationTypeId("emit_heartbeat"),
   templateRef: operationTemplateRef("emit_heartbeat", "1"),
@@ -160,6 +172,7 @@ const DEFAULT_TEMPLATES: readonly OperationTemplate[] = [
   SIGNAL_DONE,
   RETIRE_PARTICIPANT,
   EMIT_HEARTBEAT,
+  COMMIT_TRANSCRIPT,
 ];
 
 const DEFAULT_OBJECT_TYPES: readonly ObjectTypeDeclaration[] = [

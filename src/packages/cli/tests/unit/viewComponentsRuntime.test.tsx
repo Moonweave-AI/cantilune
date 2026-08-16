@@ -24,6 +24,10 @@ import ReplayViewContainer from "../../src/views/ReplayView.js";
 import PetriViewContainer from "../../src/views/PetriView.js";
 import WorldViewContainer from "../../src/views/WorldView.js";
 import { sampleRuntime } from "../support/sampleRuntime.js";
+import {
+  sampleObserveProjection,
+  sampleReplayProjection,
+} from "../support/sampleObserveReplay.js";
 import { fireTransition, invariantsFor, reachability } from "../../src/wiring/petriControl.js";
 
 function renderWithRuntime(
@@ -86,15 +90,30 @@ describe("view components with runtime data", () => {
 
   it("renders content default view branch with and without entries", () => {
     const withEntries = renderWithRuntime(ContentView, "content" as never, {
-      entries: [{ ref: "sha256:abc", metadata: { size: 3, mimeType: "text/plain", createdAt: "2026-08-14T00:00:00.000Z", createdBy: undefined } }],
+      entries: [
+        {
+          ref: "sha256:abc",
+          metadata: {
+            size: 3,
+            mimeType: "text/plain",
+            createdAt: "2026-08-14T00:00:00.000Z",
+            createdBy: undefined,
+          },
+        },
+      ],
     });
     expect(withEntries.container.textContent).toContain("sha256:abc");
 
-    const noEntries = renderWithRuntime(ContentView, "content" as never, {}, {
-      snapshot: { ...sampleRuntime.snapshot!, auditTail: [] },
-      changeLog: sampleRuntime.changeLog,
-      epoch: sampleRuntime.epoch,
-    });
+    const noEntries = renderWithRuntime(
+      ContentView,
+      "content" as never,
+      {},
+      {
+        snapshot: { ...sampleRuntime.snapshot!, auditTail: [] },
+        changeLog: sampleRuntime.changeLog,
+        epoch: sampleRuntime.epoch,
+      },
+    );
     expect(noEntries.container.textContent).toContain("No content available.");
   });
 
@@ -137,10 +156,14 @@ describe("view components with runtime data", () => {
   });
 
   it("renders observe diagnostic and titled lens branches", () => {
-    const diagnostic = renderWithRuntime(ObserveView, "observe-diagnostic");
+    const diagnostic = renderWithRuntime(ObserveView, "observe-diagnostic", {
+      observeProjection: sampleObserveProjection,
+    });
     expect(diagnostic.container.textContent).toContain("Observability Diagnostics");
 
-    const resource = renderWithRuntime(ObserveView, "observe-resource");
+    const resource = renderWithRuntime(ObserveView, "observe-resource", {
+      observeProjection: sampleObserveProjection,
+    });
     expect(resource.container.textContent).toContain("Resource Lens");
   });
 
@@ -156,16 +179,24 @@ describe("view components with runtime data", () => {
   });
 
   it("renders replay recipe branch with change id", () => {
-    const recipe = renderWithRuntime(ReplayView, "replay-recipe", { changeId: "chg:obs-001" });
+    const recipe = renderWithRuntime(ReplayView, "replay-recipe", {
+      changeId: "chg:obs-001",
+      replayProjection: sampleReplayProjection,
+    });
     expect(recipe.container.textContent).toContain("chg:obs-001");
 
-    const replay = renderWithRuntime(ReplayView, "replay");
+    const replay = renderWithRuntime(ReplayView, "replay", {
+      replayProjection: sampleReplayProjection,
+    });
     expect(replay.container.textContent).toContain("Replay Session");
   });
 
   it("renders petri fire and invariants branches", () => {
     const fireData = fireTransition(sampleRuntime, "publish_artifact");
-    const fire = renderWithRuntime(PetriView, "petri-fire", { petriData: fireData, op: "publish_artifact" });
+    const fire = renderWithRuntime(PetriView, "petri-fire", {
+      petriData: fireData,
+      op: "publish_artifact",
+    });
     expect(fire.container.textContent).toContain("Petri Fire");
 
     const invData = invariantsFor(sampleRuntime);
@@ -173,30 +204,28 @@ describe("view components with runtime data", () => {
     expect(invariants.container.textContent).toContain("Petri Invariants");
 
     const reachData = reachability(sampleRuntime, "art:task-001");
-    const reach = renderWithRuntime(PetriView, "petri-reach", { petriData: reachData, goal: "art:task-001" });
+    const reach = renderWithRuntime(PetriView, "petri-reach", {
+      petriData: reachData,
+      goal: "art:task-001",
+    });
     expect(reach.container.textContent).toContain("Reachability");
   });
 
   it("renders world diff branch", () => {
-    const diff = renderWithRuntime(WorldView, "world-diff", { refA: "snap:a", refB: "snap:b" });
+    const diff = renderWithRuntime(WorldView, "world-diff", {
+      refA: "snap:a",
+      refB: "snap:b",
+      worldDiffLeft: "participants: a",
+      worldDiffRight: "participants: b",
+    });
     expect(diff.container.textContent).toContain("World Diff");
 
-    const sparse = {
-      snapshot: {
-        snapshotRef: "snap:empty",
-        epochId: "epoch:e1",
-        participants: [],
-        artifacts: [],
-        sessions: [],
-        capabilities: [],
-        links: [],
-        auditTail: [],
-        retired: [],
-      },
-      changeLog: [],
-      epoch: sampleRuntime.epoch,
-    };
-    const emptyDiff = renderWithRuntime(WorldView, "world-diff", {}, sparse);
+    const emptyDiff = renderWithRuntime(WorldView, "world-diff", {
+      worldDiffLeft: "participants: (none)",
+      worldDiffRight: "participants: (none)",
+      refA: "snap:empty",
+      refB: "snap:empty",
+    });
     expect(emptyDiff.container.textContent).toContain("(none)");
 
     const actors = renderWithRuntime(WorldView, "world-actors");
@@ -213,7 +242,7 @@ describe("view components with runtime data", () => {
     expect(report.container.textContent).toContain("No evaluation data loaded");
 
     const recipe = renderWithRuntime(ReplayView, "replay-recipe", { changeId: "missing-id" });
-    expect(recipe.container.textContent).toContain("Derived from runtime changeLog");
+    expect(recipe.container.textContent).toMatch(/No replay result|fail-closed|CoordinationRuntime\.replay/);
   });
 
   it("renders graph stats and empty graph message via output", () => {

@@ -1,4 +1,4 @@
-import type { ActorId } from "../primitives/ids.js";
+import { DEFAULT_NAMESPACE_ID, type ActorId, type NamespaceId } from "../primitives/ids.js";
 import type { ContentRef } from "../primitives/refs.js";
 import { err, ok, type Result } from "../primitives/result.js";
 
@@ -47,6 +47,7 @@ export interface Participant {
   readonly actorId: ActorId;
   readonly kind: ActorKind;
   readonly status: ParticipationStatus;
+  readonly namespaceId?: NamespaceId;
   readonly manifestRef?: ContentRef;
 }
 
@@ -64,8 +65,9 @@ export function participant(
   kind: ActorKind,
   status: ParticipationStatus = "active",
   manifestRef?: ContentRef,
+  namespaceId: NamespaceId = DEFAULT_NAMESPACE_ID,
 ): Participant {
-  const base: Participant = { actorId, kind, status };
+  const base: Participant = { actorId, kind, status, namespaceId };
   if (manifestRef !== undefined) {
     return { ...base, manifestRef };
   }

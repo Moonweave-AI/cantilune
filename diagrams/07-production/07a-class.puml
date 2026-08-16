@@ -1,0 +1,147 @@
+@startuml 07a-class
+' 图 07A：Namespace + Transcript + AccessRequest + Actor。范围仅世界隔离与可见性类型。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam defaultFontColor #3E3A39
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam nodesep 22
+skinparam ranksep 30
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+skinparam class {
+  BackgroundColor #FFFDFC
+  BorderColor #77716B
+  HeaderBackgroundColor #F2EEEA
+}
+
+title 图 07A · Namespace、Transcript、AccessRequest 与 Actor
+caption <color:#6E6963>对齐 ADR-0021/0022 与 src/packages/core。在场不是授权。案例赋值写在字段下。</color>
+
+legend top right
+  |= 颜色 |= 工程语义 |
+  | <back:#E5EDE5>　</back> | 世界：Snapshot + Namespace |
+  | <back:#EDE8F0>　</back> | Actor 双视图：Registration / Ref |
+  | <back:#F3E5DC>　</back> | Transcript 与可见性 |
+  | <back:#E8EEF5>　</back> | 跨 NS 申请与 transcript_read |
+endlegend
+
+frame "生产隔离域 · 一世界多 Namespace" #F8F5F0 {
+
+  package "coordination · 已提交世界" #E5EDE5 {
+
+    class "CollaborationSnapshot\n某一时刻协作世界" as Snapshot #F9FCF8 {
+      +snapshotRef: SnapshotRef
+      .. 例：snap-S4；beforeRef / afterRef 解析目标 ..
+      +epochId: EpochId
+      .. 例：43 ..
+      +namespaces: Map<NamespaceId, CollaborationNamespace>
+      .. 例：ns-alpha → 租户 A；ns-beta → 租户 B ..
+      +participants: Map<ActorId, Participant>
+      +transcripts: Map<ActorId, ParticipantTranscript>
+      .. 在场 ≠ 可读全文 ..
+      +transcriptAccessRequests: Map<RequestId, TranscriptAccessRequest>
+      +capabilities: Map<CapabilityId, ScopedCapability>
+      .. 含 transcript_read ..
+    }
+
+    class "CollaborationNamespace\n隔离域" as NS #FFFDFC {
+      +namespaceId: NamespaceId
+      .. 例：ns-alpha；缺省 default ..
+      +displayName: string
+      .. 例：tenant-alpha ..
+      +adminPrincipals: List<ActorId>
+      .. 例：[ops-admin-1]；超管仍受脱敏 ..
+    }
+  }
+
+  package "nodes · Actor 双视图" #EDE8F0 {
+
+    class "Participant\n世界常驻注册" as Participant #F9FCF8 {
+      +actorId: ActorId
+      .. 例：planner-p；生命周期内不复用 ..
+      +kind: ActorKind
+      .. 例：agent ..
+      +status: ParticipationStatus
+      .. 例：active ..
+      +namespaceId: NamespaceId
+      .. 例：ns-alpha；缺省 default ..
+    }
+
+    class "ActorRef\n事件侧引用" as ActorRef #FFFDFC {
+      +actorId: ActorId
+      .. 例：planner-p ..
+      +kind: ActorKind
+      .. 例：agent；不另起身份层 ..
+    }
+  }
+
+  package "nodes · Transcript" #F3E5DC {
+
+    class "ParticipantTranscript\n已提交循环历史" as Transcript #FFF9F6 {
+      +actorId: ActorId
+      .. 例：planner-p ..
+      +namespaceId: NamespaceId
+      .. 例：ns-alpha ..
+      +messages: List<TranscriptMessage>
+      .. 例：user / assistant / tool；形状同 boot LlmMessage ..
+      +revision: number
+      .. 例：7；每组 assistant+tool 后 +1 ..
+    }
+
+    class "TranscriptVisibility\n读结果" as Visibility #FFFDFC {
+      +kind: full | summary | absent
+      .. 同 NS → full；跨 NS 无授权 → summary ..
+      +transcript: ParticipantTranscript
+      .. summary 时正文经 summarizeTranscript ..
+    }
+  }
+
+  package "nodes · 跨 NS 授权" #E8EEF5 {
+
+    class "TranscriptAccessRequest\n已提交申请" as Request #FFFDFC {
+      +requestId: TranscriptAccessRequestId
+      .. 例：req-tx-001 ..
+      +requester: ActorRef
+      .. 例：(coder-c, agent) 来自 ns-beta ..
+      +subjectActorId: ActorId
+      .. 例：planner-p；仅该 Actor 可裁决 ..
+      +subjectNamespaceId: NamespaceId
+      .. 例：ns-alpha ..
+      +status: requested | approved | denied | revoked
+      .. 例：requested ..
+      +decidedBy: ActorRef
+      .. optional；例：(planner-p, agent) ..
+    }
+
+    class "ScopedCapability\ntranscript_read" as Cap #FFFDFC {
+      +capabilityId: CapabilityId
+      .. 例：cap-tr-001 ..
+      +kind: transcript_read
+      .. 不另起平行授权类型 ..
+      +holder: ActorId
+      .. 例：coder-c ..
+      +scope: { kind: transcript, actorId, namespaceId }
+      .. 例：{transcript, planner-p, ns-alpha} ..
+    }
+  }
+
+  Snapshot *-- NS
+  Snapshot *-- Participant
+  Snapshot *-- Transcript
+  Snapshot *-- Request
+  Snapshot *-- Cap
+  Participant ..> NS : namespaceId
+  Transcript ..> Participant : actorId
+  ActorRef ..> Participant : actorId 解析
+  Request *-- ActorRef
+  Request ..> Participant : subjectActorId
+  Cap ..> Participant : holder / scope.actorId
+  Visibility ..> Transcript : visibleTranscript()
+}
+
+footer <color:#6E6963>代码锚点：collaborationNamespace.ts · participantTranscript.ts · transcriptAccessRequest.ts · transcriptVisibility.ts</color>
+@enduml

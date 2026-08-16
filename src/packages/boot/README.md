@@ -41,11 +41,11 @@ Agent Loop: while (!done) {
 
 ## Private conversation history
 
-Each booted OS owns a private `AgentLoopHistory` and reuses it across calls to `os.run()`. User
-instructions, assistant text, and complete assistant-tool/result groups therefore remain available
-to later runs without entering the shared `CollaborationSnapshot`. Seed a resumed CLI transcript
-with `BootConfig.initialMessages`; incomplete or orphaned tool protocol is discarded and cannot be
-used as evidence that work ran.
+Each booted OS owns a private `AgentLoopHistory` and reuses it across calls to `os.run()`. After
+ADR-0021, completed assistant+tool groups are also committed into
+`CollaborationSnapshot.transcripts` (same Namespace full text; cross-Namespace summary). Seed a
+resumed CLI transcript with `BootConfig.initialMessages`; incomplete or orphaned tool protocol is
+discarded and cannot be used as evidence that work ran.
 
 Low-level callers can own the same state explicitly:
 
@@ -83,6 +83,9 @@ console.log(result.summary, `(${result.turns} turns, ${result.elapsedMs}ms)`);
 ```
 
 ## Production usage
+
+`bootFileOS(adapter, { storagePath, llm })` is the production factory: file
+content plus `resolveProductionDurable` (file / Postgres HA / official etcd).
 
 ```typescript
 import { bootCantilune } from "@cantilune/boot";
@@ -152,6 +155,13 @@ const runtime = createCoordinationRuntime(
   }),
 );
 ```
+
+## Optional comms HMAC identity
+
+Production `createAgentCommsServices` calls `createCommsServices`, which uses
+ActorId pinning unless operator key material is present: env
+`CANTILUNE_COMMS_HMAC_KEY`, or `{storagePath}/comms/{agentId}/hmac.key`.
+When a key exists, HMAC-SHA256 is required; the key is never hardcoded.
 
 ## Environment
 

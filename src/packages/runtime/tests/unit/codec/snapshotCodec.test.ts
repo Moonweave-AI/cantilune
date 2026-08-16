@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { actorId, contentRef, participant, snapshotRef, epochId, collaborationSnapshot } from "@cantilune/core";
+import {
+  actorId,
+  contentRef,
+  participant,
+  snapshotRef,
+  epochId,
+  collaborationSnapshot,
+} from "@cantilune/core";
 import {
   decodeSnapshot,
   decodeSnapshotFromUnknown,

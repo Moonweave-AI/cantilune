@@ -66,14 +66,18 @@ describe("VerifierRegistry", () => {
 
   it("fails closed for an unknown verifier", () => {
     const registry = createDefaultVerifierRegistry();
-    const eval_ = registry.evaluate("nonexistent", {
-      id: "c1",
-      description: "x",
-      kind: "hard",
-      weight: 1,
-      threshold: 1,
-      verifierId: "nonexistent",
-    }, makeState());
+    const eval_ = registry.evaluate(
+      "nonexistent",
+      {
+        id: "c1",
+        description: "x",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "nonexistent",
+      },
+      makeState(),
+    );
     expect(eval_.q).toBe(0);
     expect(eval_.passed).toBe(false);
   });
@@ -82,7 +86,14 @@ describe("VerifierRegistry", () => {
 describe("no_infinite_loop verifier", () => {
   it("passes for a single distinct reply", () => {
     const eval_ = NO_INFINITE_LOOP_VERIFIER.evaluate(
-      { id: "c", description: "no loop", kind: "hard", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+      {
+        id: "c",
+        description: "no loop",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "no_infinite_loop",
+      },
       makeState(),
     );
     expect(eval_.passed).toBe(true);
@@ -91,7 +102,14 @@ describe("no_infinite_loop verifier", () => {
 
   it("fails when stuck in repeated plain-text turns with no progress", () => {
     const eval_ = NO_INFINITE_LOOP_VERIFIER.evaluate(
-      { id: "c", description: "no loop", kind: "hard", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+      {
+        id: "c",
+        description: "no loop",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "no_infinite_loop",
+      },
       makeState({
         trace: {
           conversationTurns: 4,
@@ -116,7 +134,14 @@ describe("no_infinite_loop verifier", () => {
 describe("coordination_progress verifier", () => {
   it("fails with no committed operations", () => {
     const eval_ = COORDINATION_PROGRESS_VERIFIER.evaluate(
-      { id: "c", description: "progress", kind: "hard", weight: 1, threshold: 1, verifierId: "coordination_progress" },
+      {
+        id: "c",
+        description: "progress",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "coordination_progress",
+      },
       makeState({ trace: { ...makeState().trace, committedOperations: 0 } }),
     );
     expect(eval_.passed).toBe(false);
@@ -124,7 +149,14 @@ describe("coordination_progress verifier", () => {
 
   it("passes once an operation is committed", () => {
     const eval_ = COORDINATION_PROGRESS_VERIFIER.evaluate(
-      { id: "c", description: "progress", kind: "hard", weight: 1, threshold: 1, verifierId: "coordination_progress" },
+      {
+        id: "c",
+        description: "progress",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "coordination_progress",
+      },
       makeState({ trace: { ...makeState().trace, committedOperations: 1 } }),
     );
     expect(eval_.passed).toBe(true);
@@ -148,7 +180,12 @@ describe("goalContract compiler", () => {
         return { text: "not json", toolCalls: [], finishReason: "stop" as const };
       },
     };
-    const contract = await compileGoalContract("test", badLlm, registry, "2026-01-01T00:00:00.000Z");
+    const contract = await compileGoalContract(
+      "test",
+      badLlm,
+      registry,
+      "2026-01-01T00:00:00.000Z",
+    );
     expect(contract.compiledBy).toBe("system");
   });
 });
@@ -156,7 +193,14 @@ describe("goalContract compiler", () => {
 describe("valueOfContinuation", () => {
   it("returns star=0 for no candidate actions", () => {
     const contract = contractWith([
-      { id: "c", description: "x", kind: "hard", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+      {
+        id: "c",
+        description: "x",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "no_infinite_loop",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 0, rho: 1, passed: false, evidenceRefs: [], rationale: "" },
@@ -167,7 +211,14 @@ describe("valueOfContinuation", () => {
 
   it("rates a coordination action higher when progress is unmet", () => {
     const contract = contractWith([
-      { id: "c", description: "x", kind: "hard", weight: 1, threshold: 1, verifierId: "coordination_progress" },
+      {
+        id: "c",
+        description: "x",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "coordination_progress",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 0, rho: 1, passed: false, evidenceRefs: [], rationale: "" },
@@ -185,9 +236,20 @@ describe("valueOfContinuation", () => {
 describe("semanticResidual", () => {
   it("returns full residual when no evidence exists", async () => {
     const contract = contractWith([
-      { id: "c", description: "cover the topic", kind: "soft", weight: 1, threshold: 1, verifierId: "structured_rubric" },
+      {
+        id: "c",
+        description: "cover the topic",
+        kind: "soft",
+        weight: 1,
+        threshold: 1,
+        verifierId: "structured_rubric",
+      },
     ]);
-    const result = await computeResidual(contract, makeState({ evidence: { items: [] }, pendingReply: { text: "", hasToolCalls: false } }), undefined);
+    const result = await computeResidual(
+      contract,
+      makeState({ evidence: { items: [] }, pendingReply: { text: "", hasToolCalls: false } }),
+      undefined,
+    );
     expect(result.residual).toHaveLength(1);
     expect(result.residual[0]).toBe(1);
     expect(result.usedEmbeddings).toBe(false);
@@ -195,7 +257,14 @@ describe("semanticResidual", () => {
 
   it("reduces residual when evidence matches a goal", async () => {
     const contract = contractWith([
-      { id: "c", description: "write a poem", kind: "soft", weight: 1, threshold: 1, verifierId: "structured_rubric" },
+      {
+        id: "c",
+        description: "write a poem",
+        kind: "soft",
+        weight: 1,
+        threshold: 1,
+        verifierId: "structured_rubric",
+      },
     ]);
     const state = makeState({
       pendingReply: { text: "Here is a poem about the moon", hasToolCalls: false },
@@ -210,7 +279,14 @@ describe("terminationStateMachine.decide", () => {
 
   it("verdicts DONE when hard gate open, completion high, uncertainty low, no worthwhile action", () => {
     const contract = contractWith([
-      { id: "c", description: "no loop", kind: "hard", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+      {
+        id: "c",
+        description: "no loop",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "no_infinite_loop",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 1, rho: 1, passed: true, evidenceRefs: [], rationale: "" },
@@ -228,7 +304,14 @@ describe("terminationStateMachine.decide", () => {
 
   it("verdicts CONTINUE when a worthwhile action exists", () => {
     const contract = contractWith([
-      { id: "c", description: "progress", kind: "hard", weight: 1, threshold: 1, verifierId: "coordination_progress" },
+      {
+        id: "c",
+        description: "progress",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "coordination_progress",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 0, rho: 1, passed: false, evidenceRefs: [], rationale: "" },
@@ -236,7 +319,11 @@ describe("terminationStateMachine.decide", () => {
     const verdict = decide({
       contract,
       evaluations,
-      voc: { perAction: new Map([["introduce_artifact", 0.5]]), star: 0.5, bestAction: "introduce_artifact" },
+      voc: {
+        perAction: new Map([["introduce_artifact", 0.5]]),
+        star: 0.5,
+        bestAction: "introduce_artifact",
+      },
       residual: [1],
       thresholds,
       llmDoneSignal: false,
@@ -249,7 +336,14 @@ describe("terminationStateMachine.decide", () => {
     // C = Σwq/Σw = 1.0 >= τ_C while U = Σw(1-ρ)/Σw = 0.9 > τ_U → VERIFY.
     // This is the "looks satisfied but evidence insufficient" state.
     const contract = contractWith([
-      { id: "c", description: "soft goal", kind: "soft", weight: 1, threshold: 0.05, verifierId: "structured_rubric" },
+      {
+        id: "c",
+        description: "soft goal",
+        kind: "soft",
+        weight: 1,
+        threshold: 0.05,
+        verifierId: "structured_rubric",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 1, rho: 0.1, passed: true, evidenceRefs: [], rationale: "" },
@@ -267,7 +361,14 @@ describe("terminationStateMachine.decide", () => {
 
   it("never verdicts DONE when a hard condition fails", () => {
     const contract = contractWith([
-      { id: "c", description: "hard", kind: "hard", weight: 1, threshold: 1, verifierId: "no_infinite_loop" },
+      {
+        id: "c",
+        description: "hard",
+        kind: "hard",
+        weight: 1,
+        threshold: 1,
+        verifierId: "no_infinite_loop",
+      },
     ]);
     const evaluations: CriterionEvaluation[] = [
       { criterionId: "c", q: 0, rho: 1, passed: false, evidenceRefs: [], rationale: "" },

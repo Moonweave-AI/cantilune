@@ -16,7 +16,7 @@ const PROVIDERS: readonly ProviderEntry[] = [
   {
     slug: "azure",
     tier: "openai-compatible",
-    defaultBaseUrl: "https://{resource}.openai.azure.com",
+    defaultBaseUrl: "https://{resource}.openai.azure.com/openai/deployments/{deployment}",
     envKeyName: "AZURE_OPENAI_API_KEY",
   },
   {

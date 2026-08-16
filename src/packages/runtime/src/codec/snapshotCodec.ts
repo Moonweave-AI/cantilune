@@ -14,6 +14,11 @@ import {
   type EpochId,
   type HeartbeatLog,
   type SnapshotRef,
+  type CollaborationNamespace,
+  type ParticipantTranscript,
+  type TranscriptAccessRequest,
+  type ActorId,
+  type TranscriptAccessRequestId,
 } from "@cantilune/core";
 
 export interface SnapshotWireDto {
@@ -34,6 +39,9 @@ export interface SnapshotWireDto {
    * detection saw every agent as silent.
    */
   readonly heartbeatLog?: HeartbeatLog;
+  readonly namespaces?: readonly CollaborationNamespace[];
+  readonly transcripts?: readonly ParticipantTranscript[];
+  readonly transcriptAccessRequests?: readonly TranscriptAccessRequest[];
 }
 
 export function encodeSnapshot(snapshot: CollaborationSnapshot): SnapshotWireDto {
@@ -49,6 +57,9 @@ export function encodeSnapshot(snapshot: CollaborationSnapshot): SnapshotWireDto
     auditTail: [...snapshot.auditTail],
     retiredEntities: [...snapshot.retiredEntities],
     heartbeatLog: [...snapshot.heartbeatLog],
+    namespaces: [...snapshot.namespaces.values()],
+    transcripts: [...snapshot.transcripts.values()],
+    transcriptAccessRequests: [...snapshot.transcriptAccessRequests.values()],
   };
 }
 
@@ -69,6 +80,18 @@ export function decodeSnapshot(dto: SnapshotWireDto): CollaborationSnapshot {
     auditTail: dto.auditTail,
     retiredEntities: dto.retiredEntities,
     heartbeatLog: dto.heartbeatLog ?? [],
+    namespaces: new Map(
+      (dto.namespaces ?? []).map((namespace) => [namespace.namespaceId, namespace]),
+    ),
+    transcripts: new Map(
+      (dto.transcripts ?? []).map((transcript) => [transcript.actorId as ActorId, transcript]),
+    ),
+    transcriptAccessRequests: new Map(
+      (dto.transcriptAccessRequests ?? []).map((request) => [
+        request.requestId as TranscriptAccessRequestId,
+        request,
+      ]),
+    ),
   });
 }
 

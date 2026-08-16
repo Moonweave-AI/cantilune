@@ -1,4 +1,9 @@
-import type { CollaborationSnapshot, CoordinationChange, SchemaEpochBinding, SnapshotRef } from "@cantilune/core";
+import type {
+  CollaborationSnapshot,
+  CoordinationChange,
+  SchemaEpochBinding,
+  SnapshotRef,
+} from "@cantilune/core";
 import { snapshotSchemaEpochBinding } from "../engine/activeSchemaContext.js";
 import { changeContinuesChain, isVerifiableUnloggedAdvance } from "../codec/observationBridge.js";
 import type { DurableCommitInput, DurableCoordinator } from "../ports/durableCoordinator.js";

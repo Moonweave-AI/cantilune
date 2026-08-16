@@ -1,6 +1,6 @@
 /// <reference types="node" />
-import type { ContentRef } from "@cantilune/core";
-import type { ToolExecutor, ToolObservationRecovery } from "@cantilune/syscall";
+import type { ContentRef, TranscriptMessage, TranscriptToolCall } from "@cantilune/core";
+import type { ToolApprover, ToolExecutor, ToolObservationRecovery } from "@cantilune/syscall";
 import type {
   ControlVerdict,
   ControllerThresholds,
@@ -21,6 +21,13 @@ export interface BootConfig {
   readonly llm: LlmConfig;
   /** Optional external tools (MCP servers, file ops, terminal, etc). */
   readonly tools?: ToolExecutor[];
+  /**
+   * Human authorization gate consulted before a side-effecting tool dispatches
+   * (ADR-0016 tiers decide which). Absent means tools run unattended, which is
+   * the behaviour of every embedding written before this port existed — an
+   * unattended swarm worker, for instance, has no human to ask.
+   */
+  readonly toolApprover?: ToolApprover;
   /** Principal identity for this OS instance. Defaults to auto-generated UUID. */
   readonly principalId?: string;
   /** Principal kind for this OS instance. Defaults to "agent". */
@@ -57,6 +64,12 @@ export interface BootConfig {
    * turn can consume evidence that was not durably checkpointed.
    */
   readonly onHistoryCheckpoint?: (history: AgentLoopHistory) => void | Promise<void>;
+  /**
+   * Awaited at the start of each turn before `availableActions` (ADR-0026).
+   * Used to apply a pending MCP tool surface so the current turn never sees
+   * mid-turn mutation and the next turn lists the new epoch's tools.
+   */
+  readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
   /**
    * Owner-reviewed aliases that are known to have used the exact built-in
    * static schema. Epoch names are not proof of schema identity; this list is
@@ -145,8 +158,8 @@ export interface CantilunOS {
   /** Run a user instruction end-to-end. Returns when the LLM declares done or limits are hit. */
   run(instruction: string, options?: CantilunOSRunOptions): Promise<RunResult>;
   /**
-   * Export a detached, strictly validated snapshot of the private history that
-   * this OS instance actually uses. It is never part of CollaborationSnapshot.
+   * Export a detached, strictly validated snapshot of the history this OS uses.
+   * ADR-0021 also commits the same rows onto CollaborationSnapshot.transcripts.
    */
   readonly privateHistory?: () => AgentLoopHistory;
   /** Shut down gracefully. Flushes pending writes if applicable. */
@@ -398,24 +411,11 @@ export interface LlmChatRequest {
 }
 
 /**
- * LLM message types. Only "tool" role is supported for tool results
- * (not legacy "function" role). This aligns with modern APIs (OpenAI >=1.0, Anthropic, Google).
+ * LLM chat row. Same contract as core `TranscriptMessage` (ADR-0021 / P1):
+ * boot composes the world type instead of keeping a parallel identity.
  */
-export type LlmMessage =
-  | { readonly role: "system"; readonly content: string }
-  | { readonly role: "user"; readonly content: string }
-  | {
-      readonly role: "assistant";
-      readonly content: string;
-      readonly toolCalls?: readonly LlmToolCallOutput[];
-    }
-  | { readonly role: "tool"; readonly toolCallId: string; readonly content: string };
-
-export interface LlmToolCallOutput {
-  readonly id: string;
-  readonly name: string;
-  readonly arguments: string;
-}
+export type LlmMessage = TranscriptMessage;
+export type LlmToolCallOutput = TranscriptToolCall;
 
 export interface LlmToolDef {
   readonly name: string;

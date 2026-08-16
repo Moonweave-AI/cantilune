@@ -18,6 +18,8 @@ export interface ResolvedCertificate {
   readonly issuedAt: string;
   readonly expiresAt: string;
   readonly status: CertificateValidity;
+  /** ADR-0011 A54 — revocation checkpoint bound at resolve time. */
+  readonly revocationCheckpoint?: string;
 }
 
 export interface ArtifactResolver {

@@ -12,6 +12,7 @@ import { activateParticipantHandler } from "./activateParticipant.js";
 import { signalDoneHandler } from "./signalDone.js";
 import { retireParticipantHandler } from "./retireParticipant.js";
 import { emitHeartbeatHandler } from "./emitHeartbeat.js";
+import { commitTranscriptHandler } from "./commitTranscript.js";
 
 export function createDefaultHandlers(): OperationHandlerRegistry {
   const registry = new InMemoryHandlerRegistry();
@@ -26,6 +27,7 @@ export function createDefaultHandlers(): OperationHandlerRegistry {
   registry.register(operationTypeId("signal_done"), signalDoneHandler, "1");
   registry.register(operationTypeId("retire_participant"), retireParticipantHandler, "1");
   registry.register(operationTypeId("emit_heartbeat"), emitHeartbeatHandler, "1");
+  registry.register(operationTypeId("commit_transcript"), commitTranscriptHandler, "1");
   return registry;
 }
 
@@ -40,3 +42,4 @@ export { activateParticipantHandler } from "./activateParticipant.js";
 export { signalDoneHandler } from "./signalDone.js";
 export { retireParticipantHandler } from "./retireParticipant.js";
 export { emitHeartbeatHandler } from "./emitHeartbeat.js";
+export { commitTranscriptHandler } from "./commitTranscript.js";

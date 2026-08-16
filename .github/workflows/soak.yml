@@ -1,0 +1,30 @@
+name: soak
+
+# Not a PR gate (Owner G12). Shortened soak on demand / weekly.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0"
+
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cantilune/core build
+      - run: pnpm --filter @cantilune/runtime build
+      - run: pnpm --filter @cantilune/comms build
+      - run: pnpm --filter @cantilune/boot build
+      - name: Shortened soak
+        env:
+          CANTILUNE_SOAK_MS: "600000"
+        run: node scripts/soak-24h.mjs

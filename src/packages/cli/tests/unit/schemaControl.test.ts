@@ -41,6 +41,7 @@ describe("control-plane controller", () => {
     );
     expect(binding).toBeDefined();
     expect(binding?.schemaRef.schemaId).toBe(controller.genesisRevision.schemaRef.schemaId);
+    expect(controller.getCommitReceipt("missing-admission")).toBeUndefined();
   });
 
   it("the default schema declares operation types (the catalog is non-empty)", async () => {

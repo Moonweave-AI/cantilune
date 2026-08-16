@@ -41,4 +41,10 @@ describe("Judge protocol safety", () => {
   it("rejects protocol when grader count is below quorum", () => {
     expect(isJudgeSafe(makeProtocol({ graderCount: 1, quorum: 2 }))).toBe(false);
   });
+
+  it("rejects protocols that hold tools, network, or secrets (D6)", () => {
+    expect(isJudgeSafe(makeProtocol({ toolsEnabled: true }))).toBe(false);
+    expect(isJudgeSafe(makeProtocol({ networkEnabled: true }))).toBe(false);
+    expect(isJudgeSafe(makeProtocol({ secretsHeld: true }))).toBe(false);
+  });
 });

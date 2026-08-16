@@ -2,8 +2,9 @@
 
 | 字段           | 值                                                                                                                                    |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted**（M2–M3 工程原型范围）                                                                                                    |
+| Status         | **Accepted**（0.x；ObservationAccessContext + 平台出口已落地，ADR-0025）                                                              |
 | Date           | 2026-08-11                                                                                                                            |
+| Revised        | 2026-08-16 — 生产读路径必须带 ObservationAccessContext；OTel/AG-UI/OTLP 平台（ADR-0025）                                              |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                                 |
 | Reviewers      | Joker-of-Gotham (DRI，兼任 Architecture second reader；COI 见 `reviewer-assignments.md`)；形式化 ProjectionCertificate 独立审查仍开放 |
 | Related        | RFC-0001 §7、RFC-0002、ADR-0002、ADR-0003、`docs/spec/observable-lts-policies.md`、`@cantilune/observability`                         |
@@ -27,7 +28,7 @@
 | 输出不可变性      | 返回的 `FourViewBundle` 必须在包边界处深拷贝 + 冻结（见 `immutableBoundary.ts`）   |
 | 证据              | `ReadModelDerivationEvidence` 是可选的工程自检；**不是**形式化投影证书             |
 
-**未来（M3 之后 / 面向生产）：**在稳定 facade 上引入 `ObservationAccessContext`：
+**面向生产（2026-08-15 已落地 / ADR-0025）：**稳定 facade 必须带 `ObservationAccessContext`。本包是**可观测性平台**（committed-world 四角 + OTel OTLP + AG-UI）。`ProjectionCertificate` 仍属 `@cantilune/conformance`；本包只持 digest。
 
 ```typescript
 interface ObservationAccessContext {

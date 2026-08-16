@@ -16,7 +16,10 @@ const INITIATOR = actorId("agent-0");
 const TARGET = actorId("agent-1");
 const MANIFEST_REF = contentRef("sha256:manifest-agent-1");
 
-function snapshotWith(initiatorStatus: "active" | "registered", targetStatus: "registered" | "waiting" | "blocked" | "active" | "done" | "retired") {
+function snapshotWith(
+  initiatorStatus: "active" | "registered",
+  targetStatus: "registered" | "waiting" | "blocked" | "active" | "done" | "retired",
+) {
   return collaborationSnapshot({
     snapshotRef: snapshotRef("s0"),
     epochId: epochId("e1"),
@@ -45,7 +48,11 @@ const ctx = { template: undefined as never };
 describe("activateParticipantHandler (ADR-0015)", () => {
   it("activates a registered agent and binds its manifest ref", () => {
     const snap = snapshotWith("active", "registered");
-    const result = activateParticipantHandler(snap, recipe({ manifest: "sha256:manifest-agent-1" }), ctx);
+    const result = activateParticipantHandler(
+      snap,
+      recipe({ manifest: "sha256:manifest-agent-1" }),
+      ctx,
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -56,14 +63,22 @@ describe("activateParticipantHandler (ADR-0015)", () => {
 
   it("activates a waiting agent", () => {
     const snap = snapshotWith("active", "waiting");
-    const result = activateParticipantHandler(snap, recipe({ manifest: "sha256:manifest-agent-1" }), ctx);
+    const result = activateParticipantHandler(
+      snap,
+      recipe({ manifest: "sha256:manifest-agent-1" }),
+      ctx,
+    );
 
     expect(result.ok).toBe(true);
   });
 
   it("activates a blocked agent", () => {
     const snap = snapshotWith("active", "blocked");
-    const result = activateParticipantHandler(snap, recipe({ manifest: "sha256:manifest-agent-1" }), ctx);
+    const result = activateParticipantHandler(
+      snap,
+      recipe({ manifest: "sha256:manifest-agent-1" }),
+      ctx,
+    );
 
     expect(result.ok).toBe(true);
   });
@@ -180,7 +195,11 @@ describe("activateParticipantHandler (ADR-0015)", () => {
 
   it("includes both initiator and target in involved refs", () => {
     const snap = snapshotWith("active", "registered");
-    const result = activateParticipantHandler(snap, recipe({ manifest: "sha256:manifest-agent-1" }), ctx);
+    const result = activateParticipantHandler(
+      snap,
+      recipe({ manifest: "sha256:manifest-agent-1" }),
+      ctx,
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.involved).toHaveLength(2);
@@ -199,7 +218,11 @@ describe("activateParticipantHandler (ADR-0015)", () => {
         [extra, participant(extra, "agent", "registered")],
       ]),
     });
-    const result = activateParticipantHandler(snap, recipe({ manifest: "sha256:manifest-agent-1" }), ctx);
+    const result = activateParticipantHandler(
+      snap,
+      recipe({ manifest: "sha256:manifest-agent-1" }),
+      ctx,
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.after.participants.get(INITIATOR)?.status).toBe("active");

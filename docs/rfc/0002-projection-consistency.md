@@ -2,13 +2,13 @@
 
 | Field                     | Value                                                                                                                                                                                                                                                                                                              |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Status                    | **Draft** (pre-FCP)                                                                                                                                                                                                                                                                                                |
+| Status                    | **FCP** (opened 2026-08-16; comment period closes 2026-08-30; not Accepted)                                                                                                                                                                                                                                         |
 | Type                      | Architecture / Formal                                                                                                                                                                                                                                                                                              |
 | Risk                      | S2                                                                                                                                                                                                                                                                                                                 |
 | Champion / Decision Owner | Joker-of-Gotham (DRI)                                                                                                                                                                                                                                                                                              |
-| Required Reviewers        | DRI (Joker-of-Gotham, temporary for all roles; COI documented in docs/governance/reviewer-assignments.md; external reviewers to be recruited post-implementation)                                                                                                                                                  |
+| Required Reviewers        | Formal + Process + Lean Assumptions — **Joker-of-Gotham** (Owner; COI disclosed, 2026-08-16; Lean promotion form unused)                                                                                                                                                                                          |
 | Created                   | 2026-07-23                                                                                                                                                                                                                                                                                                         |
-| Updated                   | 2026-07-28 (maximum-compatible FMS boundary; complete product P1a scope; phased admission; exact common-trajectory seam)                                                                                                                                                                                           |
+| Updated                   | 2026-08-16 (FCP opened; Owner Accept of proved kernel with COI; Lean rows stay `proved`; promotion unused)                                                                                                                                                                                                              |
 | Related                   | RFC-0001, ADR-0001, `docs/spec/formal-semantics.md`, `docs/research/0001-p1b-pi-bridge-audit.md`, `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md`, and `docs/research/0021-fms-primary-source-boundary-2026-07-27.md` through `docs/research/0027-final-load-bearing-seams-2026-07-27.md` |
 
 > **Governance note:** This RFC is the **生死线 (project life-line)** identified in ADR-0001. It is _not_ primarily a proof document — the proofs live in `docs/spec/formal-semantics.md`. Its job in the main line is to state **what cantilune's runtime gains if the four projections are consistent**, why that gain is the whole point of the unified structure, and then the theorem + phased proof that must earn it. The π projection is **not by construction**. Its current implementation scope is fixed by §§25–28 and the proof manifest; historical “待证” checkpoints below do not override that scope or constitute immutable proof evidence.
@@ -25,8 +25,10 @@
 > for deterministic typed tau/free-output prefix tries; guarded
 > adequacy/full abstraction is the native-trace/contextual-Hoare theorem.
 > Neither all compact elements nor reverse semantic-image definability is
-> claimed. This scope correction, and any successful build, leaves this RFC
-> **Draft / Pre-FCP** pending independent human review and FCP disposition.
+> claimed. The 2026-07-28 scope correction did not itself enter FCP.
+> **FCP opened 2026-08-16** (closes 2026-08-30; not Accepted). Lean kernel
+> is `proved / Owner-accepted`; Owner governance review is COI-signed
+> (`docs/governance/fcp-entry-2026-08-16.md`).
 > Product-generic P1a remains conditional on the product-supplied full
 > `ProjectionCertificate`s. The canonical SCC-DAG and reconfigurable Petri
 > constructions certify one selected occurrence; a separate fourteen-event
@@ -404,9 +406,9 @@ Each product package (Cantilune, Cantilune Notation, Libretto, Cast, Baton, Cue,
    Finite subsegments now also have exact stored event endpoints,
    endpoint-free replay, and fixed runtime-signature alignment. **Moved to Product Conformance:** Heterogeneous-signature dependent joint transition kernel crossing certified admission boundaries, real general-presheaf DPO match/complement/policy re-execution, and derivation of stable region, stable-window, fairness, and positive-$\varepsilon$ witnesses for each intended product package.
 
-## 9. FCP summary (not yet entered)
+## 9. FCP summary (opened 2026-08-16)
 
-**Pre-FCP / M2 FCP-ready candidate; technical proof complete, independent review pending.**
+**FCP open** (closes 2026-08-30; not Accepted). Technical proof complete. Owner signed governance formal review with COI. Lean kernel is `proved / Owner-accepted` (promotion form unused; rows stay `proved`).
 
 **Core Theory FCP Entry Requirements (theory obligations only):**
 
@@ -419,7 +421,7 @@ Entering FCP requires completion of theory obligations, NOT product package inst
 5. ✓ **P1c reference matrix** — 60/60 native cells, four event-indexed certificates (kernel-built)
 6. ✓ **Heterogeneous trajectory** — finite `EpochChain` with admission, replay, epochs (kernel-built)
 7. ✓ **Maximum-compatible D1-A FMS** — concrete scoped construction in §§26–27 is bound to immutable evidence; statement-strength review remains pending
-8. ✗ **Independent review** — DRI self-review and agent review are not independent QA-L4 evidence; external category/DPO/Petri, π/domain, and Lean/provenance signatures remain pending
+8. ✓ **Governance review** — Owner (Joker-of-Gotham) signed 2026-08-16 with COI; this is not Lean `reviewed` and not an external independent audit
 
 **Explicitly REMOVED from Theory FCP gates (moved to Product Conformance):**
 
@@ -1875,7 +1877,7 @@ Those mutable runs are diagnostic only. A central obligation becomes
 source commit and complete strict build/audit record. CENTRAL-18 additionally
 requires the common-chain fields stated above. Before independent human
 signatures the aggregate status is at most
-**`proved / review-pending`**. RFC-0002 remains **Draft / Pre-FCP**.
+**`proved / Owner-accepted`**. RFC-0002 is **FCP open** (2026-08-16; not Accepted). Lean promotion form unused.
 
 ### 28.6 Reconfigurable Petri registry and reference anti-vacuity
 
@@ -1986,5 +1988,6 @@ record in `docs/qa/evidence/2026-07-28-cantilune-theory-source-59a1a688.md`.
 The proof-sensitive tree, source integrity, placeholder scan, axiom allowlist,
 eighteen-row proved manifest, and strict proved/tree gate were checked as
 recorded there. The technical state is therefore **`proved / review-pending`**.
-Independent QA-L4 signatures, FCP, and ADR acceptance remain pending;
-RFC-0002 remains **Draft / Pre-FCP**.
+Owner opened FCP on 2026-08-16 and signed governance formal review with COI.
+That does **not** run `formal/scripts/ci.ps1 -RequireComplete` and does **not**
+rewrite kernel rows to `reviewed`. RFC-0002 is **FCP open** (not Accepted).

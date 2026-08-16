@@ -1,0 +1,18 @@
+{
+  "taskId": "T04",
+  "failClosed": true,
+  "minPeers": 4,
+  "minTurns": 12,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/world-model/inventory.md",
+    "artifacts/red/campaign.md",
+    "artifacts/blue/detection.md",
+    "artifacts/blue/hotfix.md",
+    "artifacts/replay.md"
+  ],
+  "requiredGlobs": []
+}

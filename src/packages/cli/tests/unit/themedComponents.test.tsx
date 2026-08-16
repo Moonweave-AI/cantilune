@@ -259,7 +259,7 @@ describe("StatusBar", () => {
 });
 
 describe("ToolCard", () => {
-  it("collapses to one line in focus mode", () => {
+  it("shows the read path and body instead of a key=json line", () => {
     const { container } = render(
       withTheme(
         "moonlight",
@@ -277,11 +277,54 @@ describe("ToolCard", () => {
         />,
       ),
     );
-    // The collapsed form shows arguments but never the tool output body.
-    expect(container.textContent).toContain("read_content");
-    expect(container.textContent).toContain("ref=sha256:abc");
-    expect(container.textContent).not.toContain("second");
+    expect(container.textContent).toContain("Read");
+    expect(container.textContent).toContain("sha256:abc");
+    expect(container.textContent).toContain("first");
+    expect(container.textContent).toContain("second");
     expect(container.textContent).toContain("1.2s");
+    expect(container.textContent).not.toContain("ref=sha256:abc");
+  });
+
+  it("keeps a successful done claim on one line", () => {
+    const { container } = render(
+      withTheme(
+        "moonlight",
+        <ToolCard
+          toolCall={{
+            id: "d",
+            name: "done",
+            args: { summary: "任务完成" },
+            status: "done",
+            result: { ok: true, output: "done" },
+          }}
+          detail="focus"
+        />,
+      ),
+    );
+    expect(container.textContent).toContain("Done");
+    expect(container.textContent).toContain("任务完成");
+    expect(container.textContent).not.toContain("summary=");
+  });
+
+  it("renders a shell command and its stdout", () => {
+    const { container } = render(
+      withTheme(
+        "moonlight",
+        <ToolCard
+          toolCall={{
+            id: "s",
+            name: "shell_run_command",
+            args: { command: "echo hi" },
+            status: "done",
+            result: { ok: true, output: "hi" },
+          }}
+          detail="focus"
+        />,
+      ),
+    );
+    expect(container.textContent).toContain("Shell");
+    expect(container.textContent).toContain("$ echo hi");
+    expect(container.textContent).toContain("hi");
   });
 
   it("expands in observe mode", () => {
@@ -368,5 +411,87 @@ describe("ChatPanel", () => {
       ),
     );
     expect(container.textContent).toContain("scrolled back 3");
+  });
+
+  it("keeps focus layout free of the lifecycle rail and a redundant done essay", () => {
+    const prose = "我是Cantilune协调系统中的自主代理，负责执行用户指令。";
+    const { container } = render(
+      withTheme(
+        "moonlight",
+        <ChatPanel
+          messages={[
+            { role: "user", content: "你能介绍一下你自己吗", timestamp: 1 },
+            {
+              role: "assistant",
+              content: prose,
+              timestamp: 2,
+              turn: 1,
+              lifecycle: [
+                { stage: "llm", label: "LLM thinking", ts: 1, detail: prose },
+                { stage: "turn_close", label: "Turn 1 end，任务完成。", ts: 2 },
+              ],
+            },
+            {
+              role: "system",
+              content: "",
+              timestamp: 3,
+              toolCalls: [
+                {
+                  id: "d",
+                  name: "done",
+                  args: { summary: prose },
+                  status: "done",
+                  startedAt: 1,
+                  endedAt: 10,
+                },
+              ],
+            },
+          ]}
+          height={20}
+          width={64}
+          detail="focus"
+        />,
+      ),
+    );
+    expect(container.textContent).toContain("自主代理");
+    expect(container.textContent).not.toContain("t1 lifecycle");
+    expect(container.textContent).not.toContain("LLM thinking");
+    expect(container.textContent?.split("自主代理").length).toBe(2);
+  });
+
+  it("expands the activity stack in observe layout", () => {
+    const { container } = render(
+      withTheme(
+        "moonlight",
+        <ChatPanel
+          messages={[
+            {
+              role: "assistant",
+              content: "ok",
+              timestamp: 1,
+              turn: 1,
+              lifecycle: [{ stage: "llm", label: "LLM thinking", ts: 1 }],
+              toolCalls: [
+                {
+                  id: "s",
+                  name: "shell",
+                  args: { command: "ls" },
+                  status: "done",
+                  startedAt: 1,
+                  endedAt: 2,
+                  result: { ok: true, output: "src" },
+                },
+              ],
+            },
+          ]}
+          height={20}
+          width={64}
+          detail="observe"
+        />,
+      ),
+    );
+    expect(container.textContent).toContain("t1 lifecycle");
+    expect(container.textContent).toContain("LLM thinking");
+    expect(container.textContent).toContain("ls");
   });
 });

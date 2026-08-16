@@ -1,0 +1,87 @@
+# Operator-provided Postgres HA kit (ADR-0023).
+# Official PostgreSQL 16 streaming + synchronous standby:
+# https://www.postgresql.org/docs/16/warm-standby.html
+# Operator Postgres HA kit (ADR-0023). etcd Raft is the other multi-host path (ADR-0029).
+name: cantilune-postgres-ha
+
+services:
+  primary:
+    image: postgres:16
+    pull_policy: never
+    container_name: cantilune-pg-primary
+    environment:
+      POSTGRES_USER: cantilune
+      POSTGRES_PASSWORD: ${CANTILUNE_POSTGRES_PASSWORD:-cantilune_local}
+      POSTGRES_DB: cantilune
+      CANTILUNE_REPLICA_PASSWORD: ${CANTILUNE_REPLICA_PASSWORD:-cantilune_replica}
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - hot_standby=on
+      - -c
+      - wal_keep_size=128MB
+      - -c
+      - synchronous_commit=on
+      - -c
+      - hba_file=/etc/cantilune/pg_hba.conf
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_primary:/var/lib/postgresql/data
+      - ./primary/00-replication.sql:/docker-entrypoint-initdb.d/00-replication.sql:ro
+      - ./primary/pg_hba.conf:/etc/cantilune/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cantilune -d cantilune"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      - ha
+
+  replica:
+    image: postgres:16
+    pull_policy: never
+    container_name: cantilune-pg-replica
+    environment:
+      POSTGRES_USER: cantilune
+      POSTGRES_PASSWORD: ${CANTILUNE_POSTGRES_PASSWORD:-cantilune_local}
+      POSTGRES_DB: cantilune
+      CANTILUNE_REPLICA_PASSWORD: ${CANTILUNE_REPLICA_PASSWORD:-cantilune_replica}
+      PGDATA: /var/lib/postgresql/data
+    depends_on:
+      primary:
+        condition: service_healthy
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -eu
+        until pg_isready -h primary -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"; do sleep 1; done
+        if [ ! -s "$$PGDATA/PG_VERSION" ]; then
+          PGPASSWORD="$$CANTILUNE_REPLICA_PASSWORD" pg_basebackup \
+            -h primary -U replicator -D "$$PGDATA" -Fp -Xs -P -R -C -S replica_slot
+          printf "primary_conninfo = 'host=primary port=5432 user=replicator password=%s application_name=replica'\nhot_standby = on\n" "$$CANTILUNE_REPLICA_PASSWORD" >> "$$PGDATA/postgresql.auto.conf"
+        fi
+        exec docker-entrypoint.sh postgres
+    volumes:
+      - pg_replica:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cantilune || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+    networks:
+      - ha
+
+volumes:
+  pg_primary:
+  pg_replica:
+
+networks:
+  ha:
+    driver: bridge

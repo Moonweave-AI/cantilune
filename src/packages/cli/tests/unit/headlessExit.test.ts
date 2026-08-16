@@ -6,20 +6,23 @@ vi.mock("@cantilune/adapter", () => ({
 
 vi.mock("../../src/runtimeSync.js", () => ({
   buildLlmConfig: vi.fn(() => ({ provider: "openai", model: "gpt-4o" })),
-  createCliRuntimeBoot: vi.fn(() => ({
-    os: {
-      run: vi.fn(async () => ({
-        ok: false,
-        summary: "failed",
-        turns: 0,
-        elapsedMs: 0,
-        producedRefs: [],
-      })),
+  missingApiKeyVar: vi.fn(() => null),
+  createCliRuntimeBoot: vi.fn(() => {
+    return {
+      os: {
+        run: vi.fn(async () => ({
+          ok: false,
+          summary: "failed",
+          turns: 0,
+          elapsedMs: 0,
+          producedRefs: [],
+        })),
+        shutdown: vi.fn(async () => undefined),
+      },
+      syncRuntime: vi.fn(() => ({ snapshot: null, changeLog: [], epoch: null })),
       shutdown: vi.fn(async () => undefined),
-    },
-    syncRuntime: vi.fn(() => ({ snapshot: null, changeLog: [], epoch: null })),
-    shutdown: vi.fn(async () => undefined),
-  })),
+    };
+  }),
 }));
 
 import { headlessRunner } from "../../src/headless/headlessRunner.js";

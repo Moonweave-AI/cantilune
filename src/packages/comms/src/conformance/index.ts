@@ -10,3 +10,11 @@ export {
   COMMS_MANIFEST_SCHEMA_VERSION,
   type CommsConformanceManifest,
 } from "./commsConformanceManifest.js";
+export {
+  runA2AConformanceHarness,
+  A2A_CONFORMANCE_CASE_IDS,
+  type A2AConformanceHarnessInput,
+  type A2AConformancePair,
+  type A2AConformanceReport,
+  type A2AConformanceCaseResult,
+} from "./a2aConformanceHarness.js";

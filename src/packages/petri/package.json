@@ -1,7 +1,7 @@
 {
   "name": "@cantilune/petri",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Cantilune Petri-net firing engine: token-game semantics, bounded reachability, and place-invariant analysis over the PNML structural net",
   "exports": {
@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
@@ -26,5 +27,9 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.7"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   }
 }

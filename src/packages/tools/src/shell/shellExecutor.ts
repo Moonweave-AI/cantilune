@@ -1,5 +1,6 @@
 import type { ToolExecutor, ToolSchema } from "@cantilune/syscall";
-import type { ShellConfig } from "../types.js";
+import { DEFAULT_SANDBOX_MODE, type ShellConfig } from "../types.js";
+import { createOsSandbox } from "../sandbox/osSandbox.js";
 import { runCommand, runCommandSchema } from "./runCommand.js";
 
 const SHELL_SCHEMAS: ToolSchema[] = [runCommandSchema];
@@ -7,6 +8,13 @@ const SHELL_SCHEMAS: ToolSchema[] = [runCommandSchema];
 export function createShellExecutor(
   config: ShellConfig & { readonly workingDirectory: string },
 ): ToolExecutor {
+  const sandboxMode = config.sandbox ?? DEFAULT_SANDBOX_MODE;
+  const osSandbox = sandboxMode === "off" ? undefined : (config.osSandbox ?? createOsSandbox());
+  const resolved: ShellConfig & { readonly workingDirectory: string } = {
+    ...config,
+    sandbox: sandboxMode,
+    ...(osSandbox !== undefined ? { osSandbox } : {}),
+  };
   const workingDirectory = config.workingDirectory;
 
   return {
@@ -22,9 +30,13 @@ export function createShellExecutor(
     async execute(
       toolName: string,
       args: Record<string, unknown>,
+      options?: { readonly signal?: AbortSignal },
     ): Promise<{ ok: boolean; output: string }> {
       if (toolName !== "shell_run_command") {
         return { ok: false, output: `Unknown shell tool: ${toolName}` };
+      }
+      if (options?.signal?.aborted === true) {
+        return { ok: false, output: "skipped: aborted before shell dispatch" };
       }
 
       try {
@@ -37,8 +49,9 @@ export function createShellExecutor(
             ...(args.timeoutMs !== undefined
               ? { timeoutMs: requireNumber(args, "timeoutMs") }
               : {}),
+            ...(options?.signal !== undefined ? { signal: options.signal } : {}),
           },
-          config,
+          resolved,
           workingDirectory,
         );
         return { ok: true, output };

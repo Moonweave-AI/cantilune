@@ -1,10 +1,11 @@
-import { storeSequence } from "@cantilune/core";
+import { storeSequence, type RuntimeInstanceId } from "@cantilune/core";
 import { mkdirSync, readFileSync, existsSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import type { MemoryControlPlaneStore } from "../memory/memoryControlPlaneStore.js";
 import type { ActiveBindingCas, ControlPlaneSnapshot } from "../ports/controlPlaneStore.js";
 import { encodeSchemaRevision, decodeSchemaRevision } from "../schema/schemaWireCodec.js";
 import type { SchemaRevision } from "../schema/schemaRevision.js";
+import type { RuntimeBinding } from "../rollout/runtimeBinding.js";
 import { withFileLock } from "./fileLock.js";
 import { atomicWriteFileSync } from "./atomicWrite.js";
 
@@ -14,6 +15,11 @@ const JOURNAL_FILE = "control-plane.journal.json";
 export interface FileControlPlaneStoreOptions {
   readonly dir: string;
   readonly memory: MemoryControlPlaneStore;
+}
+
+export interface FleetBindingsJournalEntry {
+  readonly kind: "fleetBindings";
+  readonly bindings: readonly (readonly [RuntimeInstanceId, RuntimeBinding])[];
 }
 
 function serializeSnapshot(snapshot: ControlPlaneSnapshot): string {
@@ -32,6 +38,7 @@ function serializeSnapshot(snapshot: ControlPlaneSnapshot): string {
     commitReceipts: [...snapshot.commitReceipts.entries()],
     idempotency: [...snapshot.idempotency.entries()],
     events: snapshot.events,
+    fleetBindings: [...(snapshot.fleetBindings ?? [])],
   });
 }
 
@@ -40,6 +47,7 @@ function hydrateSnapshot(raw: ReturnType<typeof JSON.parse>): ControlPlaneSnapsh
   for (const [key, wire] of raw.revisions as [string, unknown][]) {
     revisions.set(key, decodeSchemaRevision(wire as Parameters<typeof decodeSchemaRevision>[0]));
   }
+  const fleetSource = Array.isArray(raw.fleetBindings) ? raw.fleetBindings : [];
   return {
     frozen: Boolean(raw.frozen),
     lastSequence: storeSequence(raw.lastSequence ?? 0),
@@ -52,7 +60,24 @@ function hydrateSnapshot(raw: ReturnType<typeof JSON.parse>): ControlPlaneSnapsh
     commitReceipts: new Map(raw.commitReceipts ?? []),
     idempotency: new Map(raw.idempotency),
     events: raw.events ?? [],
+    fleetBindings: new Map(fleetSource as [RuntimeInstanceId, RuntimeBinding][]),
   };
+}
+
+function isFleetBindingsJournalEntry(entry: unknown): entry is FleetBindingsJournalEntry {
+  if (typeof entry !== "object" || entry === null) {
+    return false;
+  }
+  const record = entry as { readonly kind?: unknown; readonly bindings?: unknown };
+  return record.kind === "fleetBindings" && Array.isArray(record.bindings);
+}
+
+function readJournalFile(dir: string): unknown[] {
+  const path = join(dir, JOURNAL_FILE);
+  if (!existsSync(path)) {
+    return [];
+  }
+  return JSON.parse(readFileSync(path, "utf8")) as unknown[];
 }
 
 export class FileControlPlaneStore {
@@ -88,24 +113,45 @@ export class FileControlPlaneStore {
     });
   }
 
+  /**
+   * Persist fleet/runtime bindings under the same file lock as schema snapshots.
+   * Writes `fleetBindings` on the snapshot and appends a journal entry.
+   */
+  persistFleetBindings(bindings: Iterable<readonly [RuntimeInstanceId, RuntimeBinding]>): void {
+    withFileLock(this.dir, () => {
+      this.memory.replaceFleetBindings(bindings);
+      this.persistUnlocked();
+      this.appendJournalUnlocked({
+        kind: "fleetBindings",
+        bindings: [...bindings],
+      });
+    });
+  }
+
+  loadFleetBindings(): ReadonlyMap<RuntimeInstanceId, RuntimeBinding> {
+    return this.memory.getFleetBindings();
+  }
+
   private persistUnlocked(): void {
     const snapshot = this.memory.snapshot();
     atomicWriteFileSync(join(this.dir, SNAPSHOT_FILE), serializeSnapshot(snapshot));
   }
 
   appendJournal(entry: unknown): void {
+    withFileLock(this.dir, () => {
+      this.appendJournalUnlocked(entry);
+    });
+  }
+
+  private appendJournalUnlocked(entry: unknown): void {
     const path = join(this.dir, JOURNAL_FILE);
-    const prior = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : [];
+    const prior = readJournalFile(this.dir);
     prior.push(entry);
     atomicWriteFileSync(path, JSON.stringify(prior));
   }
 
   loadJournal(): readonly unknown[] {
-    const path = join(this.dir, JOURNAL_FILE);
-    if (!existsSync(path)) {
-      return [];
-    }
-    return JSON.parse(readFileSync(path, "utf8")) as unknown[];
+    return readJournalFile(this.dir);
   }
 
   /**
@@ -120,12 +166,14 @@ export class FileControlPlaneStore {
   load(): void {
     const path = join(this.dir, SNAPSHOT_FILE);
     if (!existsSync(path)) {
+      this.applyFleetJournalIfNeeded();
       return;
     }
     try {
       const raw = JSON.parse(readFileSync(path, "utf8"));
       const snapshot = hydrateSnapshot(raw);
       this.memory.restoreSnapshot(snapshot);
+      this.applyFleetJournalIfNeeded();
     } catch (error) {
       const quarantine = join(this.dir, `${SNAPSHOT_FILE}.corrupt.${String(Date.now())}`);
       try {
@@ -140,6 +188,21 @@ export class FileControlPlaneStore {
           }`,
         { cause: error },
       );
+    }
+  }
+
+  private applyFleetJournalIfNeeded(): void {
+    if (this.memory.getFleetBindings().size > 0) {
+      return;
+    }
+    let last: FleetBindingsJournalEntry | undefined;
+    for (const entry of readJournalFile(this.dir)) {
+      if (isFleetBindingsJournalEntry(entry)) {
+        last = entry;
+      }
+    }
+    if (last !== undefined) {
+      this.memory.replaceFleetBindings(last.bindings);
     }
   }
 

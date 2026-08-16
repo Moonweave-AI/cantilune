@@ -40,14 +40,21 @@ import {
 } from "@cantilune/core";
 import {
   bootSwarm,
+  loadMeshHostDirectory,
+  saveMeshHostDirectory,
+  createMemoryMeshHostDirectory,
   type CantiluneSwarm,
   type ClusterEvent,
   type ClusterResult,
   type LlmAdapterFactory,
   type LlmAdapter,
+  type SchedulerSnapshot,
+  type MeshHostDirectory,
+  type MeshHostEntry,
 } from "@cantilune/boot";
 import { createDefaultConditionRegistry } from "@cantilune/runtime";
 import type { SyscallRuntime, ProposeResult } from "@cantilune/syscall";
+import type { CliConfig } from "../config.js";
 
 /** A captured swarm lifecycle event for the view (mirrors ClusterEventRecord). */
 export interface SwarmEventRecord {
@@ -63,6 +70,11 @@ export interface SwarmControllerStatus {
   readonly running: boolean;
   readonly agents: ReadonlyMap<string, { readonly status: string; readonly heartbeat: unknown }>;
   readonly events: readonly SwarmEventRecord[];
+  /**
+   * Queue, concurrency, and budget state behind dispatch decisions. Absent
+   * before the first `/swarm start`, when there is no scheduler to project.
+   */
+  readonly scheduler?: SchedulerSnapshot;
 }
 
 export interface ActivateResult {
@@ -85,6 +97,10 @@ export interface SwarmController {
   waitForCompletion(): Promise<ClusterResult>;
   /** Stop the supervisor + release the per-agent CantilunOS pool. */
   shutdown(): Promise<void>;
+  /** List mesh host directory entries (ADR-0019 S4). */
+  listHosts(): readonly MeshHostEntry[];
+  /** Publish this process listen address into the mesh directory. */
+  joinMesh(listen: string): ActivateResult;
 }
 
 interface SwarmBackends {
@@ -106,6 +122,23 @@ function recordEvent(events: SwarmEventRecord[], event: ClusterEvent): void {
   };
   events.push(record);
   if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
+}
+
+function parseListen(listen: string): { host: string; port: number } | undefined {
+  const trimmed = listen.trim();
+  const idx = trimmed.lastIndexOf(":");
+  if (idx <= 0) return undefined;
+  const host = trimmed.slice(0, idx);
+  const port = Number(trimmed.slice(idx + 1));
+  if (!Number.isInteger(port) || port <= 0 || port > 65535 || host.length === 0) {
+    return undefined;
+  }
+  return { host, port };
+}
+
+function resolveMeshDirectory(cliConfig: CliConfig | undefined): MeshHostDirectory | undefined {
+  if (cliConfig?.swarmDirectoryPath === undefined) return undefined;
+  return loadMeshHostDirectory(cliConfig.swarmDirectoryPath);
 }
 
 /**
@@ -187,16 +220,23 @@ async function commitActivateParticipant(
 export function createSwarmController(
   backends: () => SwarmBackends,
   llmFactory: () => LlmAdapter,
+  cliConfig?: CliConfig,
 ): SwarmController {
   let swarm: CantiluneSwarm | undefined;
   const events: SwarmEventRecord[] = [];
+  let meshDirectory = resolveMeshDirectory(cliConfig);
 
   function projectStatus(): SwarmControllerStatus {
     if (swarm === undefined) {
       return { running: false, agents: new Map(), events: [...events] };
     }
     const live = swarm.status();
-    return { running: live.running, agents: live.agents, events: [...events] };
+    return {
+      running: live.running,
+      agents: live.agents,
+      events: [...events],
+      scheduler: live.scheduler,
+    };
   }
 
   return {
@@ -224,6 +264,8 @@ export function createSwarmController(
         feedDrainIntervalMs: 500,
         heartbeatCheckIntervalMs: 15_000,
         eventListener: (event) => recordEvent(events, event),
+        ...(meshDirectory !== undefined ? { meshHostDirectory: meshDirectory } : {}),
+        ...(cliConfig?.swarmRole !== undefined ? { swarmRole: cliConfig.swarmRole } : {}),
       });
       swarm.start();
       return { ok: true };
@@ -255,6 +297,8 @@ export function createSwarmController(
           agentResults: new Map(),
           totalElapsedMs: 0,
           totalTurns: 0,
+          reason: "stopped",
+          diagnostic: "No swarm is running; start one with `/swarm start`.",
         };
       }
       return swarm.waitForCompletion();
@@ -264,6 +308,46 @@ export function createSwarmController(
       if (swarm === undefined) return;
       await swarm.shutdown();
       swarm = undefined;
+    },
+
+    listHosts(): readonly MeshHostEntry[] {
+      meshDirectory ??= resolveMeshDirectory(cliConfig) ?? createMemoryMeshHostDirectory();
+      return meshDirectory.list();
+    },
+
+    joinMesh(listen: string): ActivateResult {
+      const parsed = parseListen(listen);
+      if (parsed === undefined) {
+        return { ok: false, message: "usage: /swarm join <host:port>" };
+      }
+      if (cliConfig?.swarmDirectoryPath === undefined) {
+        return {
+          ok: false,
+          message: "swarmDirectoryPath not configured — set it in CLI config before joining",
+        };
+      }
+      meshDirectory ??= loadMeshHostDirectory(cliConfig.swarmDirectoryPath);
+      const actorId = (cliConfig.principalId ?? "cli-local") as ActorId;
+      // Fingerprint is required to publish; operator must supply via Net listen
+      // material. Placeholder pin is rejected — require swarmListen fingerprint
+      // from a prior directoryNetMesh publish or explicit env.
+      const fingerprint = process.env.CANTILUNE_MESH_FINGERPRINT?.trim() ?? "";
+      if (fingerprint.length === 0) {
+        return {
+          ok: false,
+          message:
+            "CANTILUNE_MESH_FINGERPRINT required to publish (deny-by-default empty fingerprint)",
+        };
+      }
+      meshDirectory.publish({
+        actorId,
+        host: parsed.host,
+        port: parsed.port,
+        fingerprint,
+        role: cliConfig.swarmRole ?? "worker",
+      });
+      saveMeshHostDirectory(cliConfig.swarmDirectoryPath, meshDirectory);
+      return { ok: true, message: `published ${actorId as string} at ${listen}` };
     },
   };
 }

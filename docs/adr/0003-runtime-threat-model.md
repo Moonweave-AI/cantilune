@@ -2,17 +2,18 @@
 
 | Field          | Value                                                                                                                               |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | **Accepted** (engineering prototype scope)                                                                                          |
+| Status         | **Accepted** (0.x engineering; Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed)                           |
 | Date           | 2026-08-10                                                                                                                          |
+| Revised        | 2026-08-16 — Postgres HA (ADR-0023) and official etcd Raft (ADR-0029); file remains single-host default                             |
 | Decision Owner | Joker-of-Gotham (DRI)                                                                                                               |
-| Reviewers      | Joker-of-Gotham (DRI，兼任 Security + Architecture second reader；COI 见 `reviewer-assignments.md`)；FCP 前外部 Security 招募仍开放 |
-| Related        | RFC-0001 §9, ADR-0002, `@cantilune/runtime`, `diagrams/02-runtime/`                                                                 |
+| Reviewers      | Joker-of-Gotham (DRI，兼任 Security + Architecture second reader；COI 见 `reviewer-assignments.md`)                                 |
+| Related        | RFC-0001 §9, ADR-0002, ADR-0023, ADR-0029, `@cantilune/runtime`, `diagrams/02-runtime/`                                              |
 
 ## Context
 
 RFC-0001 §9 requires a Threat Model before runtime/comms/network implementation. A 2026-08-10 code review found `@cantilune/runtime` could not serve as a trusted permission boundary: forged admission tickets, TOCTOU on bindings, non-atomic commit, shallow replay verification, and observation rewrite of historical snapshot refs.
 
-This ADR records the **runtime-local threat model** and permission matrix for M2 engineering prototype scope. Comms/A2A/network facets remain out of scope until ADR follow-up.
+This ADR records the **runtime-local threat model** and permission matrix. Comms/A2A/network facets are covered by ADR-0008 / ADR-0018 / ADR-0027. Cantilune does not implement Raft: multi-host durable consumes operator **Postgres HA** (ADR-0023) or official **etcd** (ADR-0029). `CANTILUNE_HOST_MODE=multi` without either fail-closes.
 
 ## Threat actors and assets
 
@@ -32,7 +33,8 @@ PolicyEvaluator (default deny; templateAware for M2) ◄┘
                                                       │
 Internal registry (AdmittedRecord) ◄── ticket resolves ──► Committer ──► DurableCoordinator
 ObserveInput ──► principal must match source ──► ingestObservation ──► head CAS
-FileResourceLockTable ──► cross-process footprint exclusion (same dir as bundle)
+FileResourceLockTable ──► same-host footprint exclusion (file durable)
+RaftResourceLockTable ──► multi-host footprint exclusion (etcd CAS)
 ```
 
 | Boundary                 | Rule                                                                                                         |
@@ -43,7 +45,7 @@ FileResourceLockTable ──► cross-process footprint exclusion (same dir as b
 | Footprint                | Derived only from normalized `matchBindings`; never widens topology via isolation scope                      |
 | Apply                    | Handlers are pure over `(before, recipe)`; fresh entity refs pre-allocated in recipe                         |
 | Persist                  | Single `DurableCoordinator.commit(expectedHead, …)` CAS; observation allocates new `snapshotRef`             |
-| Cross-process lock       | `FileResourceLockTable` shares lock file dir with bundle; disjoint footprints only                           |
+| Cross-process lock       | File durable: `FileResourceLockTable`. etcd: `RaftResourceLockTable` (cluster CAS)                           |
 
 ## Permission matrix (M2)
 
@@ -71,7 +73,7 @@ Default when `policy` omitted: **`denyByDefaultPolicyEvaluator()`**. M2 wiring S
 | Ticket ID collision     | Monotonic admitted-id sequence per gateway instance                            |
 | Observe source spoof    | `validateObservePrincipal`; principal required on `runtime.observe`            |
 | Non-controller transfer | `session.controller_matches` at admission schema                               |
-| Cross-process lock gap  | `FileResourceLockTable` + `createFileRuntimePersistence().locks`               |
+| Cross-process lock      | `FileResourceLockTable` (file) / `RaftResourceLockTable` (etcd)                |
 | Shallow snapshot codec  | Strict `parseSnapshotWire` entity validation                                   |
 | Default policy gap      | Optional policy → deny-by-default; export `templateAwarePolicyEvaluator`       |
 
@@ -79,7 +81,7 @@ Default when `policy` omitted: **`denyByDefaultPolicyEvaluator()`**. M2 wiring S
 
 | Risk                                | Status          | Notes                                                                        |
 | ----------------------------------- | --------------- | ---------------------------------------------------------------------------- |
-| Async/multi-process storage + locks | **Closed (M2)** | `FileDurableCoordinator` + `FileResourceLockTable` + L7 cross-process/worker |
+| Async/multi-process storage + locks | **Closed**      | file / Postgres HA / official etcd Raft (ADR-0023 / ADR-0029)                |
 | Template/handler revision replay    | Closed          | Versioned registry + tests                                                   |
 | Codec strict validation             | Closed          | `parseChangeWire` + `parseSnapshotWire`                                      |
 | Pack consumer smoke                 | Closed          | CI `test:pack`                                                               |
@@ -106,7 +108,7 @@ Default when `policy` omitted: **`denyByDefaultPolicyEvaluator()`**. M2 wiring S
 
 **Negative**
 
-- Memory durable suitable for single-process; **file durable** for cross-process CAS (not distributed DB)
+- Memory durable suitable for single-process; **file durable** for single-host CAS; **Postgres HA** for multi-replica head (operator provides the database, ADR-0023)
 - Threat model does not cover A2A/comms (future ADR)
 - Production boundary still requires reviewer Accept of this ADR; external security sign-off required pre-FCP
 
@@ -135,4 +137,6 @@ Default when `policy` omitted: **`denyByDefaultPolicyEvaluator()`**. M2 wiring S
 - [x] Observe principal validation; transfer_session controller at admission
 - [x] Strict snapshot wire validation; default deny + templateAware policy export
 - [x] ADR-0003 reviewer Accept (2026-08-10, Joker-of-Gotham)
-- [ ] External Security reviewer sign-off pre-FCP (recruitment open)
+- [x] Postgres HA durable coordinator + host probe (ADR-0023, 2026-08-16)
+- [x] Independent Architecture + Security for 0.x: Joker-of-Gotham (COI disclosed, 2026-08-15)
+- [ ] External Security reviewer sign-off pre-FCP (recruitment open; not this 0.x engineering release)

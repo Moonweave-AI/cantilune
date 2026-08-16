@@ -704,13 +704,11 @@ describe("runAgentLoop branch coverage", () => {
       },
       contract: () => undefined,
     };
-    const result = await runAgentLoop(
-      syscall,
-      llm,
-      "test",
-      failingController as never,
-      { maxTurns: 100, maxTimeMs: 600_000, maxContextMessages: 40 },
-    );
+    const result = await runAgentLoop(syscall, llm, "test", failingController as never, {
+      maxTurns: 100,
+      maxTimeMs: 600_000,
+      maxContextMessages: 40,
+    });
     // The loop reached DONE via the fallback contract — compilation failure did
     // not abort the run.
     expect(result.ok).toBe(true);
@@ -743,17 +741,14 @@ describe("runAgentLoop branch coverage", () => {
       },
       contract: () => undefined,
     };
-    const result = await runAgentLoop(
-      syscall,
-      llm,
-      "test",
-      throwingController as never,
-      { maxTurns: 100, maxTimeMs: 600_000, maxContextMessages: 40 },
-    );
+    const result = await runAgentLoop(syscall, llm, "test", throwingController as never, {
+      maxTurns: 100,
+      maxTimeMs: 600_000,
+      maxContextMessages: 40,
+    });
     expect(result.ok).toBe(false);
     expect(result.terminationReason).toBe("error");
   });
-
 
   it("handles max_time termination", async () => {
     const runtime = createMockRuntime();
@@ -784,5 +779,72 @@ describe("runAgentLoop branch coverage", () => {
     });
     expect(result.ok).toBe(false);
     expect(result.terminationReason).toBe("max_time");
+  });
+
+  it("invokes onBeforeTurn before availableActions", async () => {
+    const order: string[] = [];
+    const runtime = createMockRuntime();
+    const store = createMemoryContentStore();
+    const provider = createStaticSchemaProvider([]);
+    const original = createSyscall({
+      runtime,
+      contentStore: store,
+      principal: { actorId: "t", kind: "agent" },
+      schemaProvider: provider,
+    });
+    const syscall: Syscall = {
+      ...original,
+      availableActions: async () => {
+        order.push("availableActions");
+        return original.availableActions();
+      },
+    };
+    const llm: LlmAdapter = {
+      async chat(): Promise<LlmChatResponse> {
+        return {
+          text: undefined,
+          toolCalls: [{ id: "tc-1", name: "done", arguments: { summary: "ok" } }],
+          finishReason: "tool_calls",
+        };
+      },
+    };
+    const result = await runAgentLoop(syscall, llm, "test", createTerminationController({}), {
+      maxTurns: 10,
+      maxTimeMs: 600_000,
+      maxContextMessages: 40,
+      onBeforeTurn: (turn) => {
+        order.push(`before:${turn}`);
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(order[0]).toBe("before:1");
+    expect(order).toContain("availableActions");
+    expect(order.indexOf("before:1")).toBeLessThan(order.indexOf("availableActions"));
+  });
+
+  it("fail-closes the turn when onBeforeTurn throws", async () => {
+    const runtime = createMockRuntime();
+    const store = createMemoryContentStore();
+    const syscall = createSyscall({
+      runtime,
+      contentStore: store,
+      principal: { actorId: "t", kind: "agent" },
+      schemaProvider: createStaticSchemaProvider([]),
+    });
+    const llm: LlmAdapter = {
+      async chat(): Promise<LlmChatResponse> {
+        return { text: "should not run", toolCalls: [], finishReason: "stop" };
+      },
+    };
+    const result = await runAgentLoop(syscall, llm, "test", createTerminationController({}), {
+      maxTurns: 10,
+      maxTimeMs: 600_000,
+      maxContextMessages: 40,
+      onBeforeTurn: () => {
+        throw new Error("pending attach failed");
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.error?.message).toContain("pending attach failed");
   });
 });

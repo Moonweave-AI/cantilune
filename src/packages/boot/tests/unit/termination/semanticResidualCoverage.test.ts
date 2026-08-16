@@ -8,7 +8,10 @@
  * text coalescing. Each is a real production fallback, not a decorative guard.
  */
 import { describe, it, expect } from "vitest";
-import { computeResidual, coverageFromResidual } from "../../../src/termination/semanticResidual.js";
+import {
+  computeResidual,
+  coverageFromResidual,
+} from "../../../src/termination/semanticResidual.js";
 import type { AgentState, GoalContract, EmbeddingAdapter } from "../../../src/termination/types.js";
 
 function makeState(overrides: Partial<AgentState> = {}): AgentState {
@@ -48,7 +51,14 @@ function contractWith(criteria: GoalContract["criteria"]): GoalContract {
 }
 
 function criterion(id: string, description: string): GoalContract["criteria"][number] {
-  return { id, description, kind: "soft", weight: 0.5, threshold: 0.5, verifierId: "structured_rubric" };
+  return {
+    id,
+    description,
+    kind: "soft",
+    weight: 0.5,
+    threshold: 0.5,
+    verifierId: "structured_rubric",
+  };
 }
 
 describe("computeResidual — Jaccard fallback path", () => {
@@ -116,9 +126,7 @@ describe("computeResidual — Jaccard fallback path", () => {
     ]);
     const state = makeState({
       evidence: {
-        items: [
-          { ref: "ev1", tier: "artifact", rho: 1, summary: "alpha beta gamma delta" },
-        ],
+        items: [{ ref: "ev1", tier: "artifact", rho: 1, summary: "alpha beta gamma delta" }],
       },
     });
     const result = await computeResidual(contract, state, undefined);
@@ -178,7 +186,9 @@ describe("computeResidual — embedding path", () => {
     // similarity (cost 1, full residual) for that goal.
     const contract = contractWith([criterion("g1", "   ")]);
     const state = makeState({
-      evidence: { items: [{ ref: "ev1", tier: "artifact", rho: 1, summary: "real evidence text" }] },
+      evidence: {
+        items: [{ ref: "ev1", tier: "artifact", rho: 1, summary: "real evidence text" }],
+      },
     });
     const result = await computeResidual(contract, state, undefined);
     expect(result.residual[0]).toBe(1);

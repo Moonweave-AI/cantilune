@@ -121,6 +121,8 @@ export interface ToolCall {
   readonly callId: string;
   readonly toolName: string;
   readonly args: Record<string, unknown>;
+  /** Cooperative cancel for the in-flight executor (ADR-0012/0016). */
+  readonly signal?: AbortSignal;
 }
 
 /** Durable identity of an external-tool output whose audit observation is pending. */
@@ -181,6 +183,7 @@ export interface ToolExecutor {
   execute(
     toolName: string,
     args: Record<string, unknown>,
+    options?: { readonly signal?: AbortSignal },
   ): Promise<{ ok: boolean; output: string }>;
   listTools(): Promise<ToolSchema[]>;
   /**
@@ -235,8 +238,46 @@ export interface ToolInvocationKey {
 
 /** Result of an idempotent executor's outcome query (ADR-0016). */
 export type ToolReconcileResult =
-  | { readonly status: "known"; readonly output: string }
-  | { readonly status: "unknown" };
+  { readonly status: "known"; readonly output: string } | { readonly status: "unknown" };
+
+/** One external-tool invocation presented to a human for authorization. */
+export interface ToolApprovalRequest {
+  readonly toolName: string;
+  /** Canonicalized arguments, so the human sees exactly what will be dispatched. */
+  readonly args: Record<string, unknown>;
+  readonly tier: ToolExecutionTier;
+  readonly key: ToolInvocationKey;
+}
+
+export type ToolApprovalDecision =
+  { readonly allowed: true } | { readonly allowed: false; readonly reason: string };
+
+/**
+ * Human authorization gate for external-tool dispatch.
+ *
+ * The gate is consulted only for a **fresh** invocation, before the
+ * pre-invocation journal entry is written. A recovery path (a `dispatched`
+ * entry already exists) never re-asks: the side effect may already have landed,
+ * so a denial there would be a decision about the past, not the future, and the
+ * ADR-0016 tier rules already govern that case.
+ *
+ * When no approver is configured every tool dispatches, which preserves the
+ * behaviour of every existing embedding.
+ */
+export interface ToolApprover {
+  requestApproval(request: ToolApprovalRequest): Promise<ToolApprovalDecision>;
+  /**
+   * Tiers that require authorization. Omitted means the fail-safe set: both
+   * side-effecting tiers ask, and `read` never does.
+   */
+  readonly requiresApprovalFor?: readonly ToolExecutionTier[];
+}
+
+/** Tiers that ask for authorization when an approver declares no preference. */
+export const DEFAULT_APPROVAL_TIERS: readonly ToolExecutionTier[] = [
+  "idempotent",
+  "non-idempotent",
+];
 
 export interface ToolSchema {
   readonly name: string;
@@ -294,6 +335,12 @@ export interface SyscallDependencies {
   readonly principal: SyscallPrincipal;
   readonly schemaProvider: OperationSchemaProvider;
   readonly toolExecutor?: ToolExecutor;
+  /**
+   * Human authorization gate for side-effecting tools. Absent means every tool
+   * dispatches unattended, which is the behaviour of every embedding written
+   * before this port existed.
+   */
+  readonly toolApprover?: ToolApprover;
 }
 
 /**

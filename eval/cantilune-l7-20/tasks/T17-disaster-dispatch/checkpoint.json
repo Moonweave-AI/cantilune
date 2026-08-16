@@ -1,0 +1,21 @@
+{
+  "taskId": "T17",
+  "failClosed": true,
+  "minPeers": 4,
+  "minTurns": 12,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "data/city-grid.json",
+    "artifacts/hazards.md",
+    "artifacts/medical.md",
+    "artifacts/green-corridors.md",
+    "artifacts/uav.md",
+    "artifacts/supply-retarget.md",
+    "artifacts/broadcasts.md",
+    "artifacts/tick-log.md"
+  ],
+  "requiredGlobs": []
+}

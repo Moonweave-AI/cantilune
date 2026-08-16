@@ -69,6 +69,23 @@ export interface PrefetchedSchemaData {
     readonly addedOperationTypeIds?: readonly string[];
     readonly message?: string;
   };
+  readonly operations?: readonly SchemaOperationRow[];
+  readonly admitResult?: { readonly ok: boolean; readonly message: string };
+  readonly commitResult?: { readonly ok: boolean; readonly message: string };
+  readonly rollout?: {
+    readonly acknowledged: number;
+    readonly pending: number;
+    readonly drift: number;
+    readonly failed: number;
+  };
+  readonly ephemeral?: boolean;
+}
+
+export interface SchemaOperationRow {
+  readonly id: string;
+  readonly roles: readonly string[];
+  readonly visibility: string;
+  readonly mayCreateSessions: boolean;
 }
 
 export function schemaDataFromRuntime(runtime: RuntimeState): {
@@ -83,8 +100,8 @@ export function schemaDataFromRuntime(runtime: RuntimeState): {
   const operations = [...new Set(runtime.changeLog.map((entry) => entry.operationTypeId))].map(
     (op) => ({
       id: op,
-      kind: "mutation",
-      footprint: "derived",
+      kind: "unknown",
+      footprint: "unavailable-without-control-plane",
     }),
   );
 
@@ -160,7 +177,18 @@ export function renderSchemaViewOutput(
 
   switch (activeView) {
     case "schema-ops":
-      return schemaOpsTable(ops);
+      return schemaOpsTable(prefetched.operations ?? ops.map((id) => ({
+        id,
+        roles: [],
+        visibility: "unknown",
+        mayCreateSessions: false,
+      })));
+    case "schema-admit":
+      return prefetched.admitResult?.message ?? "No admission submitted.";
+    case "schema-commit":
+      return prefetched.commitResult?.message ?? "No commit attempted.";
+    case "schema-rollout":
+      return schemaRolloutOutput(prefetched);
     case "schema-epoch":
       return schemaEpochTable(binding, ops, objectTypes);
     case "schema-epoch-history":
@@ -182,15 +210,40 @@ export function renderSchemaViewOutput(
   }
 }
 
-/** /schema ops: declared operation-template table. */
-function schemaOpsTable(ops: readonly string[]): string {
+/** /schema ops: real OperationTypeDeclaration roles / visibility / session flag. */
+function schemaOpsTable(ops: readonly SchemaOperationRow[]): string {
   return renderTable(
     [
-      { header: "Operation", width: 28 },
-      { header: "Kind", width: 12 },
-      { header: "Footprint", width: 18 },
+      { header: "Operation", width: 22 },
+      { header: "Roles", width: 22 },
+      { header: "Visibility", width: 12 },
+      { header: "Sessions", width: 10 },
     ],
-    ops.map((o) => [o, "mutation", "declared"]),
+    ops.map((op) => [
+      op.id,
+      op.roles.join(",") || "—",
+      op.visibility,
+      op.mayCreateSessions ? "yes" : "no",
+    ]),
+  );
+}
+
+function schemaRolloutOutput(prefetched: PrefetchedSchemaData): string {
+  const report = prefetched.rollout;
+  if (report === undefined) {
+    return "No fleet journal (ephemeral control plane or empty bindings).";
+  }
+  return renderTable(
+    [
+      { header: "Status", width: 16 },
+      { header: "Count", width: 8 },
+    ],
+    [
+      ["acknowledged", String(report.acknowledged)],
+      ["pending", String(report.pending)],
+      ["drift", String(report.drift)],
+      ["failed", String(report.failed)],
+    ],
   );
 }
 
@@ -399,6 +452,9 @@ export function SchemaView({ store }: ViewProps): React.ReactElement {
     "schema-ops": "Operation Templates",
     "schema-epoch": "Current Epoch",
     "schema-epoch-history": "Epoch History",
+    "schema-admit": "Schema Admit",
+    "schema-commit": "Schema Commit",
+    "schema-rollout": "Schema Rollout",
   };
 
   return (

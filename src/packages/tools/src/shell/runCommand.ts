@@ -1,6 +1,11 @@
 import { spawn } from "node:child_process";
 import type { ShellConfig } from "../types.js";
-import { DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_SHELL_TIMEOUT_MS } from "../types.js";
+import {
+  DEFAULT_MAX_OUTPUT_SIZE,
+  DEFAULT_SANDBOX_MODE,
+  DEFAULT_SHELL_TIMEOUT_MS,
+} from "../types.js";
+import { createOsSandbox, type OsSandbox } from "../sandbox/osSandbox.js";
 import { checkCommand } from "./commandSandbox.js";
 
 export interface RunCommandArgs {
@@ -8,6 +13,7 @@ export interface RunCommandArgs {
   readonly cwd?: string;
   readonly env?: Record<string, string>;
   readonly timeoutMs?: number;
+  readonly signal?: AbortSignal;
 }
 
 export async function runCommand(
@@ -20,11 +26,53 @@ export async function runCommand(
     throw new Error(check.reason ?? "Command not allowed");
   }
 
+  const sandboxMode = config.sandbox ?? DEFAULT_SANDBOX_MODE;
+  if (sandboxMode !== "off") {
+    const sandbox = config.osSandbox ?? createOsSandbox();
+    return runSandboxed(args, config, defaultCwd, sandbox);
+  }
+
+  return runOnHost(args, config, defaultCwd);
+}
+
+async function runSandboxed(
+  args: RunCommandArgs,
+  config: ShellConfig,
+  defaultCwd: string,
+  sandbox: OsSandbox,
+): Promise<string> {
+  if (args.signal?.aborted === true) {
+    throw new Error("skipped: aborted before shell dispatch");
+  }
+  const timeoutMs = args.timeoutMs ?? config.timeoutMs ?? DEFAULT_SHELL_TIMEOUT_MS;
+  const cwd = args.cwd ?? defaultCwd;
+  const inContainer =
+    sandbox.platform === "win32"
+      ? { command: "cmd.exe", args: ["/c", args.command] }
+      : { command: "sh", args: ["-c", args.command] };
+  const result = await sandbox.run(inContainer.command, inContainer.args, {
+    cwd,
+    timeoutMs,
+    ...(args.env !== undefined ? { env: args.env } : {}),
+    ...(args.signal !== undefined ? { signal: args.signal } : {}),
+  });
+  const output = formatOutput(result.stdout, result.stderr, result.exitCode);
+  if (result.exitCode !== 0) {
+    throw new Error(output);
+  }
+  return output;
+}
+
+function runOnHost(args: RunCommandArgs, config: ShellConfig, defaultCwd: string): Promise<string> {
   const timeoutMs = args.timeoutMs ?? config.timeoutMs ?? DEFAULT_SHELL_TIMEOUT_MS;
   const maxOutputSize = config.maxOutputSize ?? DEFAULT_MAX_OUTPUT_SIZE;
   const cwd = args.cwd ?? defaultCwd;
 
   return new Promise((resolve, reject) => {
+    if (args.signal?.aborted === true) {
+      reject(new Error("skipped: aborted before shell dispatch"));
+      return;
+    }
     const child = spawn(args.command, {
       cwd,
       env: args.env ? { ...process.env, ...args.env } : process.env,
@@ -35,6 +83,13 @@ export async function runCommand(
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let aborted = false;
+
+    const onAbort = (): void => {
+      aborted = true;
+      child.kill("SIGTERM");
+    };
+    args.signal?.addEventListener("abort", onAbort, { once: true });
 
     const timer = setTimeout(() => {
       timedOut = true;
@@ -51,11 +106,17 @@ export async function runCommand(
 
     child.on("error", (error) => {
       clearTimeout(timer);
+      args.signal?.removeEventListener("abort", onAbort);
       reject(error);
     });
 
     child.on("close", (code) => {
       clearTimeout(timer);
+      args.signal?.removeEventListener("abort", onAbort);
+      if (aborted) {
+        reject(new Error("skipped: shell aborted"));
+        return;
+      }
       if (timedOut) {
         reject(new Error(`Command timed out after ${timeoutMs}ms`));
         return;

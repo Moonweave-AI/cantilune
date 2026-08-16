@@ -19,11 +19,11 @@ import type {
   ReviewedDecision,
   SignedHumanReviewAttestation,
 } from "@cantilune/conformance/admission";
+import { createMemoryCryptoVerifier } from "@cantilune/conformance/admission";
 import {
+  buildReviewedEngineeringAdmissionForTest,
   defaultTestReviewerTrustStore,
-  createMemoryCryptoVerifier,
-} from "@cantilune/conformance/admission";
-import { buildReviewedEngineeringAdmissionForTest } from "@cantilune/conformance/testing";
+} from "@cantilune/conformance/testing";
 import {
   AdmissionRegistry,
   createActiveSchemaContext,
@@ -36,6 +36,10 @@ import {
 import { createMemoryRuntimePersistence, MemoryResourceLockTable } from "@cantilune/runtime/memory";
 import { createDeterministicIdGenerator } from "./deterministicIds.js";
 import { MemoryControlPlaneStore } from "../../src/memory/memoryControlPlaneStore.js";
+import {
+  createFileControlPlaneStore,
+  type FileControlPlaneStore,
+} from "../../src/file/fileControlPlaneStore.js";
 import {
   bootstrapDefaultControlPlane,
   createFullControlPlaneService,
@@ -124,9 +128,10 @@ export function buildReviewedAdmissionDecision(
   return reviewed.value;
 }
 
-export function buildAdmissionHarness(): {
+export function buildAdmissionHarness(options?: { readonly persistDir?: string }): {
   readonly service: FullControlPlaneService;
   readonly store: MemoryControlPlaneStore;
+  readonly fileStore: FileControlPlaneStore | undefined;
   readonly genesisBinding: SchemaEpochBinding;
   readonly genesisRevision: SchemaRevision;
   readonly schemaHolder: ReturnType<typeof createMutableSchemaContextHolder>;
@@ -149,6 +154,10 @@ export function buildAdmissionHarness(): {
 } {
   const store = new MemoryControlPlaneStore();
   const { genesisBinding, genesisRevision } = bootstrapDefaultControlPlane(store);
+  const fileStore =
+    options?.persistDir !== undefined
+      ? createFileControlPlaneStore(options.persistDir, store)
+      : undefined;
   const revisions = new Map<string, SchemaRevision>();
   revisions.set(
     `${genesisRevision.schemaRef.schemaId}@${genesisRevision.schemaRef.revisionId}`,
@@ -190,6 +199,7 @@ export function buildAdmissionHarness(): {
     epochAdmin,
     conformance: createConformanceEvidenceVerifier(),
     outbox: createControlPlaneOutbox(),
+    ...(fileStore !== undefined ? { fileStore } : {}),
     sealedAdmissionGate: {
       trustStore: defaultTestReviewerTrustStore(),
       crypto: createMemoryCryptoVerifier(),
@@ -269,6 +279,7 @@ export function buildAdmissionHarness(): {
   return {
     service,
     store,
+    fileStore,
     genesisBinding,
     genesisRevision,
     schemaHolder,

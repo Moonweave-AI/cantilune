@@ -6,13 +6,19 @@ and explanatory material. Start here instead of reading files by date.
 ## Current status
 
 - The generic Core Theory and one substantive reference execution are
-  **proved / independent-review-pending** at the source and evidence commits
+  **proved / Owner-accepted** at the source and evidence commits
   recorded in the [delivery record](THEORY-CLOSURE-DELIVERY-2026-07-27.md).
-- RFC-0002 is still **Draft / pre-FCP** and ADR-0001 is still **Proposed**.
-  Kernel evidence does not grant governance acceptance.
-- The eight planned production packages remain separate Product Conformance
-  work. No core theorem manufactures package rules, permissions, runtime
-  facts, or probability assumptions.
+  Owner signed governance formal review with COI on 2026-08-16; the Lean
+  promotion form was not run. Obligation rows stay `proved`.
+- RFC-0001–0004 are **FCP open** (2026-08-16 → 2026-08-30; not Accepted).
+  ADR-0001 is **Accepted** (Owner COI 2026-08-16). Kernel evidence does not
+  grant RFC Accepted or Lean `reviewed`. `@cantilune/conformance` is 0.x
+  production release authority (SS-01 lifted). No second reviewer.
+- The production packages under `src/packages/` are implemented and gated by the
+  repository's coverage floor, but their per-rule Product Conformance
+  certificates remain separate work. QA-L5 is Owner-signed with COI
+  (independence waived). No core theorem manufactures
+  package rules, permissions, runtime facts, or probability assumptions.
 
 For a Chinese project overview, see [README.zh-CN.md](README.zh-CN.md).
 
@@ -55,10 +61,12 @@ changes.
 | ------------- | -------------------------------------------------------- |
 | `adr/`        | Architecture decisions and their Chinese translations    |
 | `governance/` | Reviewer ownership and conflict-of-interest records      |
+| `plans/`      | Implementation plans and their execution records         |
 | `primer/`     | Non-normative introductions                              |
 | `qa/`         | Current review packet and immutable evidence             |
 | `research/`   | Source audits, no-go boundaries, and final proof records |
 | `rfc/`        | Architecture and formal-consistency proposals            |
+| `runbooks/`   | Operational recovery and rotation procedures             |
 | `spec/`       | Normative semantics and package-facing interfaces        |
 
 ## Maintenance rules

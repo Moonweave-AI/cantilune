@@ -77,6 +77,10 @@ export interface JudgeConfig {
   readonly masked: boolean;
   readonly randomizedOrder: boolean;
   readonly seed: number | undefined;
+  /** D6 isolation — any true value is rejected by isolated judge ports. */
+  readonly toolsEnabled?: boolean;
+  readonly networkEnabled?: boolean;
+  readonly secretsPresent?: boolean;
 }
 
 export interface JudgeOutput {

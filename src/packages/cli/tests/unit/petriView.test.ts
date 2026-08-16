@@ -78,7 +78,8 @@ describe("PetriView", () => {
       sampleRuntime,
     );
     expect(output).toContain("(none)");
-    expect(output).toContain("pending");
+    expect(output).toContain("T-invariant");
+    expect(output).not.toContain("pending");
   });
 
   it("renders the no-data fallback for petri-invariants when petriData is null", () => {

@@ -18,7 +18,6 @@ export default defineConfig({
       include: ["src/**/*.ts"],
       exclude: [
         "src/testing/**",
-        "src/adapters/lean/leanAttestationFixture.ts",
         "src/evidence/evidenceFamilies.ts",
         "src/evidence/fourViewEvidence.ts",
         "src/subject/admissionSubject.ts",
@@ -32,7 +31,6 @@ export default defineConfig({
         "src/adapters/runtime/**",
         "src/adapters/file/**",
         "src/ports/**",
-        "src/adapters/memory/testReviewerTrustStore.ts",
         "src/**/index.ts",
       ],
       thresholds: {

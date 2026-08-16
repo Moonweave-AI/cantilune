@@ -6,6 +6,11 @@ import { useAppStore } from "../storeContext.js";
 import { renderGraph } from "../render/asciiGraph.js";
 import { renderTable } from "../render/asciiTable.js";
 import { renderTimeline } from "../render/asciiTimeline.js";
+import {
+  readObserveError,
+  readObserveProjection,
+  type CliObserveProjection,
+} from "../wiring/observeControl.js";
 import { ReportView } from "./ReportView.js";
 import { ViewFrame, type ViewTone } from "./ViewFrame.js";
 
@@ -16,51 +21,26 @@ export interface ViewProps {
   readonly store: AppStore;
 }
 
-function observeDataFromRuntime(runtime: RuntimeState): {
-  summary: readonly { lens: string; nodes: number; edges: number }[];
-  resources: readonly { resource: string; actor: string; mode: string }[];
-} | null {
-  if (runtime.snapshot === null) {
-    return null;
+export function renderObserveViewOutput(
+  activeView: ViewType,
+  viewArgs: Record<string, unknown>,
+  _runtime?: RuntimeState,
+): string {
+  const error = readObserveError(viewArgs);
+  if (error !== undefined) {
+    return `Observe failed (fail-closed): ${error}`;
   }
-
-  const snapshot = runtime.snapshot;
-  const dependencyNodes = snapshot.artifacts.length;
-  const dependencyEdges = snapshot.links.length;
-  const resourceNodes = snapshot.capabilities.length;
-  const communicationNodes = snapshot.participants.length;
-  const structureNodes =
-    snapshot.participants.length + snapshot.artifacts.length + snapshot.links.length;
-
-  return {
-    summary: [
-      { lens: "dependency", nodes: dependencyNodes, edges: dependencyEdges },
-      { lens: "resource", nodes: resourceNodes, edges: resourceNodes },
-      { lens: "communication", nodes: communicationNodes, edges: snapshot.sessions.length },
-      { lens: "structure", nodes: structureNodes, edges: snapshot.links.length },
-    ],
-    resources: snapshot.capabilities.map((capability) => ({
-      resource: capability.kind,
-      actor: capability.holder,
-      mode: "exclusive",
-    })),
-  };
+  const data = readObserveProjection(viewArgs);
+  if (data === undefined) {
+    return "No FourViewBundle — run `/observe` to project via @cantilune/observability";
+  }
+  return renderProjection(activeView, data);
 }
 
-export function renderObserveViewOutput(activeView: ViewType, runtime: RuntimeState): string {
-  const data = observeDataFromRuntime(runtime);
-  if (data === null) {
-    return NO_RUNTIME_MESSAGE;
-  }
-
-  const snapshot = runtime.snapshot!;
-
+function renderProjection(activeView: ViewType, data: CliObserveProjection): string {
   switch (activeView) {
     case "observe-dependency":
-      return renderGraph(
-        snapshot.artifacts.map((artifact) => ({ id: artifact.id, label: artifact.kind })),
-        snapshot.links.map((link) => ({ from: link.from, to: link.to, label: link.kind })),
-      );
+      return renderGraph([...data.dependency.nodes], [...data.dependency.edges]);
     case "observe-resource":
       return renderTable(
         [
@@ -71,60 +51,48 @@ export function renderObserveViewOutput(activeView: ViewType, runtime: RuntimeSt
         data.resources.map((r) => [r.resource, r.actor, r.mode]),
       );
     case "observe-communication":
-      return renderGraph(
-        snapshot.participants.map((participant) => ({
-          id: participant.id,
-          label: participant.kind,
-        })),
-        snapshot.sessions.map((session) => ({
-          from: session.initiator,
-          to: session.id,
-          label: session.status,
-        })),
-      );
+      return renderGraph([...data.communication.nodes], [...data.communication.edges]);
     case "observe-structure":
-      return renderGraph(
-        [
-          ...snapshot.participants.map((participant) => ({
-            id: participant.id,
-            label: participant.kind,
-          })),
-          ...snapshot.artifacts.map((artifact) => ({
-            id: artifact.id,
-            label: artifact.kind,
-          })),
-        ],
-        snapshot.links.map((link) => ({ from: link.from, to: link.to, label: link.kind })),
-      );
+      return renderGraph([...data.structure.nodes], [...data.structure.edges]);
     case "observe-spine":
-      return renderTimeline(
-        runtime.changeLog.map((entry, index) => ({
-          timestamp: Date.parse(entry.timestamp) || Date.now() + index,
-          label: `EventSpine[${index}] ${entry.operationTypeId}`,
-          kind: "spine",
-        })),
-      );
+      return renderTimeline([...data.spine]);
     case "observe-diagnostic":
-      return `Diagnostics: ${snapshot.links.length} links, ${snapshot.capabilities.length} capabilities, ${runtime.changeLog.length} commits`;
+      return data.diagnostic;
     case "observe":
     default:
-      return renderTable(
-        [
-          { header: "Lens", width: 16 },
-          { header: "Nodes", width: 8, align: "right" },
-          { header: "Edges", width: 8, align: "right" },
-        ],
-        data.summary.map((s) => [s.lens, String(s.nodes), String(s.edges)]),
-      );
+      return [
+        `head=${data.headRef} since=${data.sinceRef}`,
+        "",
+        renderTable(
+          [
+            { header: "Lens", width: 16 },
+            { header: "Nodes", width: 8, align: "right" },
+            { header: "Edges", width: 8, align: "right" },
+          ],
+          data.summary.map((s) => [s.lens, String(s.nodes), String(s.edges)]),
+        ),
+      ].join("\n");
   }
 }
 
 export function ObserveView({ store }: ViewProps): React.ReactElement {
   const activeView = store.activeView ?? "observe";
-  const output = renderObserveViewOutput(activeView, store.runtime);
+  const error = readObserveError(store.viewArgs);
+  const data = readObserveProjection(store.viewArgs);
+  const output = renderObserveViewOutput(activeView, store.viewArgs, store.runtime);
 
-  if (store.runtime.snapshot === null) {
-    return <ViewFrame title="Four-View Bundle" tone={OBSERVE_TONE} empty={NO_RUNTIME_MESSAGE} />;
+  if (error !== undefined) {
+    return <ViewFrame title="Four-View Bundle" tone={OBSERVE_TONE} empty={output} />;
+  }
+
+  if (data === undefined) {
+    return (
+      <ViewFrame
+        title="Four-View Bundle"
+        tone={OBSERVE_TONE}
+        empty={store.runtime.snapshot === null ? NO_RUNTIME_MESSAGE : output}
+      />
+    );
   }
 
   if (activeView === "observe-diagnostic") {
@@ -135,16 +103,17 @@ export function ObserveView({ store }: ViewProps): React.ReactElement {
           sections={[
             {
               heading: "Cross-Lens Invariants",
-              content: "Four lenses derived from current runtime snapshot.",
+              content: `FourViewBundle from @cantilune/observability (since=${data.sinceRef}).`,
             },
             {
-              heading: "Stale Resources",
-              content: `${store.runtime.snapshot.capabilities.length} scoped capabilities on snapshot head.`,
+              heading: "Resource Lens",
+              content: `${data.resources.length} scoped capabilities projected.`,
             },
             {
               heading: "Spine Coverage",
-              content: `${store.runtime.changeLog.length} commits projected onto EventSpine timeline.`,
+              content: `${data.spine.length} EventSpine events in observation cut.`,
             },
+            { heading: "Stats", content: data.diagnostic },
           ]}
         />
       </ViewFrame>
@@ -161,7 +130,11 @@ export function ObserveView({ store }: ViewProps): React.ReactElement {
   };
 
   return (
-    <ViewFrame title={titles[activeView] ?? "Observability"} tone={OBSERVE_TONE}>
+    <ViewFrame
+      title={titles[activeView] ?? "Observability"}
+      tone={OBSERVE_TONE}
+      subtitle={`head=${data.headRef} since=${data.sinceRef}`}
+    >
       <Text>{output}</Text>
     </ViewFrame>
   );

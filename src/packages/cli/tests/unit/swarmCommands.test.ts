@@ -199,6 +199,8 @@ describe("swarm command wiring", () => {
         agentResults: new Map(),
         totalElapsedMs: 42,
         totalTurns: 3,
+        reason: "completed",
+        diagnostic: "",
       },
     });
     const reg = registry();
@@ -211,7 +213,7 @@ describe("swarm command wiring", () => {
     expect(notify).toHaveBeenCalledWith("info", "swarm complete — all agents done");
   });
 
-  it("swarm wait reports incomplete through notify", async () => {
+  it("swarm wait names the termination reason and the blocked agents", async () => {
     const controller = mockController({
       waitResult: {
         ok: false,
@@ -219,6 +221,8 @@ describe("swarm command wiring", () => {
         agentResults: new Map(),
         totalElapsedMs: 10,
         totalTurns: 1,
+        reason: "stalled",
+        diagnostic: "worker(condition_unmet)",
       },
     });
     const reg = registry();
@@ -227,7 +231,12 @@ describe("swarm command wiring", () => {
 
     await reg.execute("/swarm wait", appStore, { swarmControl: () => controller, notify });
 
-    expect(notify).toHaveBeenCalledWith("warn", "swarm incomplete — agent crashed");
+    // "incomplete" alone left the operator with nothing to act on; the reason
+    // and the blocked-agent diagnostic are the actionable half.
+    expect(notify).toHaveBeenCalledWith(
+      "warn",
+      "swarm stalled — agent crashed: worker(condition_unmet)",
+    );
   });
 
   it("swarm wait with no controller warns the user", async () => {

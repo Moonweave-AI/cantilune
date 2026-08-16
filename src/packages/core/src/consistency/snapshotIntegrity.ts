@@ -62,6 +62,21 @@ export function validateSnapshotIntegrityResult(
     return retiredCheck;
   }
 
+  const namespaceCheck = validateNamespaces(snapshot);
+  if (namespaceCheck !== undefined) {
+    return namespaceCheck;
+  }
+
+  const transcriptCheck = validateTranscripts(snapshot, participantIds);
+  if (transcriptCheck !== undefined) {
+    return transcriptCheck;
+  }
+
+  const accessCheck = validateTranscriptAccessRequests(snapshot, participantIds);
+  if (accessCheck !== undefined) {
+    return accessCheck;
+  }
+
   return { ok: true };
 }
 
@@ -74,6 +89,101 @@ function validateParticipants(
         "snapshot_integrity",
         "participant map key does not match actorId",
         `participants[${key}]`,
+      );
+    }
+    if (
+      participant.namespaceId !== undefined &&
+      !snapshot.namespaces.has(participant.namespaceId)
+    ) {
+      return fail(
+        "snapshot_integrity",
+        "participant namespace is not registered",
+        `participants[${key}].namespaceId`,
+      );
+    }
+  }
+  return undefined;
+}
+
+function validateNamespaces(
+  snapshot: CollaborationSnapshot,
+): { ok: false; error: CoreViolation } | undefined {
+  for (const [key, namespace] of snapshot.namespaces) {
+    if (key !== namespace.namespaceId) {
+      return fail(
+        "snapshot_integrity",
+        "namespace map key does not match namespaceId",
+        `namespaces[${key}]`,
+      );
+    }
+  }
+  return undefined;
+}
+
+function validateTranscripts(
+  snapshot: CollaborationSnapshot,
+  participantIds: ReadonlySet<ActorId>,
+): { ok: false; error: CoreViolation } | undefined {
+  for (const [key, transcript] of snapshot.transcripts) {
+    if (key !== transcript.actorId) {
+      return fail(
+        "snapshot_integrity",
+        "transcript map key does not match actorId",
+        `transcripts[${key}]`,
+      );
+    }
+    const ownerCheck = requireRegisteredActor(
+      transcript.actorId,
+      participantIds,
+      `transcripts[${key}].actorId`,
+    );
+    if (ownerCheck !== undefined) {
+      return ownerCheck;
+    }
+    if (!snapshot.namespaces.has(transcript.namespaceId)) {
+      return fail(
+        "snapshot_integrity",
+        "transcript namespace is not registered",
+        `transcripts[${key}].namespaceId`,
+      );
+    }
+  }
+  return undefined;
+}
+
+function validateTranscriptAccessRequests(
+  snapshot: CollaborationSnapshot,
+  participantIds: ReadonlySet<ActorId>,
+): { ok: false; error: CoreViolation } | undefined {
+  for (const [key, request] of snapshot.transcriptAccessRequests) {
+    if (key !== request.requestId) {
+      return fail(
+        "snapshot_integrity",
+        "transcript access request map key does not match requestId",
+        `transcriptAccessRequests[${key}]`,
+      );
+    }
+    const requesterCheck = validateActorRef(
+      request.requester,
+      snapshot.participants,
+      `transcriptAccessRequests[${key}].requester`,
+    );
+    if (requesterCheck !== undefined) {
+      return requesterCheck;
+    }
+    const subjectCheck = requireRegisteredActor(
+      request.subjectActorId,
+      participantIds,
+      `transcriptAccessRequests[${key}].subjectActorId`,
+    );
+    if (subjectCheck !== undefined) {
+      return subjectCheck;
+    }
+    if (!snapshot.namespaces.has(request.subjectNamespaceId)) {
+      return fail(
+        "snapshot_integrity",
+        "transcript access request namespace is not registered",
+        `transcriptAccessRequests[${key}].subjectNamespaceId`,
       );
     }
   }
@@ -139,6 +249,22 @@ function validateCapabilities(
         "capability scope references missing session",
         `capabilities[${capability.capabilityId}].scope`,
       );
+    }
+    if (capability.scope.kind === "transcript") {
+      if (!snapshot.participants.has(capability.scope.actorId)) {
+        return fail(
+          "snapshot_integrity",
+          "capability scope references missing transcript actor",
+          `capabilities[${capability.capabilityId}].scope`,
+        );
+      }
+      if (!snapshot.namespaces.has(capability.scope.namespaceId)) {
+        return fail(
+          "snapshot_integrity",
+          "capability scope references missing transcript namespace",
+          `capabilities[${capability.capabilityId}].scope`,
+        );
+      }
     }
   }
   return undefined;

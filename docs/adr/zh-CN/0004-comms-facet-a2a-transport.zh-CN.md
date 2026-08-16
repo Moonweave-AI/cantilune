@@ -54,15 +54,22 @@ control-plane schema admission commit
 | 净化后的 CommsEvent 信封      | ✅   |
 | L3–L5 测试                    | ✅   |
 
-### 延后（网络 Stop-Ship）
+### 网络 / 传输随访（2026-08-15）
 
-- 文件背书的 CommsStore + 跨进程 L7
-- 生产 IdentityVerifier / TLS / mTLS
-- 钉定的 A2A 互操作认证测试套件
-- 完整的 send/receive/ack 运行时消费者集成
-- DLQ replay 特权工作流
-- Observability 包接线
-- Product Conformance 证书
+ADR-0018 **T0–T4 工程已落地**：loopback、`FileTransport`（owner+pid 身份）、
+`NetTransport`（TLS 1.3 + mTLS 指纹钉扎），以及钉定的 `a2a/0.1` harness（CI
+门禁）。Boot 现调用生产 `createCommsServices`（无静默 Memory\* 默认），带 hub
+路由与会话泵。P1–P2（A1–A5）因此**不再**列为开放工程缺口。
+
+**仍开放（不是 T0–T4）：**
+
+- 公开 A2A 互操作市场主张 —— Owner C6；harness ≠ 授权
+- Product Conformance 证书 —— 未经 Owner 签署
+- ADR-0008 / ADR-0018 的独立安全 / 威胁模型签核 —— Owner C2
+- 分区 / 重连风暴套件仍在扩展（见 COMMS-DESIGN-CLOSURE）
+
+DLQ 授权回放（`dlqAuthorizedReplay`）与可观测性 comms 桥接已有工程实现；它们
+不解除 C2/C6。
 
 ## 威胁模型摘要
 

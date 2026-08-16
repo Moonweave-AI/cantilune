@@ -30,6 +30,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: "@cantilune/core",
+        replacement: path.resolve(packageRoot, "../core/src/index.ts"),
+      },
+      {
         find: "@cantilune/syscall",
         replacement: path.resolve(packageRoot, "../syscall/src/index.ts"),
       },

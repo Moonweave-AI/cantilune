@@ -1,0 +1,116 @@
+@startuml 07c-durable
+' 图 07C：file 默认 · Postgres HA · 官方 etcd Raft。同一 DurableCoordinator 契约。
+
+skinparam backgroundColor #FCFAF7
+skinparam shadowing false
+skinparam defaultFontName "Microsoft YaHei"
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam roundcorner 12
+skinparam ArrowColor #77716B
+skinparam packageBorderColor #AAA39C
+
+title 图 07C · DurableCoordinator：file / Postgres HA / etcd Raft
+caption <color:#6E6963>ADR-0023 + ADR-0029。产品做 head CAS + fencing；多宿主选运维 Postgres 或官方 etcd。两者都无则 fail-closed。</color>
+
+legend top right
+  |= 颜色 |= 含义 |
+  | <back:#E5ECEE>　</back> | 端口 DurableCoordinator |
+  | <back:#E5EDE5>　</back> | 单宿主 file CAS |
+  | <back:#E8EEF5>　</back> | 运维 Postgres HA |
+  | <back:#EDE8F0>　</back> | 官方 etcd Raft |
+  | <back:#F3E5DC>　</back> | 启动选择 / fail-closed |
+endlegend
+
+left to right direction
+
+frame "耐久端口 · 同一契约三条实现" #F8F5F0 {
+
+  package "ports/" #E5ECEE {
+
+    class "DurableCoordinator\n单一事务边界" as Port #F8FBFB {
+      +head(): SnapshotRef
+      .. 例：snap-S4；跨副本必须同一 head ..
+      +get(ref): CollaborationSnapshot
+      +activeBinding(): SchemaEpochBinding
+      .. epoch + schemaRef；ADR-0014 ..
+      +compareAndSwapHead(expected, snap): boolean
+      +compareAndSwapHeadWithBinding(...)
+      +commit(input): DurableCommitResult
+      .. head + changelog + recipe + lease ..
+      +changes() / since(fromRef)
+      +recipeForChange(change)
+    }
+  }
+
+  package "单宿主 · bootFileOS" #E5EDE5 {
+
+    class "FileDurableCoordinator\n本机文件 CAS" as File #FFFDFC {
+      +dir: path
+      .. 例：./var/cantilune/durable ..
+      +bundle: durable.bundle.json
+      .. snapshot + changelog + recipes + binding ..
+      +locks: FileResourceLockTable
+      .. 同主机跨进程；非跨机复制 ..
+    }
+  }
+
+  package "多宿主 · 运维 Postgres" #E8EEF5 {
+
+    class "PostgresDurableCoordinator\n应用层 CAS + fencing" as Pg #FFFDFC {
+      +connectionString: CANTILUNE_DURABLE_DATABASE_URL
+      .. 例：postgres://coord/cantilune ..
+      +schema: string
+      .. 例：cantilune ..
+      +leaseOwner / leaseToken
+      .. fencing；冲突 commit 失败 ..
+    }
+  }
+
+  package "多宿主 · 官方 etcd" #EDE8F0 {
+
+    class "RaftDurableCoordinator\n应用层 CAS + fencing" as Raft #FFFDFC {
+      +kv: RaftKv
+      .. 生产 EtcdRaftKv；测试 MemoryRaftKv ..
+      +namespace: string
+      .. 例：cantilune ..
+      +locks: RaftResourceLockTable
+      .. 集群 CAS；非本机文件锁 ..
+    }
+
+    class "Official etcd v3.5.21\nRaft + Txn + Lease" as Etcd #F8FAFD {
+      +endpoints: CANTILUNE_RAFT_ENDPOINTS
+      .. 例：http://127.0.0.1:2379 ..
+      +embed: CANTILUNE_RAFT_EMBED=1
+      .. 官方二进制；缺则 fail-closed ..
+    }
+  }
+
+  package "启动选择" #F3E5DC {
+
+    class "resolveProductionDurable\n环境门" as Env #FFF9F6 {
+      +URL 非空 → postgres
+      .. 除非 CANTILUNE_REQUIRE_RAFT=1 ..
+      +RAFT_ENDPOINTS / EMBED → raft
+      +multi 且两者都无 → fail-closed
+      .. 单宿主默认 file ..
+    }
+  }
+
+  File --|> Port
+  Pg --|> Port
+  Raft --|> Port
+  Env ..> Pg : URL
+  Env ..> Raft : endpoints / embed
+  Env ..> File : 单宿主默认
+  Raft ..> Etcd : 消费官方共识
+}
+
+note bottom of Env
+  <b>纪律</b>
+  跨副本读者共享一个 head，禁止每副本各算 EventSpine。
+  缺 URL 且缺 Raft 的多机部署失败关闭，不是静默 Memory。
+end note
+
+footer <color:#6E6963>代码锚点：durableCoordinator.ts · postgresDurableCoordinator.ts · raftDurableCoordinator.ts</color>
+@enduml

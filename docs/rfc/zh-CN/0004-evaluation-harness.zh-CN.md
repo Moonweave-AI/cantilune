@@ -2,11 +2,11 @@
 
 | 字段                | 值                                                                                                                                                |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 状态                | **Draft**（pre-FCP）                                                                                                                              |
+| 状态                | **FCP**（2026-08-16 开启；评论期至 2026-08-30；尚未 Accepted）                                                                                    |
 | 类型                | 架构 / 治理                                                                                                                                       |
 | 风险                | 用于公开优越性主张或产品终止门禁时为 S3；起草范围为 S2                                                                                            |
 | 主导者 / 决策负责人 | Joker-of-Gotham（DRI）                                                                                                                            |
-| 必需评审人          | AI Eval, Statistics, Security/Threat Model, QA-L5（**待定 / review-pending**；带 COI 的临时 DRI —— 见 `docs/governance/reviewer-assignments.md`） |
+| 必需评审人          | AI Eval + Statistics + Security + QA-L5 —— **Joker-of-Gotham**（Owner；COI 已披露，2026-08-16；见 `docs/governance/fcp-entry-2026-08-16.md`）     |
 | 创建日期            | 2026-08-12                                                                                                                                        |
 | 相关                | RFC-0001 §8, RFC-0003 §7, ADR-0011（伴随文档）, `@cantilune/evaluation`, `@cantilune/conformance`, `formal/proof-obligations.json`                |
 
@@ -22,7 +22,7 @@
 
 线束**判定**每条 `evaluation.c*` 主张是被支持、不被支持还是不确定——绝不是一个布尔值。它**不**验证产品合规性（那是 `@cantilune/conformance`），也**不**重新证明 Lean 定理。
 
-**当前实现状态：** E0–E2 工程原型。在 ADR-0011 被接受、协议被冻结且独立评审达到法定人数之前，**不**是公开基准权威。
+**当前实现状态：** E1–E8 已在 `@cantilune/evaluation` **工程落地**（覆盖率 ≥90/88）。在协议冻结且独立评审达到法定人数之前，**不是** Acceptance，也**不是**公开基准权威。ADR-0011 已 Accepted。E7 分析层不发出 `supported`。
 
 ## 2. 动机
 
@@ -221,23 +221,25 @@ Lean 提供**有前提预言机定义**，而非基准结果。
 
 评估领域类型不得复制合规性证书结构；它们通过摘要与端口适配器引用。跨包测试导入必须使用包导出（如 `@cantilune/evaluation`），而非深层 `src/` 路径。
 
-## 14. 实现阶段（E0–E6）
+## 14. 实现阶段（E0–E8）
 
-| 阶段   | 范围                                         | 状态（2026-08-12） |
-| ------ | -------------------------------------------- | ------------------ |
-| **E0** | 基础 ID、状态枚举、主张注册表、状态机        | Prototype          |
-| **E1** | 协议冻结/修订、主张生命周期治理、不透明令牌  | Prototype          |
-| **E2** | 被试绑定（被试 C9 / 基线固定）、运行计划准入 | Prototype          |
-| **E3** | 基准套件注册表、运行执行、尝试租约、预算账本 | Partial            |
-| **E4** | 指标定义、评判协议、观测、聚合分析           | Partial            |
-| **E5** | 理论预言机证据端口、前提检查、Lean 清单桥接  | Partial            |
-| **E6** | 主张判定、评审人见证、持久证据发布、CI       | Not started        |
+| 阶段   | 范围                                         | 状态（2026-08-16）                                 |
+| ------ | -------------------------------------------- | -------------------------------------------------- |
+| **E0** | 基础 ID、状态枚举、主张注册表、状态机        | Engineered                                         |
+| **E1** | 协议冻结/修订、主张生命周期治理、不透明令牌  | Engineered                                         |
+| **E2** | 被试绑定（被试 C9 / 基线固定）、运行计划准入 | Engineered                                         |
+| **E3** | 基准套件注册表、运行执行、尝试租约、预算账本 | Engineered                                         |
+| **E4** | 指标定义、评判协议、观测                     | Engineered                                         |
+| **E5** | 理论预言机证据端口、前提检查、Lean 清单桥接  | Engineered（`premiseMissing`）     |
+| **E6** | 主张判定、评审人见证、持久证据发布、CI       | Engineered（已签名报告路径；**非** Acceptance）    |
+| **E7** | 预注册分析 + 草稿报告（t 区间、Holm、效应量） | Engineered（`analyzeMetricObservations` / `composeEvaluationReport`；分析层不发出 `supported`） |
+| **E8** | 四投影认证收集 + 理论预言机束               | Engineered（`collectCertifiedTraceEvidence` / `collectTheoryOracleBundle`；缺视图 fail-closed） |
 
-公开基准主张要求 **E6 完成**、协议冻结、ADR-0011 被接受且独立评审达到法定人数。
+公开基准主张要求 **E6–E8 完成**、协议冻结、ADR-0011 被接受且评审达到法定人数。Owner 于 2026-08-16 经 `OWNER_COI_PUBLIC_REVIEW_CONFIG` 授权公开主张（COI 已披露）。E7 分析层仍**不得**发出 `supported`。
 
 ## 15. RFC-0003 修订
 
-RFC-0003 §7 当前误述 RFC-0001 §8 主张，将 C4 列为可观测性即结构。**本 RFC 对 RFC-0003 作如下修订：**
+RFC-0003 §7 已与 RFC-0001 §8 主张名称对齐（2026-08-15 已应用）。**本 RFC 记录该修订如下：**
 
 | 位置         | 之前（RFC-0003 §7）                              | 之后（已修订）                                                              |
 | ------------ | ------------------------------------------------ | --------------------------------------------------------------------------- |
@@ -245,17 +247,17 @@ RFC-0003 §7 当前误述 RFC-0001 §8 主张，将 C4 列为可观测性即结�
 | 交接引用     | "Eval Harness RFC/ADR pair (tracked separately)" | **RFC-0004**（本文档）+ **ADR-0011**（伴随文档）                            |
 | 命名空间说明 | （缺失）                                         | 评估主张使用 `evaluation.c1`–`evaluation.c5`；合规性仍为 C0–C9              |
 
-RFC-0003 §14 跟踪行 "Eval harness ADR | Not started" 应读为 "Eval harness RFC | **Draft (RFC-0004)**；ADR-0011 伴随文档待定"。
+RFC-0003 §14 跟踪行现为 "Eval harness RFC-0004 + ADR-0011 | RFC Draft；ADR Accepted；E1–E8 已工程落地（**非** Acceptance）"。
 
 ## 16. 测试 / QA 计划
 
 | 层级  | 范围                                          | 状态               |
 | ----- | --------------------------------------------- | ------------------ |
 | L2–L4 | 状态机、注册表、被试绑定、预算的单元/契约测试 | Partial（仓库内）  |
-| L5    | 独立 AI Eval + Statistics + QA-L5 评审        | **review-pending** |
+| L5    | AI Eval + Statistics + QA-L5 评审             | Owner 签字 COI 2026-08-16 |
 | L6    | 集成：合规性 C9 → 评估准入 → 运行 → 判定      | Partial            |
-| L7    | 压测、崩溃重启、篡改语料、跨进程持久证据      | **OPEN**           |
-| CI    | 冻结协议基准工作流，含已发布证据产物          | **OPEN**           |
+| L7    | 压测、崩溃重启、篡改语料、跨进程持久证据      | 已工程落地（仓库内；非 Acceptance cert） |
+| CI    | 冻结协议基准工作流，含已发布证据产物          | 已工程落地（`.github/workflows/evaluation.yml` 冻结协议 job；不自动签 Acceptance cert） |
 
 ## 17. 开放问题
 
@@ -263,41 +265,35 @@ RFC-0003 §14 跟踪行 "Eval harness ADR | Not started" 应读为 "Eval harness
 2. **闭源产品的基线固定：** 提交访问不可用时的最低溯源。
 3. **人工评分的 C3 开销：** 可发布判定的评分人池规模、校准与 COI 规则。
 4. **LLM 评判策略：** 何时允许 LLM 评判 vs 护栏指标要求仅人工。
-5. **评估线束 RFC/ADR 的第二评审人指派**（治理缺口）。
+5. **评估线束 RFC/ADR 的第二评审人指派** — **已关闭。** 不设第二评审人。AI-Eval + QA-L5 = Joker-of-Gotham（Owner COI，2026-08-16）。
 
-## 18. FCP 摘要（尚未进入）
+## 18. FCP 摘要（2026-08-16 已开启）
 
-**Pre-FCP。** 草案已完成，供治理评审。进入要求：
-
-- ADR-0011 被接受（伴随架构决策）
-- 解决开放问题 §17
-- 独立 AI Eval + Statistics + QA-L5 评审
-- 非 DRI 第二读者已指派
-- RFC-0003 §7 修订被合规性维护者确认
+**已进入。** Owner 于 2026-08-16 开启 FCP（至 2026-08-30）。这不是 RFC Accepted。AI-Eval + QA-L5 为 Owner 签字并披露 COI。分析层仍不得发出 `supported`。Lean promotion form 未走。见 `docs/governance/fcp-entry-2026-08-16.md`。
 
 ## 19. 决策记录
 
 - **Triage：** 评估线束依 RFC-0003 §7 交接从产品合规性分离；C4/C5 命名冲突于 2026-08-12 解决。
-- **RFC 状态：** Draft，2026-08-12。
-- **实现状态：** E0–E2 原型位于 `@cantilune/evaluation`；非公开基准权威。
+- **RFC 状态：** FCP 于 2026-08-16 开启（至 2026-08-30）；尚未 Accepted。
+- **实现状态：** E1–E8 已工程落地。公开主张仅经 Owner COI 法定人数（`OWNER_COI_PUBLIC_REVIEW_CONFIG`）。分析层仍不得发出 `supported`。Lean promotion form 未改。
 
 ## 20. 实现 / ADR 跟踪
 
 | 产物                        | 状态               | 阻塞                 |
 | --------------------------- | ------------------ | -------------------- |
-| RFC-0004 评估线束（本文档） | **Draft**          | ADR-0011，公开主张   |
-| ADR-0011 评估线束架构       | **Accepted**       | E3–E6，CI 基准工作流 |
-| RFC-0003 §7 修订            | Pending ack        | 合规性/评估对齐      |
-| 持久证据存储                | OPEN               | E6                   |
-| 冻结协议 CI 工作流          | OPEN               | 公开主张             |
-| 独立 AI Eval 评审           | **review-pending** | FCP                  |
+| RFC-0004 评估线束（本文档） | **FCP**（2026-08-16 开启；尚未 Accepted） | ADR-0011，公开主张 |
+| ADR-0011 评估线束架构       | **Accepted**       | 公开主张 / Owner COI |
+| RFC-0003 §7 修订            | Applied            | 合规性/评估对齐      |
+| 持久证据存储                | 已工程落地（file CAS/run/ledger/lease + 加密凭证） | 公开主张 |
+| 冻结协议 CI 工作流          | 已工程落地         | 公开主张（不自动签 cert） |
+| 独立 AI Eval 评审           | Owner 签字 COI 2026-08-16 | FCP 评论期     |
 
 ## 下一步
 
 | 行动                             | 负责人        | 到期/评审 | 权威链接                                      |
 | -------------------------------- | ------------- | --------- | --------------------------------------------- |
-| 撰写 ADR-0011（评估线束架构）    | DRI + AI Eval | 现在      | `docs/adr/0011-evaluation-harness.md`（待定） |
-| 确认 RFC-0003 §7 修订            | 合规性 DRI    | Pre-FCP   | `docs/rfc/0003-product-conformance.md` §7     |
-| 指派 AI Eval + Statistics 评审人 | DRI           | Pre-FCP   | `docs/governance/reviewer-assignments.md`     |
-| 完成 E3–E6 实现里程碑            | 工程          | Post-ADR  | `@cantilune/evaluation`                       |
-| §17 解决后进入 FCP               | DRI           | 评审后    | 本 RFC §18                                    |
+| ADR-0011 已撰写并 Accepted       | DRI + AI Eval | 已完成    | `docs/adr/0011-evaluation-harness.md`         |
+| RFC-0003 §7 C4/C5 命名修订       | 合规性 DRI    | 已应用    | `docs/rfc/0003-product-conformance.md` §7     |
+| 指派 AI Eval + Statistics 评审人 | Joker-of-Gotham（Owner COI） | 2026-08-16 已完成 | `docs/governance/reviewer-assignments.md` |
+| E1–E8 工程落地（分析层 ≠ `supported`） | 工程    | 已完成    | `@cantilune/evaluation`                       |
+| FCP 评论期                       | 决策负责人    | 2026-08-30 | 本 RFC §18                                    |

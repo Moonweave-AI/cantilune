@@ -160,24 +160,27 @@ function renderReachOutput(viewArgs: Record<string, unknown>): string {
   ].join("\n");
 }
 
-/** /petri invariants: S-invariant basis + change-chain T-invariant status. */
+/** /petri invariants: S-invariant + T-invariant bases from the real engine. */
 function renderInvariantsOutput(viewArgs: Record<string, unknown>): string {
   const inv = readPetriData<PetriInvariantsSnapshot>(viewArgs);
   if (inv === undefined) {
     return "No Petri data loaded";
   }
-  const invariantRows =
+  const sRows =
     inv.invariants.length === 0
       ? [["(none)", "S-invariant", "ok"]]
       : inv.invariants.map((row) => [row.label, "S-invariant", "ok"]);
-  const chainStatus = inv.changeChainNonEmpty ? "ok" : "pending";
+  const tRows =
+    (inv.transitionInvariants?.length ?? 0) === 0
+      ? [["(none)", "T-invariant", "ok"]]
+      : (inv.transitionInvariants ?? []).map((row) => [row.label, "T-invariant", "ok"]);
   return renderTable(
     [
       { header: "Invariant", width: 28 },
       { header: "Type", width: 12 },
       { header: "Status", width: 10 },
     ],
-    [...invariantRows, ["change chain", "T-invariant", chainStatus]],
+    [...sRows, ...tRows],
   );
 }
 
@@ -240,7 +243,7 @@ export function PetriView({ store }: ViewProps): React.ReactElement {
             {
               heading: "T-Invariants",
               content:
-                "Change chain non-emptiness from the runtime changeLog (cycle T-invariants pending).",
+                "S- and T-invariant bases from `@cantilune/petri` (Martinez–Silva).",
             },
           ]}
         />

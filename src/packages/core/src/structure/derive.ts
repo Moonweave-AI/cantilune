@@ -5,8 +5,9 @@ import type { RunHistory } from "./trace.js";
 import { rewriteSegments } from "./trace.js";
 
 /**
- * Diagnostic read-model node — not authoritative for scheduling or concurrency.
- * Use only for observability summaries until structure projection ADR closes.
+ * Read-only structure projection node (serial / parallel / nest / box).
+ * Derived from committed rewrite history and snapshot participants.
+ * MUST NOT be used by SwarmScheduler or any write/admission path.
  */
 export type DerivedDiagnosticView =
   | { readonly kind: "serial"; readonly parts: readonly DerivedDiagnosticView[] }
@@ -18,8 +19,12 @@ export type DerivedDiagnosticView =
 export type DerivedCompositionView = DerivedDiagnosticView;
 
 /**
- * Derive a coarse diagnostic summary from committed facts.
- * Not a trustworthy structure projection — do not use for scheduling decisions.
+ * Read-only structure projection from committed links/history.
+ * `create_session` → nest, `fork_branch` → parallel; remaining ops fold as boxes
+ * then serial composition. Observability FourViewBundle.structure and CLI
+ * `/observe structure` consume this derive — not a parallel type.
+ * MUST NOT be used by SwarmScheduler (ADR-0019 re-evaluates start conditions
+ * on the committed world).
  */
 export function deriveDiagnosticSummary(
   snapshot: CollaborationSnapshot,

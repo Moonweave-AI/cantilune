@@ -299,6 +299,20 @@ describe("tui hooks", () => {
     ).rejects.toThrow("canonical file-world generation");
   });
 
+  it("useAgentLoop prepare boots the runtime without a user instruction", async () => {
+    const store = createMemoryStore();
+    const { result } = renderHook(() => useAgentLoop({ store }));
+
+    let ready = false;
+    await act(async () => {
+      ready = await result.current.prepare();
+    });
+    expect(ready).toBe(true);
+    expect(store.get().connected).toBe(true);
+    expect(runMock).not.toHaveBeenCalled();
+    expect(createCliRuntimeBoot).toHaveBeenCalledOnce();
+  });
+
   it("useAgentLoop runs, aborts, and stops", async () => {
     const store = createMemoryStore();
     const { result } = renderHook(() => useAgentLoop({ store }));
@@ -822,6 +836,82 @@ describe("tui hooks", () => {
     expect(assistant[0]?.content).toBe("Hello world");
     expect(assistant[0]?.streaming).toBe(false);
     expect(store.get().session.tokenUsage.total).toBe(15);
+  });
+
+  it("does not append a second assistant bubble when the run summary differs from streamed prose", async () => {
+    runMock.mockImplementationOnce(async (_instruction, opts) => {
+      opts?.onEvent?.({ kind: "llm_start", turn: 1 });
+      opts?.onEvent?.({ kind: "llm_delta", turn: 1, text: "你好，需要我做什么？" });
+      opts?.onEvent?.({
+        kind: "llm_end",
+        turn: 1,
+        text: "你好，需要我做什么？",
+        toolCalls: [],
+      });
+      return {
+        ok: true,
+        summary: "成功回复用户的问候，任务完成。",
+        turns: 1,
+        elapsedMs: 4,
+        producedRefs: [],
+      };
+    });
+
+    const store = createMemoryStore();
+    const { result } = renderHook(() => useAgentLoop({ store }));
+    await act(async () => {
+      await result.current.start("你好");
+    });
+
+    const assistant = store.get().session.messages.filter((m) => m.role === "assistant");
+    expect(assistant).toHaveLength(1);
+    expect(assistant[0]?.content).toBe("你好，需要我做什么？");
+    expect(store.get().session.messages.some((m) => m.content.includes("任务完成"))).toBe(false);
+  });
+
+  it("fills an empty assistant bubble with the run summary instead of appending", async () => {
+    runMock.mockImplementationOnce(async (_instruction, opts) => {
+      opts?.onEvent?.({ kind: "llm_start", turn: 1 });
+      opts?.onEvent?.({
+        kind: "llm_end",
+        turn: 1,
+        text: "",
+        toolCalls: [{ id: "call_done", name: "done", arguments: { summary: "任务完成" } }],
+      });
+      opts?.onEvent?.({
+        kind: "tool_start",
+        turn: 1,
+        toolCallId: "call_done",
+        name: "done",
+        arguments: { summary: "任务完成" },
+      });
+      opts?.onEvent?.({
+        kind: "tool_end",
+        turn: 1,
+        toolCallId: "call_done",
+        name: "done",
+        ok: true,
+        output: "done",
+      });
+      return {
+        ok: true,
+        summary: "任务完成",
+        turns: 1,
+        elapsedMs: 4,
+        producedRefs: [],
+      };
+    });
+
+    const store = createMemoryStore();
+    const { result } = renderHook(() => useAgentLoop({ store }));
+    await act(async () => {
+      await result.current.start("你好");
+    });
+
+    const assistant = store.get().session.messages.filter((m) => m.role === "assistant");
+    expect(assistant).toHaveLength(1);
+    expect(assistant[0]?.content).toBe("任务完成");
+    expect(store.get().session.messages.filter((m) => m.content === "任务完成")).toHaveLength(1);
   });
 
   it("useAgentLoop projects tool lifecycle onto tool cards", async () => {

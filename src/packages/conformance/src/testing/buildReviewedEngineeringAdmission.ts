@@ -23,7 +23,7 @@ import type {
 import type { VerificationDecision } from "../foundation/verificationDecision.js";
 import type { SignedHumanReviewAttestation } from "../certificate/signedHumanReviewAttestation.js";
 import { domainSeparatedPayload } from "../canonical/signatureDomain.js";
-import { TEST_REVIEWER_KEY_ID } from "../adapters/memory/testReviewerTrustStore.js";
+import { TEST_REVIEWER_KEY_ID } from "./testReviewerTrustStore.js";
 
 /** TEST ONLY — private key must never ship in production authority paths. */
 export const TEST_REVIEWER_PRIVATE_KEY = Uint8Array.from(

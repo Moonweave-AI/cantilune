@@ -39,8 +39,7 @@ import {
 import type { Clock, ContentRefAuthority, IdGenerator } from "@cantilune/runtime";
 import {
   createMemoryRuntimePersistence,
-  createFileRuntimePersistence,
-  readFileRuntimeActiveBinding,
+  resolveProductionDurable,
   MemoryResourceLockTable,
 } from "@cantilune/runtime/memory";
 import { createSyscall, createStaticSchemaProvider } from "@cantilune/syscall";
@@ -111,8 +110,28 @@ export const DEFAULT_TEMPLATES: readonly AvailableTemplate[] = Object.freeze(
     },
     {
       operationTypeId: operationTypeId("register_participant"),
-      description: "Register a new agent participant in the cluster",
+      description:
+        "Register a new agent participant in the cluster. This records the participant; " +
+        "it does not launch it. Follow with activate_participant to start it.",
       requiredRoles: ["from", "participant"],
+    },
+    {
+      operationTypeId: operationTypeId("activate_participant"),
+      description:
+        "Admit a registered participant to active and start its agent loop. Write the " +
+        "agent's manifest JSON with write_content first, then pass the returned ref.",
+      requiredRoles: ["from", "participant"],
+      contentRefInputs: [
+        {
+          name: "manifestRef",
+          description:
+            "The sha256 ContentRef of the serialized AgentManifest returned by write_content. " +
+            "The manifest declares agentId, kind, systemPrompt, assignedTask, startCondition " +
+            "(a StartConditionExpression tree, not English), heartbeatIntervalMs, designedBy, " +
+            "and optionally priority.",
+          required: true,
+        },
+      ],
     },
     {
       operationTypeId: operationTypeId("signal_done"),
@@ -139,6 +158,25 @@ export const DEFAULT_TEMPLATES: readonly AvailableTemplate[] = Object.freeze(
           name: "lastAction",
           type: "string" as const,
           description: "Most recent Agent loop action",
+          required: true,
+        },
+      ],
+    },
+    {
+      operationTypeId: operationTypeId("commit_transcript"),
+      description: "Commit this agent's LLM transcript onto the shared world",
+      requiredRoles: ["from"],
+      scalarInputs: [
+        {
+          name: "messagesJson",
+          type: "string" as const,
+          description: "JSON array of TranscriptMessage rows",
+          required: true,
+        },
+        {
+          name: "revision",
+          type: "nonNegativeInteger" as const,
+          description: "Monotonic transcript revision",
           required: true,
         },
       ],
@@ -405,6 +443,7 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
     principal,
     schemaProvider,
     ...(toolExecutor !== undefined ? { toolExecutor } : {}),
+    ...(config.toolApprover !== undefined ? { toolApprover: config.toolApprover } : {}),
   });
 
   const maxTurns = config.maxTurns ?? 100;
@@ -433,8 +472,7 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
     ...(config.embedder === undefined ? {} : { embedder: config.embedder }),
     ...(config.thresholds === undefined ? {} : { thresholds: config.thresholds }),
   });
-  // Private to this OS instance: shared across user turns, never projected into
-  // CollaborationSnapshot or the audit trail.
+  // Reusable per-OS conversation. ADR-0021 also commits it onto CollaborationSnapshot.
   const conversation =
     config.history === undefined
       ? createAgentLoopHistory(config.initialMessages)
@@ -446,22 +484,44 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
     actorId: principalId,
     history: conversation,
     ...(config.systemPrompt !== undefined ? { systemPrompt: config.systemPrompt } : {}),
+    ...(config.onBeforeTurn === undefined ? {} : { onBeforeTurn: config.onBeforeTurn }),
   };
   let runInProgress = false;
   let checkpointPoison: string | undefined;
-  const checkpointPrivateHistory =
-    config.onHistoryCheckpoint === undefined
-      ? undefined
-      : async (history: ReturnType<typeof requireAgentLoopHistory>): Promise<void> => {
-          try {
-            await config.onHistoryCheckpoint?.(history);
-          } catch (error) {
-            checkpointPoison =
-              "This CantilunOS instance is fail-closed because its private history checkpoint " +
-              "failed. Create a new OS from the last verified durable AgentLoopHistory before running again.";
-            throw error;
-          }
-        };
+  let transcriptRevision = 0;
+  const commitTranscriptToWorld = async (
+    history: ReturnType<typeof requireAgentLoopHistory>,
+  ): Promise<void> => {
+    transcriptRevision += 1;
+    const revision = transcriptRevision;
+    const result = await syscall.act({
+      operation: "commit_transcript",
+      args: {
+        from: principal.actorId,
+        messagesJson: JSON.stringify(history.messages),
+        revision: String(revision),
+      },
+    });
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+  };
+
+  const checkpointPrivateHistory = async (
+    history: ReturnType<typeof requireAgentLoopHistory>,
+  ): Promise<void> => {
+    try {
+      await commitTranscriptToWorld(history);
+      if (config.onHistoryCheckpoint !== undefined) {
+        await config.onHistoryCheckpoint(history);
+      }
+    } catch (error) {
+      checkpointPoison =
+        "This CantilunOS instance is fail-closed because its transcript checkpoint " +
+        "failed. Create a new OS from the last verified durable AgentLoopHistory before running again.";
+      throw error;
+    }
+  };
 
   return {
     privateHistory(): ReturnType<typeof requireAgentLoopHistory> {
@@ -500,9 +560,7 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
           llmAdapter,
           instruction,
           terminationController,
-          checkpointPrivateHistory === undefined
-            ? agentLoopConfig
-            : { ...agentLoopConfig, onHistoryCheckpoint: checkpointPrivateHistory },
+          { ...agentLoopConfig, onHistoryCheckpoint: checkpointPrivateHistory },
           observerOnlyRunOptions(options),
         );
         return result;
@@ -809,8 +867,8 @@ export function bootMemoryOS(llmAdapter: LlmAdapter, config: BootMemoryOSConfig)
 }
 
 /**
- * Production factory: file-backed durable runtime + content store.
- * Data survives process restarts via @cantilune/runtime and @cantilune/content file adapters.
+ * Production factory: file content + file, Postgres, or official etcd Raft durable.
+ * URL selects Postgres (ADR-0023); Raft endpoints/embed select etcd (ADR-0029).
  */
 export function bootFileOS(llmAdapter: LlmAdapter, config: BootFileOSConfig): CantilunOS {
   if (config.llm === undefined) {
@@ -829,8 +887,10 @@ export function bootFileOS(llmAdapter: LlmAdapter, config: BootFileOSConfig): Ca
   const storedPrincipal = readFilePrincipal(config.storagePath);
   const requestedConfig = configWithStoredPrincipal(config, storedPrincipal);
   const { pid: requestedPid, pkind: requestedKind, t0 } = initialBootSnapshot(requestedConfig);
-  const runtimeDir = join(config.storagePath, "runtime");
-  const { durable, locks } = createFileRuntimePersistence({ dir: runtimeDir, initial: t0 });
+  const { durable, locks, dispose } = resolveProductionDurable({
+    storagePath: config.storagePath,
+    initial: t0,
+  });
   const headRef = durable.head();
   const head = headRef === undefined ? undefined : durable.get(headRef);
   if (head === undefined) {
@@ -849,15 +909,13 @@ export function bootFileOS(llmAdapter: LlmAdapter, config: BootFileOSConfig): Ca
   );
 
   const compatibleEpochIds = (config.compatibleEpochIds ?? []).map((value) => epochId(value));
-  // ADR-0014: a durable bundle carries the active schema epoch binding
-  // atomically with the head. After a crash that left the in-memory holders
-  // gone but the durable head+binding intact, the boot layer must accept the
-  // advanced head's epoch so the runtime starts under it instead of refusing
-  // with an epoch mismatch. The static schema content is still the caller's
-  // compiled default schema (validated by digest below); only the epoch id is
-  // learned from the durable binding, which is a full SchemaEpochBinding, not
-  // a bare epoch string — preserving ADR-0012 §4's "epoch name is not evidence".
-  const durableBinding = readFileRuntimeActiveBinding(runtimeDir);
+  // ADR-0014: the coordinator carries the active schema epoch binding
+  // atomically with the head (file bundle, Postgres, or etcd). After a crash
+  // the boot layer must accept the advanced head's epoch. The static schema
+  // content is still the caller's compiled default schema; only the epoch id
+  // is learned from durable.activeBinding() — a full SchemaEpochBinding, not
+  // a bare epoch string (ADR-0012 §4).
+  const durableBinding = durable.activeBinding();
   const effectiveCompatibleEpochIds =
     durableBinding !== undefined && !compatibleEpochIds.includes(durableBinding.epochId)
       ? [...compatibleEpochIds, durableBinding.epochId]
@@ -877,7 +935,20 @@ export function bootFileOS(llmAdapter: LlmAdapter, config: BootFileOSConfig): Ca
     resolvedPrincipal.actorId,
     resolvedPrincipal.kind,
   );
-  return bootCantilune({ runtime: fileRuntime, contentStore, llmAdapter, config: finalConfig });
+  const os = bootCantilune({ runtime: fileRuntime, contentStore, llmAdapter, config: finalConfig });
+  if (dispose === undefined) {
+    return os;
+  }
+  return {
+    ...os,
+    async shutdown() {
+      try {
+        await os.shutdown();
+      } finally {
+        dispose();
+      }
+    },
+  };
 }
 
 /** @internal Exported for unit tests — memory boot id/time adapters. */

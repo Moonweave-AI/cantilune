@@ -15,7 +15,7 @@ import {
   computeLeanBuildAttestationDigest,
   type LeanBuildAttestation,
 } from "../../src/evidence/leanBuildAttestation.js";
-import { parseLeanAttestationFixture } from "../../src/adapters/lean/leanAttestationFixture.js";
+import { parseLeanAttestationFixture } from "../../src/testing/leanAttestationFixture.js";
 import { verifyLeanBuildAttestation } from "../../src/verifier/leanAttestationVerifier.js";
 import { createMemoryCryptoVerifier } from "../../src/adapters/memory/memoryCryptoVerifier.js";
 import {
@@ -26,7 +26,7 @@ import {
   FIXTURE_ARTIFACT_DIGESTS,
   seedEvidenceArtifacts,
 } from "../support/conformanceFixtures.js";
-import { cliBuilt, runCli } from "../support/runCli.js";
+import { requireCliBuilt, runCli } from "../support/runCli.js";
 
 describe("L6 offline verification", () => {
   it("verifies package locally without network", async () => {
@@ -70,7 +70,8 @@ describe("L6 offline verification", () => {
     expect(result.ok).toBe(false);
   });
 
-  it.skipIf(!cliBuilt())("runs full CLI verify flow from local fixture files only", () => {
+  it("runs full CLI verify flow from local fixture files only", () => {
+    requireCliBuilt();
     const dir = mkdtempSync(join(tmpdir(), "conformance-offline-"));
     try {
       const manifestPath = join(dir, "manifest.json");

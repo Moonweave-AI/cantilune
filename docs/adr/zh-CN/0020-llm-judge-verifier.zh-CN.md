@@ -97,21 +97,27 @@
 
 | 阶段   | 范围                                                                            | 状态        |
 | ------ | ------------------------------------------------------------------------------- | ----------- |
-| **J0** | `BootConfig.judgeLlm` / `AgentInstanceConfig.judgeLlm`；pre-pass + 每 tick 缓存 | Not started |
-| **J1** | `JudgeVerifier`（盲化 prompt、钳位/失败关闭、占位符 fallback）                  | Not started |
-| **J2** | 校准集 fixture + 脱敏审计 journal                                               | Not started |
-| **J3** | 多评判者法定人数 + 审计中的评分者间离散度（pinned seed）                        | Not started |
+| **J0** | `BootConfig.judgeLlm` / `AgentInstanceConfig.judgeLlm`；pre-pass + 每 tick 缓存 | 已实现      |
+| **J1** | `JudgeVerifier`（盲化 prompt、钳位/失败关闭、占位符 fallback）                  | 已实现      |
+| **J2** | 校准集 fixture + 脱敏审计 journal                                               | 已实现      |
+| **J3** | 多评判者法定人数 + 审计中的评分者间离散度（pinned seed）                        | 已实现      |
 | **J4** | BudgetPolicy 集成 + 独立安全/威胁模型评审                                       | Not started |
+
+> 「已实现」指代码落地且自动化测试与覆盖率门禁为绿，**不等于 ADR Acceptance**。J0–J3 此前写作
+> `Not started`，与下方批准段记录的 J1–J3 已实现自相矛盾；此处修正表格。
 
 ## 测试 / QA 计划
 
 | 层级  | 范围                                                                     | 状态           |
 | ----- | ------------------------------------------------------------------------ | -------------- |
-| L2–L4 | pre-pass 缓存、钳位/fallback、盲化 prompt、法定人数中位数的单元/契约测试 | Not started    |
-| L5    | 独立架构 + 安全/威胁模型评审                                             | review-pending |
-| L6    | 集成：judgeLlm 缺失 → 占位符；存在 → 盲评评分；硬门不被覆盖              | Not started    |
+| L2–L4 | pre-pass 缓存、钳位/fallback、盲化 prompt、法定人数中位数的单元/契约测试 | 已绿           |
+| L5    | 架构 + 安全/威胁模型评审                                                 | Owner-accepted COI 2026-08-16 |
+| L6    | 集成：judgeLlm 缺失 → 占位符；存在 → 盲评评分；硬门不被覆盖              | 已绿           |
 | L7    | pinned seed 下的重放确定性；评判器上限的预算硬杀                         | Not started    |
-| CI    | boot + adapter 的 `pnpm test:coverage`                                   | Not started    |
+| CI    | boot + adapter 的 `pnpm test:coverage`                                   | 已绿           |
+
+> L7 仍为 `Not started`：其「预算硬杀」一半依赖未实现的 J4。重放确定性一半已由 J3 单测中的
+> pinned seed 覆盖，但没有专门的 L7 用例。
 
 ## 批准
 

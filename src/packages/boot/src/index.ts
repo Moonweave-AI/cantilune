@@ -34,11 +34,21 @@ export {
   bootFileOS,
   DEFAULT_TEMPLATES,
 } from "./bootCantilune.js";
+/** ADR-0023 / ADR-0029: Postgres HA or official etcd Raft. */
+export {
+  createDurableCoordinatorFromEnv,
+  resolveProductionDurable,
+} from "@cantilune/runtime/memory";
 export { wrapCoordinationRuntime } from "./runtimeAdapter.js";
 export * from "./swarm/index.js";
 /** Low-level: run the agent loop directly (for testing or custom boot logic). */
-export { createAgentLoopHistory, requireAgentLoopHistory, runAgentLoop } from "./agentLoop.js";
-export { mergeToolExecutors } from "./toolMerge.js";
+export {
+  buildDefaultSystemPrompt,
+  createAgentLoopHistory,
+  requireAgentLoopHistory,
+  runAgentLoop,
+} from "./agentLoop.js";
+export { mergeToolExecutors, invalidateToolIndex } from "./toolMerge.js";
 export * from "./cluster/index.js";
 
 // Termination controller — the zero-training, math-first authority that owns

@@ -145,4 +145,109 @@ describe("Cantilune C9 resolver", () => {
     const resolver = createCantiluneC9Resolver(store);
     expect(await resolver.checkRevocation("cert-1", "checkpoint-1")).toBe(false);
   });
+
+  it("fail-closes when checkpoint is empty (A54)", async () => {
+    const store: CertificateStorePort = {
+      async getCertificate() {
+        return resolvedCert;
+      },
+    };
+    const resolver = createCantiluneC9Resolver(store);
+    expect(await resolver.checkRevocation("cert-1", "")).toBe(true);
+  });
+
+  it("fail-closes when caller checkpoint mismatches certificate checkpoint (A54)", async () => {
+    const store: CertificateStorePort = {
+      async getCertificate() {
+        return { ...resolvedCert, revocationCheckpoint: "checkpoint-bound" };
+      },
+    };
+    const resolver = createCantiluneC9Resolver(store);
+    expect(await resolver.checkRevocation("cert-1", "checkpoint-other")).toBe(true);
+    expect(await resolver.checkRevocation("cert-1", "checkpoint-bound")).toBe(false);
+  });
+
+  it("delegates to store.isRevokedAtCheckpoint when present", async () => {
+    const store: CertificateStorePort = {
+      async getCertificate() {
+        return resolvedCert;
+      },
+      async isRevokedAtCheckpoint(_ref, checkpoint) {
+        return checkpoint === "revoked-at";
+      },
+    };
+    const resolver = createCantiluneC9Resolver(store);
+    expect(await resolver.checkRevocation("cert-1", "revoked-at")).toBe(true);
+    expect(await resolver.checkRevocation("cert-1", "still-valid")).toBe(false);
+  });
+});
+
+describe("runtime public replay port", () => {
+  it("maps a successful runtime.replay() to ReplayPort", async () => {
+    const { createRuntimePublicReplayPort } = await import(
+      "../../src/adapters/cantilune/runtimeReplayPort.js"
+    );
+    const { createCantiluneReplayAdapter } = await import(
+      "../../src/adapters/cantilune/cantiluneReplayAdapter.js"
+    );
+    const port = createRuntimePublicReplayPort({
+      replay() {
+        return { ok: true, terminalRef: "snap:final", steps: [{}, {}] };
+      },
+    });
+    const oracle = createCantiluneReplayAdapter(port);
+    const result = await oracle.replay("snap:0", []);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.terminalSnapshotRef).toBe("snap:final");
+      expect(result.value.stepCount).toBe(2);
+    }
+  });
+
+  it("surfaces a failed runtime.replay() as evidence_incomplete", async () => {
+    const { createRuntimePublicReplayPort } = await import(
+      "../../src/adapters/cantilune/runtimeReplayPort.js"
+    );
+    const { createCantiluneReplayAdapter } = await import(
+      "../../src/adapters/cantilune/cantiluneReplayAdapter.js"
+    );
+    const oracle = createCantiluneReplayAdapter(
+      createRuntimePublicReplayPort({
+        replay() {
+          return { ok: false, violation: { message: "chain broken" } };
+        },
+      }),
+    );
+    const result = await oracle.replay("snap:0", []);
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("observability read bridge", () => {
+  it("returns the observeCommitted bundle as a read-only observation", async () => {
+    const { createObservabilityReadBridge } = await import(
+      "../../src/adapters/cantilune/observabilityReadBridge.js"
+    );
+    const reader = createObservabilityReadBridge({
+      observeCommitted: () => ({ structure: { kind: "serial" } }),
+      ports: {},
+    });
+    const result = await reader.readObservations("run-1", "epoch-a", "epoch-b");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toHaveLength(1);
+  });
+
+  it("fail-closes when observeCommitted throws", async () => {
+    const { createObservabilityReadBridge } = await import(
+      "../../src/adapters/cantilune/observabilityReadBridge.js"
+    );
+    const reader = createObservabilityReadBridge({
+      observeCommitted: () => {
+        throw new Error("access denied");
+      },
+      ports: {},
+    });
+    const result = await reader.readObservations("run-1", "epoch-a", "epoch-b");
+    expect(result.ok).toBe(false);
+  });
 });

@@ -10,10 +10,6 @@ export interface ViewProps {
   readonly store: AppStore;
 }
 
-/**
- * Builtin syscall operations the agent loop always exposes, independent of any
- * external tool wiring. Mirrors `DEFAULT_TEMPLATES` plus the loop's own tools.
- */
 const BUILTIN_TOOLS: readonly { name: string; kind: string; description: string }[] = [
   { name: "done", kind: "loop", description: "Declare the task complete" },
   { name: "read_content", kind: "content", description: "Read a content-addressed blob" },
@@ -30,28 +26,58 @@ const BUILTIN_TOOLS: readonly { name: string; kind: string; description: string 
   { name: "emit_heartbeat", kind: "cluster", description: "Prove agent liveness" },
 ];
 
+interface InjectedToolRow {
+  readonly name: string;
+  readonly description: string;
+}
+
+function readInjected(viewArgs: Record<string, unknown>): readonly InjectedToolRow[] {
+  const raw = viewArgs["injectedTools"];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (row): row is InjectedToolRow =>
+      typeof row === "object" &&
+      row !== null &&
+      typeof (row as InjectedToolRow).name === "string",
+  );
+}
+
 export function renderToolsViewOutput(
   activeView: ViewType,
   store: AppStore,
   viewArgs: Record<string, unknown>,
 ): string {
+  const injected = readInjected(viewArgs);
   if (activeView === "tools-test") {
     const name = str(viewArgs["name"]);
     const known = BUILTIN_TOOLS.find((tool) => tool.name === name);
-    if (known === undefined) {
+    const injectedHit = injected.find((tool) => tool.name === name);
+    if (known === undefined && injectedHit === undefined) {
       return [
         `Unknown tool: ${name}`,
         "",
         "Available builtin tools:",
         ...BUILTIN_TOOLS.map((tool) => `  ${tool.name}`),
+        ...(injected.length > 0
+          ? ["", "Injected tools:", ...injected.map((tool) => `  ${tool.name}`)]
+          : []),
+      ].join("\n");
+    }
+    if (injectedHit !== undefined) {
+      return [
+        `Tool: ${injectedHit.name}`,
+        `Kind: injected`,
+        `Description: ${injectedHit.description}`,
+        "",
+        "Dry-run: schema listed only. Side effects are refused (no execute).",
       ].join("\n");
     }
     return [
-      `Tool: ${known.name}`,
-      `Kind: ${known.kind}`,
-      `Description: ${known.description}`,
+      `Tool: ${known!.name}`,
+      `Kind: ${known!.kind}`,
+      `Description: ${known!.description}`,
       "",
-      known.kind === "coordination" || known.kind === "cluster"
+      known!.kind === "coordination" || known!.kind === "cluster"
         ? "Dry-run: this operation goes through runtime admission; it is rejected unless the\ncurrent principal holds the required role bindings."
         : "Dry-run: this operation is handled directly by the agent loop.",
     ].join("\n");
@@ -70,8 +96,12 @@ export function renderToolsViewOutput(
       BUILTIN_TOOLS.map((tool) => [tool.name, tool.kind, tool.description]),
     ),
     "",
-    "External tools (filesystem/shell/web/mcp) are supplied via BootConfig.tools.",
-    "Use /mcp to inspect MCP server connections.",
+    injected.length === 0
+      ? "No injected tools yet (filesystem/shell/web attach at boot via createToolSet)."
+      : [
+          `Injected tools (${injected.length})`,
+          ...injected.map((tool) => `  ${tool.name} — ${tool.description}`),
+        ].join("\n"),
   ].join("\n");
 }
 
@@ -87,7 +117,7 @@ export function ToolsView({
   return (
     <ViewFrame
       title={activeView === "tools-test" ? "Tools — Dry Run" : "Tools — Registry"}
-      tone="info"
+      tone="accent"
     >
       <Text>{output}</Text>
     </ViewFrame>

@@ -19,11 +19,7 @@ import type {
 } from "./types.js";
 import { collectAgentState } from "./termination/stateEvidenceLedger.js";
 import type { WorldSnapshot, TraceCounts } from "./termination/stateEvidenceLedger.js";
-import type {
-  CandidateAction,
-  ControlVerdict,
-  GoalContract,
-} from "./termination/types.js";
+import type { CandidateAction, ControlVerdict, GoalContract } from "./termination/types.js";
 import type { TerminationController } from "./termination/index.js";
 import { defaultSystemContract } from "./termination/goalContract.js";
 
@@ -54,6 +50,11 @@ export interface AgentLoopConfig {
   /** Reusable private history synchronized in place on every termination path. */
   readonly history?: AgentLoopHistory;
   readonly onHistoryCheckpoint?: (history: AgentLoopHistory) => void | Promise<void>;
+  /**
+   * Awaited at the start of each turn before tools are listed (ADR-0026).
+   * Must not run during an in-flight LLM/tool turn.
+   */
+  readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
 }
 
 /** Create caller-owned conversation state suitable for reuse across runs. */
@@ -539,9 +540,15 @@ function requirePerception(value: unknown): {
     recentObservations: record["recentObservations"],
     headRef: typeof headRef === "string" ? headRef : undefined,
     ...(typeof record["epochId"] === "string" ? { epochId: record["epochId"] } : {}),
-    ...(typeof record["participantCount"] === "number" ? { participantCount: record["participantCount"] } : {}),
-    ...(typeof record["artifactCount"] === "number" ? { artifactCount: record["artifactCount"] } : {}),
-    ...(typeof record["auditTailLength"] === "number" ? { auditTailLength: record["auditTailLength"] } : {}),
+    ...(typeof record["participantCount"] === "number"
+      ? { participantCount: record["participantCount"] }
+      : {}),
+    ...(typeof record["artifactCount"] === "number"
+      ? { artifactCount: record["artifactCount"] }
+      : {}),
+    ...(typeof record["auditTailLength"] === "number"
+      ? { auditTailLength: record["auditTailLength"] }
+      : {}),
   };
 }
 
@@ -711,6 +718,7 @@ interface TurnPreparationContext extends TurnRequestContext {
   readonly messages: readonly LlmMessage[];
   readonly goalMessage: LlmMessage;
   readonly maxContext: number;
+  readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
 }
 
 interface PreparedTurn {
@@ -723,6 +731,23 @@ async function prepareTurn(
   ctx: TurnPreparationContext,
 ): Promise<{ readonly prepared: PreparedTurn } | { readonly failure: RunResult }> {
   const emit = ctx.options?.onEvent;
+  if (ctx.onBeforeTurn !== undefined) {
+    try {
+      await ctx.onBeforeTurn(ctx.turns);
+    } catch (caught: unknown) {
+      return {
+        failure: phaseFailure(
+          "configuration",
+          caught,
+          ctx.turns,
+          ctx.startTime,
+          ctx.producedRefs,
+          ctx.ledger,
+          emit,
+        ),
+      };
+    }
+  }
   let contextMsg: string;
   try {
     const perception = requirePerception(await ctx.syscall.perceive());
@@ -968,6 +993,7 @@ export async function runAgentLoop(
     ...(config?.onHistoryCheckpoint === undefined
       ? {}
       : { onHistoryCheckpoint: config.onHistoryCheckpoint }),
+    ...(config?.onBeforeTurn === undefined ? {} : { onBeforeTurn: config.onBeforeTurn }),
   };
   const result = await executeAgentLoop(ctx);
   if (!state.historyPersistenceFailed && state.historyDirty) {
@@ -1070,6 +1096,7 @@ interface AgentLoopExecutionContext {
   readonly goalMessage: LlmMessage;
   readonly state: MutableAgentLoopState;
   readonly onHistoryCheckpoint?: (history: AgentLoopHistory) => void | Promise<void>;
+  readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
 }
 
 async function executeAgentLoop(ctx: AgentLoopExecutionContext): Promise<RunResult> {
@@ -1131,6 +1158,7 @@ async function executeAgentTurn(ctx: AgentLoopExecutionContext): Promise<RunResu
     ledger: state.ledger,
     options: ctx.options,
     maxTimeMs: ctx.maxTimeMs,
+    ...(ctx.onBeforeTurn === undefined ? {} : { onBeforeTurn: ctx.onBeforeTurn }),
   });
   if ("failure" in turnPreparation) return turnPreparation.failure;
   state.messages = turnPreparation.prepared.messages;
@@ -1175,11 +1203,7 @@ async function executeAgentTurn(ctx: AgentLoopExecutionContext): Promise<RunResu
   if (postLlmLimit !== undefined) return postLlmLimit;
 
   const turnMessageCount = state.messages.length;
-  const turnOutcome = await processTurnResponse(
-    ctx,
-    turnResponse.response,
-    state.messages,
-  );
+  const turnOutcome = await processTurnResponse(ctx, turnResponse.response, state.messages);
   // processTurnResponse mutates this exact array even on terminal outcomes, so
   // retain it before checkpointing terminal tool groups (including unresolved
   // external-observation receipts).
@@ -1512,7 +1536,15 @@ async function evaluateController(
   llmDoneSignal: boolean,
 ): Promise<ControlVerdict | { readonly fault: RunResult }> {
   const state = ctx.state;
-  let perception: { worldSummary: string; recentObservations: string; headRef: string | undefined; epochId?: string | undefined; participantCount?: number | undefined; artifactCount?: number | undefined; auditTailLength?: number | undefined };
+  let perception: {
+    worldSummary: string;
+    recentObservations: string;
+    headRef: string | undefined;
+    epochId?: string | undefined;
+    participantCount?: number | undefined;
+    artifactCount?: number | undefined;
+    auditTailLength?: number | undefined;
+  };
   try {
     perception = requirePerception(await ctx.syscall.perceive());
   } catch (caught: unknown) {
@@ -1886,7 +1918,13 @@ async function executeOneToolCall(
   emitToolStart(ctx, toolCall);
   let result: ToolDispatchResult;
   try {
-    result = await dispatchToolCall(ctx.syscall, toolCall, ctx.producedRefs, ctx.ledger);
+    result = await dispatchToolCall(
+      ctx.syscall,
+      toolCall,
+      ctx.producedRefs,
+      ctx.ledger,
+      ctx.options?.signal,
+    );
   } catch (caught: unknown) {
     return failedToolDispatch(ctx, toolCall, caught);
   }
@@ -2208,7 +2246,18 @@ function stringifyForDetail(value: unknown): string {
   if (value === undefined) return "undefined";
   if (value === null) return "null";
   if (typeof value === "string") return JSON.stringify(value);
-  return String(value);
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (typeof value === "symbol") return value.toString();
+  // Objects and functions: a plain `String(value)` yields "[object Object]",
+  // which tells a reader nothing. Serialize structurally, falling back only
+  // when the value is cyclic or otherwise unserializable.
+  try {
+    return JSON.stringify(value) ?? Object.prototype.toString.call(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
 }
 
 type ParsedStreamChunk =
@@ -2445,6 +2494,7 @@ async function dispatchToolCall(
   toolCall: LlmToolCallResult,
   producedRefs: ContentRef[],
   ledger: OperationLedger,
+  signal?: AbortSignal,
 ): Promise<ToolDispatchResult> {
   switch (toolCall.name) {
     case "done":
@@ -2457,7 +2507,7 @@ async function dispatchToolCall(
       return dispatchRetryToolObservation(syscall, toolCall, ledger);
     default:
       if (toolCall.name.startsWith("tool:")) {
-        return dispatchExternalToolCall(syscall, toolCall, producedRefs, ledger);
+        return dispatchExternalToolCall(syscall, toolCall, producedRefs, ledger, signal);
       }
       return dispatchActToolCall(syscall, toolCall);
   }
@@ -2527,6 +2577,7 @@ async function dispatchExternalToolCall(
   toolCall: LlmToolCallResult,
   producedRefs: ContentRef[],
   ledger: OperationLedger,
+  signal?: AbortSignal,
 ): Promise<ToolDispatchResult> {
   const explicitRecoveryOf = toolRecoveryOf(toolCall);
   const pending =
@@ -2564,6 +2615,7 @@ async function dispatchExternalToolCall(
       callId: toolCall.id,
       toolName: toolCall.name.slice(5),
       args: toolExecutionArguments(toolCall.arguments),
+      ...(signal !== undefined ? { signal } : {}),
     }),
     toolCall,
   );
@@ -2919,10 +2971,13 @@ function mkResult(
   };
 }
 
-function buildDefaultSystemPrompt(actorId?: string): string {
+export function buildDefaultSystemPrompt(actorId?: string): string {
   return [
-    "You are an autonomous agent operating inside the Cantilune coordination OS.",
-    "You have full authority to decide how to accomplish the user's instruction.",
+    "You are an autonomous peer inside the Cantilune coordination OS.",
+    "The human supplies the task. You decide the plan, the evidence, the tools,",
+    "how long to keep working, and whether other peers should join.",
+    "A single active participant is the starting world, not a reason to refuse",
+    "multi-agent work. Do not tell the human to run /swarm, /cluster, or to call tools for you.",
     ...(actorId === undefined
       ? []
       : [
@@ -2932,22 +2987,29 @@ function buildDefaultSystemPrompt(actorId?: string): string {
           "behalf of another participant is refused as principal_invalid.",
         ]),
     "",
-    "Available capabilities:",
-    "- Introduce artifacts (tasks, documents, code)",
-    "- Delegate tasks to other participants",
-    "- Fork parallel branches",
-    "- Create communication sessions",
-    "- Read/write content (read_content / write_content tools)",
-    "- Use external tools (prefixed with tool:)",
+    "You may:",
+    "- Research with search, fetch, shell, and filesystem tools; write lasting artifacts.",
+    "- Work across many turns. Prefer current evidence over recollection.",
+    "- Grow the cluster when parallelism, specialization, or independent review would help:",
+    "  1. write_content an AgentManifest JSON (agentId, kind, systemPrompt, assignedTask,",
+    "     startCondition, heartbeatIntervalMs, designedBy, optional priority/maxTurns).",
+    "  2. register_participant for that agentId (records the peer; does not start it).",
+    "  3. activate_participant with that manifest ContentRef (the live supervisor starts its loop).",
+    "- Fork branches, create sessions, delegate, and publish artifacts.",
+    "- startCondition is a StartConditionExpression tree, not English. Examples:",
+    '  {"operator":"atom","atom":{"evaluator":"always","params":{}}} starts immediately;',
+    '  {"operator":"atom","atom":{"evaluator":"agentsDone","params":{"agents":["peer-id"]}}} waits;',
+    '  {"operator":"atom","atom":{"evaluator":"artifactPublished","params":{"artifactId":"id"}}} waits.',
+    "  Compose with operator and/or/not. Missing, empty, or non-expression values start immediately.",
+    "- Leave a formal startCondition that is not yet true; the scheduler re-evaluates it on every drain.",
     "",
     "Rules:",
     "- Every operation goes through admission — illegal ops will be rejected with explanation.",
-    "- Call the 'done' tool when the user's instruction is fully completed.",
+    "- Call the 'done' tool only when the user's instruction is actually completed.",
     "- If an operation fails, read the error message and adjust your approach.",
     `- For read_content/write_content only, a successful exact retry clears its matching failure; corrected arguments may name the failed call with '${RECOVERY_ARGUMENT_KEY}'.`,
     `- Never rerun an external tool whose output was stored but audit observation failed. Use ${RETRY_TOOL_OBSERVATION} with the exact recovery identity returned by the failed call.`,
     `- Coordination operations never accept '${RECOVERY_ARGUMENT_KEY}'; a different successful operation cannot clear a rejected one.`,
-    "- Be efficient: minimize unnecessary operations.",
   ].join("\n");
 }
 

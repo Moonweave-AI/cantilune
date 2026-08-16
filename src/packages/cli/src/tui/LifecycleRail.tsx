@@ -13,14 +13,10 @@ export interface LifecycleRailProps {
 }
 
 /**
- * The vertical lifecycle rail rendered inline beneath an assistant message.
+ * The vertical lifecycle rail for one turn's process.
  *
- * This is what makes the default transcript a complete lifecycle view: every
- * stage the agent went through — turn open, LLM thinking, each tool dispatch
- * (coordination tools in the cluster accent), diagnostics, errors, turn close
- * — is shown by default, in time order, indented under a rule so it reads as
- * one turn's work. No slash-command switch is needed to see it; `/events`
- * remains as the pure-stream alternative lens on the same process.
+ * Focus layout keeps this folded behind {@link ActivityBlock}; observe layout
+ * or Ctrl+T expands it. `/events` remains the pure-stream alternative lens.
  *
  * Each line: `│ glyph  +0.4s  label`. The glyph and tint are chosen per stage;
  * coordination lines use the secondary accent (purple) so cluster activity is

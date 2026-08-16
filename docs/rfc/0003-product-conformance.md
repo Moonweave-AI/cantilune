@@ -2,18 +2,18 @@
 
 | Field                     | Value                                                                                                                                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status                    | **Draft** (pre-FCP)                                                                                                                                                                                     |
+| Status                    | **FCP** (opened 2026-08-16; comment period closes 2026-08-30; not Accepted)                                                                                                                             |
 | Type                      | Architecture / Governance                                                                                                                                                                               |
 | Risk                      | S4 when used for control-plane activation or product release; S2 for drafting scope                                                                                                                     |
 | Champion / Decision Owner | Joker-of-Gotham (DRI)                                                                                                                                                                                   |
-| Required Reviewers        | Formal Mathematics, Process Semantics, Security/Threat Model, QA-L5 (all **TBD / review-pending**; interim DRI with COI — see `docs/governance/reviewer-assignments.md`)                                |
+| Required Reviewers        | Formal Mathematics, Process Semantics, Security/Threat Model, QA-L5 — **Joker-of-Gotham** (Owner; COI disclosed, 2026-08-16)                                                                            |
 | Created                   | 2026-08-11                                                                                                                                                                                              |
 | Updated                   | 2026-08-11                                                                                                                                                                                              |
 | Related                   | RFC-0001 §8, RFC-0002 §7.1, ADR-0001, ADR-0006, ADR-0009, ADR-0010, `@cantilune/conformance`, `formal/proof-obligations.json`, `docs/research/0018-theory-product-boundary-clarification-2026-07-27.md` |
 
 > **Governance note:** This RFC is the canonical source for **Product Conformance** — the post–Core-Theory gate where concrete packages supply operational evidence, machine verification, human review, and sealed release decisions. Chat discussion is not authoritative. Nothing in this RFC claims QA-L5 complete, independent review signed, or production release authority.
 
-> **Boundary correction (inherits RFC-0002 §7.1):** Core Theory FCP (`proved / review-pending` at QA-L4) proves generic certificate interfaces are satisfiable via reference witnesses. **Product Conformance is a separate gate.** Eight planned product distributions do not block theory closure; their absence is expected until post-FCP package work begins.
+> **Boundary correction (inherits RFC-0002 §7.1):** Core Theory (`proved / Owner-accepted` at QA-L4; promotion unused) proves generic certificate interfaces are satisfiable via reference witnesses. **Product Conformance is a separate gate.** Owner granted `@cantilune/conformance` 0.x production release authority on 2026-08-16 (SS-01 lifted). Release Acceptance certificates are still not auto-signed.
 
 ---
 
@@ -21,7 +21,7 @@
 
 `@cantilune/conformance` is the **product evidence verification and release-gate module**. It answers five independent questions about a package or admission subject, binds evidence through a **C0–C9 certificate chain**, selects a **verification profile** from a ranked matrix, and emits **sealed `VerificationDecision` values** consumable only by authorized downstream gates (control-plane schema activation, fleet rollout, product release).
 
-Product Conformance **does not re-prove Lean theorems in TypeScript**. It verifies that supplied product evidence satisfies the interfaces already defined in Core Theory and recorded in `formal/proof-obligations.json`.
+Product Conformance verifies that supplied product evidence satisfies the interfaces already defined in Core Theory and recorded in `formal/proof-obligations.json`.
 
 **Current implementation status:** M1–M2 engineering prototype. **NOT** production admission or release authority until ADR-0009, ADR-0010, and QA-L5 review close.
 
@@ -57,7 +57,7 @@ Research log 0018 and RFC-0002 §7.1 established the theory/product split. This 
 
 ## 4. Non-goals
 
-- Re-proving Lean theorems or mutating `formal/proof-obligations.json` status from TypeScript.
+- Mutating `formal/proof-obligations.json` status from product code.
 - Runtime commit, control-plane catalog mutation, or holding private signing keys inside `@cantilune/conformance`.
 - Treating Vitest pass, non-empty certificate fields, or DRI self-review as product conformance.
 - Replacing QA-L4 theory review (`docs/qa/0002-theory-closure-proved-review-pending-2026-07-27.md`).
@@ -224,33 +224,33 @@ RFC-0001 §8 defines five **falsifiable superiority claims** (C1 expressiveness,
 | Concern                                                               | Owner module                                                                    | This RFC         |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------- |
 | Evidence correctness, certificate chain, release gate                 | `@cantilune/conformance`                                                        | **In scope**     |
-| Baseline comparison runs, metric collection, benchmark falsifiability | Future **eval harness ADR** (new; **not** ADR-0005 observability read boundary) | **Handoff only** |
+| Baseline comparison runs, metric collection, benchmark falsifiability | **RFC-0004** + **ADR-0011** (not ADR-0005 observability read boundary)          | **Handoff only** |
 
 **Handoff contract:**
 
 1. Eval harness MUST consume **sealed C9 `PackageConformanceCertificate`** (or equivalent release decision) before attributing benchmark results to a product version.
 2. Conformance MUST NOT embed benchmark logic or issue superiority claims.
 3. Eval harness MUST record: artifact subject, verifier build, policy version, and evidence root digest alongside every published metric row.
-4. RFC-0001 §8 claims remain **unverified** until eval ADR Accepted + harness CI exists.
+4. RFC-0001 §8 claims remain **unverified** until a publishable `ClaimDecision` under Owner COI quorum + frozen protocol (RFC-0004). ADR-0011 is Accepted; E1–E8 are engineered. Analysis still cannot emit `supported`.
 
-**Next artifact:** Eval Harness RFC/ADR pair (tracked separately; referenced from RFC-0001 implementation table).
+**Next artifact:** RFC-0004 (FCP open) + ADR-0011 (Accepted). Evaluation claims stay namespaced `evaluation.c1`–`evaluation.c5`; conformance remains C0–C9.
 
 ## 8. Security / correctness implications
 
 - Product Conformance is a **trust boundary** when wired to control-plane or release automation (S4).
 - Threat model: **ADR-0010** (STRIDE mapping to conformance module).
 - Trust lifecycle: **ADR-0009** (roots, revocation, quorum, cache invalidation, verifier pinning).
-- M2 prototype MUST NOT be described as production-ready regardless of test pass rate.
+- `@cantilune/conformance` is 0.x production release authority (Owner 2026-08-16). It still MUST NOT auto-sign release Acceptance certificates. SemVer remains 0.x.
 
 ## 9. Test / QA plan
 
 | Tier  | Scope                                                                                    | Status                                                            |
 | ----- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | L2–L4 | Unit/contract for digest binding, inventory completeness, engineering admission verifier | Partial (in repo)                                                 |
-| L5    | Independent formal + security + QA-L5 review                                             | **review-pending** — `docs/qa/conformance-l5-review-checklist.md` |
+| L5    | Formal + security + QA-L5 review                                                         | Owner-signed COI 2026-08-16 — `docs/qa/conformance-l5-review-checklist.md` |
 | L6    | Integration with control-plane prepare/commit negative paths                             | Partial                                                           |
-| L7    | Tamper corpus, fuzz, mutation, crash recovery, pack CLI                                  | **OPEN**                                                          |
-| CI    | Dedicated conformance workflow with SBOM/provenance                                      | **OPEN**                                                          |
+| L7    | Tamper corpus, fuzz, mutation, crash recovery, pack CLI                                  | Engineered (in-repo; see `@cantilune/conformance` DESIGN-CLOSURE) |
+| CI    | Dedicated conformance workflow with SBOM/provenance                                      | Engineered (`.github/workflows/conformance.yml`; no auto-sign)    |
 
 ## 10. Compatibility / migration
 
@@ -264,39 +264,34 @@ RFC-0001 §8 defines five **falsifiable superiority claims** (C1 expressiveness,
 2. **File/durable evidence CAS:** single-writer layout vs shared object store (implementation ADR follow-up).
 3. **External signing tool:** HSM vs sigstore vs manual quorum (M3+).
 4. **Lean bridge automation:** attestation generation from CI vs manual upload (M3+).
-5. **Second reviewer assignment** for Product Conformance RFC/ADRs (governance gap).
+5. **Second reviewer assignment** — **closed.** No second reviewer. DRI / Formal / QA-L5 / Security = Joker-of-Gotham (Owner COI, 2026-08-16).
 
-## 12. FCP summary (not yet entered)
+## 12. FCP summary (opened 2026-08-16)
 
-**Pre-FCP.** Draft complete for governance review. Entry requires:
-
-- Independent Formal + Security + QA-L5 review per checklist (all items review-pending)
-- ADR-0009 and ADR-0010 external Security + Formal independent Accept (engineering scope Accepted; FCP sign-off pending)
-- Resolution of open questions Q1–Q5
-- Non-DRI second reader assigned
+**Entered.** Owner opened FCP on 2026-08-16 (closes 2026-08-30). This is not RFC Accepted. Formal + Security + QA-L5 are Owner-signed with COI; independence rows are waived. Lean kernel is `proved / Owner-accepted` (promotion unused). `@cantilune/conformance` is 0.x production release authority (SS-01 lifted). Release certs are not auto-signed. See `docs/governance/fcp-entry-2026-08-16.md`.
 
 ## 13. Decision record
 
 - **Triage:** Product Conformance separated from Core Theory per research 0018 / RFC-0002 §7.1.
-- **RFC status:** Draft, 2026-08-11.
-- **Implementation status:** M1–M2 prototype in `@cantilune/conformance`; NOT release authority.
+- **RFC status:** FCP opened 2026-08-16 (closes 2026-08-30); not Accepted.
+- **Implementation status:** `@cantilune/conformance` is 0.x production release authority (Owner 2026-08-16). Still no auto-signed Acceptance cert.
 
 ## 14. Implementation / ADR tracking
 
 | Artifact                             | Status                                                          | Blocks             |
 | ------------------------------------ | --------------------------------------------------------------- | ------------------ |
-| ADR-0009 Conformance trust lifecycle | **Accepted** (M2–M3 engineering scope; external review pending) | S4 closure         |
-| ADR-0010 Conformance threat model    | **Accepted** (M2–M3 engineering scope; external review pending) | S4 closure         |
-| QA-L5 checklist                      | **review-pending**                                              | FCP                |
-| Immutable evidence CAS               | OPEN                                                            | S4                 |
-| Verified/Reviewed sealed types       | OPEN                                                            | S4                 |
-| Eval harness ADR                     | Not started                                                     | RFC-0001 §8 claims |
+| ADR-0009 Conformance trust lifecycle | **Accepted** (M2–M3 engineering scope; Owner COI 2026-08-16)    | S4 closure         |
+| ADR-0010 Conformance threat model    | **Accepted** (M2–M3 engineering scope; Owner COI 2026-08-16)    | S4 closure         |
+| QA-L5 checklist                      | Owner-signed COI 2026-08-16; independence waived; SS-01 lifted  | FCP close          |
+| Immutable evidence CAS               | Engineered (file)                                               | S4                 |
+| Verified/Reviewed sealed types       | Engineered                                                      | S4                 |
+| Eval harness RFC-0004 + ADR-0011     | RFC FCP; ADR Accepted; E1–E8 engineered; Owner COI public claims | public claims     |
 
 ## Next Steps
 
 | Action                               | Owner                             | Due/Review | Canonical Link                               |
 | ------------------------------------ | --------------------------------- | ---------- | -------------------------------------------- |
-| Independent QA-L5 review kickoff     | Formal + Security reviewers (TBD) | Pre-FCP    | `docs/qa/conformance-l5-review-checklist.md` |
-| Accept ADR-0009 / ADR-0010           | DRI + Security                    | Pre-FCP    | `docs/adr/0009-*`, `docs/adr/0010-*`         |
-| File durable evidence store          | Engineering                       | M3         | `@cantilune/conformance` ports               |
-| Assign non-DRI conformance reviewers | DRI                               | Pre-FCP    | `docs/governance/reviewer-assignments.md`    |
+| QA-L5 Owner-signed COI               | Joker-of-Gotham                   | Done 2026-08-16 | `docs/qa/conformance-l5-review-checklist.md` |
+| Accept ADR-0009 / ADR-0010           | DRI + Security (Owner COI)        | Done       | `docs/adr/0009-*`, `docs/adr/0010-*`         |
+| File durable evidence store          | Engineering                       | Done (file) | `@cantilune/conformance` ports              |
+| FCP comment period                   | Decision Owner                    | 2026-08-30 | `docs/governance/fcp-entry-2026-08-16.md`    |

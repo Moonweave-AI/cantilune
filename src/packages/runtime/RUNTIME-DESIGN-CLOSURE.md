@@ -9,7 +9,7 @@
 | 含义      | 说明                                                             |
 | --------- | ---------------------------------------------------------------- |
 | ✅ 已闭包 | 代码 + 对应层测试成立                                            |
-| ⚠️ 部分   | 分布式 DB 未做；ADR-0003 Request Changes 已 remediate，待 Accept |
+| ⚠️ 部分   | 工程深等价，非形式化 Verified |
 | ❌ OPEN   | 刻意未做或外置包                                                 |
 
 **结论（2026-08-10）：** M2 工程原型级纵向闭环已成立。**FileDurableCoordinator** + **FileResourceLockTable** 提供跨进程 CAS 与锁；76/76 Vitest。**M2 原型 Stop-Ship 已解除**；**ADR-0003 Accept**（reviewer: Joker-of-Gotham）。
@@ -38,17 +38,18 @@
 | `ReplayRecipe`     | wire + sidecar + bundle       | ✅                               |
 | `Verified`         | `snapshotsCanonicallyEqual`   | ⚠️ 工程深等价，非形式化 Verified |
 | Template revision  | registry `@revision` 精确匹配 | ✅                               |
-| SignatureAdmission | control-plane stub            | ⚠️ stub                          |
+| Four-view admission | `@cantilune/conformance` `FourViewEvidence` / `verifyFourViewEvidence` (no `SignatureAdmission` symbol) | ✅ engineering; Owner C3 open |
 
 ---
 
-## 4. OPEN（下一迭代）
+## 4. 已落地的多副本 durable
 
-| 项                                   | 落点                                  |
-| ------------------------------------ | ------------------------------------- |
-| 分布式 DB / 多副本 durable           | 未来 ADR（file durable 为单目录 CAS） |
-| ADR-0003 Accept + 生产边界 Stop-Ship | ✅ M2 Accept；生产边界仍 Open         |
-| `@cantilune/comms`                   | 外置 02G                              |
+| 项                         | 落点                                      |
+| -------------------------- | ----------------------------------------- |
+| 运维 Postgres HA           | ADR-0023；`createPostgresDurableCoordinator` |
+| 官方 etcd Raft             | ADR-0029；`createRaftDurableCoordinator`  |
+| ADR-0003 Accept            | ✅ M2 Accept                              |
+| `@cantilune/comms`         | 已落地（02G / ADR-0018 / ADR-0027）       |
 
 ---
 
@@ -77,17 +78,15 @@ business commit/replay chain accepts only canonically verified observation
 and/or epoch-only head advances, and resolver-backed replay selects the schema
 binding for each historical epoch.
 
-**QA-L5 Stop-Ship residual:** `MemoryEpochAdministration` still keeps its
-prepared/committed receipt journal in process memory. With a file-backed
-`DurableCoordinator`, a crash after the epoch-head CAS but before the in-memory
-journal and holders are updated cannot be recovered from `admissionId` alone:
-the durable snapshot records `epochId`, but not the admission id, schema ref,
-or complete from-binding needed to reconstruct `RuntimeEpochReceipt`. Closing
-this requires a durable epoch journal written in the same transaction as the
-head, or a separately reviewed recovery protocol carrying authenticated
-binding/request evidence. Until then, cross-process epoch-transition atomicity
-and crash recovery are **unverified and not release-ready**; the passing
-in-process and control-plane tests must not be cited as evidence for that claim.
+**Epoch journal engineering (2026-08-15):** the in-memory receipt journal is no
+longer the crash-recovery authority. `DurableCoordinator.compareAndSwapHeadWithBinding`
+commits head + `schemaBinding` in one CAS; `recoverFromDurableBinding` rebuilds
+the receipt from the durable bundle when the process journal is empty; L7
+`tests/system/l7/epoch-transition-crash-atomic.test.ts` exercises that boundary.
+This closes the **engineering** Stop-Ship described above. Multi-replica
+durable is Postgres HA (ADR-0023) or official etcd Raft (ADR-0029).
+ADR-0014 engineering is on the durable binding path; Lean rows stay
+`proved / Owner-accepted`.
 
 # Content reference authority boundary (2026-08-13)
 

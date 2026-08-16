@@ -131,7 +131,12 @@ async function seedRealCluster(): Promise<{
 }
 
 /** Commit `activate_participant` (initiator → worker, manifest ref) on the real runtime. */
-function commitActivate(runtime: ReturnType<typeof createCoordinationRuntime>, initiator: ActorId, worker: ActorId, manifestRef: ContentRef): void {
+function commitActivate(
+  runtime: ReturnType<typeof createCoordinationRuntime>,
+  initiator: ActorId,
+  worker: ActorId,
+  manifestRef: ContentRef,
+): void {
   runtime.proposeAndCommit(
     coordinationIntent(
       actorRef(initiator, "agent"),
@@ -146,7 +151,7 @@ function commitActivate(runtime: ReturnType<typeof createCoordinationRuntime>, i
 
 describe("L6 — real-runtime closed-loop swarm (ADR-0015 §7)", () => {
   it("activate_participant appends to the real commit feed and binds the manifest on the participant", async () => {
-    const { runtime, contentStore, initiator, worker, manifestRef } = await seedRealCluster();
+    const { runtime, initiator, worker, manifestRef } = await seedRealCluster();
 
     // Commit through the REAL runtime: the handler binds the manifest ref and
     // transitions the worker registered → active. This appends a real
@@ -154,9 +159,13 @@ describe("L6 — real-runtime closed-loop swarm (ADR-0015 §7)", () => {
     commitActivate(runtime, initiator, worker, manifestRef);
 
     const feed = runtime.changes();
-    const activateChange = feed.find((c) => c.operationTypeId === operationTypeId("activate_participant"));
+    const activateChange = feed.find(
+      (c) => c.operationTypeId === operationTypeId("activate_participant"),
+    );
     expect(activateChange).toBeDefined();
-    expect(activateChange!.matchBindings.some((b) => b.role === "participant" && b.actorId === worker)).toBe(true);
+    expect(
+      activateChange!.matchBindings.some((b) => b.role === "participant" && b.actorId === worker),
+    ).toBe(true);
 
     const headAfterActivate = runtime.getHead();
     const workerParticipant = headAfterActivate!.participants.get(worker);
@@ -243,7 +252,11 @@ describe("L6 — real-runtime closed-loop swarm (ADR-0015 §7)", () => {
     const { runtime, contentStore, initiator, worker, manifestRef } = await seedRealCluster();
     const syscallRuntime = wrapCoordinationRuntime(runtime);
 
-    const shared = createSharedResources({ runtime: syscallRuntime, contentStore, storagePath: "/tmp/closed-loop-2" });
+    const shared = createSharedResources({
+      runtime: syscallRuntime,
+      contentStore,
+      storagePath: "/tmp/closed-loop-2",
+    });
     const supervisor = new ClusterSupervisor({
       shared,
       conditionRegistry: createDefaultConditionRegistry(),
@@ -283,11 +296,9 @@ describe("L6 — real-runtime closed-loop swarm (ADR-0015 §7)", () => {
     // Now signal the initiator done (it finishes its coordinating role) by
     // committing signal_done for it directly on the real runtime.
     runtime.proposeAndCommit(
-      coordinationIntent(
-        actorRef(initiator, "agent"),
-        operationTypeId("signal_done"),
-        [matchBinding("from", initiator as string)],
-      ),
+      coordinationIntent(actorRef(initiator, "agent"), operationTypeId("signal_done"), [
+        matchBinding("from", initiator as string),
+      ]),
       { principal: actorRef(initiator, "agent") },
     );
     await supervisor.drainFeed();

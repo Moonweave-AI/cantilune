@@ -10,7 +10,7 @@ describe("GraphView", () => {
     expect(output).toContain("publish_artifact(actor:coder)");
     expect(output).toContain("commit_change(actor:planner)");
     expect(output).toContain("Edges:");
-    expect(output).toContain("chain");
+    expect(output).toContain("before/after");
   });
 
   it("shows empty state without runtime data", () => {
@@ -27,7 +27,7 @@ describe("GraphView", () => {
       },
       sampleRuntime,
     );
-    expect(output).toContain("Path chg:obs-001");
+    expect(output).toContain("chg:obs-001");
     expect(output).toContain("chg:commit-004");
   });
 

@@ -101,14 +101,18 @@ export function validateReviewers(
     return { valid: false, reason: "no reviewer attestations" };
   }
 
-  const uniqueReviewerIds = new Set(attestations.map((a) => a.reviewerId));
-  if (uniqueReviewerIds.size < attestations.length) {
-    return { valid: false, reason: "duplicate reviewer detected" };
-  }
-
   if (config.selfReviewProhibited) {
+    const uniqueReviewerIds = new Set(attestations.map((a) => a.reviewerId));
+    if (uniqueReviewerIds.size < attestations.length) {
+      return { valid: false, reason: "duplicate reviewer detected" };
+    }
     if (attestations.some((a) => a.reviewerId === config.claimOwnerRef)) {
       return { valid: false, reason: "self-review prohibited" };
+    }
+  } else {
+    const uniqueRoleKeys = new Set(attestations.map((a) => `${a.reviewerId}:${a.role}`));
+    if (uniqueRoleKeys.size < attestations.length) {
+      return { valid: false, reason: "duplicate reviewer role detected" };
     }
   }
 

@@ -40,6 +40,12 @@ import { encodeCommunicationWireFrame } from "../../codec/strictWireCodec.js";
 import { assertVerifiedEnvelope } from "../../security/commsCapability.js";
 import { atomicWriteFileSync } from "../../file/atomicWrite.js";
 import type { EStopGate } from "../../security/identityVerifier.js";
+import {
+  createFileEndpointIdentityVerifier,
+  readFileEndpointIdentity,
+  resolveStoreOwner,
+  writeFileEndpointIdentity,
+} from "../../security/fileEndpointIdentity.js";
 
 const OUTBOX_DIR = "outbox";
 const INBOX_DIR = "inbox";
@@ -78,6 +84,19 @@ export interface FileTransportOptions {
    * given explicitly.
    */
   readonly dir?: string;
+  /**
+   * Store root for file endpoint identity (owner+pid sidecar). When set with
+   * {@link localActorRef}, this process writes its identity on construction.
+   */
+  readonly identityStoreRoot?: string;
+  /** Local ActorRef bound into the identity sidecar. */
+  readonly localActorRef?: string;
+  /**
+   * Peer identity store root. When set with {@link expectedPeerActorRef},
+   * handshake/receive verify the peer's owner+pid file.
+   */
+  readonly peerIdentityStoreRoot?: string;
+  readonly expectedPeerActorRef?: string;
 }
 
 interface InboxEntry {
@@ -114,6 +133,9 @@ export class FileTransport implements CommunicationTransport {
   private readonly inboxDir: string;
   private readonly maxFrameBytes: number;
   private readonly eStopGate: EStopGate | undefined;
+  private readonly peerIdentityStoreRoot: string | undefined;
+  private readonly expectedPeerActorRef: string | undefined;
+  private readonly identityVerifier = createFileEndpointIdentityVerifier();
   private writeCounter = 0;
 
   constructor(options: FileTransportOptions) {
@@ -122,8 +144,13 @@ export class FileTransport implements CommunicationTransport {
     this.inboxDir = options.inboxDir ?? join(root, INBOX_DIR);
     this.maxFrameBytes = options.maxFrameBytes ?? 1_048_576;
     this.eStopGate = options.eStopGate;
+    this.peerIdentityStoreRoot = options.peerIdentityStoreRoot;
+    this.expectedPeerActorRef = options.expectedPeerActorRef;
     ensureDir(this.outboxDir);
     ensureDir(this.inboxDir);
+    if (options.identityStoreRoot !== undefined && options.localActorRef !== undefined) {
+      writeFileEndpointIdentity(options.identityStoreRoot, options.localActorRef);
+    }
   }
 
   /** Directory this transport writes dispatched frames into. */
@@ -158,11 +185,37 @@ export class FileTransport implements CommunicationTransport {
     return ok({ attemptRef: `file-${envelope.envelope.messageId as string}` });
   }
 
+  /**
+   * Write already-encoded bytes (strict wire v1 or an A2A-wrapped frame) into
+   * the outbox. Used by the a2a/0.1 harness so the reference adapter can sit
+   * on top of FileTransport without a second codec.
+   */
+  async sendRawFrame(bytes: Uint8Array): Promise<Result<void, CommsViolation>> {
+    if (this.isFrozen()) {
+      return err(commsViolation("transport_failed", "send", "E-Stop frozen", { retryable: false }));
+    }
+    if (bytes.byteLength === 0) {
+      return err(
+        commsViolation("transport_failed", "send", "frame is empty", { retryable: false }),
+      );
+    }
+    const seq = (this.writeCounter += 1);
+    const name = `${String(seq).padStart(10, "0")}-raw-${String(seq)}${FRAME_SUFFIX}`;
+    const target = join(this.outboxDir, name);
+    atomicWriteFileSync(target, Buffer.from(bytes).toString("base64"));
+    return ok(undefined);
+  }
+
   async receive(): Promise<Result<Uint8Array, CommsViolation>> {
     if (this.isFrozen()) {
       return err(
         commsViolation("transport_failed", "receive", "E-Stop frozen", { retryable: true }),
       );
+    }
+    const identity = this.verifyPeerIdentity();
+    if (!identity.ok) {
+      this.eStopGate?.setFrozen(true);
+      return identity;
     }
     const entry = this.peekInbox();
     if (entry === undefined) {
@@ -238,6 +291,11 @@ export class FileTransport implements CommunicationTransport {
     if (this.isFrozen()) {
       return err(commsViolation("transport_failed", "session", "E-Stop frozen"));
     }
+    const identity = this.verifyPeerIdentity();
+    if (!identity.ok) {
+      this.eStopGate?.setFrozen(true);
+      return identity;
+    }
     // File-based handshake marker: the peer reads a `.handshake-<sessionId>`
     // marker from its inbox. This mirrors LoopbackTransport's simplified
     // handshake — the durable channel binding is established by the session
@@ -247,6 +305,51 @@ export class FileTransport implements CommunicationTransport {
     const body = JSON.stringify({ transcriptDigest: request.transcriptDigest });
     atomicWriteFileSync(target, body);
     return ok({ ackDigest: request.transcriptDigest });
+  }
+
+  private verifyPeerIdentity(): Result<void, CommsViolation> {
+    if (
+      this.peerIdentityStoreRoot === undefined ||
+      this.expectedPeerActorRef === undefined
+    ) {
+      return ok(undefined);
+    }
+    const record = readFileEndpointIdentity(this.peerIdentityStoreRoot);
+    if (record === undefined) {
+      return err(
+        commsViolation("identity_unverified", "authenticate", "peer file identity missing", {
+          retryable: false,
+        }),
+      );
+    }
+    // Authenticate against filesystem owner truth — never re-present the
+    // sidecar's own claimed owner/pid (that would accept any forged file).
+    // Pid must still match the live binding written by the peer process;
+    // we re-read the claimed pid only to bind ActorRef↔pid, then require the
+    // owner field to equal the OS owner of the store root.
+    const authenticOwner = resolveStoreOwner(this.peerIdentityStoreRoot);
+    const verified = this.identityVerifier.verifyFileIdentity({
+      expectedActorRef: this.expectedPeerActorRef,
+      storeRoot: this.peerIdentityStoreRoot,
+      presentedPid: record.pid,
+      presentedOwner: authenticOwner,
+    });
+    if (!verified.ok) {
+      return verified;
+    }
+    // Extra fail-closed: forged owner that happens to match a stale presented
+    // value is already caught above; reject non-positive / obviously fake pids.
+    if (!Number.isInteger(record.pid) || record.pid <= 1) {
+      return err(
+        commsViolation(
+          "identity_unverified",
+          "authenticate",
+          `peer file identity pid is not a live binding: ${String(record.pid)}`,
+          { retryable: false },
+        ),
+      );
+    }
+    return ok(undefined);
   }
 
   private isFrozen(): boolean {

@@ -12,6 +12,8 @@ export interface CommandPaletteProps {
   readonly selected: number;
   /** Rows of results to show at once before scrolling. */
   readonly visibleRows?: number;
+  /** Terminal columns; each suggestion is clipped to one row of this width. */
+  readonly width?: number;
 }
 
 /** Category tint, so the eye can group a long list without reading every row. */
@@ -49,30 +51,84 @@ function argHint(suggestion: CommandSuggestion): string {
   return ` ${suggestion.requiredArgs.map((name) => `<${name}>`).join(" ")}`;
 }
 
-function UsageLine({ usage }: { readonly usage: CommandUsage }): React.ReactElement {
-  const { colors, text } = useTheme();
+/** Clip a palette cell so a row cannot wrap and push the frame off-screen. */
+export function clipPaletteText(value: string, budget: number, ellipsis = "…"): string {
+  if (budget <= 0) return "";
+  if (value.length <= budget) return value;
+  if (budget <= ellipsis.length) return ellipsis.slice(0, budget);
+  return `${value.slice(0, budget - ellipsis.length)}${ellipsis}`;
+}
+
+export interface PaletteRowCells {
+  readonly name: string;
+  readonly child: string;
+  readonly description: string;
+  readonly category: string;
+}
+
+/**
+ * Pack one suggestion into a single terminal row.
+ *
+ * Name, description, and category share `width` minus chrome; leftover
+ * description is dropped rather than wrapped.
+ */
+export function formatPaletteRow(
+  entry: CommandSuggestion,
+  width: number,
+  childMark: string,
+  ellipsis = "…",
+): PaletteRowCells {
+  const inner = Math.max(16, width - 4);
+  const marker = 2;
+  const nameRaw = `${entry.label}${argHint(entry)}`;
+  const nameBudget = Math.min(Math.max(nameRaw.length, 10), Math.max(10, Math.floor(inner * 0.36)));
+  const child = entry.childCount > 0 ? `${childMark}${entry.childCount}` : " ";
+  const reserved = marker + nameBudget + 1 + child.length + 1 + entry.category.length;
+  const descBudget = Math.max(0, inner - reserved - 1);
+  return {
+    name: clipPaletteText(nameRaw, nameBudget, ellipsis).padEnd(nameBudget),
+    child,
+    description: clipPaletteText(entry.description, descBudget, ellipsis),
+    category: entry.category,
+  };
+}
+
+function UsageLine({
+  usage,
+  width,
+}: {
+  readonly usage: CommandUsage;
+  readonly width: number;
+}): React.ReactElement {
+  const { colors, text, glyphs } = useTheme();
+  const inner = Math.max(16, width - 4);
   const signature = usage.args
     .map((arg) => (arg.required ? `<${arg.name}>` : `[${arg.name}]`))
     .join(" ");
   const current = usage.args[usage.argIndex];
+  const ellipsis = glyphs.ellipsis;
 
   return (
-    <Box flexDirection="column">
-      <Box>
+    <Box flexDirection="column" width={inner}>
+      <Box width={inner}>
         <Text bold {...fg(colors.accentAlt)}>
-          {usage.name}
+          {clipPaletteText(usage.name, inner, ellipsis)}
         </Text>
-        {signature.length > 0 ? <Text {...text.muted}> {signature}</Text> : null}
+        {signature.length > 0 ? (
+          <Text {...text.muted}>
+            {" "}
+            {clipPaletteText(signature, Math.max(0, inner - usage.name.length - 1), ellipsis)}
+          </Text>
+        ) : null}
       </Box>
-      <Text {...text.muted}>{usage.description}</Text>
+      <Text {...text.muted}>{clipPaletteText(usage.description, inner, ellipsis)}</Text>
       {current !== undefined ? (
         <Text {...text.accent}>
-          {current.name}
-          <Text {...text.muted}>
-            {" — "}
-            {current.description}
-            {current.required ? " (required)" : " (optional)"}
-          </Text>
+          {clipPaletteText(
+            `${current.name} — ${current.description}${current.required ? " (required)" : " (optional)"}`,
+            inner,
+            ellipsis,
+          )}
         </Text>
       ) : null}
     </Box>
@@ -92,29 +148,28 @@ export function CommandPalette({
   usage = null,
   selected,
   visibleRows = 8,
+  width = 100,
 }: CommandPaletteProps): React.ReactElement {
   const theme = useTheme();
   const { colors, glyphs, text } = theme;
 
   const safeSelected = suggestions.length === 0 ? 0 : Math.min(selected, suggestions.length - 1);
   const { start, end } = scrollWindow(safeSelected, suggestions.length, visibleRows);
-  const widest = suggestions.reduce(
-    (max, entry) => Math.max(max, entry.label.length + argHint(entry).length),
-    0,
-  );
+  const inner = Math.max(16, width - 4);
 
   return (
     <Box
       flexDirection="column"
+      width={width}
       borderStyle={theme.border}
       {...border(colors.accentAlt)}
       paddingX={1}
     >
       {usage !== null && suggestions.length === 0 ? (
-        <UsageLine usage={usage} />
+        <UsageLine usage={usage} width={width} />
       ) : (
         <>
-          <Box justifyContent="space-between">
+          <Box width={inner} justifyContent="space-between">
             <Text bold {...fg(colors.accentAlt)}>
               Commands
             </Text>
@@ -130,28 +185,27 @@ export function CommandPalette({
           ) : (
             suggestions.slice(start, end).map((entry, index) => {
               const isActive = start + index === safeSelected;
+              const row = formatPaletteRow(entry, width, glyphs.prompt, glyphs.ellipsis);
               return (
-                <Box key={entry.name}>
+                <Box key={entry.name} width={inner} flexWrap="nowrap">
                   <Text {...(isActive ? text.accent : {})}>{isActive ? glyphs.prompt : " "} </Text>
-                  <Text {...(isActive ? text.selected : text.muted)}>
-                    {`${entry.label}${argHint(entry)}`.padEnd(widest)}
-                  </Text>
-                  {/* A parent segment advertises its depth so the list reads as
-                      a tree rather than an arbitrarily truncated flat list. */}
-                  <Text {...text.muted}>
-                    {entry.childCount > 0 ? ` ${glyphs.prompt}${entry.childCount}` : "  "}
-                  </Text>
-                  <Text {...text.muted}> {entry.description}</Text>
-                  <Text {...fg(categoryColor(theme, entry.category))}> {entry.category}</Text>
+                  <Text {...(isActive ? text.selected : text.muted)}>{row.name}</Text>
+                  <Text {...text.muted}> {row.child}</Text>
+                  {row.description.length > 0 ? (
+                    <Text {...text.muted}> {row.description}</Text>
+                  ) : null}
+                  <Text {...fg(categoryColor(theme, entry.category))}> {row.category}</Text>
                 </Box>
               );
             })
           )}
 
           <Text {...text.muted}>
-            {glyphs.upDown} select {glyphs.sep} Tab complete {glyphs.sep} Enter run {glyphs.sep} Esc
-            dismiss
-            {end < suggestions.length ? ` ${glyphs.sep} ${suggestions.length - end} more` : ""}
+            {clipPaletteText(
+              `${glyphs.upDown} select ${glyphs.sep} Tab complete ${glyphs.sep} Enter run ${glyphs.sep} Esc dismiss${end < suggestions.length ? ` ${glyphs.sep} ${suggestions.length - end} more` : ""}`,
+              inner,
+              glyphs.ellipsis,
+            )}
           </Text>
         </>
       )}

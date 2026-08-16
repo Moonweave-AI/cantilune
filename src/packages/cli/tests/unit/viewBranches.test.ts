@@ -9,7 +9,7 @@ describe("view branch coverage", () => {
   it("covers graph op-only filter and empty edge cases", () => {
     expect(renderGraphViewOutput("graph", { op: "commit" }, sampleRuntime)).toContain("commit");
     expect(renderGraphViewOutput("graph-path", { refA: "x", refB: "y" }, sampleRuntime)).toContain(
-      "Path",
+      "No path",
     );
     expect(renderGraph([], [{ from: "missing", to: "nope" }])).toContain("(empty graph)");
   });

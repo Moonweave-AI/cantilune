@@ -1,0 +1,18 @@
+{
+  "taskId": "T06",
+  "failClosed": true,
+  "minPeers": 3,
+  "minTurns": 10,
+  "requireActivate": true,
+  "requireComms": true,
+  "requireObserve": true,
+  "forbidSelfScore": true,
+  "requiredArtifacts": [
+    "artifacts/sap.md",
+    "artifacts/stats.md",
+    "artifacts/compliance-reject.md",
+    "artifacts/nda/outline.md",
+    "artifacts/nda/module-2-summary.md"
+  ],
+  "requiredGlobs": ["data/**"]
+}

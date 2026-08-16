@@ -4,34 +4,31 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createCommsServices } from "../../src/engine/createCommsServices.js";
 import { denyByDefaultAuthorizer } from "../../src/security/denyByDefaultAuthorizer.js";
-import { testRuntimeCommitPort } from "../../src/engine/testRuntimeCommitPort.js";
 import { defaultTestQuiescence, defaultTestSessionAuthority } from "../support/envelopeFixtures.js";
+import { productionCommsDeps } from "../support/productionCommsDeps.js";
 
 describe("createCommsServices modes", () => {
   it("creates production services when all ports provided", () => {
-    const services = createCommsServices({
-      mode: "production",
-      bindingResolver: { getActiveBinding: () => undefined },
-      sessionAuthority: defaultTestSessionAuthority,
-      quiescence: defaultTestQuiescence,
-      runtimeCommit: testRuntimeCommitPort(),
-      observation: {
-        observe: async () => ({ ok: true, value: { snapshotRef: "snap-1" as never } }),
-      },
-      identity: {
-        verifyPeer: async () => ({
-          ok: false,
-          error: {
-            code: "identity_unverified",
-            phase: "authenticate",
-            message: "no",
-            retryable: false,
-          },
+    const dir = mkdtempSync(join(tmpdir(), "comms-svc-prod-"));
+    try {
+      const services = createCommsServices({
+        ...productionCommsDeps(dir, {
+          verifyPeer: async () => ({
+            ok: false,
+            error: {
+              code: "identity_unverified",
+              phase: "authenticate",
+              message: "no",
+              retryable: false,
+            },
+          }),
         }),
-      },
-      authorizer: denyByDefaultAuthorizer(),
-    });
-    expect(services.admin.isFrozen()).toBe(false);
+        authorizer: denyByDefaultAuthorizer(),
+      });
+      expect(services.admin.isFrozen()).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("uses file store when storeDir provided", () => {

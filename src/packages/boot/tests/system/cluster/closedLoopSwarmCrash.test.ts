@@ -71,8 +71,7 @@ describe("L7 — cross-process swarm crash-and-restart (ADR-0015 §7, SS-01)", (
 
     const log = readLog(logFile);
     const summary = log.find((l) => l.summary === "seed") as
-      | { converged: boolean; workerStatus: string }
-      | undefined;
+      { converged: boolean; workerStatus: string } | undefined;
     expect(summary).toBeDefined();
     expect(summary!.converged).toBe(true);
     expect(summary!.workerStatus).toBe("done");
@@ -90,8 +89,7 @@ describe("L7 — cross-process swarm crash-and-restart (ADR-0015 §7, SS-01)", (
     expect(crash.status).not.toBe(0); // crashed
     const crashLog = readLog(logFile);
     const crashSummary = crashLog.find((l) => l.summary === "crash-pre-done") as
-      | { workerStatus: string; signalDoneCount: number }
-      | undefined;
+      { workerStatus: string; signalDoneCount: number } | undefined;
     expect(crashSummary).toBeDefined();
     expect(crashSummary!.workerStatus).toBe("active");
     expect(crashSummary!.signalDoneCount).toBe(0);
@@ -108,8 +106,7 @@ describe("L7 — cross-process swarm crash-and-restart (ADR-0015 §7, SS-01)", (
 
     const fullLog = readLog(logFile);
     const recoverSummary = fullLog.find((l) => l.summary === "recover") as
-      | { converged: boolean; workerStatus: string; activateCount: number }
-      | undefined;
+      { converged: boolean; workerStatus: string; activateCount: number } | undefined;
     expect(recoverSummary).toBeDefined();
     expect(recoverSummary!.converged).toBe(true);
     expect(recoverSummary!.workerStatus).toBe("retired");

@@ -2,18 +2,18 @@
 
 | Field              | Value                                                                                                    |
 | ------------------ | -------------------------------------------------------------------------------------------------------- |
-| Status             | **Proposed** (Owner review requested)                                                                    |
+| Status             | **Accepted** (2026-08-15 Owner + independent Architecture/Security: Joker-of-Gotham, COI disclosed). §1 private-history rule superseded by ADR-0021. |
 | Created            | 2026-08-13                                                                                               |
 | Updated            | 2026-08-13                                                                                               |
 | Last reviewed      | 2026-08-13                                                                                               |
 | Decision Owner     | Joker-of-Gotham                                                                                          |
 | Implementation DRI | Codex implementation team                                                                                |
-| Reviewers          | Independent Architecture and Security review pending                                                     |
+| Reviewers          | Joker-of-Gotham (independent Architecture + Security, COI disclosed, 2026-08-15)                         |
 | Summary            | Keep conversation state private, make artifact content reachable, and verify completion against evidence |
 | Canonical          | This ADR; RFC-0001 remains the architectural authority                                                   |
-| Related            | RFC-0001, ADR-0002, ADR-0003, ADR-0006, `@cantilune/boot`, `@cantilune/syscall`, `@cantilune/runtime`    |
+| Related            | RFC-0001, ADR-0002, ADR-0003, ADR-0006, ADR-0021, `@cantilune/boot`, `@cantilune/syscall`, `@cantilune/runtime` |
 | Supersedes         | None                                                                                                     |
-| Superseded by      | None                                                                                                     |
+| Superseded by      | ADR-0021 for §1 private-history / snapshot transcript rule                                               |
 
 ## Context
 
@@ -168,6 +168,14 @@ but does not itself repair the historical artifact mapping.
   prove quiescence and use the recovery runbook rather than automatically deleting a stale PID.
 
 ### 6. Release gates discovered by root-system audit
+
+> **Superseded in part (2026-08-15).** The two `ClusterSupervisor` conditions below were written
+> when no trusted feed existed. Their preconditions have since been met: ADR-0015 supplied the
+> committed-change feed, `activate_participant`, canonical Manifest binding, durable completion, and
+> liveness policy; ADR-0019 supplied the CLI boot surface and the dispatch scheduler. The CLI cluster
+> and swarm views are consequently no longer read-only. What remains unmet is the permission review
+> — the independent QA-L5 Architecture + Security sign-off named in §"Consequences" — so the gate is
+> narrower now, not lifted. The original text is retained as the as-reported record.
 
 - `ClusterSupervisor` remains experimental and MUST NOT be connected to the CLI production path
   until a trusted committed-change feed, explicit participant activation, canonical Manifest
