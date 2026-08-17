@@ -87,6 +87,7 @@ export interface L7TwentyRunArgs {
   readonly toId?: string;
   readonly runId?: string;
   readonly maxTurns?: number;
+  readonly maxTimeMs?: number;
   readonly scoreOnlyDir?: string;
   readonly planOnly: boolean;
   readonly passAtK: number;
@@ -201,6 +202,7 @@ export function parseL7TwentyRunArgs(argv: readonly string[]): L7TwentyRunArgs {
   let toId: string | undefined;
   let runId: string | undefined;
   let maxTurns: number | undefined;
+  let maxTimeMs: number | undefined;
   let scoreOnlyDir: string | undefined;
   let planOnly = false;
   let passAtK = 1;
@@ -214,6 +216,7 @@ export function parseL7TwentyRunArgs(argv: readonly string[]): L7TwentyRunArgs {
     else if (arg === "--to") toId = argv[i + 1] ?? toId;
     else if (arg === "--run-id") runId = argv[i + 1] ?? runId;
     else if (arg === "--max-turns") maxTurns = parsePositiveInt(argv[i + 1]);
+    else if (arg === "--max-time-ms") maxTimeMs = parsePositiveInt(argv[i + 1]);
     else if (arg === "--score-only") scoreOnlyDir = argv[i + 1] ?? scoreOnlyDir;
     else if (arg === "--k") passAtK = parsePositiveInt(argv[i + 1]) ?? 1;
     else if (arg === "--plan-only") {
@@ -233,6 +236,7 @@ export function parseL7TwentyRunArgs(argv: readonly string[]): L7TwentyRunArgs {
     ...(toId !== undefined ? { toId } : {}),
     ...(runId !== undefined ? { runId } : {}),
     ...(maxTurns !== undefined ? { maxTurns } : {}),
+    ...(maxTimeMs !== undefined ? { maxTimeMs } : {}),
     ...(scoreOnlyDir !== undefined ? { scoreOnlyDir } : {}),
     planOnly,
     passAtK,
@@ -490,18 +494,23 @@ export function createCantiluneL7TwentySuite(suiteRoot: string): L7LoadedSuite {
 
 export function composeL7TwentyInstruction(spec: L7TaskSpec): string {
   const commsLine = spec.checkpoint.requireComms
-    ? "需要至少一条通信会话（create_session 或 comms 投递）。"
+    ? "必须至少建立一条通信会话（create_session 或 comms 投递），否则任务失败。"
     : "通信会话按任务需要自决。";
   return [
     `Cantilune L7-20 任务 ${spec.id}（${spec.title}）。`,
-    "你在真实 Cantilune OS 中工作。集群结构由你自决：先 write_content 写 AgentManifest，再 register_participant，再 activate_participant。",
+    "你在真实 Cantilune OS 中工作。这是一个多 Agent swarm 任务：你必须先 write_content 写 AgentManifest，再 register_participant，再 activate_participant，组建 swarm 后由 peer 协作完成 Wave-1。",
+    "直接用 filesystem 工具自己写所有产物而不组建 swarm，视为任务失败——本任务评测的就是 swarm 自构建与协作能力。",
+    "集群拓扑（角色、编制、串/并/反馈环）由你自决，但必须有 swarm：先建 swarm，再分配任务给 peer。",
     "startCondition 必须是表达式树（operator/atom/evaluator），不能写自然语言；缺省或无法解析视为 always。",
-    "Wave-1 列出的路径是工作区相对路径，目录类产物写在 artifacts/ 下（例如 artifacts/legacy/），不要写到工作区根。",
+    "Wave-1 列出的路径是工作区相对路径，目录类产物写在 artifacts/ 下（例如 artifacts/legacy/），不要写到工作区根。peer 也可写 artifacts/。",
+    "Wave-1 每个产物必须用 filesystem 工具写成磁盘文件（路径以 artifacts/ 开头），不是 write_content + introduce_artifact——评分器只认磁盘文件。",
+    "brief 中列出的每个产物路径必须各自独立存在为一个非空磁盘文件；不能把多个产物的内容合并到一个文件里。逐项检查 brief 的 Wave-1 清单，每条对应一个文件。",
+    "你必须确保 brief 中 Wave-1 列出的每一个产物都有 peer 负责或你自己完成，缺一个即任务失败。",
     "不要要求用户执行 /swarm、/cluster 或任何 slash 命令，也不要只口头讲解工具。",
     "所有文件写在当前工作区。不要改 checkpoint.json、PROTOCOL.md 或评分源码。",
-    `本任务至少需要 ${spec.checkpoint.minPeers} 个非发起方 peer，至少 ${spec.checkpoint.minTurns} 轮。`,
+    `硬性门禁：必须 register + activate 至少 ${spec.checkpoint.minPeers} 个非发起方 active peer，至少 ${spec.checkpoint.minTurns} 轮（含 peer 轮次），否则任务失败。`,
     commsLine,
-    "目标合同是全愿景；本轮必须交付 brief 中 Wave-1 列出的产物。",
+    "目标合同是全愿景；本轮必须交付 brief 中 Wave-1 列出的产物。由 peer 分工完成，不要全部自己写。",
     "",
     spec.brief,
   ].join("\n");

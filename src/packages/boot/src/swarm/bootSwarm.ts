@@ -30,7 +30,7 @@
  */
 import type { ActorId, AgentManifest } from "@cantilune/core";
 import { createSyscall, createStaticSchemaProvider } from "@cantilune/syscall";
-import type { SyscallRuntime, SyscallContentStore } from "@cantilune/syscall";
+import type { SyscallRuntime, SyscallContentStore, ToolExecutor } from "@cantilune/syscall";
 import {
   ClusterSupervisor,
   createSharedResources,
@@ -100,6 +100,15 @@ export interface BootSwarmDeps {
   /** Multi-host directory (ADR-0019 S4). */
   readonly meshHostDirectory?: import("../cluster/meshHostDirectory.js").MeshHostDirectory;
   readonly swarmRole?: "supervisor" | "worker";
+  /**
+   * External tools (filesystem/shell/web/mcp) made available to every agent
+   * `CantilunOS` booted by the swarm. Without this, agents can only use
+   * syscall operations (write_content/register_participant/…) and cannot
+   * write files to the workspace — so checkpoint artifacts that must exist
+   * on disk (artifacts/**) are never produced. The initiator's tool set is
+   * typically passed here so peers share the same workspace access.
+   */
+  readonly tools?: readonly ToolExecutor[];
 }
 
 /** Snapshot of the swarm's live state for the CLI view. */
@@ -190,6 +199,7 @@ export function bootSwarm(deps: BootSwarmDeps): CantiluneSwarm {
           ...(deps.contractLlm !== undefined ? { contractLlm: deps.contractLlm } : {}),
           ...(deps.judgeLlm !== undefined ? { judgeLlm: deps.judgeLlm } : {}),
         },
+        deps.tools,
       );
     },
   };
@@ -274,6 +284,7 @@ export function createCantiluneOsAgent(
   contentStore: SyscallContentStore,
   llmAdapter: LlmAdapter,
   sensors: { readonly contractLlm?: LlmAdapter; readonly judgeLlm?: LlmAdapter },
+  tools?: readonly ToolExecutor[],
 ): SwarmAgentHandle {
   // bootCantilune reads principalId/principalKind/systemPrompt/maxTurns/
   // maxTimeMs/contractLlm/judgeLlm from config; it ignores durable/
@@ -284,6 +295,15 @@ export function createCantiluneOsAgent(
     provider: manifest.provider ?? "swarm",
     model: manifest.model ?? "swarm-agent",
   };
+  // The registered participant's kind (from the durable snapshot) is the
+  // authority; the manifest's kind may be a semantic role label rather than a
+  // valid ActorKind. Using the snapshot's kind keeps the agent's observation
+  // source.kind aligned with the participant entry the runtime admitted.
+  const registeredHead = runtime.getHead() as
+    | { participants: ReadonlyMap<string, { kind: string }> }
+    | undefined;
+  const registeredEntry = registeredHead?.participants.get(agentId as string);
+  const principalKind = (registeredEntry?.kind ?? manifest.kind) as typeof manifest.kind;
   const os = bootCantilune({
     runtime,
     contentStore,
@@ -293,12 +313,19 @@ export function createCantiluneOsAgent(
       contentStore: "memory",
       llm: llmConfig,
       principalId: agentId as string,
-      principalKind: manifest.kind,
+      principalKind,
       systemPrompt: manifest.systemPrompt,
       ...(manifest.maxTurns !== undefined ? { maxTurns: manifest.maxTurns } : {}),
-      ...(manifest.maxTimeMs !== undefined ? { maxTimeMs: manifest.maxTimeMs } : {}),
+      // Cap per-agent wall clock at the bootCantilune default (10 min). The
+      // manifest's maxTimeMs is advisory and can be unreasonably high (an LLM
+      // that writes maxTimeMs=3600000 would let one agent consume the entire
+      // 60-min engineering budget). The swarm's own maxWallClockMs is the real
+      // budget authority; per-agent time is bounded here so a slow agent cannot
+      // stall the whole round.
+      ...{ maxTimeMs: Math.min(manifest.maxTimeMs ?? 600_000, 600_000) },
       ...(sensors.contractLlm !== undefined ? { contractLlm: sensors.contractLlm } : {}),
       ...(sensors.judgeLlm !== undefined ? { judgeLlm: sensors.judgeLlm } : {}),
+      ...(tools !== undefined ? { tools: [...tools] } : {}),
     },
   });
 
@@ -322,10 +349,12 @@ export function createCantiluneOsAgent(
   // emission — the OS's own syscall drives the agent loop. This mirrors
   // AgentInstance.emitHeartbeat (agentInstance.ts) so the liveness contract is
   // identical across the two agent kinds (AgentInstance default vs CantilunOS).
+  // Uses the same registered-kind resolution as the OS principal so heartbeat
+  // emissions are not rejected by the admission principal validation.
   const heartbeatSyscall = createSyscall({
     runtime,
     contentStore,
-    principal: { actorId: agentId as string, kind: manifest.kind },
+    principal: { actorId: agentId as string, kind: principalKind },
     schemaProvider: createStaticSchemaProvider(DEFAULT_TEMPLATES),
   });
 

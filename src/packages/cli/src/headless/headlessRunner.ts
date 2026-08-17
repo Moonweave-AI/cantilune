@@ -368,6 +368,11 @@ async function defaultSwarmBoot(
     feedDrainIntervalMs: 200,
     heartbeatCheckIntervalMs: 15_000,
     completionPollMs: 200,
+    // Peers share the initiator's tool set so they can write artifacts to the
+    // workspace (PROTOCOL §3: agents write artifacts/ on disk). Without this
+    // swarm agents can only use syscall operations and the checkpoint's
+    // filesystem globs never match.
+    tools: runtimeConfig.tools ?? [toolSet.tools],
     ...(runtimeConfig.maxTimeMs !== undefined
       ? { schedulerPolicy: { maxWallClockMs: runtimeConfig.maxTimeMs } }
       : {}),
@@ -554,7 +559,15 @@ export async function headlessRunner(argv: readonly string[]): Promise<number> {
     return 1;
   }
   const baseUrl = parsed.baseUrl ?? config.baseUrl;
-  const durable = parsed.ephemeral ? "memory" : (config.durable ?? "file");
+  // An explicit --storage-path is the caller's signal for on-disk persistence
+  // (PROTOCOL §3: `--storage-path` implies durable=file). Without it the
+  // persisted config's durable preference stands, so the TUI's `memory` mode
+  // and the observer flow are unaffected.
+  const durable = parsed.ephemeral
+    ? "memory"
+    : parsed.storagePath !== undefined
+      ? "file"
+      : (config.durable ?? "file");
   const storagePath = parsed.storagePath ?? (durable === "file" ? config.storagePath : undefined);
   const result = await runHeadless({
     ...parsed,

@@ -73,8 +73,11 @@ export function ingestObservation(
 
   try {
     validateSnapshotIntegrity(next);
-  } catch {
-    return runtimeViolation("observe_invalid", "observation produced invalid snapshot");
+  } catch (error) {
+    return runtimeViolation(
+      "observe_invalid",
+      `observation produced invalid snapshot: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   if (!durable.compareAndSwapHead(expectedHead, next)) {

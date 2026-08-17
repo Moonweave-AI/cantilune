@@ -159,6 +159,7 @@ async function main() {
       if (args.model !== undefined) cliArgs.push("--model", args.model);
       if (args.baseUrl !== undefined) cliArgs.push("--base-url", args.baseUrl);
       if (args.maxTurns !== undefined) cliArgs.push("--max-turns", String(args.maxTurns));
+      if (args.maxTimeMs !== undefined) cliArgs.push("--max-time-ms", String(args.maxTimeMs));
       const spawned = await run("pnpm", cliArgs, {
         cwd: repoRoot,
         capture: true,

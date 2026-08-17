@@ -491,7 +491,16 @@ export class ClusterSupervisor {
     const llmAdapter = this.llmAdapterFactory(manifest);
 
     const schemaProvider = createStaticSchemaProvider(DEFAULT_TEMPLATES);
-    const principal = { actorId: agentId as string, kind: manifest.kind };
+    // The registered participant's kind (from the durable snapshot) is the
+    // authority for the collaboration world; the manifest's kind field may
+    // carry a semantic role label that is not a valid ActorKind. Using the
+    // snapshot's kind keeps the agent's observation source.kind consistent
+    // with the participant entry the runtime admitted, so validateActorRef
+    // in the auditTail integrity check does not reject the agent's own
+    // observation.
+    const registeredHead = this.shared.runtime.getHead() as CollaborationSnapshot | undefined;
+    const registeredEntry = registeredHead?.participants.get(agentId);
+    const principal = { actorId: agentId as string, kind: registeredEntry?.kind ?? manifest.kind };
 
     const syscall = createSyscall({
       runtime: this.shared.runtime,

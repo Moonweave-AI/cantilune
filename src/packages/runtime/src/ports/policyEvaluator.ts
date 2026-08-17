@@ -40,6 +40,18 @@ function hasRoleBinding(
   return matchBindings.some((binding) => binding.role === role);
 }
 
+/**
+ * Self-lifecycle operations that an agent may exercise even after it has
+ * signalled `done`. `commit_transcript` checkpoints the agent's own private
+ * history onto the shared world; `emit_heartbeat` proves liveness. Neither
+ * mutates the collaboration graph (participants/artifacts/sessions/links),
+ * so allowing them post-`signal_done` does not reopen coordination authority.
+ * Without this exemption, an agent that calls `signal_done` before its final
+ * transcript checkpoint has its `commit_transcript` rejected, poisoning the
+ * OS and losing the transcript.
+ */
+const SELF_LIFECYCLE_OPERATIONS = new Set(["commit_transcript", "emit_heartbeat"]);
+
 export function templateAwarePolicyEvaluator(): PolicyEvaluator {
   return {
     evaluate(input) {
@@ -57,7 +69,10 @@ export function templateAwarePolicyEvaluator(): PolicyEvaluator {
           reason: `initiator ${String(input.intent.initiator.actorId)} not found in participants`,
         };
       }
-      if (initiator.status !== "active") {
+      if (
+        initiator.status !== "active" &&
+        !SELF_LIFECYCLE_OPERATIONS.has(String(input.intent.operationTypeId))
+      ) {
         return {
           kind: "deny",
           reason: `initiator ${String(input.intent.initiator.actorId)} status is ${initiator.status}, not active`,
