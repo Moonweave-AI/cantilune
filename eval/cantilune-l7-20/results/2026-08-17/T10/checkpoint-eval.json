@@ -1,0 +1,67 @@
+{
+  "taskId": "T10",
+  "passed": true,
+  "decision": "measured",
+  "gates": [
+    {
+      "id": "swarmFanout",
+      "passed": true,
+      "hard": true,
+      "detail": "active-or-terminal non-initiator peers=5 min=3",
+      "value": 5
+    },
+    {
+      "id": "activateLoop",
+      "passed": true,
+      "hard": true,
+      "detail": "activate_participant=5 supervisorStarts=5",
+      "value": 5
+    },
+    {
+      "id": "notLecture",
+      "passed": true,
+      "hard": true,
+      "detail": "tool/act or workspace artifacts present"
+    },
+    {
+      "id": "horizon",
+      "passed": true,
+      "hard": true,
+      "detail": "turns=45 min=10",
+      "value": 45
+    },
+    {
+      "id": "artifacts",
+      "passed": true,
+      "hard": true,
+      "detail": "required artifacts present",
+      "value": 6
+    },
+    {
+      "id": "comms",
+      "passed": true,
+      "hard": true,
+      "detail": "sessions=1 create_session=true",
+      "value": 1
+    },
+    {
+      "id": "observe",
+      "passed": true,
+      "hard": true,
+      "detail": "changes=135 audit=23",
+      "value": 135
+    },
+    {
+      "id": "noSelfScore",
+      "passed": true,
+      "hard": true,
+      "detail": "suite and scorer sources unchanged"
+    },
+    {
+      "id": "wave1",
+      "passed": true,
+      "hard": true,
+      "detail": "wave-1 artifacts and globs present"
+    }
+  ]
+}

@@ -1,0 +1,1091 @@
+{
+  "suiteId": "cantilune-l7-20",
+  "runDate": "2026-08-17",
+  "protocolId": "evaluation.protocol.cantilune-l7-20",
+  "decision": "measured",
+  "tasksMeasured": 20,
+  "tasksTotal": 20,
+  "passAtK": 1,
+  "tasks": [
+    {
+      "taskId": "T01",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 36,
+      "elapsedMs": 689274,
+      "committed": 7,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 36
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 185
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T02",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 29,
+      "elapsedMs": 429292,
+      "committed": 9,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 29
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 48
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T03",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 38,
+      "elapsedMs": 456695,
+      "committed": 11,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 38
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 122
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T04",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 42,
+      "elapsedMs": 626018,
+      "committed": 12,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 42
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 178
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T05",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 38,
+      "elapsedMs": 571067,
+      "committed": 11,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 38
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 113
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T06",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 35,
+      "elapsedMs": 636377,
+      "committed": 9,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 35
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 134
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T07",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 44,
+      "elapsedMs": 480474,
+      "committed": 9,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 2
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 44
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 71
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T08",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 56,
+      "elapsedMs": 1473578,
+      "committed": 11,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 56
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 2
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 505
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T09",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 26,
+      "elapsedMs": 600038,
+      "committed": 10,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 26
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 61
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T10",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 45,
+      "elapsedMs": 824229,
+      "committed": 11,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 45
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 135
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T11",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 65,
+      "elapsedMs": 1081172,
+      "committed": 11,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 65
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 7
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 315
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T12",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 37,
+      "elapsedMs": 664361,
+      "committed": 7,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 37
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 146
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T13",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 58,
+      "elapsedMs": 1153099,
+      "committed": 11,
+      "rejected": 2,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 58
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 310
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T14",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 32,
+      "elapsedMs": 397398,
+      "committed": 7,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 32
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 6
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 96
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T15",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 41,
+      "elapsedMs": 635700,
+      "committed": 13,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 41
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 8
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 141
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T16",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 32,
+      "elapsedMs": 510635,
+      "committed": 7,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 3
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 32
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 7
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 118
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T17",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 55,
+      "elapsedMs": 853920,
+      "committed": 11,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 55
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 8
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 256
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T18",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 35,
+      "elapsedMs": 368127,
+      "committed": 9,
+      "rejected": 0,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 35
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 7
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 100
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T19",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 53,
+      "elapsedMs": 1084816,
+      "committed": 11,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 5
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 53
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 9
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 251
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "taskId": "T20",
+      "runId": "",
+      "decision": "measured",
+      "passed": true,
+      "turns": 43,
+      "elapsedMs": 494253,
+      "committed": 9,
+      "rejected": 1,
+      "gates": [
+        {
+          "id": "swarmFanout",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "activateLoop",
+          "passed": true,
+          "value": 4
+        },
+        {
+          "id": "notLecture",
+          "passed": true
+        },
+        {
+          "id": "horizon",
+          "passed": true,
+          "value": 43
+        },
+        {
+          "id": "artifacts",
+          "passed": true,
+          "value": 8
+        },
+        {
+          "id": "comms",
+          "passed": true,
+          "value": 1
+        },
+        {
+          "id": "observe",
+          "passed": true,
+          "value": 121
+        },
+        {
+          "id": "noSelfScore",
+          "passed": true
+        },
+        {
+          "id": "wave1",
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
