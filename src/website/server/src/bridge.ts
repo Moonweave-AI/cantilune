@@ -28,6 +28,7 @@ import {
   type SwarmController,
 } from "@cantilune/cli/lib";
 import type { ToolApprovalDecision, ToolApprovalRequest, ToolApprover } from "@cantilune/syscall";
+import { pickDirectory } from "./pickDirectory.js";
 import { toWorldSnapshotWire } from "./worldSnapshot.js";
 import type { WebSocket } from "ws";
 import type {
@@ -65,6 +66,8 @@ export class BridgeSession {
   private abortController: AbortController | undefined;
   private runInProgress = false;
   private pendingApproval: PendingApproval | undefined;
+  private runMode: "execute" | "plan" | "observe" = "execute";
+  private alwaysAllow = false;
   private pendingAskUser:
     { readonly resolve: (answer: string) => void; readonly turn: number } | undefined;
   private currentTurn = 0;
@@ -100,6 +103,13 @@ export class BridgeSession {
         break;
       case "approve":
         this.resolveApproval(message);
+        break;
+      case "setMode":
+        this.runMode = message.mode;
+        if (message.mode !== "execute") this.alwaysAllow = false;
+        break;
+      case "pickWorkspace":
+        void this.pickWorkspace();
         break;
       case "stop":
         this.stop();
@@ -222,6 +232,8 @@ export class BridgeSession {
     this.runInProgress = true;
     this.abortController = new AbortController();
     this.currentTurn = 0;
+    this.alwaysAllow = false;
+    if (request.mode !== undefined) this.runMode = request.mode;
     try {
       const result: RunResult = await this.boot.os.run(request.instruction, {
         signal: this.abortController.signal,
@@ -423,6 +435,12 @@ export class BridgeSession {
   /* ─────────────────────── tool approval ─────────────────────── */
 
   private requestApproval(request: ToolApprovalRequest): Promise<ToolApprovalDecision> {
+    if (this.runMode === "execute" || this.alwaysAllow) {
+      return Promise.resolve({ allowed: true });
+    }
+    if (this.runMode === "observe") {
+      return Promise.resolve({ allowed: false, reason: "read only" });
+    }
     return new Promise<ToolApprovalDecision>((resolve) => {
       this.pendingApproval = { resolve, toolCallId: request.key.originalToolCallId };
       this.send({
@@ -436,14 +454,31 @@ export class BridgeSession {
   }
 
   private resolveApproval(message: ApproveRequest): void {
+    if (message.scope === "always" && message.decision === "allow") {
+      this.alwaysAllow = true;
+    }
     if (this.pendingApproval === undefined) return;
-    if (message.toolCallId !== this.pendingApproval.toolCallId) return;
+    if (message.toolCallId !== this.pendingApproval.toolCallId && message.toolCallId !== "*") {
+      return;
+    }
     if (message.decision === "allow") {
       this.pendingApproval.resolve({ allowed: true });
     } else {
       this.pendingApproval.resolve({ allowed: false, reason: "denied by operator" });
     }
     this.pendingApproval = undefined;
+  }
+
+  private async pickWorkspace(): Promise<void> {
+    try {
+      const path = await pickDirectory();
+      this.send(path === undefined ? { type: "workspacePicked" } : { type: "workspacePicked", path });
+    } catch (error) {
+      this.send({
+        type: "error",
+        message: `pick workspace failed: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    }
   }
 
   /* ─────────────────────── world snapshot ─────────────────────── */

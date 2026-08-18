@@ -35,6 +35,24 @@ describe("block parsing", () => {
     expect(blocks[1]).toMatchObject({ level: 3 });
   });
 
+  it("keeps a heading as its own block without a blank line after it", () => {
+    const blocks = parseMarkdown("### src/pickDirectory.ts\nWindows uses Add-Type");
+    expect(kinds(blocks)).toEqual(["heading", "paragraph"]);
+  });
+
+  it("starts a table immediately after a heading", () => {
+    const blocks = parseMarkdown("### 集成测试\n|脚本|端口|\n|---|---|\n|smoke|7475|");
+    expect(kinds(blocks)).toEqual(["heading", "table"]);
+    const table = expectBlock(blocks[1], "table");
+    expect(table.header).toHaveLength(2);
+    expect(table.rows).toHaveLength(1);
+  });
+
+  it("does not swallow a table into the preceding paragraph", () => {
+    const blocks = parseMarkdown("简介如下\n|脚本|端口|\n|---|---|\n|smoke|7475|");
+    expect(kinds(blocks)).toEqual(["paragraph", "table"]);
+  });
+
   it("parses a fenced code block with its language and keeps lines verbatim", () => {
     const blocks = parseMarkdown("```ts\nconst x = 1;\n  indented\n```");
     expect(blocks[0]).toEqual({

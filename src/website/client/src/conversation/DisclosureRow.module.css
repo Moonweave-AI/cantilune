@@ -1,0 +1,117 @@
+.root {
+  align-self: flex-start;
+  width: 100%;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  overflow: hidden;
+  cursor: pointer;
+  list-style: none;
+  color: var(--cln-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 24px;
+  gap: 6px;
+}
+
+.row::-webkit-details-marker {
+  display: none;
+}
+
+.chevron {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  place-items: center;
+  color: var(--cln-alias-label-caption);
+  line-height: 0;
+  transform: rotate(-90deg);
+  transition: transform 140ms var(--cln-ease);
+}
+
+.root[open] > .row .chevron {
+  transform: rotate(0deg);
+}
+
+.icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  place-items: center;
+  color: var(--cln-alias-label-secondary);
+  line-height: 0;
+}
+
+.root[data-pending] .row::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 300px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--cln-alias-bg-base) 60%, transparent) 55%,
+    transparent 100%
+  );
+  animation: cln-disclosure-sweep 2.6s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes cln-disclosure-sweep {
+  0% {
+    left: -300px;
+  }
+  90%,
+  100% {
+    left: 100%;
+  }
+}
+
+.title {
+  flex: none;
+  font-weight: 400;
+}
+
+.sep {
+  flex: none;
+  width: 2px;
+  height: 2px;
+  margin: 0 2px;
+  border-radius: 1px;
+  background: var(--cln-alias-label-caption);
+}
+
+.summary {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--cln-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  padding: 8px 0 4px 22px;
+  color: var(--cln-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 24px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root[data-pending] .row::after {
+    animation: none;
+  }
+  .chevron {
+    transition: none;
+  }
+}

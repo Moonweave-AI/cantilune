@@ -1,17 +1,13 @@
 /**
  * ConfigPanel — ADR-0030 §3.3. The setup surface that replaces CLI /provider.
- * Lives in the sidebar. Sends `configure`; the server boots the OS.
- * API key is sent over WS to server memory only — never persisted here.
- *
- * Exposes the full CLI configuration surface: loop LLM (provider/model/baseUrl/
- * key), durability, max turns, plus an Advanced section for contract & judge
- * LLM adapters, search provider, MCP servers, termination thresholds, system
- * prompt, and principal id — so the website is a complete replacement for the
- * CLI, not a subset.
+ * Lives in Settings. Sends `configure`; the server boots the OS.
+ * The local website harness persists the last successful form (including API
+ * key) in origin localStorage so refresh can reconnect.
  */
 
 import { useEffect, useState } from "react";
 import type { ConfigureRequest } from "@shared/protocol";
+import type { CatalogEntry } from "../persist/store";
 import { LunarLogo } from "../theme/LunarLogo";
 import type { ConnectionStatus } from "../ws/useBridge";
 import styles from "./ConfigPanel.module.css";
@@ -39,9 +35,17 @@ interface ConfigPanelProps {
   readonly workspacePath: string;
   readonly showChrome?: boolean;
   readonly preset: ConfigPresetDefaults | undefined;
+  readonly defaults?: Partial<ConfigureRequest> | undefined;
+  readonly catalog: readonly CatalogEntry[];
+  readonly onCatalogChange: (entries: readonly CatalogEntry[]) => void;
+  readonly runtimeOnly?: boolean;
 }
 
 const SEARCH_PROVIDERS = ["none", "tavily", "serper", "brave"] as const;
+
+function numStr(value: number | undefined): string {
+  return value !== undefined ? String(value) : "";
+}
 
 export function ConfigPanel({
   providers,
@@ -52,39 +56,45 @@ export function ConfigPanel({
   workspacePath,
   showChrome = true,
   preset,
+  defaults,
+  catalog,
+  onCatalogChange,
+  runtimeOnly = false,
 }: ConfigPanelProps): JSX.Element {
-  const [provider, setProvider] = useState("openai");
-  const [model, setModel] = useState("gpt-4o");
-  const [baseUrl, setBaseUrl] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [durable, setDurable] = useState<"memory" | "file">("memory");
-  const [storagePath, setStoragePath] = useState("./.cantilune/os");
-  const [maxTurns, setMaxTurns] = useState("100");
+  const [provider, setProvider] = useState(defaults?.provider ?? "openai");
+  const [model, setModel] = useState(defaults?.model ?? "gpt-4o");
+  const [baseUrl, setBaseUrl] = useState(defaults?.baseUrl ?? "");
+  const [apiKey, setApiKey] = useState(defaults?.apiKey ?? "");
+  const [durable, setDurable] = useState<"memory" | "file">(defaults?.durable ?? "memory");
+  const [storagePath, setStoragePath] = useState(defaults?.storagePath ?? "./.cantilune/os");
+  const [maxTurns, setMaxTurns] = useState(
+    defaults?.maxTurns !== undefined ? String(defaults.maxTurns) : "100",
+  );
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Advanced: contract LLM (contract compilation), judge LLM (verification)
-  const [contractProvider, setContractProvider] = useState("");
-  const [contractModel, setContractModel] = useState("");
-  const [judgeProvider, setJudgeProvider] = useState("");
-  const [judgeModel, setJudgeModel] = useState("");
+  const [contractProvider, setContractProvider] = useState(defaults?.contractProvider ?? "");
+  const [contractModel, setContractModel] = useState(defaults?.contractModel ?? "");
+  const [judgeProvider, setJudgeProvider] = useState(defaults?.judgeProvider ?? "");
+  const [judgeModel, setJudgeModel] = useState(defaults?.judgeModel ?? "");
 
   // Advanced: tools
-  const [searchProvider, setSearchProvider] = useState<string>("none");
-  const [mcpServers, setMcpServers] = useState("");
+  const [searchProvider, setSearchProvider] = useState<string>(defaults?.searchProvider ?? "none");
+  const [mcpServers, setMcpServers] = useState(defaults?.mcpServers?.join("\n") ?? "");
 
   // Advanced: termination controller thresholds
-  const [tauC, setTauC] = useState("");
-  const [tauU, setTauU] = useState("");
-  const [epsilon, setEpsilon] = useState("");
-  const [lambda, setLambda] = useState("");
-  const [mu, setMu] = useState("");
-  const [hardGate, setHardGate] = useState("");
+  const [tauC, setTauC] = useState(numStr(defaults?.thresholds?.tauC));
+  const [tauU, setTauU] = useState(numStr(defaults?.thresholds?.tauU));
+  const [epsilon, setEpsilon] = useState(numStr(defaults?.thresholds?.epsilon));
+  const [lambda, setLambda] = useState(numStr(defaults?.thresholds?.lambda));
+  const [mu, setMu] = useState(numStr(defaults?.thresholds?.mu));
+  const [hardGate, setHardGate] = useState(numStr(defaults?.thresholds?.hardGate));
 
   // Advanced: misc
-  const [principalId, setPrincipalId] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState("");
-  const [maxTimeMs, setMaxTimeMs] = useState("");
-  const [maxContextMessages, setMaxContextMessages] = useState("");
+  const [principalId, setPrincipalId] = useState(defaults?.principalId ?? "");
+  const [systemPrompt, setSystemPrompt] = useState(defaults?.systemPrompt ?? "");
+  const [maxTimeMs, setMaxTimeMs] = useState(numStr(defaults?.maxTimeMs));
+  const [maxContextMessages, setMaxContextMessages] = useState(numStr(defaults?.maxContextMessages));
 
   useEffect(() => {
     if (preset?.provider !== undefined && providers.some((item) => item.slug === preset.provider)) {
@@ -156,6 +166,13 @@ export function ConfigPanel({
     if (workspacePath.length > 0 && workspacePath !== ".") req.workspace = workspacePath;
 
     onConfigure(req);
+    const exists = catalog.some((item) => item.provider === provider && item.model === model);
+    if (!exists) {
+      onCatalogChange([
+        ...catalog,
+        { id: `${provider}:${model}:${Date.now()}`, provider, model, label: model },
+      ]);
+    }
   };
 
   return (
@@ -183,7 +200,9 @@ export function ConfigPanel({
         New session
       </button>
 
-      <div className={styles.regionLabel}>Connection</div>
+      {!runtimeOnly && (
+        <>
+          <div className={styles.regionLabel}>Connection</div>
 
       <section className={styles.section}>
         <label className={styles.label}>Provider</label>
@@ -202,8 +221,106 @@ export function ConfigPanel({
       </section>
 
       <section className={styles.section}>
-        <label className={styles.label}>Model</label>
+        <label className={styles.label}>当前模型</label>
         <input className={styles.input} value={model} onChange={(e) => setModel(e.target.value)} />
+      </section>
+
+      <section className={styles.section}>
+        <label className={styles.label}>
+          模型目录 <span className={styles.hint}>(可同时保存多个，供输入框切换)</span>
+        </label>
+        <div className={styles.catalog}>
+          {catalog.map((item) => {
+            const active = item.provider === provider && item.model === model;
+            return (
+              <div key={item.id} className={styles.catalogRow}>
+                <select
+                  className={styles.select}
+                  value={item.provider}
+                  aria-label="供应商"
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    onCatalogChange(
+                      catalog.map((row) => (row.id === item.id ? { ...row, provider: next } : row)),
+                    );
+                    if (active) setProvider(next);
+                  }}
+                >
+                  {[item.provider, ...providers.map((entry) => entry.slug)]
+                    .filter((slug, index, list) => slug.length > 0 && list.indexOf(slug) === index)
+                    .map((slug) => (
+                      <option key={slug} value={slug}>
+                        {slug}
+                      </option>
+                    ))}
+                </select>
+                <input
+                  className={styles.input}
+                  value={item.model}
+                  aria-label="模型 id"
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    onCatalogChange(
+                      catalog.map((row) =>
+                        row.id === item.id
+                          ? { ...row, model: next, label: row.label === row.model ? next : row.label }
+                          : row,
+                      ),
+                    );
+                    if (active) setModel(next);
+                  }}
+                />
+                <input
+                  className={styles.input}
+                  value={item.label}
+                  aria-label="显示名"
+                  placeholder="显示名"
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    onCatalogChange(
+                      catalog.map((row) => (row.id === item.id ? { ...row, label: next } : row)),
+                    );
+                  }}
+                />
+                <button
+                  type="button"
+                  className={active ? styles.catalogUseActive : styles.catalogUse}
+                  onClick={() => {
+                    setProvider(item.provider);
+                    setModel(item.model);
+                  }}
+                >
+                  {active ? "使用中" : "使用"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.catalogRemove}
+                  aria-label={`删除 ${item.label || item.model}`}
+                  onClick={() => onCatalogChange(catalog.filter((row) => row.id !== item.id))}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            className={styles.catalogAdd}
+            onClick={() =>
+              onCatalogChange([
+                ...catalog,
+                {
+                  id: `${provider}:model:${Date.now()}`,
+                  provider,
+                  model: "",
+                  label: "",
+                },
+              ])
+            }
+          >
+            + 添加模型
+          </button>
+        </div>
       </section>
 
       <section className={styles.section}>
@@ -220,7 +337,7 @@ export function ConfigPanel({
 
       <section className={styles.section}>
         <label className={styles.label}>
-          API Key <span className={styles.hint}>(server-memory only; not stored)</span>
+          API Key <span className={styles.hint}>(保存在本机浏览器，刷新后自动重连)</span>
         </label>
         <input
           className={styles.input}
@@ -232,6 +349,8 @@ export function ConfigPanel({
           }
         />
       </section>
+        </>
+      )}
 
       <section className={styles.section}>
         <label className={styles.label}>Durability</label>

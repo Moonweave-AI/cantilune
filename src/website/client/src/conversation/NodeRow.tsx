@@ -5,6 +5,11 @@
 
 import type { ConversationNode } from "./nodes";
 import type { ControlVerdictKindWire, TerminationAuditWire } from "@shared/protocol";
+import { memo, useState, type MouseEvent, type ReactNode } from "react";
+import { MarkdownView } from "./MarkdownView";
+import { DisclosureRow } from "./DisclosureRow";
+import { ErrorBoundary } from "../shell/ErrorBoundary";
+import { IconCopy, IconSearch, IconTerminal } from "../theme/icons";
 import styles from "./NodeRow.module.css";
 
 interface NodeRowProps {
@@ -22,7 +27,10 @@ const VERDICT_LABEL: Record<ControlVerdictKindWire, string> = {
   STALLED: "Stalled",
 };
 
-export function NodeRow({ node, onApprove, onAskUserReply }: NodeRowProps): JSX.Element {
+export const NodeRow = memo(function NodeRow({
+  node,
+  onAskUserReply,
+}: NodeRowProps): JSX.Element {
   switch (node.kind) {
     case "user":
       return (
@@ -32,39 +40,28 @@ export function NodeRow({ node, onApprove, onAskUserReply }: NodeRowProps): JSX.
       );
 
     case "assistant":
-      return <div className={styles.assistant}>{renderMarkdown(node.text)}</div>;
-
     case "reasoning":
+      if ((node.text ?? "").trim().length === 0 && node.pending !== true) return <></>;
       return (
-        <details className={styles.reasoning} open={node.pending}>
-          <summary>
-            <span className={styles.reasoningLabel}>Think{node.pending ? "…" : ""}</span>
-          </summary>
-          <div className={`${styles.reasoningBody} ${node.pending ? styles.reasoningPending : ""}`}>
-            {node.text}
-          </div>
-        </details>
+        <div className={styles.assistant}>
+          <ErrorBoundary
+            fallback={<pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{node.text}</pre>}
+          >
+            <MarkdownView source={node.text} />
+          </ErrorBoundary>
+        </div>
       );
 
     case "tool_call":
       return (
-        <div className={styles.toolCall}>
-          <div className={styles.toolHead}>
-            <span className={styles.toolIcon}>{node.coordination ? "⇄" : "⚙"}</span>
-            <span className={styles.toolName}>{node.toolName}</span>
-            {node.pending ? (
-              <span className={styles.toolPending}>running…</span>
-            ) : (
-              <span className={node.ok ? styles.toolOk : styles.toolFail}>
-                {node.ok ? "ok" : "failed"}
-              </span>
-            )}
-          </div>
-          {node.arguments !== undefined && (
-            <pre className={styles.toolArgs}>{JSON.stringify(node.arguments, null, 2)}</pre>
-          )}
-          {node.output !== undefined && <pre className={styles.toolOutput}>{node.output}</pre>}
-        </div>
+        <DisclosureRow
+          title={toolTitle(node.toolName)}
+          summary={toolSummary(node)}
+          pending={node.pending === true}
+          icon={toolIcon(node.toolName)}
+        >
+          <ToolResultCard node={node} />
+        </DisclosureRow>
       );
 
     case "control_verdict":
@@ -105,34 +102,14 @@ export function NodeRow({ node, onApprove, onAskUserReply }: NodeRowProps): JSX.
       );
 
     case "approval":
-      return node.approval !== undefined ? (
+      if (node.pending === true || node.approval === undefined) return <></>;
+      return (
         <div className={styles.approval}>
           <div className={styles.approvalHead}>
-            <span className={styles.approvalTier}>tier: {node.approval.tier}</span>
+            <span className={styles.approvalTier}>已处理 · {node.approval.tier}</span>
             <span className={styles.approvalName}>{node.approval.name}</span>
           </div>
-          <pre className={styles.toolArgs}>{JSON.stringify(node.approval.arguments, null, 2)}</pre>
-          {node.pending ? (
-            <div className={styles.approvalActions}>
-              <button
-                className={styles.approveBtn}
-                onClick={() => onApprove(node.approval!.toolCallId, "allow")}
-              >
-                Allow
-              </button>
-              <button
-                className={styles.denyBtn}
-                onClick={() => onApprove(node.approval!.toolCallId, "deny")}
-              >
-                Deny
-              </button>
-            </div>
-          ) : (
-            <span className={styles.resolvedBadge}>resolved</span>
-          )}
         </div>
-      ) : (
-        <></>
       );
 
     case "diagnostic":
@@ -168,7 +145,7 @@ export function NodeRow({ node, onApprove, onAskUserReply }: NodeRowProps): JSX.
     case "run_result":
       return node.runResult !== undefined ? <RunResultRow result={node.runResult} /> : <></>;
   }
-}
+});
 
 function RunResultRow({
   result,
@@ -176,11 +153,14 @@ function RunResultRow({
   readonly result: NonNullable<ConversationNode["runResult"]>;
 }): JSX.Element {
   return (
-    <div className={styles.runResult} data-ok={result.ok}>
-      <div className={styles.runResultHead}>
+    <details className={styles.runResult} data-ok={result.ok}>
+      <summary className={styles.runResultHead}>
         <span className={styles.runResultBadge}>{result.ok ? "✓ complete" : "✗ ended"}</span>
-        <span className={styles.runResultReason}>{result.terminationReason ?? "—"}</span>
-      </div>
+        <span className={styles.runResultReason}>{result.terminationReason ?? "controller"}</span>
+        <small>
+          {result.turns} turns · {formatMs(result.elapsedMs)} · 展开
+        </small>
+      </summary>
       <div className={styles.runResultSummary}>{result.summary}</div>
       <div className={styles.runResultStats}>
         <span>{result.turns} turns</span>
@@ -193,7 +173,7 @@ function RunResultRow({
           {result.toolCalls.unresolved} unresolved
         </span>
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -300,119 +280,97 @@ function AuditView({ audit }: { readonly audit: TerminationAuditWire }): JSX.Ele
   );
 }
 
-function renderMarkdown(text: string | undefined): JSX.Element {
-  if (text === undefined) return <></>;
-  return <div className={styles.markdown}>{markdownToJsx(text)}</div>;
-}
-
-/** Minimal, dependency-free Markdown → React renderer (ADR-0030 §4.2). */
-function markdownToJsx(src: string): readonly JSX.Element[] {
-  const blocks = src.split(/\n{2,}/);
-  return blocks.map((block, i) => {
-    const trimmed = block.trim();
-    if (trimmed.length === 0) return <div key={i} className={styles.mdSpacer} />;
-    // fenced code block
-    const fence = trimmed.match(/^```(\w*)\n([\s\S]*?)```$/);
-    if (fence !== null) {
-      return (
-        <pre key={i} className={styles.mdCodeBlock}>
-          <code>{fence[2]}</code>
-        </pre>
-      );
-    }
-    // heading
-    const heading = trimmed.match(/^(#{1,4})\s+(.*)$/);
-    if (heading !== null && heading[1] !== undefined && heading[2] !== undefined) {
-      const level = heading[1].length;
-      const Tag = `h${level}` as "h1" | "h2" | "h3" | "h4";
-      return (
-        <Tag key={i} className={styles.mdHeading}>
-          {inlineMd(heading[2])}
-        </Tag>
-      );
-    }
-    // unordered list
-    if (
-      /^[-*]\s+/m.test(trimmed) &&
-      trimmed.split("\n").every((l) => /^[-*]\s+/.test(l.trim()) || l.trim().length === 0)
-    ) {
-      const items = trimmed
-        .split("\n")
-        .filter((l) => /^[-*]\s+/.test(l.trim()))
-        .map((l) => l.trim().replace(/^[-*]\s+/, ""));
-      return (
-        <ul key={i} className={styles.mdList}>
-          {items.map((it, j) => (
-            <li key={j}>{inlineMd(it)}</li>
-          ))}
-        </ul>
-      );
-    }
-    // ordered list
-    if (
-      /^\d+\.\s+/m.test(trimmed) &&
-      trimmed.split("\n").every((l) => /^\d+\.\s+/.test(l.trim()) || l.trim().length === 0)
-    ) {
-      const items = trimmed
-        .split("\n")
-        .filter((l) => /^\d+\.\s+/.test(l.trim()))
-        .map((l) => l.trim().replace(/^\d+\.\s+/, ""));
-      return (
-        <ol key={i} className={styles.mdList}>
-          {items.map((it, j) => (
-            <li key={j}>{inlineMd(it)}</li>
-          ))}
-        </ol>
-      );
-    }
-    return (
-      <p key={i} className={styles.mdPara}>
-        {inlineMd(trimmed)}
-      </p>
-    );
-  });
-}
-
-/** Inline: `code`, **bold**, *italic*. */
-function inlineMd(text: string): readonly JSX.Element[] {
-  const out: JSX.Element[] = [];
-  let rest = text;
-  let key = 0;
-  const push = (node: JSX.Element) => {
-    out.push(node);
-  };
-  while (rest.length > 0) {
-    const code = rest.match(/^`([^`]+)`/);
-    if (code !== null) {
-      push(
-        <code key={key++} className={styles.mdInlineCode}>
-          {code[1]}
-        </code>,
-      );
-      rest = rest.slice(code[0].length);
-      continue;
-    }
-    const bold = rest.match(/^\*\*([^*]+)\*\*/);
-    if (bold !== null) {
-      push(<strong key={key++}>{bold[1]}</strong>);
-      rest = rest.slice(bold[0].length);
-      continue;
-    }
-    const italic = rest.match(/^\*([^*]+)\*/);
-    if (italic !== null) {
-      push(<em key={key++}>{italic[1]}</em>);
-      rest = rest.slice(italic[0].length);
-      continue;
-    }
-    const next = rest.search(/[`*]/);
-    if (next === -1) {
-      push(<span key={key++}>{rest}</span>);
-      break;
-    }
-    push(<span key={key++}>{rest.slice(0, next)}</span>);
-    rest = rest.slice(next);
+function toolIcon(name: string | undefined): ReactNode {
+  const key = (name ?? "").toLowerCase();
+  if (key.includes("search") || key.includes("web") || key.includes("tavily")) {
+    return <IconSearch size={14} />;
   }
-  return out;
+  return <IconTerminal size={14} />;
+}
+
+function toolTitle(name: string | undefined): string {
+  const key = (name ?? "").toLowerCase();
+  if (
+    key.includes("shell") ||
+    key.includes("bash") ||
+    key.includes("pwsh") ||
+    key.includes("powershell") ||
+    key === "cmd" ||
+    key.includes("terminal")
+  ) {
+    return "Shell";
+  }
+  if (key.includes("search") || key.includes("web") || key.includes("tavily") || key.includes("serper")) {
+    return "Search";
+  }
+  if (key.includes("read")) return "Read";
+  if (key.includes("write") || key.includes("edit") || key.includes("apply_patch")) return "Write";
+  return name ?? "tool";
+}
+
+function toolSummary(node: ConversationNode): string {
+  if (node.pending === true) return "running…";
+  const description = node.arguments?.description;
+  if (typeof description === "string" && description.trim().length > 0) {
+    return description.replace(/\s+/g, " ").slice(0, 72);
+  }
+  const command = commandLine(node.arguments);
+  if (command.length > 0) return command.replace(/\s+/g, " ").slice(0, 48);
+  if (node.ok === false) return "failed";
+  return "ok";
+}
+
+function commandLine(args: Record<string, unknown> | undefined): string {
+  if (args === undefined) return "";
+  const argv = args.argv;
+  if (Array.isArray(argv) && argv.every((item) => typeof item === "string")) {
+    return argv.join(" ");
+  }
+  for (const key of ["command", "cmd", "script", "query", "url", "path"] as const) {
+    const value = args[key];
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  return "";
+}
+
+function ToolResultCard({ node }: { readonly node: ConversationNode }): JSX.Element {
+  const [copied, setCopied] = useState(false);
+  const command = commandLine(node.arguments);
+  const output = node.output ?? "";
+  const copy = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const text = command.length > 0 ? command : output;
+    if (text.length === 0) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
+  return (
+    <div
+      className={styles.toolCard}
+      data-ok={node.ok === false ? "false" : "true"}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <header>
+        <i
+          className={styles.statusDot}
+          data-ok={node.pending === true ? "pending" : node.ok === false ? "false" : "true"}
+        />
+        <code>{command.length > 0 ? command : (node.toolName ?? "tool")}</code>
+        <button type="button" onClick={copy} aria-label="复制命令">
+          <IconCopy size={13} />
+          {copied ? "已复制" : "复制"}
+        </button>
+      </header>
+      {output.length > 0 && (
+        <pre>{output.length > 4_000 ? `${output.slice(0, 4_000)}…` : output}</pre>
+      )}
+    </div>
+  );
 }
 
 function formatMs(ms: number): string {

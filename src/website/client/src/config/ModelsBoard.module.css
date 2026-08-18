@@ -1,0 +1,258 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 12px 0 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  gap: 12px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 12px;
+  background: var(--cln-alias-bg-layer-1);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.identity {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.identity strong {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.identity em {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--cln-alias-border-l3);
+  border-radius: 4px;
+  color: var(--cln-alias-label-secondary);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 16px;
+}
+
+.dotOk,
+.dotMissing {
+  box-sizing: border-box;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.dotOk {
+  background: var(--cln-alias-state-success);
+}
+
+.dotMissing {
+  background: var(--cln-alias-state-error);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 4px;
+}
+
+.edit,
+.remove,
+.ghost,
+.primary,
+.use,
+.useActive,
+.x,
+.addModel,
+.addProvider {
+  box-sizing: border-box;
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  gap: 6px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.actions .edit,
+.actions .remove {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.edit:hover,
+.ghost:hover,
+.use:hover,
+.addModel:hover,
+.addProvider:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+}
+
+.remove {
+  border: 0;
+  color: var(--cln-alias-state-error);
+}
+
+.remove:hover {
+  background: color-mix(in oklch, var(--cln-alias-state-error) 12%, transparent);
+}
+
+.primary {
+  border: 0;
+  background: var(--cln-mw-lilac);
+  color: var(--cln-mw-ink);
+}
+
+.useActive {
+  border-color: var(--cln-mw-lilac);
+  background: oklch(84% 0.13 292 / 0.12);
+  color: var(--cln-mw-lilac);
+}
+
+.x {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--cln-alias-label-tertiary);
+}
+
+.x:hover {
+  background: color-mix(in oklch, var(--cln-alias-state-error) 12%, transparent);
+  color: var(--cln-alias-state-error);
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  gap: 14px;
+  border-radius: 12px;
+  background: var(--cln-alias-bg-layer-2);
+}
+
+.editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--cln-alias-label-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.editor input,
+.editor select {
+  box-sizing: border-box;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 8px;
+  background: var(--cln-alias-bg-layer-1);
+  color: var(--cln-alias-label-primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.editor select {
+  max-width: 240px;
+  cursor: pointer;
+}
+
+.models {
+  display: flex;
+  flex-direction: column;
+  padding-top: 12px;
+  gap: 8px;
+  border-top: 1px solid var(--cln-alias-border-l2);
+}
+
+.modelRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  padding: 6px;
+  gap: 6px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 8px;
+}
+
+.modelRow input {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 8px;
+  background: var(--cln-alias-bg-layer-1);
+  color: var(--cln-alias-label-primary);
+  font-size: 13px;
+}
+
+.addModel {
+  align-self: flex-start;
+  width: auto;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.addProvider {
+  flex: 1 1 0;
+  min-width: 180px;
+  height: 44px;
+  border: 1px dashed var(--cln-alias-border-l3);
+  border-radius: 12px;
+}
+
+.addProvider:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

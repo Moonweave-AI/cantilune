@@ -19,12 +19,10 @@ export type ConnectionStatus = "connecting" | "open" | "closed" | "error";
 export interface BridgeApi {
   readonly status: ConnectionStatus;
   readonly send: (message: ClientMessage) => void;
-  readonly lastMessage: ServerMessage | null;
 }
 
 export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeApi {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
-  const [lastMessage, setLastMessage] = useState<ServerMessage | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
@@ -32,6 +30,7 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
   useEffect(() => {
     let stopped = false;
     let attempt = 0;
+    let timer = 0;
 
     const connect = () => {
       if (stopped) return;
@@ -46,7 +45,6 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
       socket.addEventListener("message", (event) => {
         try {
           const message = JSON.parse(event.data as string) as ServerMessage;
-          setLastMessage(message);
           onMessageRef.current?.(message);
         } catch {
           // ignore malformed frames
@@ -58,7 +56,7 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
         setStatus("closed");
         attempt += 1;
         const delay = Math.min(1000 * 2 ** attempt, 8000);
-        setTimeout(connect, delay);
+        timer = window.setTimeout(connect, delay);
       });
 
       socket.addEventListener("error", () => {
@@ -69,6 +67,7 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
     connect();
     return () => {
       stopped = true;
+      window.clearTimeout(timer);
       socketRef.current?.close();
     };
   }, []);
@@ -80,5 +79,5 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
     }
   }, []);
 
-  return { status, send, lastMessage };
+  return { status, send };
 }

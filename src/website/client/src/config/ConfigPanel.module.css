@@ -190,8 +190,11 @@
 
 .segBtn,
 .segActive {
+  display: inline-flex;
   flex: 1;
   min-height: 34px;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--cln-alias-border-l2);
   border-radius: 8px;
   background: transparent;
@@ -205,9 +208,9 @@
 }
 
 .segActive {
-  border-color: var(--cln-static-lunar-500);
-  background: var(--cln-alias-sidebar-active);
-  color: var(--cln-static-lunar-800);
+  border-color: var(--cln-mw-lilac);
+  background: oklch(84% 0.13 292 / 0.12);
+  color: var(--cln-mw-lilac);
   font-weight: 600;
 }
 
@@ -285,8 +288,11 @@
 }
 
 .configureBtn {
+  display: inline-flex;
   flex: none;
   min-height: 38px;
+  align-items: center;
+  justify-content: center;
   margin: auto 2px 10px;
   padding: 8px 16px;
   border: none;
@@ -300,6 +306,71 @@
 
 .configureBtn:hover {
   background: var(--cln-alias-button-primary-hover);
+}
+
+.catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.catalogRow {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1.1fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.catalogRow .input,
+.catalogRow .select {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.catalogUse,
+.catalogUseActive,
+.catalogRemove,
+.catalogAdd {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cln-alias-label-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.catalogUse:hover,
+.catalogAdd:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+  color: var(--cln-alias-label-primary);
+}
+
+.catalogUseActive {
+  border-color: var(--cln-mw-lilac);
+  background: oklch(84% 0.13 292 / 0.12);
+  color: var(--cln-mw-lilac);
+}
+
+.catalogRemove {
+  width: 32px;
+  padding: 0;
+}
+
+.catalogRemove:hover {
+  border-color: var(--cln-alias-state-error);
+  color: var(--cln-alias-state-error);
+}
+
+.catalogAdd {
+  width: 100%;
+  border-style: dashed;
 }
 
 .footer {

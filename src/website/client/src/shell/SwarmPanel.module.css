@@ -6,7 +6,6 @@
   min-height: 190px;
   padding: 12px 16px 16px;
   overflow-y: auto;
-  border-top: 1px solid var(--cln-alias-border-l1);
 }
 
 .head {

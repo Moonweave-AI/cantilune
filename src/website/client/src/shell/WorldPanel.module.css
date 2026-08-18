@@ -4,7 +4,6 @@
   flex-direction: column;
   min-height: 150px;
   overflow: hidden;
-  border-top: 1px solid var(--cln-alias-border-l1);
 }
 
 .head {

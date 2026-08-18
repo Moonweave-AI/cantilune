@@ -9,9 +9,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  height: 58px;
+  height: 42px;
   gap: 4px;
-  padding: 0 17px;
+  padding: 0 8px 0 16px;
   border-bottom: 1px solid var(--cln-alias-border-l1);
 }
 
@@ -24,16 +24,36 @@
   background: transparent;
   color: var(--cln-alias-label-tertiary);
   cursor: pointer;
-  font-size: 11px;
+  font: var(--cln-font-xs-13);
 }
 
 .tabActive {
-  border-bottom-color: var(--cln-static-lunar-500);
-  color: var(--cln-static-lunar-700);
+  border-bottom-color: var(--cln-alias-state-business-primary);
+  color: var(--cln-alias-label-primary);
   font-weight: 600;
 }
 
 .tab:hover {
+  color: var(--cln-alias-label-primary);
+}
+
+.close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cln-alias-label-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.close:hover {
+  background: var(--cln-alias-interactive-bg-hover);
   color: var(--cln-alias-label-primary);
 }
 

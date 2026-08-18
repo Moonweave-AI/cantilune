@@ -1,16 +1,9 @@
 /**
- * Markdown parser producing a terminal-oriented AST.
+ * Markdown parser producing a renderable AST.
  *
- * Agent replies are markdown. Rendering them as raw text loses every structural
- * cue the model spent tokens producing — headings, list nesting, code fences,
- * tables — which is the difference between a transcript you can skim and a wall
- * of characters.
- *
- * This is deliberately not a CommonMark implementation. It covers the
- * constructs an assistant actually emits, and anything it does not recognise
- * degrades to a paragraph rather than being dropped, so no output is ever lost
- * to a parse gap. It has no dependencies: the CLI ships as part of an OS and
- * should not pull a markdown stack into the runtime closure.
+ * Same dialect as the CLI TUI (`packages/cli/src/render/markdown.ts`): headings,
+ * lists, fences, tables, quotes. Kept in the website client so Vite does not
+ * have to resolve files outside its root (that import failure blanked the UI).
  */
 
 /** Inline span, the leaves of a paragraph, heading, list item, or table cell. */
@@ -292,7 +285,8 @@ export function parseInline(source: string): readonly InlineNode[] {
       nodes.push({ kind: "text", value: rest.slice(0, hit.index) });
     }
     nodes.push(hit.node);
-    rest = rest.slice(hit.index + hit.length);
+    const consumed = Math.max(hit.length, 1);
+    rest = rest.slice(hit.index + consumed);
   }
 
   return nodes;

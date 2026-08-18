@@ -1,15 +1,19 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { ConfigureRequest } from "@shared/protocol";
 import {
   ConfigPanel,
   type ConfigPresetDefaults,
   type ProviderEntryWire,
 } from "../config/ConfigPanel";
+import { ModelsBoard } from "../config/ModelsBoard";
+import { IconBrain, IconChevronDown, IconClose, IconLayers, IconPuzzle, IconSettings } from "../theme/icons";
+import { ThemeToggle } from "../theme/ThemeToggle";
+import type { ThemePreference } from "../theme/theme";
+import type { CatalogEntry } from "../persist/store";
 import type { ConnectionStatus } from "../ws/useBridge";
 import styles from "./SettingsOverlay.module.css";
 
 export type SettingsTab = "general" | "models" | "plugins" | "presets";
-type ThemePreference = "dark" | "light" | "system";
 
 interface SettingsOverlayProps {
   readonly providers: readonly ProviderEntryWire[];
@@ -19,10 +23,13 @@ interface SettingsOverlayProps {
   readonly activeTab: SettingsTab;
   readonly preset: ConfigPresetDefaults | undefined;
   readonly workspacePath: string;
+  readonly defaults: Partial<ConfigureRequest> | undefined;
   readonly onTabChange: (tab: SettingsTab) => void;
   readonly onClose: () => void;
   readonly onThemeChange: (theme: ThemePreference) => void;
   readonly onConfigure: (request: ConfigureRequest) => void;
+  readonly catalog: readonly CatalogEntry[];
+  readonly onCatalogChange: (entries: readonly CatalogEntry[]) => void;
   readonly onNewSession: () => void;
   readonly onDownloadLog: () => void;
   readonly onApplyPreset: (preset: ConfigPresetDefaults) => void;
@@ -36,20 +43,20 @@ const TEXT = {
   presets: "Agent \u9884\u8bbe",
   exportLog: "\u5bfc\u51fa\u4f1a\u8bdd\u65e5\u5fd7",
   standard: "\u6807\u51c6\u6a21\u5f0f",
-  light: "\u6d45\u8272",
-  dark: "\u6df1\u8272",
-  system: "\u8ddf\u968f\u7cfb\u7edf",
   current: "\u5f53\u524d\u4f7f\u7528",
   apply: "\u5e94\u7528",
 } as const;
 
-const tabs: readonly { readonly id: SettingsTab; readonly label: string; readonly icon: string }[] =
-  [
-    { id: "general", label: TEXT.general, icon: "[ ]" },
-    { id: "models", label: TEXT.models, icon: "( )" },
-    { id: "plugins", label: TEXT.plugins, icon: "=" },
-    { id: "presets", label: TEXT.presets, icon: "*" },
-  ];
+const tabs: readonly {
+  readonly id: SettingsTab;
+  readonly label: string;
+  readonly icon: typeof IconSettings;
+}[] = [
+  { id: "general", label: TEXT.general, icon: IconSettings },
+  { id: "models", label: TEXT.models, icon: IconLayers },
+  { id: "plugins", label: TEXT.plugins, icon: IconPuzzle },
+  { id: "presets", label: TEXT.presets, icon: IconBrain },
+];
 
 const presets = [
   [
@@ -91,33 +98,52 @@ export function SettingsOverlay(props: SettingsOverlayProps): JSX.Element {
     activeTab,
     preset,
     workspacePath,
+    defaults,
+    catalog,
     onTabChange,
     onClose,
     onThemeChange,
     onConfigure,
+    onCatalogChange,
     onNewSession,
     onDownloadLog,
     onApplyPreset,
   } = props;
+  const titleId = useId();
+  const closeButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButton.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <div className={styles.overlay} role="presentation">
-      <section className={styles.panel} role="dialog" aria-modal="true" aria-label={TEXT.settings}>
+      <div className={styles.mask} aria-hidden="true" onClick={onClose} />
+      <section className={styles.panel} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <aside className={styles.nav}>
-          <h1>{TEXT.settings}</h1>
+          <h1 id={titleId}>{TEXT.settings}</h1>
           <nav role="tablist">
-            {tabs.map((tab) => (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                className={activeTab === tab.id ? styles.navActive : styles.navItem}
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-              >
-                <span>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={activeTab === tab.id ? styles.navActive : styles.navItem}
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </nav>
         </aside>
         <main className={styles.content}>
@@ -127,8 +153,14 @@ export function SettingsOverlay(props: SettingsOverlayProps): JSX.Element {
               <button type="button" className={styles.export} onClick={onDownloadLog}>
                 {TEXT.exportLog}
               </button>
-              <button type="button" className={styles.close} onClick={onClose} aria-label="close">
-                x
+              <button
+                ref={closeButton}
+                type="button"
+                className={styles.close}
+                onClick={onClose}
+                aria-label="关闭设置"
+              >
+                <IconClose size={16} />
               </button>
             </div>
           </header>
@@ -148,9 +180,12 @@ export function SettingsOverlay(props: SettingsOverlayProps): JSX.Element {
                 configured={configured}
                 connectionStatus={connectionStatus}
                 onConfigure={onConfigure}
+                onCatalogChange={onCatalogChange}
                 onNewSession={onNewSession}
                 workspacePath={workspacePath}
                 preset={preset}
+                defaults={defaults}
+                catalog={catalog}
               />
             )}
             {activeTab === "plugins" && <Plugins />}
@@ -195,31 +230,14 @@ function General({
         {rows.map(([label, hint, value]) => (
           <SettingRow key={label} label={label} hint={hint}>
             <button type="button" className={styles.selectLike}>
-              {value} <span>v</span>
+              {value} <IconChevronDown size={12} />
             </button>
           </SettingRow>
         ))}
         <div className={styles.appearance}>
           <strong>{"\u5916\u89c2"}</strong>
-          <div className={styles.themeChoices}>
-            {(
-              [
-                ["light", "o", TEXT.light],
-                ["dark", "*", TEXT.dark],
-                ["system", "-", TEXT.system],
-              ] as const
-            ).map(([value, icon, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={theme === value ? styles.themeActive : styles.themeChoice}
-                onClick={() => onThemeChange(value)}
-              >
-                <span>{icon}</span>
-                {label}
-              </button>
-            ))}
-          </div>
+          <p>浅色、深色与跟随系统会立即生效，并保存在本机。</p>
+          <ThemeToggle theme={theme} onChange={onThemeChange} />
         </div>
         <SettingRow
           label={"\u8fd0\u884c\u65f6\u8fde\u63a5"}
@@ -273,41 +291,55 @@ function Models({
   configured,
   connectionStatus,
   onConfigure,
+  onCatalogChange,
   onNewSession,
   workspacePath,
   preset,
+  defaults,
+  catalog,
 }: {
   readonly providers: readonly ProviderEntryWire[];
   readonly configured: boolean;
   readonly connectionStatus: ConnectionStatus;
   readonly onConfigure: (request: ConfigureRequest) => void;
+  readonly onCatalogChange: (entries: readonly CatalogEntry[]) => void;
   readonly onNewSession: () => void;
   readonly workspacePath: string;
   readonly preset: ConfigPresetDefaults | undefined;
+  readonly defaults: Partial<ConfigureRequest> | undefined;
+  readonly catalog: readonly CatalogEntry[];
 }): JSX.Element {
   return (
-    <section className={styles.section}>
+    <section className={styles.sectionWide}>
       <h2>{TEXT.models}</h2>
-      <p className={styles.lead}>
-        {
-          "\u586b\u5199\u6a21\u578b\u670d\u52a1\u5546\u7684 API \u5bc6\u94a5\u540e\uff0c\u5373\u53ef\u5728\u4f1a\u8bdd\u4e2d\u4f7f\u7528\u8be5\u6a21\u578b\u3002"
-        }
-      </p>
-      <div className={styles.providerIntro}>
-        <strong>{"\u5f53\u524d\u5de5\u4f5c\u533a"}</strong>
-        <span>{workspacePath}</span>
-      </div>
+      <p className={styles.lead}>填入各提供方的 API 密钥即可使用其模型。</p>
       <div className={styles.modelEditor}>
-        <ConfigPanel
+        <ModelsBoard
           providers={providers}
+          catalog={catalog}
+          defaults={defaults}
           configured={configured}
-          connectionStatus={connectionStatus}
-          onConfigure={onConfigure}
-          onNewSession={onNewSession}
           workspacePath={workspacePath}
-          showChrome={false}
-          preset={preset}
+          onCatalogChange={onCatalogChange}
+          onConfigure={onConfigure}
         />
+        <details className={styles.runtime}>
+          <summary>运行时与高级</summary>
+          <ConfigPanel
+            providers={providers}
+            configured={configured}
+            connectionStatus={connectionStatus}
+            onConfigure={onConfigure}
+            onNewSession={onNewSession}
+            workspacePath={workspacePath}
+            showChrome={false}
+            preset={preset}
+            defaults={defaults}
+            catalog={catalog}
+            onCatalogChange={onCatalogChange}
+            runtimeOnly
+          />
+        </details>
       </div>
     </section>
   );
@@ -369,7 +401,7 @@ function Plugins(): JSX.Element {
                   <strong>{name}</strong>
                   <p>{text}</p>
                 </div>
-                <span>v</span>
+                <IconChevronDown size={14} />
               </summary>
               <div className={styles.pluginDetails}>
                 {
@@ -388,7 +420,7 @@ function Plugins(): JSX.Element {
                 <i /> {"\u5df2\u542f\u7528"}
               </span>
               <button type="button" aria-label={`${item} settings`}>
-                v
+                <IconChevronDown size={14} />
               </button>
             </div>
           ))}

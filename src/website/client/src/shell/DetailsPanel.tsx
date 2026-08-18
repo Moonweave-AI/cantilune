@@ -8,24 +8,14 @@ import styles from "./DetailsPanel.module.css";
 
 interface DetailsPanelProps {
   readonly selected: ConversationNode | null;
-  readonly onThemeToggle: () => void;
-  readonly dark: boolean;
   readonly hideHeader?: boolean;
 }
 
-export function DetailsPanel({
-  selected,
-  onThemeToggle,
-  dark,
-  hideHeader = false,
-}: DetailsPanelProps): JSX.Element {
+export function DetailsPanel({ selected, hideHeader = false }: DetailsPanelProps): JSX.Element {
   return (
     <div className={hideHeader ? styles.panelCompact : styles.panel}>
       <header className={styles.head}>
         <span className={styles.title}>{"\u68c0\u67e5"}</span>
-        <button className={styles.themeBtn} onClick={onThemeToggle} aria-label="Toggle theme">
-          {dark ? "☀" : "☾"}
-        </button>
       </header>
       <div className={styles.body}>
         {selected === null ? (

@@ -1,106 +1,106 @@
 .frame {
   position: relative;
   display: grid;
+  grid-template-rows: 100%;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: var(--cln-alias-bg-base);
-  transition: grid-template-columns 180ms var(--cln-ease);
+  transition: grid-template-columns var(--cln-dur-slow) var(--cln-ease);
 }
-.sidebar,
-.center,
-.details {
-  position: relative;
+
+.frame[data-dragging] {
+  transition: none;
+}
+
+.sidebarCol {
   min-width: 0;
-  min-height: 0;
+  overflow: hidden;
+  background: var(--cln-alias-sidebar-bg);
+  border-right: 1px solid var(--cln-alias-border-l1);
+}
+
+.centerCol {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   overflow: hidden;
 }
-.sidebar {
-  border-right: 1px solid var(--cln-alias-border-l1);
-  background: var(--cln-alias-sidebar-bg);
-}
-.center {
+
+.detailsCol {
   display: flex;
+  min-width: 0;
   min-height: 0;
   flex-direction: column;
-}
-.details {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-  border-left: 1px solid var(--cln-alias-border-l1);
+  overflow: hidden;
+  border-left: 1px solid var(--cln-alias-border-l2);
   background: var(--cln-alias-bg-layer-1);
 }
-.sidebarContent {
-  width: 100%;
-  height: 100%;
-  opacity: 1;
-  transition: opacity 120ms var(--cln-ease);
-}
-.sidebar[data-collapsed] .sidebarContent {
+
+.frame[data-details-collapsed] .detailsCol {
+  border-left: none;
   pointer-events: none;
-  opacity: 0;
 }
-.sidebarToggle {
+
+.handle {
   position: absolute;
-  z-index: 6;
-  top: 12px;
-  right: 8px;
-  display: grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--cln-alias-label-secondary);
-  cursor: pointer;
-  font-size: 20px;
-}
-.sidebarToggle:hover {
-  background: var(--cln-alias-interactive-bg-hover);
-  color: var(--cln-alias-label-primary);
-}
-.sidebar[data-collapsed] .sidebarToggle {
-  top: 10px;
-  right: 13px;
-  width: 28px;
-  height: 28px;
-}
-.dragHandle,
-.dragHandleLeft {
-  position: absolute;
-  z-index: 7;
+  z-index: 8;
   top: 0;
   bottom: 0;
-  width: 7px;
+  width: 8px;
+  margin-left: -4px;
   cursor: col-resize;
   touch-action: none;
+  transition: left var(--cln-dur-slow) var(--cln-ease);
 }
-.dragHandle {
-  right: -3px;
+
+.frame[data-dragging] .handle {
+  transition: none;
 }
-.dragHandleLeft {
-  left: -3px;
-}
-.dragHandle:hover,
-.dragHandleLeft:hover {
-  background: color-mix(in srgb, var(--cln-static-focus) 28%, transparent);
-}
-.railMark {
+
+.handle[data-side="details"]::after {
+  content: "";
   position: absolute;
-  top: 50px;
-  left: 0;
-  width: 52px;
-  color: var(--cln-alias-label-caption);
-  font-family: var(--cln-font-family-code);
-  font-size: 11px;
-  text-align: center;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 10px;
+  background: var(--cln-alias-button-floating);
+  opacity: 0;
+  transition:
+    opacity var(--cln-dur-slow) var(--cln-ease),
+    background var(--cln-dur-slow) var(--cln-ease);
 }
+
+.detailsCol:hover ~ .handle[data-side="details"]::after,
+.handle[data-side="details"]:hover::after,
+.handle[data-side="details"][data-dragging]::after {
+  opacity: 1;
+}
+
+.handle[data-side="details"]:hover::after,
+.handle[data-side="details"][data-dragging]::after {
+  border-color: var(--cln-alias-border-l3);
+  background: var(--cln-alias-interactive-bg-active);
+}
+
+.overlayLayer {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlayLayer > * {
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .frame,
-  .sidebarContent {
+  .handle {
     transition: none;
   }
 }

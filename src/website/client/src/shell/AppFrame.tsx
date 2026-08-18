@@ -1,128 +1,208 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
+import {
+  clampWidth,
+  computeColumns,
+  DETAILS_DEFAULT,
+  DETAILS_MAX,
+  DETAILS_MIN,
+  SIDEBAR_AUTO_COLLAPSE,
+  SIDEBAR_DEFAULT,
+  SIDEBAR_MAX,
+  SIDEBAR_MIN,
+} from "./columns";
 import styles from "./AppFrame.module.css";
 
-interface ColumnSizes {
-  readonly sidebar: number;
-  readonly details: number;
-}
-interface AppFrameProps {
-  readonly sidebar: ReactNode;
-  readonly center: ReactNode;
-  readonly details: ReactNode;
-  readonly detailsVisible: boolean;
-}
-const MIN_SIDEBAR = 264,
-  MAX_SIDEBAR = 360,
-  DEFAULT_SIDEBAR = 280,
-  COLLAPSED_SIDEBAR = 52,
-  MIN_DETAILS = 300,
-  MAX_DETAILS = 480,
-  DEFAULT_DETAILS = 340,
-  CENTER_MIN = 620,
-  NARROW_BREAKPOINT = 1040;
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, Math.round(value)));
-function columns(width: number, sizes: ColumnSizes, collapsed: boolean): ColumnSizes {
-  const sidebar = collapsed ? COLLAPSED_SIDEBAR : clamp(sizes.sidebar, MIN_SIDEBAR, MAX_SIDEBAR);
-  const details = clamp(sizes.details, MIN_DETAILS, MAX_DETAILS);
-  if (sidebar + details + CENTER_MIN <= width) return { sidebar, details };
-  return {
-    sidebar,
-    details: sidebar + CENTER_MIN < width ? Math.max(MIN_DETAILS, width - sidebar - CENTER_MIN) : 0,
-  };
+export interface AppFrameSidebarParams {
+  readonly collapsed: boolean;
+  readonly width: number;
+  readonly onToggle: () => void;
 }
 
-export function AppFrame({ sidebar, center, details, detailsVisible }: AppFrameProps): JSX.Element {
-  const [sizes, setSizes] = useState<ColumnSizes>({
-    sidebar: DEFAULT_SIDEBAR,
-    details: DEFAULT_DETAILS,
-  });
-  const [width, setWidth] = useState(typeof window === "undefined" ? 1440 : window.innerWidth);
-  const [collapsed, setCollapsed] = useState(
-    typeof window === "undefined" ? false : window.innerWidth < NARROW_BREAKPOINT,
-  );
-  const raf = useRef<number | null>(null);
-  useEffect(() => {
-    const resize = () => {
-      if (raf.current !== null) return;
-      raf.current = requestAnimationFrame(() => {
-        raf.current = null;
-        setWidth(window.innerWidth);
-      });
-    };
-    window.addEventListener("resize", resize);
-    return () => {
-      window.removeEventListener("resize", resize);
-      if (raf.current !== null) cancelAnimationFrame(raf.current);
-    };
+interface AppFrameProps {
+  readonly sidebar: (params: AppFrameSidebarParams) => ReactNode;
+  readonly center: ReactNode;
+  readonly details: ReactNode;
+  readonly overlay?: ReactNode;
+  readonly detailsOpen: boolean;
+}
+
+function DragHandle({
+  side,
+  left,
+  onStart,
+  onDrag,
+  onEnd,
+}: {
+  readonly side: "sidebar" | "details";
+  readonly left: number;
+  readonly onStart: () => void;
+  readonly onDrag: (dx: number) => void;
+  readonly onEnd: () => void;
+}): JSX.Element {
+  const [dragging, setDragging] = useState(false);
+  const origin = useRef(0);
+  const latest = useRef(0);
+  const frame = useRef<number | null>(null);
+  const callbacks = useRef({ onStart, onDrag, onEnd });
+  callbacks.current = { onStart, onDrag, onEnd };
+
+  const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    origin.current = event.clientX;
+    latest.current = event.clientX;
+    callbacks.current.onStart();
+    setDragging(true);
   }, []);
-  const computed = columns(width, sizes, collapsed);
-  const tracks = detailsVisible ? computed : { ...computed, details: 0 };
-  const drag = useCallback(
-    (side: "sidebar" | "details") => (event: React.PointerEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      const target = event.currentTarget,
-        x = event.clientX,
-        start = side === "sidebar" ? sizes.sidebar : sizes.details;
-      target.setPointerCapture(event.pointerId);
-      const move = (next: PointerEvent) =>
-        setSizes((previous) => ({
-          ...previous,
-          [side]: clamp(
-            start + (side === "sidebar" ? next.clientX - x : x - next.clientX),
-            side === "sidebar" ? MIN_SIDEBAR : MIN_DETAILS,
-            side === "sidebar" ? MAX_SIDEBAR : MAX_DETAILS,
-          ),
-        }));
-      const up = (next: PointerEvent) => {
-        if (target.hasPointerCapture(next.pointerId)) target.releasePointerCapture(next.pointerId);
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-      };
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-    },
-    [sizes],
-  );
+
+  const onPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    latest.current = event.clientX;
+    frame.current ??= requestAnimationFrame(() => {
+      frame.current = null;
+      callbacks.current.onDrag(latest.current - origin.current);
+    });
+  }, []);
+
+  const onPointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (frame.current !== null) {
+      cancelAnimationFrame(frame.current);
+      frame.current = null;
+    }
+    callbacks.current.onDrag(latest.current - origin.current);
+    setDragging(false);
+    callbacks.current.onEnd();
+  }, []);
+
   return (
     <div
+      className={styles.handle}
+      style={{ left }}
+      data-side={side}
+      data-dragging={dragging || undefined}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={side === "sidebar" ? "调整侧边栏" : "调整详情面板"}
+    />
+  );
+}
+
+export function AppFrame({
+  sidebar,
+  center,
+  details,
+  overlay,
+  detailsOpen,
+}: AppFrameProps): JSX.Element {
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [viewport, setViewport] = useState(
+    typeof window === "undefined" ? 1440 : window.innerWidth,
+  );
+  const [sidebarPref, setSidebarPref] = useState(SIDEBAR_DEFAULT);
+  const [detailsPref, setDetailsPref] = useState(DETAILS_DEFAULT);
+  const [narrowExpanded, setNarrowExpanded] = useState(false);
+  const [wideCollapsed, setWideCollapsed] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (el === null) return;
+    let raf: number | null = null;
+    const observer = new ResizeObserver(() => {
+      raf ??= requestAnimationFrame(() => {
+        raf = null;
+        const width = el.getBoundingClientRect().width;
+        if (width > 0) setViewport(width);
+      });
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (raf !== null) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const narrow = viewport < SIDEBAR_AUTO_COLLAPSE;
+  const sidebarCollapsed = narrow ? !narrowExpanded : wideCollapsed;
+  const sidebarPreference = sidebarCollapsed
+    ? 0
+    : sidebarPref === 0
+      ? SIDEBAR_DEFAULT
+      : sidebarPref;
+  const cols = computeColumns(viewport, sidebarPreference, detailsOpen ? detailsPref : 0);
+  const colsRef = useRef(cols);
+  colsRef.current = cols;
+
+  const sidebarBase = useRef(0);
+  const detailsBase = useRef(0);
+  const onDragEnd = useCallback(() => setDragging(false), []);
+  const onSidebarStart = useCallback(() => {
+    sidebarBase.current = colsRef.current.sidebar;
+    setDragging(true);
+  }, []);
+  const onDetailsStart = useCallback(() => {
+    detailsBase.current = colsRef.current.details;
+    setDragging(true);
+  }, []);
+  const onSidebarDrag = useCallback((dx: number) => {
+    setSidebarPref(clampWidth(sidebarBase.current + dx, SIDEBAR_MIN, SIDEBAR_MAX));
+  }, []);
+  const onDetailsDrag = useCallback((dx: number) => {
+    setDetailsPref(clampWidth(detailsBase.current - dx, DETAILS_MIN, DETAILS_MAX));
+  }, []);
+
+  const onToggle = useCallback(() => {
+    if (narrow) setNarrowExpanded((value) => !value);
+    else setWideCollapsed((value) => !value);
+  }, [narrow]);
+
+  return (
+    <div
+      ref={frameRef}
       className={styles.frame}
-      style={{ gridTemplateColumns: `${tracks.sidebar}px minmax(0, 1fr) ${tracks.details}px` }}
+      style={{ gridTemplateColumns: `${cols.sidebar}px minmax(0, 1fr) ${cols.details}px` }}
+      data-sidebar-collapsed={sidebarCollapsed || undefined}
+      data-details-collapsed={cols.details === 0 || undefined}
+      data-dragging={dragging || undefined}
     >
-      <aside className={styles.sidebar} data-collapsed={collapsed || undefined}>
-        <div className={styles.sidebarContent}>{sidebar}</div>
-        <button
-          type="button"
-          className={styles.sidebarToggle}
-          onClick={() => setCollapsed((value) => !value)}
-          aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
-        >
-          {collapsed ? "›" : "‹"}
-        </button>
-        {!collapsed && (
-          <div
-            className={styles.dragHandle}
-            onPointerDown={drag("sidebar")}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="调整侧边栏"
-          />
-        )}
-      </aside>
-      <main className={styles.center}>{center}</main>
-      {tracks.details > 0 && (
-        <aside className={styles.details}>
-          <div
-            className={styles.dragHandleLeft}
-            onPointerDown={drag("details")}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="调整详情面板"
-          />
-          {details}
-        </aside>
+      <div className={styles.sidebarCol}>
+        {sidebar({ collapsed: sidebarCollapsed, width: cols.sidebar, onToggle })}
+      </div>
+      <div className={styles.centerCol}>{center}</div>
+      <div className={styles.detailsCol}>{details}</div>
+      <div className={styles.overlayLayer} data-shell-overlay="">
+        {overlay}
+      </div>
+      {!sidebarCollapsed && (
+        <DragHandle
+          side="sidebar"
+          left={cols.sidebar}
+          onStart={onSidebarStart}
+          onDrag={onSidebarDrag}
+          onEnd={onDragEnd}
+        />
       )}
-      {collapsed && <div className={styles.railMark}>C</div>}
+      {cols.details > 0 && (
+        <DragHandle
+          side="details"
+          left={viewport - cols.details}
+          onStart={onDetailsStart}
+          onDrag={onDetailsDrag}
+          onEnd={onDragEnd}
+        />
+      )}
     </div>
   );
 }

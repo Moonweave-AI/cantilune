@@ -12,7 +12,7 @@
   },
   "files": ["dist"],
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "pnpm exec tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/server/src/index.js",

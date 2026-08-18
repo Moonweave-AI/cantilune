@@ -4,6 +4,7 @@ import type { ConversationNode } from "../conversation/nodes";
 import { DetailsPanel } from "./DetailsPanel";
 import { SwarmPanel, type ActivateManifestInput } from "./SwarmPanel";
 import { WorldPanel } from "./WorldPanel";
+import { IconClose } from "../theme/icons";
 import styles from "./DetailsRail.module.css";
 
 type RailTab = "inspect" | "world" | "swarm";
@@ -13,8 +14,7 @@ interface DetailsRailProps {
   readonly world: WorldSnapshotWire | null;
   readonly swarmStatus: SwarmStatusWire | null;
   readonly clusterEvents: readonly ClusterEventWire[];
-  readonly dark: boolean;
-  readonly onThemeToggle: () => void;
+  readonly onClose: () => void;
   readonly onSwarmStart: () => void;
   readonly onSwarmStop: () => void;
   readonly onSwarmActivate: (agentId: string, manifest: ActivateManifestInput) => void;
@@ -25,8 +25,7 @@ export function DetailsRail({
   world,
   swarmStatus,
   clusterEvents,
-  dark,
-  onThemeToggle,
+  onClose,
   onSwarmStart,
   onSwarmStop,
   onSwarmActivate,
@@ -53,11 +52,12 @@ export function DetailsRail({
             {label}
           </button>
         ))}
+        <button type="button" className={styles.close} onClick={onClose} aria-label="关闭详情">
+          <IconClose size={14} />
+        </button>
       </nav>
       <div className={styles.content}>
-        {tab === "inspect" && (
-          <DetailsPanel selected={selected} onThemeToggle={onThemeToggle} dark={dark} hideHeader />
-        )}
+        {tab === "inspect" && <DetailsPanel selected={selected} hideHeader />}
         {tab === "world" && (
           <>
             {world !== null ? (

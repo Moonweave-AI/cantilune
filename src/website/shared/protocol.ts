@@ -17,7 +17,10 @@ export interface ConfigureRequest {
   readonly provider: string;
   readonly model: string;
   readonly baseUrl?: string;
-  /** Server-memory-only; never persisted client-side by the client. */
+  /**
+   * Sent to server memory on configure. The local website harness also stores
+   * it in origin localStorage so refresh can reconnect without re-typing.
+   */
   readonly apiKey?: string;
   readonly durable?: "memory" | "file";
   readonly storagePath?: string;
@@ -47,6 +50,7 @@ export interface ConfigureRequest {
 export interface RunRequest {
   readonly type: "run";
   readonly instruction: string;
+  readonly mode?: "execute" | "plan" | "observe";
 }
 
 export interface AskUserReply {
@@ -58,6 +62,17 @@ export interface ApproveRequest {
   readonly type: "approve";
   readonly toolCallId: string;
   readonly decision: "allow" | "deny";
+  /** Allow the rest of this run without further prompts. */
+  readonly scope?: "once" | "always";
+}
+
+export interface SetModeRequest {
+  readonly type: "setMode";
+  readonly mode: "execute" | "plan" | "observe";
+}
+
+export interface PickWorkspaceRequest {
+  readonly type: "pickWorkspace";
 }
 
 export interface StopRequest {
@@ -116,6 +131,8 @@ export type ClientMessage =
   | RunRequest
   | AskUserReply
   | ApproveRequest
+  | SetModeRequest
+  | PickWorkspaceRequest
   | StopRequest
   | InspectRequest
   | SwarmStartRequest
@@ -384,6 +401,11 @@ export interface ErrorResponse {
   readonly message: string;
 }
 
+export interface WorkspacePickedEvent {
+  readonly type: "workspacePicked";
+  readonly path?: string;
+}
+
 export type ServerMessage =
   | ReadyEvent
   | AgentEventEnvelope
@@ -392,4 +414,5 @@ export type ServerMessage =
   | SwarmStatusEvent
   | RunResultEvent
   | WorldSnapshotEvent
+  | WorkspacePickedEvent
   | ErrorResponse;
