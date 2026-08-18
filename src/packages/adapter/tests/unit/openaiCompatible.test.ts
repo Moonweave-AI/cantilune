@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createOpenAiCompatibleAdapter } from "../../src/openaiCompatible/openaiCompatibleAdapter.js";
 import {
   fromOpenAiResponse,
+  decodeOpenAiToolName,
+  encodeOpenAiToolName,
   toOpenAiMessages,
   toOpenAiTools,
   type OpenAiChoice,
@@ -35,6 +37,30 @@ describe("openaiToolMapping", () => {
         },
       },
     ]);
+  });
+
+  it("encodes Cantilune external tool names and decodes provider responses", () => {
+    const internalName = "tool:shell_run_command";
+    const encoded = encodeOpenAiToolName(internalName);
+    expect(encoded).toMatch(/^[a-zA-Z0-9_-]+$/);
+    expect(encoded).not.toBe(internalName);
+    expect(decodeOpenAiToolName(encoded)).toBe(internalName);
+
+    expect(
+      toOpenAiTools([
+        { name: internalName, description: "Run a command", parameters: { type: "object" } },
+      ])[0]?.function.name,
+    ).toBe(encoded);
+    expect(
+      fromOpenAiResponse({
+        message: {
+          tool_calls: [
+            { id: "call_1", type: "function", function: { name: encoded, arguments: "{}" } },
+          ],
+        },
+        finish_reason: "tool_calls",
+      }).toolCalls[0]?.name,
+    ).toBe(internalName);
   });
 
   it("converts LLM messages to OpenAI chat format", () => {

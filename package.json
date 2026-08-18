@@ -22,6 +22,7 @@
     "host:provision": "node scripts/host/provision-host.mjs",
     "host:verify": "node scripts/verify-host.mjs",
     "cantilune": "node src/packages/cli/dist/index.js",
+    "dev:website": "node scripts/dev-website.mjs",
     "soak:8h": "node scripts/soak-24h.mjs",
     "soak:24h": "node scripts/soak-24h.mjs",
     "soak:publish-summary": "node scripts/publish-soak-summary.mjs",

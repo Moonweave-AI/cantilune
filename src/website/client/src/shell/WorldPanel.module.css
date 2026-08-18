@@ -1,0 +1,112 @@
+.panel {
+  display: flex;
+  flex: 0 1 30%;
+  flex-direction: column;
+  min-height: 150px;
+  overflow: hidden;
+  border-top: 1px solid var(--cln-alias-border-l1);
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--cln-alias-border-l1);
+}
+
+.title {
+  color: var(--cln-alias-label-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.epoch {
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--cln-alias-label-caption);
+  font-family: var(--cln-font-family-code);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 16px 16px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.sectionLabel {
+  margin-bottom: 2px;
+  color: var(--cln-alias-label-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--cln-alias-border-l1);
+  font-size: 12px;
+}
+
+.id {
+  overflow: hidden;
+  color: var(--cln-alias-label-primary);
+  font-family: var(--cln-font-family-code);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kind {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: var(--cln-alias-label-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  justify-self: end;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--cln-alias-bg-layer-2);
+  color: var(--cln-alias-label-secondary);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.tag[data-status="active"],
+.tag[data-status="published"] {
+  background: var(--cln-static-cyan-50);
+  color: var(--cln-static-cyan-700);
+}
+
+.tag[data-status="retired"],
+.tag[data-status="rejected"] {
+  background: color-mix(in srgb, var(--cln-alias-state-error) 12%, transparent);
+  color: var(--cln-alias-state-error);
+}
+
+.tag[data-status="registered"],
+.tag[data-status="waiting"] {
+  background: color-mix(in srgb, var(--cln-alias-state-warn) 16%, transparent);
+  color: var(--cln-static-amber-500);
+}

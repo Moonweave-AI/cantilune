@@ -1,0 +1,43 @@
+{
+  "name": "@cantilune/website-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Local Node backend that hosts the Cantilune packages and streams AgentEvents to the website client (ADR-0030)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/server/src/index.js",
+    "smoke": "node src/integrationSmoke.mjs",
+    "smoke:deny": "node src/integrationDeny.mjs",
+    "smoke:estop": "node src/integrationEstop.mjs",
+    "smoke:swarm": "node src/integrationSwarm.mjs",
+    "smoke:real": "node src/integrationReal.mjs",
+    "smoke:all": "node src/integrationSmoke.mjs && node src/integrationDeny.mjs && node src/integrationEstop.mjs && node src/integrationSwarm.mjs",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@cantilune/adapter": "workspace:*",
+    "@cantilune/boot": "workspace:*",
+    "@cantilune/cli": "workspace:*",
+    "@cantilune/core": "workspace:*",
+    "@cantilune/runtime": "workspace:*",
+    "@cantilune/syscall": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "license": "Apache-2.0"
+}

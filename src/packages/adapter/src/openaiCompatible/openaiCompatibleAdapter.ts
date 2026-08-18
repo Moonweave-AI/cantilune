@@ -5,6 +5,7 @@ import {
   fromOpenAiResponse,
   toOpenAiMessages,
   toOpenAiTools,
+  decodeOpenAiToolName,
   StreamAccumulator,
   normalizeToolCallDelta,
   type OpenAiChoice,
@@ -40,7 +41,7 @@ function toolCallChunks(frame: OpenAiStreamChunk): LlmStreamChunk[] {
       kind: "tool_call_delta",
       index: delta.index,
       ...(delta.id !== undefined ? { id: delta.id } : {}),
-      ...(delta.name !== undefined ? { name: delta.name } : {}),
+      ...(delta.name !== undefined ? { name: decodeOpenAiToolName(delta.name) } : {}),
       ...(delta.argumentsDelta !== undefined ? { argumentsDelta: delta.argumentsDelta } : {}),
     });
   }
@@ -60,11 +61,7 @@ function isAzureProvider(entry: ProviderEntry): boolean {
 }
 
 /** Resolve chat completions URL; Azure uses deployments + api-version. */
-function chatCompletionsUrl(
-  entry: ProviderEntry,
-  baseUrl: string,
-  model: string,
-): string {
+function chatCompletionsUrl(entry: ProviderEntry, baseUrl: string, model: string): string {
   if (!isAzureProvider(entry)) {
     return `${baseUrl}/chat/completions`;
   }

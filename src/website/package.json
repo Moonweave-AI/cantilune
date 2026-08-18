@@ -1,0 +1,17 @@
+{
+  "name": "@cantilune/website",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Cantilune website agent harness UI — the primary interactive surface that replaces the CLI (ADR-0030)",
+  "scripts": {
+    "dev": "concurrently -n server,client -c magenta,cyan \"pnpm --filter @cantilune/website-server dev\" \"pnpm --filter @cantilune/website-client dev\"",
+    "build": "pnpm --filter @cantilune/website-server build && pnpm --filter @cantilune/website-client build",
+    "typecheck": "pnpm --filter @cantilune/website-server typecheck && pnpm --filter @cantilune/website-client typecheck",
+    "clean": "pnpm --filter @cantilune/website-server clean && pnpm --filter @cantilune/website-client clean"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "license": "Apache-2.0"
+}

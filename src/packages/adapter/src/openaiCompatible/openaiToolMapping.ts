@@ -93,6 +93,54 @@ export interface NormalizedToolCallDelta {
 }
 
 /**
+ * OpenAI-compatible providers only accept ASCII tool names. Cantilune keeps
+ * the richer internal names (for example `tool:shell_run_command`) so that
+ * the tool registry and audit trail remain lossless. This boundary encoding
+ * is reversible and only changes names that need it.
+ */
+const PROVIDER_TOOL_NAME_PREFIX = "cln_";
+
+function isProviderSafeToolName(name: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(name);
+}
+
+export function encodeOpenAiToolName(name: string): string {
+  if (isProviderSafeToolName(name) && !name.startsWith(PROVIDER_TOOL_NAME_PREFIX)) {
+    return name;
+  }
+
+  const encoded = [...name]
+    .map((character) => {
+      if (/^[a-zA-Z0-9-]$/.test(character)) return character;
+      return `_x${character.codePointAt(0)?.toString(16) ?? "0"}_`;
+    })
+    .join("");
+  return `${PROVIDER_TOOL_NAME_PREFIX}${encoded}`;
+}
+
+export function decodeOpenAiToolName(name: string): string {
+  if (!name.startsWith(PROVIDER_TOOL_NAME_PREFIX)) return name;
+
+  const encoded = name.slice(PROVIDER_TOOL_NAME_PREFIX.length);
+  let decoded = "";
+  for (let index = 0; index < encoded.length;) {
+    if (encoded[index] !== "_" || encoded[index + 1] !== "x") {
+      decoded += encoded[index];
+      index++;
+      continue;
+    }
+
+    const end = encoded.indexOf("_", index + 2);
+    if (end < 0) return name;
+    const codePoint = Number.parseInt(encoded.slice(index + 2, end), 16);
+    if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return name;
+    decoded += String.fromCodePoint(codePoint);
+    index = end + 1;
+  }
+  return decoded;
+}
+
+/**
  * Normalize one raw tool-call delta against the OpenAI spec, absorbing the
  * provider drift that would otherwise trip the boot layer's strict
  * {@code requireToolCallDelta} validator.
@@ -141,7 +189,7 @@ export function toOpenAiTools(tools: readonly LlmToolDef[]): OpenAiFunctionTool[
   return tools.map((tool) => ({
     type: "function" as const,
     function: {
-      name: tool.name,
+      name: encodeOpenAiToolName(tool.name),
       description: tool.description,
       parameters: tool.parameters,
     },
@@ -167,7 +215,7 @@ export function toOpenAiMessages(messages: readonly LlmMessage[]): OpenAiChatMes
                   id: toolCall.id,
                   type: "function" as const,
                   function: {
-                    name: toolCall.name,
+                    name: encodeOpenAiToolName(toolCall.name),
                     arguments: toolCall.arguments,
                   },
                 })),
@@ -224,7 +272,7 @@ export function fromOpenAiResponse(
   const message = choice?.message;
   const toolCalls: LlmToolCallResult[] = (message?.tool_calls ?? []).map((toolCall) => ({
     id: toolCall.id,
-    name: toolCall.function.name,
+    name: decodeOpenAiToolName(toolCall.function.name),
     arguments: parseToolArguments(toolCall.function.arguments),
   }));
 
@@ -299,7 +347,7 @@ export class StreamAccumulator {
       .sort(([a], [b]) => a - b)
       .map(([index, entry]) => ({
         id: entry.id.length > 0 ? entry.id : `call_${index}`,
-        name: entry.name,
+        name: decodeOpenAiToolName(entry.name),
         arguments: parseToolArguments(entry.args),
       }));
 

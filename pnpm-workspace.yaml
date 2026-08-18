@@ -1,2 +1,5 @@
 packages:
   - "src/packages/*"
+  - "src/website"
+  - "src/website/server"
+  - "src/website/client"

@@ -1,0 +1,106 @@
+.frame {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--cln-alias-bg-base);
+  transition: grid-template-columns 180ms var(--cln-ease);
+}
+.sidebar,
+.center,
+.details {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.sidebar {
+  border-right: 1px solid var(--cln-alias-border-l1);
+  background: var(--cln-alias-sidebar-bg);
+}
+.center {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+.details {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  border-left: 1px solid var(--cln-alias-border-l1);
+  background: var(--cln-alias-bg-layer-1);
+}
+.sidebarContent {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 120ms var(--cln-ease);
+}
+.sidebar[data-collapsed] .sidebarContent {
+  pointer-events: none;
+  opacity: 0;
+}
+.sidebarToggle {
+  position: absolute;
+  z-index: 6;
+  top: 12px;
+  right: 8px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cln-alias-label-secondary);
+  cursor: pointer;
+  font-size: 20px;
+}
+.sidebarToggle:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+  color: var(--cln-alias-label-primary);
+}
+.sidebar[data-collapsed] .sidebarToggle {
+  top: 10px;
+  right: 13px;
+  width: 28px;
+  height: 28px;
+}
+.dragHandle,
+.dragHandleLeft {
+  position: absolute;
+  z-index: 7;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.dragHandle {
+  right: -3px;
+}
+.dragHandleLeft {
+  left: -3px;
+}
+.dragHandle:hover,
+.dragHandleLeft:hover {
+  background: color-mix(in srgb, var(--cln-static-focus) 28%, transparent);
+}
+.railMark {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 52px;
+  color: var(--cln-alias-label-caption);
+  font-family: var(--cln-font-family-code);
+  font-size: 11px;
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame,
+  .sidebarContent {
+    transition: none;
+  }
+}

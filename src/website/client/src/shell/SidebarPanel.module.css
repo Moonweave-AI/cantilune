@@ -1,0 +1,252 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 12px 10px;
+  background: var(--cln-alias-sidebar-bg);
+  color: var(--cln-alias-sidebar-fg);
+  overflow: hidden;
+}
+.brandRow {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 4px;
+}
+.brand {
+  display: inline-flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  text-align: left;
+}
+.brand em {
+  margin-left: 2px;
+  padding: 1px 4px;
+  border: 1px solid var(--cln-alias-border-l3);
+  border-radius: 3px;
+  color: var(--cln-alias-label-secondary);
+  font-family: var(--cln-font-family-code);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.status {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cln-alias-label-caption);
+}
+.status[data-status="open"] {
+  background: var(--cln-alias-state-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cln-alias-state-success) 12%, transparent);
+}
+.status[data-status="error"] {
+  background: var(--cln-alias-state-error);
+}
+.newSession {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  margin: 6px 0 16px;
+  padding: 0 12px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 11px;
+  background: var(--cln-alias-bg-layer-3);
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 550;
+}
+.newSession:hover {
+  background: var(--cln-alias-interactive-bg-active);
+}
+.workspaceSection {
+  flex: none;
+}
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  color: var(--cln-alias-label-secondary);
+  font-size: 13px;
+}
+.sectionHead > div {
+  display: flex;
+  gap: 3px;
+}
+.sectionHead button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cln-alias-label-secondary);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+}
+.sectionHead button:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+  color: var(--cln-alias-label-primary);
+}
+.workspace {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 30px;
+  gap: 7px;
+  padding: 4px 5px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.workspace:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+}
+.folder {
+  color: var(--cln-static-focus);
+  font-size: 19px;
+  line-height: 1;
+}
+.workspaceName {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspaceForm {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 4px 0 7px;
+  padding: 7px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 7px;
+  background: var(--cln-alias-bg-layer-2);
+}
+.workspaceForm input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 4px;
+  background: var(--cln-alias-bg-base);
+  color: var(--cln-alias-label-primary);
+  font-size: 11px;
+  padding: 4px 6px;
+}
+.workspaceForm button {
+  min-height: 27px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--cln-alias-interactive-bg-active);
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  font-size: 10px;
+}
+.sessionSection {
+  min-height: 0;
+  flex: 1;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  gap: 3px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.session,
+.sessionActive {
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.session:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+}
+.sessionActive {
+  background: var(--cln-alias-sidebar-active);
+}
+.sessionTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session small {
+  flex: none;
+  color: var(--cln-alias-label-tertiary);
+  font-size: 10px;
+}
+.foot {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 7px;
+}
+.runtime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  color: var(--cln-alias-label-caption);
+  font-size: 10px;
+}
+.runtime i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cln-alias-label-caption);
+}
+.runtime[data-ready] i {
+  background: var(--cln-alias-state-success);
+}
+.settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+.settings:hover {
+  background: var(--cln-alias-interactive-bg-hover);
+}

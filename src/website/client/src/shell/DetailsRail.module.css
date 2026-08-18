@@ -1,0 +1,54 @@
+.rail {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.tabs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 58px;
+  gap: 4px;
+  padding: 0 17px;
+  border-bottom: 1px solid var(--cln-alias-border-l1);
+}
+
+.tab,
+.tabActive {
+  align-self: stretch;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--cln-alias-label-tertiary);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.tabActive {
+  border-bottom-color: var(--cln-static-lunar-500);
+  color: var(--cln-static-lunar-700);
+  font-weight: 600;
+}
+
+.tab:hover {
+  color: var(--cln-alias-label-primary);
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden auto;
+}
+
+.empty {
+  margin: auto 22px;
+  color: var(--cln-alias-label-caption);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
