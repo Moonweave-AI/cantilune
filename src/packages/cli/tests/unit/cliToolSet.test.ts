@@ -52,4 +52,17 @@ describe("parseMcpServerSpec", () => {
     });
     expect(created.tools.applyMcpSurface).toBeTypeOf("function");
   });
+
+  it("does not expose filesystem or shell tools without a selected directory", async () => {
+    const created = createCliToolSet({
+      sandbox: "off",
+      filesystem: false,
+      shell: false,
+    });
+
+    await expect(created.tools.listTools()).resolves.toEqual([
+      expect.objectContaining({ name: "web_search" }),
+      expect.objectContaining({ name: "web_fetch" }),
+    ]);
+  });
 });

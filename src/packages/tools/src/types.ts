@@ -34,7 +34,7 @@ export interface ShellConfig {
 
 export interface WebConfig {
   readonly enabled: boolean;
-  readonly searchProvider?: "tavily" | "serper" | "brave" | "none";
+  readonly searchProvider?: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
   readonly searchApiKey?: string;
   readonly timeoutMs?: number;
   readonly maxResponseSize?: number;

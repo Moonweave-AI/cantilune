@@ -20,6 +20,7 @@ import {
 } from "./dockerHost.mjs";
 import { mergeHostEnv } from "./hostEnv.mjs";
 import { installOfficialEtcd } from "./install-etcd.mjs";
+import { prefetchCloakBrowser } from "./prefetch-cloakbrowser.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = resolve(here, "../..");
@@ -70,11 +71,12 @@ export async function prefetchHost(options = {}) {
   const etcdBin = await installOfficialEtcd(repoRoot);
   mergeHostEnv(repoRoot, { CANTILUNE_ETCD_BIN: etcdBin });
   process.stdout.write(`CANTILUNE_ETCD_BIN=${etcdBin}\n`);
+  const cloakBrowser = await prefetchCloakBrowser({ repoRoot, env });
   if (mode === "bin") {
     process.stdout.write(
       "Host prefetch: official etcd binary only (CI/workflow images are declared on the job).\n",
     );
-    return { etcdBin, mode };
+    return { etcdBin, cloakBrowser, mode };
   }
   await ensureDocker();
   process.stdout.write(`Pulling ${POSTGRES_COMPOSE}\n`);
@@ -84,7 +86,7 @@ export async function prefetchHost(options = {}) {
   pullHostImages();
   pullAlpineInWsl(env);
   process.stdout.write("Host prefetch complete. Services are not started.\n");
-  return { etcdBin, mode };
+  return { etcdBin, cloakBrowser, mode };
 }
 
 function invokedAsCli() {

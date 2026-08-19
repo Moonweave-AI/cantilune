@@ -11,9 +11,12 @@ import {
 } from "@cantilune/tools";
 
 export interface CliToolSetInput {
-  readonly workingDirectory: string;
+  /** Filesystem and shell tools are enabled only after a real directory is selected. */
+  readonly workingDirectory?: string;
+  readonly filesystem?: boolean;
+  readonly shell?: boolean;
   readonly mcpServers?: readonly string[];
-  readonly searchProvider?: "tavily" | "serper" | "brave" | "none";
+  readonly searchProvider?: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
   /** Production omits this so `createToolSet` defaults to `required`. */
   readonly sandbox?: SandboxMode;
 }
@@ -69,14 +72,21 @@ export function createCliToolSet(input: CliToolSetInput): {
   readonly tools: ToolSet;
   readonly mcp: readonly ParsedMcpServer[];
 } {
+  // ToolSetConfig requires a string for its shape, but disabled filesystem
+  // and shell executors never receive it. An empty value prevents a website
+  // session from implicitly inheriting the host project's current directory.
+  const workingDirectory = input.workingDirectory ?? "";
   const mcp = (input.mcpServers ?? []).map(parseMcpServerSpec);
   const attached = mcp
     .map((entry) => entry.config)
     .filter((config): config is McpConfig => config !== undefined);
   const config: ToolSetConfig = {
-    workingDirectory: input.workingDirectory,
-    filesystem: { enabled: true, rootDir: input.workingDirectory },
-    shell: { enabled: true },
+    workingDirectory,
+    filesystem:
+      input.filesystem === false
+        ? { enabled: false }
+        : { enabled: true, rootDir: workingDirectory },
+    shell: { enabled: input.shell !== false },
     web: {
       enabled: true,
       ...(input.searchProvider !== undefined ? { searchProvider: input.searchProvider } : {}),

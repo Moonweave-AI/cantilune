@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "clean": "pnpm -r run clean",
+    "prebuild": "pnpm web:provision",
     "build": "pnpm -r run build",
     "build:fresh": "pnpm clean && pnpm build",
     "test": "pnpm -r run test",
@@ -17,6 +18,7 @@
     "check:0x": "node scripts/check-0x-versions.mjs",
     "test:static": "pnpm check:encoding && pnpm check:0x && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:host",
     "prepare": "node scripts/host/prefetch-host.mjs",
+    "web:provision": "node scripts/host/prefetch-cloakbrowser.mjs",
     "host:prefetch": "node scripts/host/prefetch-host.mjs",
     "test:host": "node --test scripts/host/*.test.mjs",
     "host:provision": "node scripts/host/provision-host.mjs",

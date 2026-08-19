@@ -28,10 +28,10 @@ export function createWebExecutor(config: WebConfig): ToolExecutor {
           case "web_search": {
             const query = requireString(args, "query");
             const searchConfig: {
-              provider: "tavily" | "serper" | "brave" | "none";
+              provider: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
               apiKey?: string;
             } = {
-              provider: config.searchProvider ?? "none",
+              provider: config.searchProvider ?? "cloakbrowser",
             };
             if (config.searchApiKey !== undefined) {
               searchConfig.apiKey = config.searchApiKey;

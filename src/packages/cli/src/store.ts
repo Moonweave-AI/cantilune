@@ -297,7 +297,7 @@ export interface AppStore {
   judgeModel: string | undefined;
   judgeQuorumModels: readonly string[] | undefined;
   mcpServers: readonly string[] | undefined;
-  searchProvider: "tavily" | "serper" | "brave" | "none" | undefined;
+  searchProvider: "cloakbrowser" | "tavily" | "serper" | "brave" | "none" | undefined;
   connected: boolean;
   agentRunning: boolean;
   phase: AgentPhase;

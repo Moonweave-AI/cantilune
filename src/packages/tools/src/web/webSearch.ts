@@ -1,5 +1,7 @@
+import { cloakBrowserSearch } from "./cloakBrowserSearch.js";
+
 export interface WebSearchConfig {
-  readonly provider: "tavily" | "serper" | "brave" | "none";
+  readonly provider: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
   readonly apiKey?: string;
 }
 
@@ -16,15 +18,22 @@ export interface WebSearchResult {
 }
 
 export async function webSearch(args: WebSearchArgs, config?: WebSearchConfig): Promise<string> {
-  const provider = config?.provider ?? "none";
+  const provider = config?.provider ?? "cloakbrowser";
   const apiKey = config?.apiKey;
 
-  if (provider === "none" || apiKey === undefined || apiKey.length === 0) {
+  if (provider === "none") {
     return "Web search not configured. Set search API key in config.";
   }
-
   try {
-    const results = await searchWithProvider(provider, apiKey, args);
+    let results: readonly WebSearchResult[];
+    if (provider === "cloakbrowser") {
+      results = await cloakBrowserSearch(args);
+    } else {
+      if (apiKey === undefined || apiKey.length === 0) {
+        return "Web search not configured. Set search API key in config.";
+      }
+      results = await searchWithProvider(provider, apiKey, args);
+    }
     if (results.length === 0) {
       return `No results found for query: "${args.query}"`;
     }
@@ -42,7 +51,7 @@ export function formatSearchResults(results: readonly WebSearchResult[]): string
 }
 
 async function searchWithProvider(
-  provider: WebSearchConfig["provider"],
+  provider: Exclude<WebSearchConfig["provider"], "cloakbrowser" | "none">,
   apiKey: string,
   args: WebSearchArgs,
 ): Promise<WebSearchResult[]> {
@@ -161,7 +170,7 @@ async function searchBrave(
 
 export const webSearchSchema = {
   name: "web_search",
-  description: "Search the web using a configured search API provider (tavily, serper, or brave).",
+  description: "Search the public web through the configured read-only provider.",
   parameters: {
     type: "object",
     properties: {

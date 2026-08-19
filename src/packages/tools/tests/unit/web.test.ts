@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createWebExecutor } from "../../src/web/webExecutor.js";
 import { htmlToText, webFetch } from "../../src/web/webFetch.js";
 import { formatSearchResults, webSearch } from "../../src/web/webSearch.js";
+import { cloakBrowserSearch } from "../../src/web/cloakBrowserSearch.js";
+
+vi.mock("../../src/web/cloakBrowserSearch.js", () => ({ cloakBrowserSearch: vi.fn() }));
 
 function mockFetchResponse(options: {
   ok?: boolean;
@@ -158,6 +161,7 @@ describe("formatSearchResults", () => {
 describe("webSearch", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
+    vi.mocked(cloakBrowserSearch).mockReset();
   });
 
   afterEach(() => {
@@ -170,8 +174,40 @@ describe("webSearch", () => {
   });
 
   it("returns not configured message when api key is missing", async () => {
-    const output = await webSearch({ query: "test" }, { provider: "tavily" });
+    const output = await webSearch({ query: "test" }, { provider: "tavily", apiKey: "" });
     expect(output).toBe("Web search not configured. Set search API key in config.");
+  });
+
+  it("uses the keyless CloakBrowser provider by default", async () => {
+    vi.mocked(cloakBrowserSearch).mockResolvedValue([
+      { title: "Cloak hit", url: "https://cloak.example", snippet: "public result" },
+    ]);
+
+    const output = await webSearch({ query: "cantilune" });
+
+    expect(cloakBrowserSearch).toHaveBeenCalledWith({ query: "cantilune" });
+    expect(output).toContain("Cloak hit");
+  });
+
+  it("handles an empty or failed CloakBrowser search as a normal tool result", async () => {
+    vi.mocked(cloakBrowserSearch).mockResolvedValueOnce([]);
+    await expect(webSearch({ query: "empty" }, { provider: "cloakbrowser" })).resolves.toContain(
+      'No results found for query: "empty"',
+    );
+
+    vi.mocked(cloakBrowserSearch).mockRejectedValueOnce(new Error("browser unavailable"));
+    await expect(
+      webSearch({ query: "unavailable" }, { provider: "cloakbrowser" }),
+    ).resolves.toContain("browser unavailable");
+  });
+
+  it("fails closed for an unrecognised provider value", async () => {
+    const output = await webSearch(
+      { query: "unknown" },
+      { provider: "unsupported" as never, apiKey: "test-key" },
+    );
+
+    expect(output).toContain('No results found for query: "unknown"');
   });
 
   it("parses Tavily API results", async () => {
@@ -211,8 +247,9 @@ describe("webSearch", () => {
       }),
     );
 
+    const controller = new AbortController();
     const output = await webSearch(
-      { query: "serper query" },
+      { query: "serper query", signal: controller.signal },
       { provider: "serper", apiKey: "serper-key" },
     );
     expect(output).toContain("Serper Hit");
@@ -233,8 +270,9 @@ describe("webSearch", () => {
       }),
     );
 
+    const controller = new AbortController();
     const output = await webSearch(
-      { query: "brave query" },
+      { query: "brave query", signal: controller.signal },
       { provider: "brave", apiKey: "brave-key" },
     );
     expect(output).toContain("Brave Hit");
@@ -312,6 +350,28 @@ describe("webSearch", () => {
     const output = await webSearch({ query: "sparse" }, { provider: "serper", apiKey: "key" });
     expect(output).toContain("1. ");
   });
+
+  it("fills missing Tavily and Brave result fields", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      mockFetchResponse({
+        contentType: "application/json",
+        body: JSON.stringify({ results: [{}] }),
+      }),
+    );
+    await expect(
+      webSearch({ query: "sparse tavily" }, { provider: "tavily", apiKey: "key" }),
+    ).resolves.toContain("1. ");
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      mockFetchResponse({
+        contentType: "application/json",
+        body: JSON.stringify({ web: { results: [{}] } }),
+      }),
+    );
+    await expect(
+      webSearch({ query: "sparse brave" }, { provider: "brave", apiKey: "key" }),
+    ).resolves.toContain("1. ");
+  });
 });
 
 describe("createWebExecutor", () => {
@@ -348,6 +408,28 @@ describe("createWebExecutor", () => {
     expect(result.output).toContain("Hit");
   });
 
+  it("uses the default keyless provider and forwards optional tool arguments", async () => {
+    vi.mocked(cloakBrowserSearch).mockResolvedValue([
+      { title: "Cloak executor hit", url: "https://cloak.example/hit", snippet: "result" },
+    ]);
+    vi.mocked(fetch).mockResolvedValue(
+      mockFetchResponse({ contentType: "text/plain", body: "without max length" }),
+    );
+    const controller = new AbortController();
+    const executor = createWebExecutor({ enabled: true });
+
+    await expect(
+      executor.execute(
+        "web_search",
+        { query: "default", maxResults: 2 },
+        { signal: controller.signal },
+      ),
+    ).resolves.toMatchObject({ ok: true, output: expect.stringContaining("Cloak executor hit") });
+    await expect(
+      executor.execute("web_fetch", { url: "https://example.com" }, { signal: controller.signal }),
+    ).resolves.toEqual({ ok: true, output: "without max length" });
+  });
+
   it("executes web_fetch with optional maxLength", async () => {
     vi.mocked(fetch).mockResolvedValue(
       mockFetchResponse({ contentType: "text/plain", body: "content" }),
@@ -373,5 +455,21 @@ describe("createWebExecutor", () => {
     const badQuery = await executor.execute("web_search", { query: 123 });
     expect(badQuery.ok).toBe(false);
     expect(badQuery.output).toContain("Expected string argument: query");
+  });
+
+  it("does not dispatch after abort and reports invalid numeric arguments", async () => {
+    const executor = createWebExecutor({ enabled: true });
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      executor.execute("web_search", { query: "never" }, { signal: controller.signal }),
+    ).resolves.toEqual({ ok: false, output: "skipped: aborted before web dispatch" });
+    await expect(
+      executor.execute("web_fetch", { url: "https://example.com", maxLength: NaN }),
+    ).resolves.toMatchObject({
+      ok: false,
+      output: expect.stringContaining("Expected number argument"),
+    });
   });
 });

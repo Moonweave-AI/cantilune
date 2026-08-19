@@ -49,7 +49,7 @@ export interface CliConfig {
   /** MCP server specs. Live `/mcp connect|disconnect` schedules epoch-bound attach. */
   readonly mcpServers?: readonly string[];
   /** Web search provider for tools. */
-  readonly searchProvider?: "tavily" | "serper" | "brave" | "none";
+  readonly searchProvider?: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
 }
 
 export const DEFAULT_CONFIG: CliConfig = {
@@ -58,6 +58,7 @@ export const DEFAULT_CONFIG: CliConfig = {
   layout: "focus",
   durable: "file",
   storagePath: "./.cantilune/os",
+  searchProvider: "cloakbrowser",
 };
 
 export function configDir(): string {
@@ -118,6 +119,7 @@ export function parseConfig(raw: unknown): CliConfig {
   const mcpServers = readStringArray(raw, "mcpServers");
   const searchProviderRaw = readString(raw, "searchProvider");
   const searchProvider =
+    searchProviderRaw === "cloakbrowser" ||
     searchProviderRaw === "tavily" ||
     searchProviderRaw === "serper" ||
     searchProviderRaw === "brave" ||
