@@ -372,6 +372,15 @@ importers:
 
   src/website:
     devDependencies:
+      '@cantilune/cli':
+        specifier: workspace:*
+        version: link:../packages/cli
+      '@cantilune/website-client':
+        specifier: workspace:*
+        version: link:client
+      '@cantilune/website-server':
+        specifier: workspace:*
+        version: link:server
       concurrently:
         specifier: ^9.1.0
         version: 9.2.4
