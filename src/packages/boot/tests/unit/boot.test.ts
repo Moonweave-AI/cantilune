@@ -286,7 +286,11 @@ describe("bootCantilune", () => {
     expect(observe).not.toHaveBeenCalled();
     expect(chat).not.toHaveBeenCalled();
     expect(foreign).toEqual({ messages: [], pendingToolObservations: [] });
-    expect(os.privateHistory!()).toEqual({ messages: [], pendingToolObservations: [] });
+    expect(os.privateHistory!()).toEqual({
+      messages: [],
+      contextMessages: [],
+      pendingToolObservations: [],
+    });
   });
 
   it("exports the exact detached history used by the booted OS", async () => {

@@ -4,17 +4,31 @@ import styles from "./ContextMeter.module.css";
 
 const RADIUS = 5.5;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const CONTEXT_WINDOW = 128_000;
-
 interface ContextMeterProps {
   readonly usedTokens: number;
+  readonly contextWindowTokens: number;
+  readonly outputReserveTokens: number;
+  readonly estimated: boolean;
+  readonly estimateSource?: "heuristic" | "provider_usage";
+  readonly prunedToolResults?: number;
+  readonly summarizedMessages?: number;
 }
 
-export function ContextMeter({ usedTokens }: ContextMeterProps): JSX.Element {
+export function ContextMeter({
+  usedTokens,
+  contextWindowTokens,
+  outputReserveTokens,
+  estimated,
+  estimateSource,
+  prunedToolResults = 0,
+  summarizedMessages = 0,
+}: ContextMeterProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLSpanElement>(null);
   const used = Math.max(0, usedTokens);
-  const percent = Math.min(100, Math.round((used / CONTEXT_WINDOW) * 100));
+  const contextWindow = Math.max(1, contextWindowTokens);
+  const promptBudget = Math.max(1, contextWindow - Math.max(0, outputReserveTokens));
+  const percent = Math.min(100, Math.round((used / promptBudget) * 100));
   const reading = `${percent}%`;
 
   useEffect(() => {
@@ -63,12 +77,27 @@ export function ContextMeter({ usedTokens }: ContextMeterProps): JSX.Element {
             <span className={styles.headline}>上下文已用</span>
             <span className={styles.percent}>{reading}</span>
             <span className={styles.figures}>
-              ~{formatTokens(used)} / {formatTokens(CONTEXT_WINDOW)}
+              {estimated ? "≈" : ""}
+              {formatTokens(used)} / {formatTokens(promptBudget)} prompt
             </span>
           </div>
           <div className={styles.bar}>
             <div className={styles.segment} style={{ width: `${Math.max(2, percent)}%` }} />
           </div>
+          <div className={styles.figures}>
+            {formatTokens(outputReserveTokens)} output reserved · {formatTokens(contextWindow)}{" "}
+            total
+          </div>
+          {estimated && (
+            <div className={styles.figures}>
+              {estimateSource === "provider_usage" ? "provider usage + surface delta" : "heuristic"}
+            </div>
+          )}
+          {(prunedToolResults > 0 || summarizedMessages > 0) && (
+            <div className={styles.figures}>
+              compacted: {summarizedMessages} messages · pruned: {prunedToolResults} tool results
+            </div>
+          )}
         </div>
       )}
     </span>

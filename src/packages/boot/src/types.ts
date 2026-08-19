@@ -6,6 +6,8 @@ import type {
   ControllerThresholds,
   EmbeddingAdapter,
 } from "./termination/types.js";
+import type { ContextCompactionPolicy } from "./context/contextCompaction.js";
+import type { ToolResultPrunePolicy } from "./context/toolResultPruner.js";
 
 /**
  * Configuration to boot a Cantilune OS instance.
@@ -43,8 +45,25 @@ export interface BootConfig {
    * plus idempotent outcome reconciliation (ADR-0012 SS-03).
    */
   readonly maxTimeMs?: number;
-  /** Maximum messages retained in LLM context (sliding window). Default: 40. */
+  /** Emergency maximum provider-context rows. Default: 10,000. Token pressure compacts first. */
   readonly maxContextMessages?: number;
+  /**
+   * Total model context window in tokens, including the requested completion.
+   * Defaults to `llm.contextWindowTokens ?? 128_000`. The loop reserves
+   * `maxOutputTokens`, compacts proactively, then lets provider-confirmed
+   * overflow drive one forced compaction/retry cycle.
+   */
+  readonly maxContextTokens?: number;
+  /**
+   * Tokens reserved for each model completion. Default:
+   * `llm.maxTokens ?? 4_096`. Hosts that construct the adapter separately
+   * must use the same value for `llm.maxTokens`; the website bridge does so.
+   */
+  readonly maxOutputTokens?: number;
+  /** Automatic pressure compaction and provider-overflow recovery policy. */
+  readonly contextCompaction?: Partial<ContextCompactionPolicy>;
+  /** Deterministic head/tail pruning policy for oversized tool results. */
+  readonly toolResultPruning?: Partial<ToolResultPrunePolicy>;
   /**
    * Trusted transcript seed used only when an OS instance creates its private
    * conversation history. Incomplete tool-call/result groups are discarded by
@@ -147,6 +166,8 @@ export interface LlmConfig {
   readonly baseUrl?: string;
   /** Maximum tokens per response. */
   readonly maxTokens?: number;
+  /** Model-specific total prompt + completion capacity for this exact route. */
+  readonly contextWindowTokens?: number;
   /** Temperature for sampling. */
   readonly temperature?: number;
 }
@@ -199,7 +220,15 @@ export interface RunOptions {
  * while the loop replaces its validated/compacted contents in place.
  */
 export interface AgentLoopHistory {
+  /** Complete audit/evidence transcript; semantic compaction never deletes it. */
   readonly messages: LlmMessage[];
+  /** Replayable provider-visible surface after pruning and summary replacement. */
+  readonly contextMessages?: LlmMessage[];
+  /** Last exact provider prompt usage paired with its heuristic envelope price. */
+  readonly contextTokenAnchor?: {
+    readonly heuristicPromptTokens: number;
+    readonly providerPromptTokens: number;
+  };
   /**
    * Pending external-tool observations. Callers may serialize this alongside
    * `messages`; it contains ContentRefs and call identities, never tool output.
@@ -228,7 +257,13 @@ export type AgentErrorPhase = "configuration" | "llm" | "tool" | "perceive" | "a
 
 export type AgentEvent =
   | { readonly kind: "turn_start"; readonly turn: number; readonly elapsedMs: number }
-  | { readonly kind: "llm_start"; readonly turn: number; readonly model?: string }
+  | {
+      readonly kind: "llm_start";
+      readonly turn: number;
+      readonly model?: string;
+      /** Prompt budget actually enforced before this provider request. */
+      readonly context?: ContextUsage;
+    }
   | { readonly kind: "llm_delta"; readonly turn: number; readonly text: string }
   | {
       readonly kind: "llm_end";
@@ -310,6 +345,28 @@ export interface TokenUsage {
   readonly total: number;
 }
 
+/** Provider-request context accounting emitted immediately before an LLM call. */
+export interface ContextUsage {
+  /** Current prompt pressure, anchored to provider usage when available. */
+  readonly estimatedPromptTokens: number;
+  /** Raw fixed-density heuristic for this exact request envelope. */
+  readonly heuristicPromptTokens: number;
+  readonly estimateSource: "heuristic" | "provider_usage";
+  /** Configured total prompt + completion window. */
+  readonly maxContextTokens: number;
+  /** Completion tokens kept outside the prompt budget. */
+  readonly maxOutputTokens: number;
+  /** `maxContextTokens - maxOutputTokens`. */
+  readonly promptBudgetTokens: number;
+  readonly compactionThresholdTokens: number;
+  readonly pressureRatio: number;
+  readonly messageCount: number;
+  /** Number of older provider-context messages removed for this request. */
+  readonly compactedMessages: number;
+  readonly prunedToolResults: number;
+  readonly summarizedMessages: number;
+}
+
 export interface RunResult {
   readonly ok: boolean;
   /** Human-readable final outcome. */
@@ -371,6 +428,12 @@ export interface RunError {
  * Implementations wrap provider-specific SDKs (OpenAI, Anthropic, etc).
  */
 export interface LlmAdapter {
+  /** Exact routed-model metadata when the adapter/host knows it. */
+  readonly modelInfo?: {
+    readonly provider: string;
+    readonly model: string;
+    readonly contextWindowTokens?: number;
+  };
   /**
    * Send messages + available tools to the LLM, get back either a text response
    * or one or more tool calls. Must throw on unrecoverable errors (network, auth).
@@ -406,6 +469,8 @@ export type LlmStreamChunk =
 export interface LlmChatRequest {
   readonly messages: readonly LlmMessage[];
   readonly tools: readonly LlmToolDef[];
+  /** Per-call completion cap; adapters fall back to their configured cap. */
+  readonly maxTokens?: number;
   /** Cancellation signal forwarded to the underlying HTTP request. */
   readonly signal?: AbortSignal;
 }

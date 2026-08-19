@@ -14,6 +14,7 @@ export type {
   ProgressEvent,
   AgentEvent,
   TokenUsage,
+  ContextUsage,
   LlmConfig,
   LlmAdapter,
   LlmChatRequest,
@@ -49,6 +50,14 @@ export {
   runAgentLoop,
 } from "./agentLoop.js";
 export { mergeToolExecutors, invalidateToolIndex } from "./toolMerge.js";
+export {
+  CONTEXT_WINDOW_EXCEEDED,
+  LlmProviderError,
+  isContextWindowExceededError,
+  providerHttpError,
+} from "./llmError.js";
+export type { ContextCompactionPolicy } from "./context/contextCompaction.js";
+export type { ToolResultPrunePolicy } from "./context/toolResultPruner.js";
 export * from "./cluster/index.js";
 
 // Termination controller — the zero-training, math-first authority that owns

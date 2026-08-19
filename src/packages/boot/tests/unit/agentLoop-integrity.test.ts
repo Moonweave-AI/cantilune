@@ -3,7 +3,11 @@ import { contentRef } from "@cantilune/core";
 import { createSyscall, createStaticSchemaProvider, toolArgumentsDigest } from "@cantilune/syscall";
 import { createMemoryContentStore } from "@cantilune/content/memory";
 import type { Syscall, SyscallRuntime, ToolExecutor } from "@cantilune/syscall";
-import { createAgentLoopHistory, runAgentLoop } from "../../src/agentLoop.js";
+import {
+  createAgentLoopHistory,
+  estimateLlmRequestTokens,
+  runAgentLoop,
+} from "../../src/agentLoop.js";
 import { createTerminationController } from "../../src/termination/index.js";
 import type {
   AgentEvent,
@@ -101,6 +105,183 @@ function observationRuntime(): { runtime: SyscallRuntime; observeCount: () => nu
 }
 
 describe("agent loop trustworthy execution", () => {
+  it("summarizes complete message units when projected pressure crosses the threshold", async () => {
+    const requests: { messages: readonly LlmMessage[]; tools: readonly LlmToolDef[] }[] = [];
+    const events: AgentEvent[] = [];
+    const llm: LlmAdapter = {
+      async chat(request): Promise<LlmChatResponse> {
+        requests.push({ messages: request.messages, tools: request.tools });
+        if (request.tools.length === 0) {
+          return {
+            text: "## Primary Request and Intent\n- Preserve the earlier task.\n## Next Step\n- Continue.",
+            toolCalls: [],
+            finishReason: "stop",
+            usage: { prompt: 50_000, completion: 40, total: 50_040 },
+          };
+        }
+        return done();
+      },
+    };
+    const old = "old-context ".repeat(10_000);
+
+    await runAgentLoop(
+      baseSyscall(),
+      llm,
+      "finish within the configured context window",
+      createTerminationController(),
+      {
+        ...config,
+        maxContextTokens: 100_000,
+        maxOutputTokens: 10_000,
+        initialMessages: [
+          { role: "user", content: old },
+          { role: "assistant", content: old },
+          { role: "user", content: old },
+          { role: "assistant", content: old },
+        ],
+      },
+      { onEvent: (event) => events.push(event) },
+    );
+
+    expect(requests).toHaveLength(2);
+    expect(estimateLlmRequestTokens(requests[1]!.messages, requests[1]!.tools)).toBeLessThanOrEqual(
+      90_000,
+    );
+    const start = events.find((event) => event.kind === "llm_start");
+    expect(start?.kind === "llm_start" ? start.context : undefined).toMatchObject({
+      maxContextTokens: 100_000,
+      maxOutputTokens: 10_000,
+      promptBudgetTokens: 90_000,
+    });
+    expect(
+      start?.kind === "llm_start" ? (start.context?.summarizedMessages ?? 0) : 0,
+    ).toBeGreaterThan(0);
+  });
+
+  it("does not reject a request solely because the first heuristic exceeds the prompt budget", async () => {
+    const chat = vi.fn<LlmAdapter["chat"]>().mockResolvedValue(done());
+    const result = await runAgentLoop(
+      baseSyscall(),
+      { chat },
+      "required goal",
+      createTerminationController(),
+      { ...config, maxContextTokens: 1_000, maxOutputTokens: 500 },
+    );
+
+    expect(chat).toHaveBeenCalled();
+    expect(result.summary).not.toContain("provider was not called");
+  });
+
+  it("forces semantic compaction and retries after provider-confirmed context overflow", async () => {
+    const events: AgentEvent[] = [];
+    let primaryCalls = 0;
+    const llm: LlmAdapter = {
+      async chat(request): Promise<LlmChatResponse> {
+        if (request.tools.length === 0) {
+          return {
+            text: "## Primary Request and Intent\n- Continue the task.\n## Next Step\n- Finish.",
+            toolCalls: [],
+            finishReason: "stop",
+          };
+        }
+        primaryCalls++;
+        if (primaryCalls === 1) {
+          throw new Error("maximum context length exceeded");
+        }
+        return done();
+      },
+    };
+
+    await runAgentLoop(
+      baseSyscall(),
+      llm,
+      "finish after recovering context",
+      createTerminationController(),
+      {
+        ...config,
+        initialMessages: [
+          { role: "user", content: "old request" },
+          { role: "assistant", content: "old response" },
+        ],
+        contextCompaction: { thresholdRatio: 0.99, maxOverflowRetries: 1 },
+      },
+      { onEvent: (event) => events.push(event) },
+    );
+
+    expect(primaryCalls).toBe(2);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        kind: "diagnostic",
+        message: expect.stringContaining("Provider confirmed context overflow"),
+      }),
+    );
+  });
+
+  it("anchors the next request pressure to provider-reported prompt usage", async () => {
+    const events: AgentEvent[] = [];
+    const llm = scriptedAdapter([
+      {
+        ...toolResponse({ id: "read", name: "read_content", arguments: { ref: "sha256:good" } }),
+        usage: { prompt: 321, completion: 12, total: 333 },
+      },
+      done(),
+    ]);
+
+    await runAgentLoop(
+      baseSyscall(),
+      llm,
+      "read then finish",
+      createTerminationController(),
+      config,
+      { onEvent: (event) => events.push(event) },
+    );
+
+    const starts = events.filter((event) => event.kind === "llm_start");
+    expect(starts).toHaveLength(2);
+    expect(starts[1]?.kind === "llm_start" ? starts[1].context?.estimateSource : undefined).toBe(
+      "provider_usage",
+    );
+  });
+
+  it("persists compacted provider context separately from the complete evidence transcript", async () => {
+    const history = createAgentLoopHistory([
+      { role: "user", content: "old request ".repeat(5_000) },
+      { role: "assistant", content: "old response ".repeat(5_000) },
+    ]);
+    const llm: LlmAdapter = {
+      async chat(request): Promise<LlmChatResponse> {
+        if (request.tools.length === 0) {
+          return {
+            text: "## Primary Request and Intent\n- Preserve the old request.\n## Next Step\n- Finish.",
+            toolCalls: [],
+            finishReason: "stop",
+          };
+        }
+        return done();
+      },
+    };
+
+    await runAgentLoop(baseSyscall(), llm, "finish", createTerminationController(), {
+      ...config,
+      history,
+      maxContextTokens: 20_000,
+      maxOutputTokens: 2_000,
+    });
+
+    expect(history.messages.some((message) => message.content.includes("old request"))).toBe(true);
+    expect(
+      history.contextMessages?.some(
+        (message) =>
+          message.role === "system" && message.content.startsWith("[Conversation compacted:"),
+      ),
+    ).toBe(true);
+    expect(
+      history.contextMessages?.some((message) =>
+        message.content.includes("old request old request"),
+      ),
+    ).toBe(false);
+  });
+
   it("rejects done after an unresolved read failure and reports the total tally", async () => {
     const events: AgentEvent[] = [];
     const result = await runAgentLoop(
@@ -1250,6 +1431,9 @@ describe("agent loop trustworthy execution", () => {
     [{ maxTurns: 0 }, "maxTurns"],
     [{ maxTimeMs: Number.NaN }, "maxTimeMs"],
     [{ maxContextMessages: 0 }, "maxContextMessages"],
+    [{ maxContextTokens: 1 }, "maxContextTokens"],
+    [{ maxOutputTokens: 0 }, "maxOutputTokens"],
+    [{ maxContextTokens: 4_096, maxOutputTokens: 4_096 }, "maxOutputTokens"],
     [{ perTurnTimeoutMs: Number.POSITIVE_INFINITY }, "perTurnTimeoutMs"],
   ] as const)("fails typed before execution for invalid limit %j", async (patch, field) => {
     const perceive = vi.fn<Syscall["perceive"]>();

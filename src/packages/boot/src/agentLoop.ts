@@ -11,6 +11,7 @@ import type {
   LlmToolCallResult,
   AgentLoopHistory,
   AgentErrorPhase,
+  ContextUsage,
   RunError,
   RunOperationTally,
   RunToolTally,
@@ -22,10 +23,24 @@ import type { WorldSnapshot, TraceCounts } from "./termination/stateEvidenceLedg
 import type { CandidateAction, ControlVerdict, GoalContract } from "./termination/types.js";
 import type { TerminationController } from "./termination/index.js";
 import { defaultSystemContract } from "./termination/goalContract.js";
+import {
+  compactContext,
+  resolveContextCompactionPolicy,
+  type ContextCompactionPolicy,
+} from "./context/contextCompaction.js";
+import { ContextTokenMeter, estimateRequestTokens } from "./context/tokenMeter.js";
+import {
+  pruneToolResults,
+  resolveToolResultPrunePolicy,
+  type ToolResultPrunePolicy,
+} from "./context/toolResultPruner.js";
+import { isContextWindowExceededError } from "./llmError.js";
 
 const DEFAULT_MAX_TURNS = 100;
 const DEFAULT_MAX_TIME_MS = 600_000;
-const DEFAULT_MAX_CONTEXT_MESSAGES = 40;
+const DEFAULT_MAX_CONTEXT_MESSAGES = 10_000;
+const DEFAULT_MAX_CONTEXT_TOKENS = 128_000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 4_096;
 const DEFAULT_PER_TURN_TIMEOUT_MS = 120_000;
 const COMPACTION_MARKER_PREFIX = "[Conversation compacted:";
 const RECOVERY_ARGUMENT_KEY = "cantiluneRecoveryOf";
@@ -36,6 +51,12 @@ export interface AgentLoopConfig {
   readonly maxTurns: number;
   readonly maxTimeMs: number;
   readonly maxContextMessages: number;
+  /** Total prompt + completion window. Default: 128,000 tokens. */
+  readonly maxContextTokens?: number;
+  /** Completion reserve subtracted from the prompt budget. Default: 4,096. */
+  readonly maxOutputTokens?: number;
+  readonly contextCompaction?: Partial<ContextCompactionPolicy>;
+  readonly toolResultPruning?: Partial<ToolResultPrunePolicy>;
   readonly systemPrompt?: string;
   /** Per-turn LLM call timeout in ms. Default: 120_000 (2 min). */
   readonly perTurnTimeoutMs?: number;
@@ -61,8 +82,10 @@ export interface AgentLoopConfig {
 export function createAgentLoopHistory(
   initialMessages: readonly LlmMessage[] = [],
 ): AgentLoopHistory {
+  const messages = normalizeHistoryMessages(requireHistoryMessages(initialMessages));
   return {
-    messages: normalizeHistoryMessages(requireHistoryMessages(initialMessages)),
+    messages,
+    contextMessages: messages.map((message) => cloneMessage(message)),
     pendingToolObservations: [],
   };
 }
@@ -470,18 +493,52 @@ export function requireAgentLoopHistory(value: unknown): AgentLoopHistory {
   const detached = detachedBoundaryValue(value, "AgentLoopHistory");
   const record = recordValue(detached);
   if (record === undefined) throw new TypeError("AgentLoopHistory must be an object.");
+  const messages = requireHistoryMessages(record["messages"]);
+  const contextMessages =
+    record["contextMessages"] === undefined
+      ? messages.map((message) => cloneMessage(message))
+      : requireHistoryMessages(record["contextMessages"]);
+  const rawAnchor = recordValue(record["contextTokenAnchor"]);
+  let contextTokenAnchor:
+    { heuristicPromptTokens: number; providerPromptTokens: number } | undefined;
+  if (record["contextTokenAnchor"] !== undefined) {
+    if (
+      rawAnchor === undefined ||
+      !Number.isInteger(rawAnchor["heuristicPromptTokens"]) ||
+      (rawAnchor["heuristicPromptTokens"] as number) < 0 ||
+      !Number.isInteger(rawAnchor["providerPromptTokens"]) ||
+      (rawAnchor["providerPromptTokens"] as number) < 0
+    ) {
+      throw new TypeError("AgentLoopHistory contains an invalid context token anchor.");
+    }
+    contextTokenAnchor = {
+      heuristicPromptTokens: rawAnchor["heuristicPromptTokens"] as number,
+      providerPromptTokens: rawAnchor["providerPromptTokens"] as number,
+    };
+  }
   return {
-    messages: requireHistoryMessages(record["messages"]),
+    messages,
+    contextMessages,
+    ...(contextTokenAnchor === undefined ? {} : { contextTokenAnchor }),
     pendingToolObservations: requirePendingToolObservations(record["pendingToolObservations"]),
   };
 }
 
 function requireMutableHistoryTarget(history: AgentLoopHistory): void {
   try {
+    if (history.contextMessages === undefined) {
+      Object.defineProperty(history, "contextMessages", {
+        value: history.messages.map((message) => cloneMessage(message)),
+        enumerable: true,
+        configurable: true,
+      });
+    }
     if (
       !Array.isArray(history.messages) ||
+      !Array.isArray(history.contextMessages) ||
       !Array.isArray(history.pendingToolObservations) ||
       !Object.isExtensible(history.messages) ||
+      !Object.isExtensible(history.contextMessages) ||
       !Object.isExtensible(history.pendingToolObservations)
     ) {
       throw new TypeError("AgentLoopHistory arrays must be mutable and extensible.");
@@ -490,6 +547,7 @@ function requireMutableHistoryTarget(history: AgentLoopHistory): void {
     // changing the caller's contents. This catches frozen arrays and common
     // fail-closed proxy targets before perception, LLM, or tool side effects.
     history.messages.splice(history.messages.length, 0);
+    history.contextMessages.splice(history.contextMessages.length, 0);
     history.pendingToolObservations.splice(history.pendingToolObservations.length, 0);
   } catch (error) {
     if (error instanceof TypeError && error.message.startsWith("AgentLoopHistory arrays")) {
@@ -715,9 +773,15 @@ function ignoreObserverResult(result: unknown): void {
 
 interface TurnPreparationContext extends TurnRequestContext {
   readonly syscall: Syscall;
+  readonly llm: LlmAdapter;
+  readonly tokenMeter: ContextTokenMeter;
   readonly messages: readonly LlmMessage[];
   readonly goalMessage: LlmMessage;
   readonly maxContext: number;
+  readonly maxContextTokens: number;
+  readonly maxOutputTokens: number;
+  readonly compactionPolicy: ContextCompactionPolicy;
+  readonly prunePolicy: ToolResultPrunePolicy;
   readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
 }
 
@@ -725,6 +789,18 @@ interface PreparedTurn {
   readonly messages: LlmMessage[];
   readonly messagesForLlm: readonly LlmMessage[];
   readonly tools: readonly LlmToolDef[];
+  readonly context: ContextUsage;
+}
+
+/**
+ * Provider-neutral fixed-density estimate. Successful provider usage later
+ * anchors this heuristic so only the changed request surface is estimated.
+ */
+export function estimateLlmRequestTokens(
+  messages: readonly LlmMessage[],
+  tools: readonly LlmToolDef[],
+): number {
+  return estimateRequestTokens(messages, tools);
 }
 
 async function prepareTurn(
@@ -786,15 +862,111 @@ async function prepareTurn(
   // For very small budgets, the instruction hierarchy is: current goal,
   // canonical system prompt, then the per-turn world snapshot.
   const includeWorldContext = ctx.maxContext > 2;
-  const messages = compactMessages(
-    ctx.messages,
-    ctx.maxContext - (includeWorldContext ? 1 : 0),
-    ctx.goalMessage,
+  const tools = actionsToToolDefs(actions);
+  const messageBudget = ctx.maxContext - (includeWorldContext ? 1 : 0);
+  const promptBudget = ctx.maxContextTokens - ctx.maxOutputTokens;
+  const compactionThresholdTokens = Math.min(
+    promptBudget,
+    Math.floor(ctx.maxContextTokens * ctx.compactionPolicy.thresholdRatio),
   );
-  const messagesForLlm: LlmMessage[] = includeWorldContext
-    ? [...messages, { role: "system", content: contextMsg }]
-    : [...messages];
-  return { prepared: { messages, messagesForLlm, tools: actionsToToolDefs(actions) } };
+  const withWorld = (surface: readonly LlmMessage[]): LlmMessage[] =>
+    includeWorldContext ? [...surface, { role: "system", content: contextMsg }] : [...surface];
+
+  let messages = [...ctx.messages];
+  let messagesForLlm = withWorld(messages);
+  let measurement = ctx.tokenMeter.measure(messagesForLlm, tools);
+  let prunedToolResults = 0;
+  let summarizedMessages = 0;
+
+  if (ctx.compactionPolicy.auto && measurement.promptTokens >= compactionThresholdTokens) {
+    const pressure = await compactPressureSurface(
+      ctx,
+      messages,
+      tools,
+      withWorld,
+      compactionThresholdTokens,
+    );
+    messages = pressure.messages;
+    prunedToolResults = pressure.prunedToolResults;
+    summarizedMessages = pressure.summarizedMessages;
+  }
+
+  messages = compactMessages(messages, messageBudget, ctx.goalMessage);
+  messagesForLlm = withWorld(messages);
+  measurement = ctx.tokenMeter.measure(messagesForLlm, tools);
+
+  return {
+    prepared: {
+      messages,
+      messagesForLlm,
+      tools,
+      context: {
+        estimatedPromptTokens: measurement.promptTokens,
+        heuristicPromptTokens: measurement.heuristicPromptTokens,
+        estimateSource: measurement.source,
+        maxContextTokens: ctx.maxContextTokens,
+        maxOutputTokens: ctx.maxOutputTokens,
+        promptBudgetTokens: promptBudget,
+        compactionThresholdTokens,
+        pressureRatio: measurement.promptTokens / ctx.maxContextTokens,
+        messageCount: messagesForLlm.length,
+        compactedMessages: Math.max(0, ctx.messages.length - messages.length),
+        prunedToolResults,
+        summarizedMessages,
+      },
+    },
+  };
+}
+
+async function compactPressureSurface(
+  ctx: TurnPreparationContext,
+  initialMessages: readonly LlmMessage[],
+  tools: readonly LlmToolDef[],
+  withWorld: (surface: readonly LlmMessage[]) => LlmMessage[],
+  thresholdTokens: number,
+): Promise<{
+  readonly messages: LlmMessage[];
+  readonly prunedToolResults: number;
+  readonly summarizedMessages: number;
+}> {
+  const pruned = pruneToolResults(initialMessages, ctx.prunePolicy);
+  let messages = pruned.messages;
+  let measurement = ctx.tokenMeter.measure(withWorld(messages), tools);
+  let summarizedMessages = 0;
+  for (let attempt = 0; attempt <= ctx.compactionPolicy.compactionRetries; attempt++) {
+    if (measurement.promptTokens < thresholdTokens) break;
+    try {
+      const compacted = await compactContext(
+        ctx.llm,
+        messages,
+        ctx.goalMessage,
+        Math.floor(ctx.maxContextTokens * ctx.compactionPolicy.retainRatio),
+        ctx.compactionPolicy.maxSummaryTokens,
+        ctx.options?.signal,
+      );
+      if (compacted === null) break;
+      messages = compacted.messages;
+      summarizedMessages += compacted.shadowedMessages;
+      measurement = ctx.tokenMeter.measure(withWorld(messages), tools);
+      ctx.options?.onEvent?.({
+        kind: "diagnostic",
+        turn: ctx.turns,
+        phase: "llm",
+        message:
+          `Context pressure compaction summarized ${String(compacted.shadowedMessages)} ` +
+          `message(s); projected prompt is ${String(measurement.promptTokens)} token(s).`,
+      });
+    } catch (caught: unknown) {
+      ctx.options?.onEvent?.({
+        kind: "diagnostic",
+        turn: ctx.turns,
+        phase: "llm",
+        message: `Context pressure compaction failed; continuing to provider: ${caught instanceof Error ? caught.message : String(caught)}`,
+      });
+      break;
+    }
+  }
+  return { messages, prunedToolResults: pruned.prunedResults, summarizedMessages };
 }
 
 /**
@@ -806,10 +978,15 @@ async function requestTurnResponse(
   messagesForLlm: readonly LlmMessage[],
   tools: readonly LlmToolDef[],
   perTurnTimeout: number,
+  context: ContextUsage,
   ctx: TurnRequestContext,
-): Promise<{ readonly response: LlmChatResponse } | { readonly failure: RunResult }> {
+): Promise<
+  | { readonly response: LlmChatResponse }
+  | { readonly contextOverflow: unknown }
+  | { readonly failure: RunResult }
+> {
   const emit = ctx.options?.onEvent;
-  emit?.({ kind: "llm_start", turn: ctx.turns });
+  emit?.({ kind: "llm_start", turn: ctx.turns, context });
 
   try {
     const response = requireLlmResponse(
@@ -817,6 +994,7 @@ async function requestTurnResponse(
         llm,
         messagesForLlm,
         tools,
+        context.maxOutputTokens,
         perTurnTimeout,
         ctx.options?.signal,
         emit === undefined
@@ -848,6 +1026,7 @@ async function requestTurnResponse(
 
     return { response };
   } catch (err: unknown) {
+    if (isContextWindowExceededError(err)) return { contextOverflow: err };
     return { failure: turnRequestFailure(err, ctx, emit) };
   }
 }
@@ -943,6 +1122,9 @@ export async function runAgentLoop(
   const maxTurns = config?.maxTurns ?? DEFAULT_MAX_TURNS;
   const maxTimeMs = config?.maxTimeMs ?? DEFAULT_MAX_TIME_MS;
   const maxContext = config?.maxContextMessages ?? DEFAULT_MAX_CONTEXT_MESSAGES;
+  const maxContextTokens =
+    config?.maxContextTokens ?? llm.modelInfo?.contextWindowTokens ?? DEFAULT_MAX_CONTEXT_TOKENS;
+  const maxOutputTokens = config?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const perTurnTimeout = config?.perTurnTimeoutMs ?? DEFAULT_PER_TURN_TIMEOUT_MS;
 
   const startTime = Date.now();
@@ -952,10 +1134,30 @@ export async function runAgentLoop(
     maxTurns,
     maxTimeMs,
     maxContext,
+    maxContextTokens,
+    maxOutputTokens,
+    ...(config?.contextCompaction === undefined
+      ? {}
+      : { contextCompaction: config.contextCompaction }),
+    ...(config?.toolResultPruning === undefined
+      ? {}
+      : { toolResultPruning: config.toolResultPruning }),
     perTurnTimeout,
   });
   if (preflightConfigurationError !== undefined) {
     return preflightConfigurationFailure(preflightConfigurationError, options, startTime);
+  }
+  let compactionPolicy: ContextCompactionPolicy;
+  let prunePolicy: ToolResultPrunePolicy;
+  try {
+    compactionPolicy = resolveContextCompactionPolicy(config?.contextCompaction);
+    prunePolicy = resolveToolResultPrunePolicy(config?.toolResultPruning);
+  } catch (caught: unknown) {
+    return preflightConfigurationFailure(
+      caught instanceof Error ? caught.message : String(caught),
+      options,
+      startTime,
+    );
   }
   const initialized = initializeAgentLoopState(
     config,
@@ -986,10 +1188,15 @@ export async function runAgentLoop(
     maxTurns,
     maxTimeMs,
     maxContext,
+    maxContextTokens,
+    maxOutputTokens,
+    compactionPolicy,
+    prunePolicy,
     perTurnTimeout,
     startTime,
     goalMessage,
     state,
+    tokenMeter: new ContextTokenMeter(state.contextTokenAnchor),
     ...(config?.onHistoryCheckpoint === undefined
       ? {}
       : { onHistoryCheckpoint: config.onHistoryCheckpoint }),
@@ -1016,6 +1223,8 @@ interface MutableAgentLoopState {
   readonly history: AgentLoopHistory | undefined;
   historyDirty: boolean;
   historyPersistenceFailed: boolean;
+  contextTokenAnchor:
+    { readonly heuristicPromptTokens: number; readonly providerPromptTokens: number } | undefined;
   turns: number;
   /**
    * First-class turn accumulators for the termination controller's no-progress
@@ -1046,10 +1255,13 @@ function initializeAgentLoopState(
     const pending = restoredHistory?.pendingToolObservations ?? [];
     ledger = new OperationLedger(pending);
     const historyMessages = restoredHistory?.messages ?? [];
+    const historyContextMessages = restoredHistory?.contextMessages ?? historyMessages;
     const initialMessages = requireHistoryMessages(config?.initialMessages ?? []);
-    const seed = historyMessages.length > 0 ? historyMessages : initialMessages;
-    const evidenceMessages = initializeMessages(seed, systemPrompt);
-    const messages = evidenceMessages.map((message) => cloneMessage(message));
+    const evidenceSeed = historyMessages.length > 0 ? historyMessages : initialMessages;
+    const contextSeed =
+      historyContextMessages.length > 0 ? historyContextMessages : initialMessages;
+    const evidenceMessages = initializeMessages(evidenceSeed, systemPrompt);
+    const messages = initializeMessages(contextSeed, systemPrompt);
     messages.push(goalMessage);
     evidenceMessages.push(goalMessage);
     return {
@@ -1061,6 +1273,7 @@ function initializeAgentLoopState(
         history,
         historyDirty: history !== undefined,
         historyPersistenceFailed: false,
+        contextTokenAnchor: restoredHistory?.contextTokenAnchor,
         turns: 0,
         plainTextTurns: 0,
         toolCallTurns: 0,
@@ -1091,10 +1304,15 @@ interface AgentLoopExecutionContext {
   readonly maxTurns: number;
   readonly maxTimeMs: number;
   readonly maxContext: number;
+  readonly maxContextTokens: number;
+  readonly maxOutputTokens: number;
+  readonly compactionPolicy: ContextCompactionPolicy;
+  readonly prunePolicy: ToolResultPrunePolicy;
   readonly perTurnTimeout: number;
   readonly startTime: number;
   readonly goalMessage: LlmMessage;
   readonly state: MutableAgentLoopState;
+  readonly tokenMeter: ContextTokenMeter;
   readonly onHistoryCheckpoint?: (history: AgentLoopHistory) => void | Promise<void>;
   readonly onBeforeTurn?: (turn: number) => void | Promise<void>;
 }
@@ -1147,50 +1365,11 @@ async function executeAgentTurn(ctx: AgentLoopExecutionContext): Promise<RunResu
     turn: state.turns,
     elapsedMs: Date.now() - ctx.startTime,
   });
-  const turnPreparation = await prepareTurn({
-    syscall: ctx.syscall,
-    messages: state.messages,
-    goalMessage: ctx.goalMessage,
-    maxContext: ctx.maxContext,
-    turns: state.turns,
-    startTime: ctx.startTime,
-    producedRefs: state.producedRefs,
-    ledger: state.ledger,
-    options: ctx.options,
-    maxTimeMs: ctx.maxTimeMs,
-    ...(ctx.onBeforeTurn === undefined ? {} : { onBeforeTurn: ctx.onBeforeTurn }),
-  });
-  if ("failure" in turnPreparation) return turnPreparation.failure;
-  state.messages = turnPreparation.prepared.messages;
-
-  // Perception and action discovery may consume the remaining budget or abort
-  // the run. Never initiate a fresh LLM request after either condition.
-  const postPreparationLimit = checkRunLimits(
-    ctx.options,
-    ctx.maxTimeMs,
-    ctx.maxTurns,
-    state.turns - 1,
-    ctx.startTime,
-    state.producedRefs,
-    state.ledger,
-  );
-  if (postPreparationLimit !== undefined) return postPreparationLimit;
-
-  const turnResponse = await requestTurnResponse(
-    ctx.llm,
-    turnPreparation.prepared.messagesForLlm,
-    turnPreparation.prepared.tools,
-    Math.max(1, Math.min(ctx.perTurnTimeout, ctx.maxTimeMs - (Date.now() - ctx.startTime))),
-    {
-      turns: state.turns,
-      startTime: ctx.startTime,
-      producedRefs: state.producedRefs,
-      ledger: state.ledger,
-      options: ctx.options,
-      maxTimeMs: ctx.maxTimeMs,
-    },
-  );
-  if ("failure" in turnResponse) return turnResponse.failure;
+  const requested = await requestTurnWithContextRecovery(ctx);
+  if ("failure" in requested) return requested.failure;
+  const { prepared, response } = requested;
+  ctx.tokenMeter.recordSuccessfulRequest(prepared.messagesForLlm, prepared.tools, response.usage);
+  state.contextTokenAnchor = ctx.tokenMeter.snapshot();
   const postLlmLimit = checkRunLimits(
     ctx.options,
     ctx.maxTimeMs,
@@ -1203,7 +1382,7 @@ async function executeAgentTurn(ctx: AgentLoopExecutionContext): Promise<RunResu
   if (postLlmLimit !== undefined) return postLlmLimit;
 
   const turnMessageCount = state.messages.length;
-  const turnOutcome = await processTurnResponse(ctx, turnResponse.response, state.messages);
+  const turnOutcome = await processTurnResponse(ctx, response, state.messages);
   // processTurnResponse mutates this exact array even on terminal outcomes, so
   // retain it before checkpointing terminal tool groups (including unresolved
   // external-observation receipts).
@@ -1220,6 +1399,129 @@ async function executeAgentTurn(ctx: AgentLoopExecutionContext): Promise<RunResu
   const contextFailure = ensureLatestToolGroupFitsContext(ctx);
   if (contextFailure !== undefined) return contextFailure;
   return undefined;
+}
+
+function currentTurnRequestContext(ctx: AgentLoopExecutionContext): TurnRequestContext {
+  return {
+    turns: ctx.state.turns,
+    startTime: ctx.startTime,
+    producedRefs: ctx.state.producedRefs,
+    ledger: ctx.state.ledger,
+    options: ctx.options,
+    maxTimeMs: ctx.maxTimeMs,
+  };
+}
+
+async function overflowRecoveryFailure(
+  ctx: AgentLoopExecutionContext,
+  error: unknown,
+  retries: number,
+): Promise<RunResult | undefined> {
+  if (retries < ctx.compactionPolicy.maxOverflowRetries && (await recoverContextOverflow(ctx))) {
+    return undefined;
+  }
+  return turnRequestFailure(error, currentTurnRequestContext(ctx), ctx.options?.onEvent);
+}
+
+async function requestTurnWithContextRecovery(
+  ctx: AgentLoopExecutionContext,
+): Promise<
+  | { readonly prepared: PreparedTurn; readonly response: LlmChatResponse }
+  | { readonly failure: RunResult }
+> {
+  let overflowRetries = 0;
+  let runBeforeTurn = true;
+  while (true) {
+    const turnPreparation = await prepareTurn({
+      syscall: ctx.syscall,
+      llm: ctx.llm,
+      tokenMeter: ctx.tokenMeter,
+      messages: ctx.state.messages,
+      goalMessage: ctx.goalMessage,
+      maxContext: ctx.maxContext,
+      maxContextTokens: ctx.maxContextTokens,
+      maxOutputTokens: ctx.maxOutputTokens,
+      compactionPolicy: ctx.compactionPolicy,
+      prunePolicy: ctx.prunePolicy,
+      ...currentTurnRequestContext(ctx),
+      ...(runBeforeTurn && ctx.onBeforeTurn !== undefined
+        ? { onBeforeTurn: ctx.onBeforeTurn }
+        : {}),
+    });
+    if ("failure" in turnPreparation) return turnPreparation;
+    ctx.state.messages = turnPreparation.prepared.messages;
+
+    const limit = checkRunLimits(
+      ctx.options,
+      ctx.maxTimeMs,
+      ctx.maxTurns,
+      ctx.state.turns - 1,
+      ctx.startTime,
+      ctx.state.producedRefs,
+      ctx.state.ledger,
+    );
+    if (limit !== undefined) return { failure: limit };
+
+    const response = await requestTurnResponse(
+      ctx.llm,
+      turnPreparation.prepared.messagesForLlm,
+      turnPreparation.prepared.tools,
+      Math.max(1, Math.min(ctx.perTurnTimeout, ctx.maxTimeMs - (Date.now() - ctx.startTime))),
+      turnPreparation.prepared.context,
+      currentTurnRequestContext(ctx),
+    );
+    if ("failure" in response) return response;
+    if ("response" in response)
+      return { prepared: turnPreparation.prepared, response: response.response };
+
+    const failure = await overflowRecoveryFailure(ctx, response.contextOverflow, overflowRetries);
+    if (failure !== undefined) return { failure };
+    overflowRetries++;
+    runBeforeTurn = false;
+  }
+}
+
+async function recoverContextOverflow(ctx: AgentLoopExecutionContext): Promise<boolean> {
+  const before = ctx.state.messages;
+  const pruned = pruneToolResults(before, ctx.prunePolicy);
+  ctx.state.messages = pruned.messages;
+  let progressed = pruned.prunedResults > 0;
+  try {
+    const compacted = await compactContext(
+      ctx.llm,
+      ctx.state.messages,
+      ctx.goalMessage,
+      0,
+      ctx.compactionPolicy.maxSummaryTokens,
+      ctx.options?.signal,
+    );
+    if (compacted !== null) {
+      ctx.state.messages = compacted.messages;
+      progressed = true;
+    }
+    if (progressed) {
+      ctx.options?.onEvent?.({
+        kind: "diagnostic",
+        turn: ctx.state.turns,
+        phase: "llm",
+        message:
+          `Provider confirmed context overflow; compacted the model surface ` +
+          `and will retry (${String(pruned.prunedResults)} tool result(s) pruned, ` +
+          `${String(compacted?.shadowedMessages ?? 0)} message(s) summarized).`,
+      });
+    }
+    return progressed;
+  } catch (caught: unknown) {
+    ctx.options?.onEvent?.({
+      kind: "diagnostic",
+      turn: ctx.state.turns,
+      phase: "llm",
+      message:
+        `Context-overflow recovery failed${progressed ? " after tool-result pruning" : ""}: ` +
+        `${caught instanceof Error ? caught.message : String(caught)}`,
+    });
+    return progressed;
+  }
 }
 
 async function checkpointAgentLoopHistory(
@@ -1249,6 +1551,14 @@ function persistAgentLoopHistory(state: MutableAgentLoopState): Error | undefine
   try {
     const retained = normalizeHistoryMessages(state.evidenceMessages);
     state.history.messages.splice(0, state.history.messages.length, ...retained);
+    const context = normalizeHistoryMessages(state.messages);
+    if (state.history.contextMessages === undefined) {
+      throw new TypeError("AgentLoopHistory contextMessages was not initialized.");
+    }
+    state.history.contextMessages.splice(0, state.history.contextMessages.length, ...context);
+    Object.assign(state.history, {
+      contextTokenAnchor: state.contextTokenAnchor,
+    });
     state.history.pendingToolObservations.splice(
       0,
       state.history.pendingToolObservations.length,
@@ -1328,8 +1638,18 @@ export function validateAgentLoopLimits(input: {
   readonly maxTurns: number;
   readonly maxTimeMs: number;
   readonly maxContext: number;
+  readonly maxContextTokens?: number;
+  readonly maxOutputTokens?: number;
+  readonly contextCompaction?: Partial<ContextCompactionPolicy>;
+  readonly toolResultPruning?: Partial<ToolResultPrunePolicy>;
   readonly perTurnTimeout: number;
 }): string | undefined {
+  try {
+    resolveContextCompactionPolicy(input.contextCompaction);
+    resolveToolResultPrunePolicy(input.toolResultPruning);
+  } catch (caught: unknown) {
+    return caught instanceof Error ? caught.message : String(caught);
+  }
   if (!Number.isInteger(input.maxTurns) || input.maxTurns < 1) {
     return "maxTurns must be a positive integer.";
   }
@@ -1338,6 +1658,25 @@ export function validateAgentLoopLimits(input: {
   }
   if (!Number.isInteger(input.maxContext) || input.maxContext < 1) {
     return "maxContextMessages must be a positive integer.";
+  }
+  if (
+    input.maxContextTokens !== undefined &&
+    (!Number.isInteger(input.maxContextTokens) || input.maxContextTokens < 2)
+  ) {
+    return "maxContextTokens must be an integer greater than 1.";
+  }
+  if (
+    input.maxOutputTokens !== undefined &&
+    (!Number.isInteger(input.maxOutputTokens) || input.maxOutputTokens < 1)
+  ) {
+    return "maxOutputTokens must be a positive integer.";
+  }
+  if (
+    input.maxContextTokens !== undefined &&
+    input.maxOutputTokens !== undefined &&
+    input.maxOutputTokens >= input.maxContextTokens
+  ) {
+    return "maxOutputTokens must be smaller than maxContextTokens.";
   }
   if (!Number.isFinite(input.perTurnTimeout) || input.perTurnTimeout <= 0) {
     return "perTurnTimeoutMs must be a positive finite number.";
@@ -2142,6 +2481,7 @@ async function callLlmWithTimeout(
   llm: LlmAdapter,
   messages: readonly LlmMessage[],
   tools: readonly LlmToolDef[],
+  maxTokens: number,
   timeoutMs: number,
   parentSignal?: AbortSignal,
   onDelta?: (text: string) => void,
@@ -2152,7 +2492,7 @@ async function callLlmWithTimeout(
   let onParentAbort: (() => void) | undefined;
   let acceptsDeltas = true;
 
-  const request = { messages, tools, signal: controller.signal };
+  const request = { messages, tools, maxTokens, signal: controller.signal };
   // Convert the adapter promise into an observed promise before racing it: a
   // late rejection after timeout/abort is consumed here and cannot become an
   // unhandled rejection or trigger any dispatch path.
@@ -2879,9 +3219,11 @@ function compactMessages(
   if (limit === 0) return [];
 
   let previouslyDropped = 0;
+  let semanticCheckpoint: LlmMessage | undefined;
   const core = messages.filter((message) => {
     if (!isCompactionMarker(message)) return true;
     previouslyDropped += markerDroppedCount(message);
+    semanticCheckpoint ??= message;
     return false;
   });
 
@@ -2933,7 +3275,7 @@ function compactMessages(
   const dropped = previouslyDropped + core.length - retained.length;
   if (dropped <= 0 || markerSlots === 0) return retained.slice(0, limit);
 
-  const marker: LlmMessage = {
+  const marker: LlmMessage = semanticCheckpoint ?? {
     role: "system",
     content: `${COMPACTION_MARKER_PREFIX} ${String(dropped)} earlier message(s) omitted.]`,
   };

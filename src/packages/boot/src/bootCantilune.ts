@@ -448,11 +448,21 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
 
   const maxTurns = config.maxTurns ?? 100;
   const maxTimeMs = config.maxTimeMs ?? 600_000;
-  const maxContextMessages = config.maxContextMessages ?? 40;
+  const maxContextMessages = config.maxContextMessages ?? 10_000;
+  const maxContextTokens = config.maxContextTokens ?? config.llm.contextWindowTokens ?? 128_000;
+  const maxOutputTokens = config.maxOutputTokens ?? config.llm.maxTokens ?? 4_096;
   const loopConfigurationError = validateAgentLoopLimits({
     maxTurns,
     maxTimeMs,
     maxContext: maxContextMessages,
+    maxContextTokens,
+    maxOutputTokens,
+    ...(config.contextCompaction === undefined
+      ? {}
+      : { contextCompaction: config.contextCompaction }),
+    ...(config.toolResultPruning === undefined
+      ? {}
+      : { toolResultPruning: config.toolResultPruning }),
     perTurnTimeout: 120_000,
   });
   const terminationController = createTerminationController({
@@ -481,8 +491,16 @@ export function bootCantilune(deps: BootDependencies): CantilunOS {
     maxTurns,
     maxTimeMs,
     maxContextMessages,
+    maxContextTokens,
+    maxOutputTokens,
     actorId: principalId,
     history: conversation,
+    ...(config.contextCompaction === undefined
+      ? {}
+      : { contextCompaction: config.contextCompaction }),
+    ...(config.toolResultPruning === undefined
+      ? {}
+      : { toolResultPruning: config.toolResultPruning }),
     ...(config.systemPrompt !== undefined ? { systemPrompt: config.systemPrompt } : {}),
     ...(config.onBeforeTurn === undefined ? {} : { onBeforeTurn: config.onBeforeTurn }),
   };
@@ -795,6 +813,14 @@ function finalizeBootConfig(
     ...(config.maxTimeMs !== undefined ? { maxTimeMs: config.maxTimeMs } : {}),
     ...(config.maxContextMessages !== undefined
       ? { maxContextMessages: config.maxContextMessages }
+      : {}),
+    ...(config.maxContextTokens !== undefined ? { maxContextTokens: config.maxContextTokens } : {}),
+    ...(config.maxOutputTokens !== undefined ? { maxOutputTokens: config.maxOutputTokens } : {}),
+    ...(config.contextCompaction !== undefined
+      ? { contextCompaction: config.contextCompaction }
+      : {}),
+    ...(config.toolResultPruning !== undefined
+      ? { toolResultPruning: config.toolResultPruning }
       : {}),
     ...(config.systemPrompt !== undefined ? { systemPrompt: config.systemPrompt } : {}),
     ...(config.initialMessages !== undefined ? { initialMessages: config.initialMessages } : {}),

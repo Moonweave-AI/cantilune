@@ -1,4 +1,5 @@
 import type { LlmAdapter, LlmChatRequest, LlmConfig, LlmStreamChunk } from "@cantilune/boot";
+import { providerHttpError } from "../providerError.js";
 import { fetchWithRetry, readErrorBody, readSseStream } from "../httpClient.js";
 import type { AdapterOptions, ProviderEntry } from "../types.js";
 import {
@@ -65,8 +66,11 @@ function chatCompletionsUrl(entry: ProviderEntry, baseUrl: string, model: string
   if (!isAzureProvider(entry)) {
     return `${baseUrl}/chat/completions`;
   }
+  const azureApiVersion = process.env.AZURE_OPENAI_API_VERSION?.trim();
   const apiVersion =
-    process.env.AZURE_OPENAI_API_VERSION?.trim() || process.env.OPENAI_API_VERSION?.trim();
+    azureApiVersion === undefined || azureApiVersion.length === 0
+      ? process.env.OPENAI_API_VERSION?.trim()
+      : azureApiVersion;
   if (apiVersion === undefined || apiVersion.length === 0) {
     throw new Error(
       "Azure OpenAI requires AZURE_OPENAI_API_VERSION or OPENAI_API_VERSION (fail-closed)",
@@ -116,8 +120,9 @@ export function createOpenAiCompatibleAdapter(
     if (request.tools.length > 0) {
       body.tools = toOpenAiTools(request.tools);
     }
-    if (config.maxTokens !== undefined) {
-      body.max_tokens = config.maxTokens;
+    const maxTokens = request.maxTokens ?? config.maxTokens;
+    if (maxTokens !== undefined) {
+      body.max_tokens = maxTokens;
     }
     if (config.temperature !== undefined) {
       body.temperature = config.temperature;
@@ -146,12 +151,19 @@ export function createOpenAiCompatibleAdapter(
 
     if (!response.ok) {
       const detail = await readErrorBody(response);
-      throw new Error(`OpenAI-compatible API error (${response.status}): ${detail}`);
+      throw providerHttpError("OpenAI-compatible", response.status, detail);
     }
     return response;
   }
 
   return {
+    modelInfo: {
+      provider: config.provider,
+      model: config.model,
+      ...(config.contextWindowTokens === undefined
+        ? {}
+        : { contextWindowTokens: config.contextWindowTokens }),
+    },
     async chat(request: LlmChatRequest) {
       const response = await post(request, false);
       const payload = (await response.json()) as {

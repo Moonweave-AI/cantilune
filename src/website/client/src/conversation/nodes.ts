@@ -55,6 +55,20 @@ export interface ConversationNode {
   readonly startedAt?: number;
   readonly endedAt?: number;
   readonly usage?: { readonly prompt: number; readonly completion: number; readonly total: number };
+  readonly context?: {
+    readonly estimatedPromptTokens: number;
+    readonly heuristicPromptTokens: number;
+    readonly estimateSource: "heuristic" | "provider_usage";
+    readonly maxContextTokens: number;
+    readonly maxOutputTokens: number;
+    readonly promptBudgetTokens: number;
+    readonly compactionThresholdTokens: number;
+    readonly pressureRatio: number;
+    readonly messageCount: number;
+    readonly compactedMessages: number;
+    readonly prunedToolResults: number;
+    readonly summarizedMessages: number;
+  };
   readonly pending?: boolean;
   readonly approval?: {
     readonly toolCallId: string;
@@ -133,22 +147,24 @@ function clipArgs(args: Record<string, unknown>): Record<string, unknown> {
 
 /** Drop noisy / oversized fields so a saved session cannot freeze the next load. */
 export function compactConversation(state: ConversationState): ConversationState {
-  const kept = state.nodes.filter((node) => !SKIP_STORED_KINDS.has(node.kind)).map((node) => {
-    const next: ConversationNode = {
-      ...node,
-      pending: false,
-      ...(node.text !== undefined ? { text: clipText(node.text) } : {}),
-      ...(node.output !== undefined ? { output: clipText(node.output) } : {}),
-      ...(node.detail !== undefined ? { detail: clipText(node.detail) } : {}),
-      ...(node.message !== undefined ? { message: clipText(node.message) } : {}),
-      ...(node.question !== undefined ? { question: clipText(node.question) } : {}),
-      ...(node.arguments !== undefined ? { arguments: clipArgs(node.arguments) } : {}),
-      ...(node.runResult !== undefined
-        ? { runResult: { ...node.runResult, summary: clipText(node.runResult.summary) } }
-        : {}),
-    };
-    return next;
-  });
+  const kept = state.nodes
+    .filter((node) => !SKIP_STORED_KINDS.has(node.kind))
+    .map((node) => {
+      const next: ConversationNode = {
+        ...node,
+        pending: false,
+        ...(node.text !== undefined ? { text: clipText(node.text) } : {}),
+        ...(node.output !== undefined ? { output: clipText(node.output) } : {}),
+        ...(node.detail !== undefined ? { detail: clipText(node.detail) } : {}),
+        ...(node.message !== undefined ? { message: clipText(node.message) } : {}),
+        ...(node.question !== undefined ? { question: clipText(node.question) } : {}),
+        ...(node.arguments !== undefined ? { arguments: clipArgs(node.arguments) } : {}),
+        ...(node.runResult !== undefined
+          ? { runResult: { ...node.runResult, summary: clipText(node.runResult.summary) } }
+          : {}),
+      };
+      return next;
+    });
   return { nodes: kept.length > MAX_STORED_NODES ? kept.slice(-MAX_STORED_NODES) : kept };
 }
 
@@ -205,8 +221,19 @@ export function reduceAgentEvent(
         ],
       };
 
-    case "llm_start":
-      return state;
+    case "llm_start": {
+      if (event.context === undefined) return state;
+      const idx = lastIndexOf(
+        state.nodes,
+        (node) => node.kind === "turn" && node.turn === event.turn,
+      );
+      if (idx === -1) return state;
+      const existing = state.nodes[idx];
+      if (existing === undefined) return state;
+      const nodes = [...state.nodes];
+      nodes[idx] = { ...existing, context: event.context };
+      return { nodes };
+    }
 
     case "llm_delta": {
       const idx = lastIndexOf(

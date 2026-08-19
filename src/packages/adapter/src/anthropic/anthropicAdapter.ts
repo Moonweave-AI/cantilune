@@ -1,4 +1,5 @@
 import type { LlmAdapter, LlmChatRequest, LlmConfig, LlmStreamChunk } from "@cantilune/boot";
+import { providerHttpError } from "../providerError.js";
 import { fetchWithRetry, readErrorBody, readSseStream } from "../httpClient.js";
 import type { AdapterOptions, ProviderEntry } from "../types.js";
 import {
@@ -78,7 +79,7 @@ export function createAnthropicAdapter(
     const body: Record<string, unknown> = {
       model: config.model,
       messages: toAnthropicMessages(conversation),
-      max_tokens: config.maxTokens ?? 4096,
+      max_tokens: request.maxTokens ?? config.maxTokens ?? 4096,
     };
     if (system !== undefined) {
       body.system = system;
@@ -111,12 +112,19 @@ export function createAnthropicAdapter(
 
     if (!response.ok) {
       const detail = await readErrorBody(response);
-      throw new Error(`Anthropic API error (${response.status}): ${detail}`);
+      throw providerHttpError("Anthropic", response.status, detail);
     }
     return response;
   }
 
   return {
+    modelInfo: {
+      provider: config.provider,
+      model: config.model,
+      ...(config.contextWindowTokens === undefined
+        ? {}
+        : { contextWindowTokens: config.contextWindowTokens }),
+    },
     async chat(request: LlmChatRequest) {
       const response = await post(request, false);
       const payload = (await response.json()) as {

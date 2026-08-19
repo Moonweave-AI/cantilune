@@ -151,6 +151,12 @@ export function ConfigPanel({
   const [maxContextMessages, setMaxContextMessages] = useState(
     numStr(defaults?.maxContextMessages),
   );
+  const [maxContextTokens, setMaxContextTokens] = useState(
+    numStr(defaults?.maxContextTokens ?? 128_000),
+  );
+  const [maxOutputTokens, setMaxOutputTokens] = useState(
+    numStr(defaults?.maxOutputTokens ?? 4_096),
+  );
 
   useEffect(() => {
     if (
@@ -189,6 +195,8 @@ export function ConfigPanel({
     const hardGateNum = num(hardGate);
     const maxTimeMsNum = num(maxTimeMs);
     const maxContextNum = num(maxContextMessages);
+    const maxContextTokensNum = num(maxContextTokens);
+    const maxOutputTokensNum = num(maxOutputTokens);
 
     // Build with a mutable-local helper, then hand the completed object to
     // onConfigure. Conditional spreads under exactOptionalPropertyTypes widen
@@ -222,6 +230,8 @@ export function ConfigPanel({
     if (systemPrompt.length > 0) req.systemPrompt = systemPrompt;
     if (maxTimeMsNum !== undefined) req.maxTimeMs = maxTimeMsNum;
     if (maxContextNum !== undefined) req.maxContextMessages = maxContextNum;
+    if (maxContextTokensNum !== undefined) req.maxContextTokens = maxContextTokensNum;
+    if (maxOutputTokensNum !== undefined) req.maxOutputTokens = maxOutputTokensNum;
     if (workspacePath.length > 0 && workspacePath !== ".") req.workspace = workspacePath;
 
     onConfigure(req);
@@ -410,7 +420,8 @@ export function ConfigPanel({
 
           <section className={styles.section}>
             <label className={styles.label}>
-              API Key <span className={styles.hint}>(仅本次会话保留，不写入浏览器存储；刷新后需重输)</span>
+              API Key{" "}
+              <span className={styles.hint}>(仅本次会话保留，不写入浏览器存储；刷新后需重输)</span>
             </label>
             <input
               className={styles.input}
@@ -641,6 +652,28 @@ export function ConfigPanel({
               value={maxContextMessages}
               onChange={(e) => setMaxContextMessages(e.target.value)}
               placeholder="unset"
+            />
+          </label>
+          <label className={styles.miniLabel}>
+            Context window (tokens)
+            <input
+              className={styles.input}
+              type="number"
+              min="2"
+              value={maxContextTokens}
+              onChange={(e) => setMaxContextTokens(e.target.value)}
+              placeholder="128000"
+            />
+          </label>
+          <label className={styles.miniLabel}>
+            Output reserve (tokens)
+            <input
+              className={styles.input}
+              type="number"
+              min="1"
+              value={maxOutputTokens}
+              onChange={(e) => setMaxOutputTokens(e.target.value)}
+              placeholder="4096"
             />
           </label>
           <label className={styles.miniLabel}>
