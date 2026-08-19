@@ -57,10 +57,24 @@ await runAgentLoop(syscall, llm, "first goal", detector, config, { history });
 await runAgentLoop(syscall, llm, "follow-up goal", detector, config, { history });
 ```
 
-`maxContextMessages` is a hard per-request message limit, including the current world context. The
-loop retains the current run's initial user goal, emits at most one compaction marker, and never
-splits an assistant message containing `toolCalls` from its ordered tool results. With a one-message
-budget, only the initial goal is sent.
+Context control keeps two replayable histories: `messages` is the complete evidence transcript,
+while `contextMessages` is the provider-visible surface after pruning and summary replacement.
+Semantic compaction therefore never deletes audit evidence. Assistant tool calls and their ordered
+tool results remain one indivisible unit.
+
+`maxContextTokens` is the routed model's total prompt-plus-completion capacity (default
+`llm.contextWindowTokens ?? 128_000`); `maxOutputTokens` reserves the completion portion. The first
+request uses a fixed-density estimate. After a successful request, provider-reported prompt usage
+becomes the anchor and the meter estimates only subsequent surface changes. At 80% pressure the
+loop first prunes oversized tool-result middles, then replaces older complete message units with an
+LLM-generated structured checkpoint while retaining the newest 16% verbatim. Both ratios and retry
+budgets are configurable through `contextCompaction`; tool head/tail budgets use
+`toolResultPruning`.
+
+An estimate alone never rejects a request. If the provider confirms `CONTEXT_WINDOW_EXCEEDED`, the
+loop forces one balanced compaction and retries the same turn (default once). An irreducible request
+still returns the original provider error. `maxContextMessages` remains an emergency row cap
+(default 10,000), not the primary context policy.
 
 Every loop-produced result includes both tallies:
 

@@ -18,7 +18,7 @@
 import { createAdapter, createEmbedder, getProvider, listProviders } from "@cantilune/adapter";
 import { statSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
-import type { EmbeddingAdapter, LlmAdapter, LlmConfig } from "@cantilune/boot";
+import type { LlmAdapter, LlmConfig } from "@cantilune/boot";
 import type { AgentEvent, RunResult } from "@cantilune/boot";
 import {
   createCliRuntimeBoot,
@@ -32,7 +32,6 @@ import { pickDirectory } from "./pickDirectory.js";
 import { toWorldSnapshotWire } from "./worldSnapshot.js";
 import type { WebSocket } from "ws";
 import type {
-  AgentEventEnvelope,
   ApproveRequest,
   AskUserReply,
   ClientMessage,
@@ -45,9 +44,7 @@ import type {
   RunRequest,
   ServerMessage,
   StartConditionExpressionWire,
-  StopRequest,
   SwarmStatusWire,
-  WorldSnapshotWire,
 } from "../../shared/protocol.js";
 
 export interface BridgeSessionOptions {
@@ -190,6 +187,12 @@ export class BridgeSession {
         ...(request.maxTimeMs !== undefined ? { maxTimeMs: request.maxTimeMs } : {}),
         ...(request.maxContextMessages !== undefined
           ? { maxContextMessages: request.maxContextMessages }
+          : {}),
+        ...(request.maxContextTokens !== undefined
+          ? { maxContextTokens: request.maxContextTokens }
+          : {}),
+        ...(request.maxOutputTokens !== undefined
+          ? { maxOutputTokens: request.maxOutputTokens }
           : {}),
         ...(request.systemPrompt !== undefined ? { systemPrompt: request.systemPrompt } : {}),
         ...(request.thresholds !== undefined ? { thresholds: request.thresholds } : {}),
@@ -551,6 +554,10 @@ export class BridgeSession {
         : {}),
       ...(request.baseUrl !== undefined && request.baseUrl.length > 0
         ? { baseUrl: request.baseUrl }
+        : {}),
+      ...(request.maxOutputTokens !== undefined ? { maxTokens: request.maxOutputTokens } : {}),
+      ...(request.maxContextTokens !== undefined
+        ? { contextWindowTokens: request.maxContextTokens }
         : {}),
     };
   }

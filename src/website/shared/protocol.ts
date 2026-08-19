@@ -29,6 +29,10 @@ export interface ConfigureRequest {
   readonly maxTurns?: number;
   readonly maxTimeMs?: number;
   readonly maxContextMessages?: number;
+  /** Total prompt + completion context window enforced by the server. */
+  readonly maxContextTokens?: number;
+  /** Completion cap reserved out of maxContextTokens. */
+  readonly maxOutputTokens?: number;
   readonly systemPrompt?: string;
   readonly thresholds?: {
     readonly tauC?: number;
@@ -148,7 +152,25 @@ export type ClientMessage =
  */
 export type AgentEventWire =
   | { readonly kind: "turn_start"; readonly turn: number; readonly elapsedMs: number }
-  | { readonly kind: "llm_start"; readonly turn: number; readonly model?: string }
+  | {
+      readonly kind: "llm_start";
+      readonly turn: number;
+      readonly model?: string;
+      readonly context?: {
+        readonly estimatedPromptTokens: number;
+        readonly heuristicPromptTokens: number;
+        readonly estimateSource: "heuristic" | "provider_usage";
+        readonly maxContextTokens: number;
+        readonly maxOutputTokens: number;
+        readonly promptBudgetTokens: number;
+        readonly compactionThresholdTokens: number;
+        readonly pressureRatio: number;
+        readonly messageCount: number;
+        readonly compactedMessages: number;
+        readonly prunedToolResults: number;
+        readonly summarizedMessages: number;
+      };
+    }
   | { readonly kind: "llm_delta"; readonly turn: number; readonly text: string }
   | {
       readonly kind: "llm_end";

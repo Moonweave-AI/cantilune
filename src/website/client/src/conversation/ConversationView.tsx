@@ -85,11 +85,24 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
   const hero = nodes.length === 0;
   const phase = hero ? "hero" : "active";
   const overlay = view === "trajectory" && composerOpen;
-  const usedTokens = nodes.reduce((sum, node) => {
-    if (node.usage !== undefined) return sum + node.usage.total;
-    const chars = (node.text ?? node.output ?? node.message ?? "").length;
-    return sum + Math.ceil(chars / 4);
-  }, 0);
+  const latestContextNode = [...nodes].reverse().find((node) => node.context !== undefined);
+  const latestContext = latestContextNode?.context;
+  const latestContextIndex =
+    latestContextNode === undefined ? -1 : nodes.indexOf(latestContextNode);
+  const latestPromptUsage = [...nodes.slice(latestContextIndex + 1)]
+    .reverse()
+    .find(
+      (node) =>
+        node.usage !== undefined &&
+        (latestContextNode === undefined || node.turn === latestContextNode.turn),
+    )?.usage;
+  const usedTokens = latestPromptUsage?.prompt ?? latestContext?.estimatedPromptTokens ?? 0;
+  const contextWindowTokens = latestContext?.maxContextTokens ?? 128_000;
+  const outputReserveTokens = latestContext?.maxOutputTokens ?? 4_096;
+  const contextEstimated = latestPromptUsage === undefined && latestContext !== undefined;
+  const contextEstimateSource = latestContext?.estimateSource;
+  const prunedToolResults = latestContext?.prunedToolResults ?? 0;
+  const summarizedMessages = latestContext?.summarizedMessages ?? 0;
   const turns = Math.max(0, ...nodes.map((node) => node.turn));
   const pendingApprovals = useMemo<readonly ApprovalItem[]>(
     () =>
@@ -332,6 +345,12 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
                 overlay={overlay}
                 mode={mode}
                 usedTokens={usedTokens}
+                contextWindowTokens={contextWindowTokens}
+                outputReserveTokens={outputReserveTokens}
+                contextEstimated={contextEstimated}
+                {...(contextEstimateSource === undefined ? {} : { contextEstimateSource })}
+                prunedToolResults={prunedToolResults}
+                summarizedMessages={summarizedMessages}
                 turns={turns}
                 steps={nodes.length}
                 workspaceName={workspaceName}

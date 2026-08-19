@@ -15,6 +15,12 @@ interface ComposerProps {
   readonly overlay: boolean;
   readonly mode: RunMode;
   readonly usedTokens: number;
+  readonly contextWindowTokens: number;
+  readonly outputReserveTokens: number;
+  readonly contextEstimated: boolean;
+  readonly contextEstimateSource?: "heuristic" | "provider_usage";
+  readonly prunedToolResults: number;
+  readonly summarizedMessages: number;
   readonly turns: number;
   readonly steps: number;
   readonly workspaceName: string;
@@ -47,6 +53,12 @@ export function Composer(props: ComposerProps): JSX.Element {
     overlay,
     mode,
     usedTokens,
+    contextWindowTokens,
+    outputReserveTokens,
+    contextEstimated,
+    contextEstimateSource,
+    prunedToolResults,
+    summarizedMessages,
     turns,
     steps,
     workspaceName,
@@ -73,7 +85,8 @@ export function Composer(props: ComposerProps): JSX.Element {
   const slashItems = useMemo(() => {
     if (slashQuery === null) return [];
     return SLASH.filter(
-      ([id, label]) => slashQuery.length === 0 || id.includes(slashQuery) || label.includes(slashQuery),
+      ([id, label]) =>
+        slashQuery.length === 0 || id.includes(slashQuery) || label.includes(slashQuery),
     );
   }, [slashQuery]);
   const groupedCatalog = useMemo(() => {
@@ -172,7 +185,8 @@ export function Composer(props: ComposerProps): JSX.Element {
     }
     if (event.key !== "Enter") return;
     if (event.shiftKey) return;
-    const composingNow = composing || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
+    const composingNow =
+      composing || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229;
     if (composingNow) return;
     event.preventDefault();
     if (!event.repeat) submit();
@@ -345,7 +359,17 @@ export function Composer(props: ComposerProps): JSX.Element {
                 </div>
               )}
             </div>
-            <ContextMeter usedTokens={usedTokens} />
+            <ContextMeter
+              usedTokens={usedTokens}
+              contextWindowTokens={contextWindowTokens}
+              outputReserveTokens={outputReserveTokens}
+              estimated={contextEstimated}
+              {...(contextEstimateSource === undefined
+                ? {}
+                : { estimateSource: contextEstimateSource })}
+              prunedToolResults={prunedToolResults}
+              summarizedMessages={summarizedMessages}
+            />
             {running ? (
               <button
                 type="button"

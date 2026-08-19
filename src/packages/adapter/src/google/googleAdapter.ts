@@ -1,4 +1,5 @@
 import type { LlmAdapter, LlmChatRequest, LlmConfig } from "@cantilune/boot";
+import { providerHttpError } from "../providerError.js";
 import { fetchWithRetry, readErrorBody } from "../httpClient.js";
 import type { AdapterOptions, ProviderEntry } from "../types.js";
 import { fromGoogleResponse, toGoogleContents, toGoogleTools } from "./googleToolMapping.js";
@@ -30,6 +31,13 @@ export function createGoogleAdapter(
   const baseUrl = normalizeBaseUrl(config.baseUrl ?? entry.defaultBaseUrl);
 
   return {
+    modelInfo: {
+      provider: config.provider,
+      model: config.model,
+      ...(config.contextWindowTokens === undefined
+        ? {}
+        : { contextWindowTokens: config.contextWindowTokens }),
+    },
     async chat(request: LlmChatRequest) {
       const apiKey = resolveApiKey(config, entry.envKeyName);
       if (!apiKey) {
@@ -46,8 +54,9 @@ export function createGoogleAdapter(
       }
 
       const generationConfig: Record<string, unknown> = {};
-      if (config.maxTokens !== undefined) {
-        generationConfig.maxOutputTokens = config.maxTokens;
+      const maxTokens = request.maxTokens ?? config.maxTokens;
+      if (maxTokens !== undefined) {
+        generationConfig.maxOutputTokens = maxTokens;
       }
       if (config.temperature !== undefined) {
         generationConfig.temperature = config.temperature;
@@ -75,7 +84,7 @@ export function createGoogleAdapter(
 
       if (!response.ok) {
         const detail = await readErrorBody(response);
-        throw new Error(`Google Gemini API error (${response.status}): ${detail}`);
+        throw providerHttpError("Google Gemini", response.status, detail);
       }
 
       const payload = (await response.json()) as Parameters<typeof fromGoogleResponse>[0];

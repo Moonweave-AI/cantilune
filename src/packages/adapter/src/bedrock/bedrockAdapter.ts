@@ -1,4 +1,5 @@
 import type { LlmAdapter, LlmChatRequest, LlmConfig } from "@cantilune/boot";
+import { providerHttpError } from "../providerError.js";
 import { fetchWithRetry, readErrorBody } from "../httpClient.js";
 import type { AdapterOptions, ProviderEntry } from "../types.js";
 import {
@@ -20,6 +21,13 @@ export function createBedrockAdapter(
   options?: AdapterOptions,
 ): LlmAdapter {
   return {
+    modelInfo: {
+      provider: config.provider,
+      model: config.model,
+      ...(config.contextWindowTokens === undefined
+        ? {}
+        : { contextWindowTokens: config.contextWindowTokens }),
+    },
     async chat(request: LlmChatRequest) {
       const credentials = resolveAwsCredentials(config.apiKey);
       const region = resolveAwsRegion(config.baseUrl);
@@ -35,8 +43,9 @@ export function createBedrockAdapter(
       }
 
       const inferenceConfig: Record<string, unknown> = {};
-      if (config.maxTokens !== undefined) {
-        inferenceConfig.maxTokens = config.maxTokens;
+      const maxTokens = request.maxTokens ?? config.maxTokens;
+      if (maxTokens !== undefined) {
+        inferenceConfig.maxTokens = maxTokens;
       }
       if (config.temperature !== undefined) {
         inferenceConfig.temperature = config.temperature;
@@ -75,7 +84,7 @@ export function createBedrockAdapter(
 
       if (!response.ok) {
         const detail = await readErrorBody(response);
-        throw new Error(`AWS Bedrock API error (${response.status}): ${detail}`);
+        throw providerHttpError("AWS Bedrock", response.status, detail);
       }
 
       const result = (await response.json()) as Parameters<typeof fromBedrockResponse>[0];
