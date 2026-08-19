@@ -61,7 +61,7 @@ function start(): Server {
       try {
         parsed = JSON.parse(data.toString()) as ClientMessage;
       } catch {
-        send({ type: "error", message: "invalid JSON" });
+        send({ type: "error", scope: "transport", message: "invalid JSON" });
         return;
       }
       void session.handle(parsed);

@@ -18,8 +18,7 @@ export interface ConfigureRequest {
   readonly model: string;
   readonly baseUrl?: string;
   /**
-   * Sent to server memory on configure. The local website harness also stores
-   * it in origin localStorage so refresh can reconnect without re-typing.
+   * Sent to server memory on configure. It is never persisted by the browser.
    */
   readonly apiKey?: string;
   readonly durable?: "memory" | "file";
@@ -43,7 +42,7 @@ export interface ConfigureRequest {
   readonly contractModel?: string;
   readonly judgeProvider?: string;
   readonly judgeModel?: string;
-  readonly searchProvider?: "tavily" | "serper" | "brave" | "none";
+  readonly searchProvider?: "cloakbrowser" | "tavily" | "serper" | "brave" | "none";
   readonly mcpServers?: readonly string[];
 }
 
@@ -396,8 +395,17 @@ export interface ReadyEvent {
   }[];
 }
 
+/** Sent only after the server has successfully built the configured runtime. */
+export interface ConfiguredEvent {
+  readonly type: "configured";
+  readonly provider: string;
+  readonly model: string;
+}
+
 export interface ErrorResponse {
   readonly type: "error";
+  /** Which operation failed; only configuration failure invalidates the runtime. */
+  readonly scope: "configuration" | "run" | "workspace" | "swarm" | "transport";
   readonly message: string;
 }
 
@@ -408,6 +416,7 @@ export interface WorkspacePickedEvent {
 
 export type ServerMessage =
   | ReadyEvent
+  | ConfiguredEvent
   | AgentEventEnvelope
   | ApprovalRequestEvent
   | ClusterEventEnvelope

@@ -8,6 +8,10 @@ import { NodeRow } from "./NodeRow";
 import type { ConversationNode } from "./nodes";
 import type { RunMode } from "./PermissionSelect";
 import { TrajectoryView } from "./TrajectoryView";
+import {
+  findLatestRunResultIndex,
+  hasAssistantReplyBeforeRunResult,
+} from "./runOutcome";
 import styles from "./ConversationView.module.css";
 
 const FOLLOW_THRESHOLD = 24;
@@ -71,6 +75,7 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
     onAlwaysAllow,
     onPickWorkspace,
   } = props;
+  const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const seatObserver = useRef<ResizeObserver | null>(null);
   const stick = useRef(true);
@@ -98,11 +103,7 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
   );
   const thread = useMemo(() => {
     const filtered = nodes.filter((node) => {
-      if (
-        node.kind === "run_result" ||
-        node.kind === "turn" ||
-        node.kind === "diagnostic"
-      ) {
+      if (node.kind === "run_result" || node.kind === "turn" || node.kind === "diagnostic") {
         return false;
       }
       if (node.kind === "approval" && node.pending === true) return false;
@@ -118,6 +119,18 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
     if (showEarlier || filtered.length <= VISIBLE_NODE_WINDOW) return filtered;
     return filtered.slice(-VISIBLE_NODE_WINDOW);
   }, [nodes, showEarlier]);
+  const latestRunResult = useMemo(() => {
+    if (running) return undefined;
+    const index = findLatestRunResultIndex(nodes);
+    if (index < 0) return undefined;
+    const node = nodes[index];
+    return node?.kind === "run_result" ? node : undefined;
+  }, [nodes, running]);
+  const latestRunHasAssistant = useMemo(() => {
+    if (latestRunResult === undefined) return false;
+    const index = nodes.indexOf(latestRunResult);
+    return index >= 0 ? hasAssistantReplyBeforeRunResult(nodes, index) : false;
+  }, [latestRunResult, nodes]);
   const hiddenCount = useMemo(() => {
     const total = nodes.filter((node) => {
       if (node.kind === "run_result" || node.kind === "turn" || node.kind === "diagnostic") {
@@ -132,14 +145,14 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
   const seatResizeRef = useCallback((seat: HTMLDivElement | null) => {
     seatObserver.current?.disconnect();
     seatObserver.current = null;
-    const scroller = seat?.parentElement ?? null;
-    if (seat === null || scroller === null) return;
+    const root = rootRef.current;
+    if (seat === null || root === null) return;
     let last = -1;
     const apply = () => {
       const height = seat.offsetHeight;
       if (height === last) return;
       last = height;
-      scroller.style.setProperty("--cln-composer-height", `${height}px`);
+      root.style.setProperty("--cln-composer-height", `${height}px`);
     };
     seatObserver.current = new ResizeObserver(apply);
     seatObserver.current.observe(seat);
@@ -153,8 +166,19 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
     }
   }, [nodes, view]);
 
+  const onContentScroll = useCallback(() => {
+    const element = scrollRef.current;
+    if (element === null) return;
+    const next = element.scrollHeight - element.scrollTop - element.clientHeight < FOLLOW_THRESHOLD;
+    if (stick.current === next) return;
+    stick.current = next;
+    setFollow(next);
+  }, []);
+
+  const conversationOwnsScroll = view === "conversation" && !hero;
+
   return (
-    <div className={styles.root} data-phase={phase}>
+    <div ref={rootRef} className={styles.root} data-phase={phase} data-view={view}>
       <header className={hero ? styles.headerHidden : styles.header}>
         <div className={styles.titleRow}>
           <div className={styles.crumbs}>
@@ -198,31 +222,26 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
 
       <div
         className={styles.scrollBody}
-        ref={scrollRef}
+        ref={conversationOwnsScroll ? undefined : scrollRef}
         data-conversation-scroll=""
-        onScroll={() => {
-          const element = scrollRef.current;
-          if (element === null) return;
-          const next =
-            element.scrollHeight - element.scrollTop - element.clientHeight < FOLLOW_THRESHOLD;
-          if (stick.current === next) return;
-          stick.current = next;
-          setFollow(next);
-        }}
+        onScroll={conversationOwnsScroll ? undefined : onContentScroll}
       >
         {view === "trajectory" ? (
           <div
             className={styles.viewArea}
             data-conversation-composer-overlay={overlay || undefined}
           >
-            <TrajectoryView
-              nodes={nodes}
-              onSelectNode={onSelectNode}
-              compactDock={!composerOpen}
-            />
+            <TrajectoryView nodes={nodes} onSelectNode={onSelectNode} compactDock={!composerOpen} />
           </div>
         ) : (
-          <div className={styles.viewArea} role="log" aria-label="Agent 对话" aria-live="polite">
+          <div
+            ref={conversationOwnsScroll ? scrollRef : undefined}
+            className={styles.viewArea}
+            role="log"
+            aria-label="Agent 对话"
+            aria-live="polite"
+            onScroll={conversationOwnsScroll ? onContentScroll : undefined}
+          >
             {hero ? null : (
               <div className={styles.flow}>
                 {hiddenCount > 0 && (
@@ -253,13 +272,16 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
                     <NodeRow node={node} onApprove={onApprove} onAskUserReply={onAskUserReply} />
                   </div>
                 ))}
-                {nodes
-                  .filter((node) => node.kind === "run_result")
-                  .map((node) => (
-                    <div key={node.id} className={styles.controllerDock}>
-                      <NodeRow node={node} onApprove={onApprove} onAskUserReply={onAskUserReply} />
-                    </div>
-                  ))}
+                {latestRunResult !== undefined && (
+                  <div className={styles.controllerDock}>
+                    <NodeRow
+                      node={latestRunResult}
+                      onApprove={onApprove}
+                      onAskUserReply={onAskUserReply}
+                      runHasAssistantReply={latestRunHasAssistant}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -300,28 +322,28 @@ export function ConversationView(props: ConversationViewProps): JSX.Element {
               </button>
             )}
             {(hero || view !== "trajectory" || composerOpen) && (
-            <Composer
-              configured={configured}
-              running={running}
-              provider={provider}
-              model={model}
-              catalog={catalog}
-              hero={hero}
-              overlay={overlay}
-              mode={mode}
-              usedTokens={usedTokens}
-              turns={turns}
-              steps={nodes.length}
-              workspaceName={workspaceName}
-              onModeChange={onModeChange}
-              onSend={onSend}
-              onStop={onStop}
-              onOpenSettings={onOpenSettings}
-              onOpenModelSettings={onOpenModelSettings}
-              onSelectModel={onSelectModel}
-              onNewSession={onNewSession}
-              onDownloadLog={onDownloadLog}
-            />
+              <Composer
+                configured={configured}
+                running={running}
+                provider={provider}
+                model={model}
+                catalog={catalog}
+                hero={hero}
+                overlay={overlay}
+                mode={mode}
+                usedTokens={usedTokens}
+                turns={turns}
+                steps={nodes.length}
+                workspaceName={workspaceName}
+                onModeChange={onModeChange}
+                onSend={onSend}
+                onStop={onStop}
+                onOpenSettings={onOpenSettings}
+                onOpenModelSettings={onOpenModelSettings}
+                onSelectModel={onSelectModel}
+                onNewSession={onNewSession}
+                onDownloadLog={onDownloadLog}
+              />
             )}
           </div>
         </div>

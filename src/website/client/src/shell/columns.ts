@@ -10,6 +10,7 @@ export const CENTER_MIN = 640;
 export const SIDEBAR_MIN = 264;
 export const SIDEBAR_MAX = 420;
 export const SIDEBAR_DEFAULT = 280;
+/** Harness rail: 56 px wide with 36 px controls and 10 px side padding. */
 export const SIDEBAR_COLLAPSED = 56;
 export const SIDEBAR_AUTO_COLLAPSE = 1024;
 export const DETAILS_MIN = 300;
@@ -21,7 +22,11 @@ export function clampWidth(px: number, min: number, max: number): number {
 }
 
 export function computeColumns(viewport: number, sidebar: number, details: number): Columns {
-  const s = sidebar === 0 ? SIDEBAR_COLLAPSED : clampWidth(sidebar, SIDEBAR_MIN, SIDEBAR_MAX);
+  // A narrow expanded sidebar is a drawer, not a cropped desktop rail. Keeping
+  // it within the frame lets every internal edge share one visual baseline.
+  const requestedSidebar =
+    sidebar === 0 ? SIDEBAR_COLLAPSED : clampWidth(sidebar, SIDEBAR_MIN, SIDEBAR_MAX);
+  const s = Math.min(requestedSidebar, Math.max(SIDEBAR_COLLAPSED, Math.round(viewport)));
   const d0 = details === 0 ? 0 : clampWidth(details, DETAILS_MIN, DETAILS_MAX);
   if (s + d0 + CENTER_MIN <= viewport) {
     return { sidebar: s, center: viewport - s - d0, details: d0 };

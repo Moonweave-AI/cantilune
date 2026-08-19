@@ -1,8 +1,10 @@
 .root {
   position: relative;
   display: flex;
+  min-height: 0;
   min-width: 0;
   height: 100%;
+  flex: 1;
   flex-direction: column;
   background: var(--cln-alias-bg-base);
   --cln-chat-content-width: var(--cln-chat-content-w);
@@ -137,7 +139,6 @@
 
 .tabActive::after {
   background: var(--cln-mw-cyan);
-  box-shadow: 0 0 0.9rem var(--cln-mw-cyan);
 }
 
 .tab:hover {
@@ -156,6 +157,15 @@
 
 .root[data-phase="hero"] .scrollBody {
   justify-content: center;
+  padding-block: clamp(20px, 6vh, 64px);
+}
+
+.root[data-phase="hero"] .viewArea {
+  display: none;
+}
+
+.root[data-phase="hero"] .composerSeat {
+  width: 100%;
 }
 
 .root[data-phase="active"] {
@@ -169,9 +179,17 @@
   flex-direction: column;
 }
 
-.root[data-phase="active"] .viewArea {
-  flex: 1 0 auto;
-  min-height: auto;
+.root[data-phase="active"][data-view="conversation"] .scrollBody {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.root[data-phase="active"][data-view="conversation"] .viewArea {
+  min-height: 0;
+  flex: 1 1 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .flow {
@@ -223,7 +241,7 @@
   --cln-composer-text-max-height: var(--cln-composer-text-max);
 }
 
-.root[data-phase="active"] .composerSeat {
+.root[data-phase="active"][data-view="trajectory"] .composerSeat {
   position: sticky;
   z-index: 7;
   bottom: 0;
@@ -265,7 +283,7 @@
   z-index: 1;
   align-self: center;
   width: min(calc(var(--cln-composer-card-max) + 2 * var(--cln-composer-side)), 100%);
-  padding-bottom: 32px;
+  padding-bottom: 0;
   gap: 8px;
 }
 
@@ -273,10 +291,10 @@
   position: absolute;
   z-index: -1;
   left: 50%;
-  bottom: 40px;
+  top: 50%;
   width: min(720px, 90%);
   height: 220px;
-  transform: translate(-50%, 40%);
+  transform: translate(-50%, -36%);
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,

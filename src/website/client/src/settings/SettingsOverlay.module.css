@@ -162,6 +162,7 @@
   font-size: 19px;
   font-weight: 650;
   letter-spacing: -0.02em;
+  line-height: 26px;
 }
 
 .lead {
@@ -172,6 +173,7 @@
 }
 
 .rows {
+  margin-top: 16px;
   border-top: 1px solid var(--cln-alias-border-l2);
 }
 
@@ -181,7 +183,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  border-bottom: 1px solid var(--cln-alias-border-l1);
+  border-bottom: 1px solid var(--cln-alias-border-l2);
 }
 
 .settingRow > div {
@@ -208,13 +210,48 @@
   justify-content: space-between;
   padding: 0 12px;
   gap: 16px;
-  border: 0;
+  border: 1px solid var(--cln-alias-border-l2);
   border-radius: 18px;
   background: var(--cln-alias-bg-layer-3);
   color: var(--cln-alias-label-primary);
   cursor: pointer;
   font-size: 12px;
   line-height: 16px;
+  transition:
+    background var(--cln-dur-fast) var(--cln-ease),
+    color var(--cln-dur-fast) var(--cln-ease),
+    transform var(--cln-dur-fast) var(--cln-ease);
+}
+
+.selectLike:hover,
+.selectLike:focus-visible,
+.selectControl:hover,
+.selectControl:focus-visible {
+  background: var(--cln-alias-interactive-bg-hover);
+  color: var(--cln-alias-label-primary);
+  outline: 1px solid var(--cln-alias-border-l3);
+  outline-offset: 2px;
+}
+
+.selectLike:active {
+  transform: translateY(1px);
+}
+
+.selectControl {
+  min-width: 132px;
+  height: 36px;
+  padding: 0 28px 0 12px;
+  border: 1px solid var(--cln-alias-border-l2);
+  border-radius: 18px;
+  appearance: auto;
+  background: var(--cln-alias-bg-layer-3);
+  color: var(--cln-alias-label-primary);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 16px;
+  transition:
+    background var(--cln-dur-fast) var(--cln-ease),
+    color var(--cln-dur-fast) var(--cln-ease);
 }
 
 .connection {
@@ -232,7 +269,7 @@
 
 .appearance {
   padding: 20px 0 16px;
-  border-bottom: 1px solid var(--cln-alias-border-l1);
+  border-bottom: 1px solid var(--cln-alias-border-l2);
 }
 
 .appearance p {
@@ -445,6 +482,17 @@
   border: 1px solid var(--cln-alias-border-l2);
   border-radius: 12px;
   background: var(--cln-alias-bg-layer-3);
+  transition:
+    border-color var(--cln-dur-fast) var(--cln-ease),
+    background var(--cln-dur-fast) var(--cln-ease),
+    transform var(--cln-dur-fast) var(--cln-ease);
+}
+
+.presetCard:hover,
+.presetCard:focus-within {
+  border-color: var(--cln-alias-border-l3);
+  background: var(--cln-alias-interactive-bg-hover);
+  transform: translateY(-1px);
 }
 
 .presetActive {

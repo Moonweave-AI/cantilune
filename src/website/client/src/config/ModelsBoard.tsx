@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import type { ConfigureRequest } from "@shared/protocol";
 import type { CatalogEntry } from "../persist/store";
-import type { ProviderEntryWire } from "./ConfigPanel";
+import { BUILTIN_PROVIDER_ENTRIES, type ProviderEntryWire } from "./ConfigPanel";
 import styles from "./ModelsBoard.module.css";
 
 interface ModelsBoardProps {
@@ -108,6 +108,7 @@ export function ModelsBoard({
   onCatalogChange,
   onConfigure,
 }: ModelsBoardProps): JSX.Element {
+  const availableProviders = providers.length > 0 ? providers : BUILTIN_PROVIDER_ENTRIES;
   const groups = useMemo(() => groupsOf(catalog, defaults), [catalog, defaults]);
   const [editing, setEditing] = useState<string | null>(() => {
     const initial = groupsOf(catalog, defaults);
@@ -120,7 +121,7 @@ export function ModelsBoard({
   const [draftUrl, setDraftUrl] = useState("");
   const [draftModel, setDraftModel] = useState("");
   const taken = new Set(groups.map((group) => group.provider));
-  const addable = providers.filter((item) => !taken.has(item.slug));
+  const addable = availableProviders.filter((item) => !taken.has(item.slug));
   const activeProvider = defaults?.provider;
   const activeModel = defaults?.model;
 
@@ -140,7 +141,7 @@ export function ModelsBoard({
       group.baseUrl.length > 0
         ? group.baseUrl
         : (defaults?.baseUrl ??
-          providers.find((item) => item.slug === group.provider)?.defaultBaseUrl ??
+          availableProviders.find((item) => item.slug === group.provider)?.defaultBaseUrl ??
           "");
     if (key.length > 0) req.apiKey = key;
     if (url.length > 0) req.baseUrl = url;
@@ -245,7 +246,8 @@ export function ModelsBoard({
                     <input
                       value={group.baseUrl}
                       placeholder={
-                        providers.find((item) => item.slug === group.provider)?.defaultBaseUrl ?? ""
+                        availableProviders.find((item) => item.slug === group.provider)
+                          ?.defaultBaseUrl ?? ""
                       }
                       onChange={(event) =>
                         patchGroup(
@@ -354,7 +356,11 @@ export function ModelsBoard({
                     <button type="button" className={styles.ghost} onClick={() => setEditing(null)}>
                       取消
                     </button>
-                    <button type="button" className={styles.primary} onClick={() => applyGroup(group)}>
+                    <button
+                      type="button"
+                      className={styles.primary}
+                      onClick={() => applyGroup(group)}
+                    >
                       {configured && active ? "保存并重连" : "应用并连接"}
                     </button>
                   </div>
@@ -378,8 +384,9 @@ export function ModelsBoard({
                   onChange={(event) => {
                     const slug = event.target.value;
                     setDraftProvider(slug);
-                    const meta = providers.find((item) => item.slug === slug);
-                    if (meta !== undefined && draftUrl.length === 0) setDraftUrl(meta.defaultBaseUrl);
+                    const meta = availableProviders.find((item) => item.slug === slug);
+                    if (meta !== undefined && draftUrl.length === 0)
+                      setDraftUrl(meta.defaultBaseUrl);
                   }}
                 >
                   {addable.map((item) => (
@@ -435,7 +442,12 @@ export function ModelsBoard({
         </div>
       )}
       <div className={styles.addRow}>
-        <button type="button" className={styles.addProvider} onClick={startBuiltin} disabled={addable.length === 0}>
+        <button
+          type="button"
+          className={styles.addProvider}
+          onClick={startBuiltin}
+          disabled={addable.length === 0}
+        >
           + 添加提供方
         </button>
         <button type="button" className={styles.addProvider} onClick={startCustom}>

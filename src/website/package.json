@@ -6,7 +6,7 @@
   "description": "Cantilune website agent harness UI — the primary interactive surface that replaces the CLI (ADR-0030)",
   "scripts": {
     "dev": "concurrently -n server,client -c magenta,cyan \"pnpm --filter @cantilune/website-server dev\" \"pnpm --filter @cantilune/website-client dev\"",
-    "build": "pnpm --filter @cantilune/website-server build && pnpm --filter @cantilune/website-client build",
+    "build": "pnpm --filter @cantilune/cli build && pnpm --filter @cantilune/website-server build && pnpm --filter @cantilune/website-client build",
     "typecheck": "pnpm --filter @cantilune/website-server typecheck && pnpm --filter @cantilune/website-client typecheck",
     "clean": "pnpm --filter @cantilune/website-server clean && pnpm --filter @cantilune/website-client clean"
   },

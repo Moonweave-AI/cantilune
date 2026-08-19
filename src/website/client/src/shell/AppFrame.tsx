@@ -30,6 +30,7 @@ interface AppFrameProps {
   readonly center: ReactNode;
   readonly details: ReactNode;
   readonly overlay?: ReactNode;
+  readonly banner?: ReactNode;
   readonly detailsOpen: boolean;
 }
 
@@ -104,6 +105,7 @@ export function AppFrame({
   center,
   details,
   overlay,
+  banner,
   detailsOpen,
 }: AppFrameProps): JSX.Element {
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -142,6 +144,7 @@ export function AppFrame({
       ? SIDEBAR_DEFAULT
       : sidebarPref;
   const cols = computeColumns(viewport, sidebarPreference, detailsOpen ? detailsPref : 0);
+  const detailsDrawerOpen = detailsOpen && cols.details === 0;
   const colsRef = useRef(cols);
   colsRef.current = cols;
 
@@ -180,8 +183,12 @@ export function AppFrame({
       <div className={styles.sidebarCol}>
         {sidebar({ collapsed: sidebarCollapsed, width: cols.sidebar, onToggle })}
       </div>
-      <div className={styles.centerCol}>{center}</div>
-      <div className={styles.detailsCol}>{details}</div>
+      <div className={styles.centerCol}>
+        {banner}
+        {center}
+      </div>
+      <div className={styles.detailsCol}>{!detailsDrawerOpen && details}</div>
+      {detailsDrawerOpen && <div className={styles.detailsDrawer}>{details}</div>}
       <div className={styles.overlayLayer} data-shell-overlay="">
         {overlay}
       </div>

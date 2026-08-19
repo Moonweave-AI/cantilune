@@ -6,6 +6,7 @@
 import type { ConversationNode } from "./nodes";
 import type { ControlVerdictKindWire, TerminationAuditWire } from "@shared/protocol";
 import { memo, useState, type MouseEvent, type ReactNode } from "react";
+import { presentRunOutcome, terminationReasonLabel } from "./runOutcome";
 import { MarkdownView } from "./MarkdownView";
 import { DisclosureRow } from "./DisclosureRow";
 import { ErrorBoundary } from "../shell/ErrorBoundary";
@@ -16,6 +17,8 @@ interface NodeRowProps {
   readonly node: ConversationNode;
   readonly onApprove: (toolCallId: string, decision: "allow" | "deny") => void;
   readonly onAskUserReply: (answer: string) => void;
+  /** When rendering run_result: whether this run already surfaced an assistant reply. */
+  readonly runHasAssistantReply?: boolean;
 }
 
 const VERDICT_LABEL: Record<ControlVerdictKindWire, string> = {
@@ -30,6 +33,7 @@ const VERDICT_LABEL: Record<ControlVerdictKindWire, string> = {
 export const NodeRow = memo(function NodeRow({
   node,
   onAskUserReply,
+  runHasAssistantReply = false,
 }: NodeRowProps): JSX.Element {
   switch (node.kind) {
     case "user":
@@ -143,36 +147,53 @@ export const NodeRow = memo(function NodeRow({
       );
 
     case "run_result":
-      return node.runResult !== undefined ? <RunResultRow result={node.runResult} /> : <></>;
+      return node.runResult !== undefined ? (
+        <RunResultRow result={node.runResult} hasAssistantReply={runHasAssistantReply} />
+      ) : (
+        <></>
+      );
   }
 });
 
 function RunResultRow({
   result,
+  hasAssistantReply,
 }: {
   readonly result: NonNullable<ConversationNode["runResult"]>;
+  readonly hasAssistantReply: boolean;
 }): JSX.Element {
+  const presentation = presentRunOutcome(result, hasAssistantReply);
   return (
-    <details className={styles.runResult} data-ok={result.ok}>
+    <details className={styles.runResult} data-outcome={presentation.outcome}>
       <summary className={styles.runResultHead}>
-        <span className={styles.runResultBadge}>{result.ok ? "✓ complete" : "✗ ended"}</span>
-        <span className={styles.runResultReason}>{result.terminationReason ?? "controller"}</span>
+        <span className={styles.runResultBadge} data-outcome={presentation.outcome}>
+          {presentation.badge}
+        </span>
+        <span className={styles.runResultReason}>
+          {terminationReasonLabel(result.terminationReason)}
+        </span>
         <small>
-          {result.turns} turns · {formatMs(result.elapsedMs)} · 展开
+          {result.turns} 轮 · {formatMs(result.elapsedMs)} · 详情
         </small>
       </summary>
-      <div className={styles.runResultSummary}>{result.summary}</div>
+      <p className={styles.runResultHint}>{presentation.hint}</p>
+      {hasAssistantReply && (
+        <p className={styles.runResultHint}>完整回复见上方助手消息；此处仅为运行审计摘要。</p>
+      )}
       <div className={styles.runResultStats}>
-        <span>{result.turns} turns</span>
+        <span>{result.turns} 轮</span>
         <span>{formatMs(result.elapsedMs)}</span>
         <span>
-          {result.operations.committed} committed / {result.operations.rejected} rejected
+          协调 {result.operations.committed} 提交 / {result.operations.rejected} 拒绝
         </span>
         <span>
-          tools {result.toolCalls.succeeded}/{result.toolCalls.total} ok ·{" "}
-          {result.toolCalls.unresolved} unresolved
+          工具 {result.toolCalls.succeeded}/{result.toolCalls.total} 成功
+          {result.toolCalls.unresolved > 0 ? ` · ${result.toolCalls.unresolved} 未恢复` : ""}
         </span>
       </div>
+      {result.error !== undefined && (
+        <p className={styles.runResultError}>{result.error.message}</p>
+      )}
     </details>
   );
 }

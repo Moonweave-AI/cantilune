@@ -3,7 +3,9 @@ import { IconClock, IconClose, IconCopy, IconSearch, IconThink, IconTool } from 
 import type { ConversationNode } from "./nodes";
 import {
   buildTrajectory,
+  displayToolName,
   formatDuration,
+  isTrajectoryEvent,
   labelFor,
   searchable,
   schemaFor,
@@ -33,7 +35,9 @@ export function TrajectoryView({
 }: TrajectoryViewProps): JSX.Element {
   const [actualDuration, setActualDuration] = useState(true);
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(nodes.at(-1)?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    [...nodes].reverse().find(isTrajectoryEvent)?.id ?? null,
+  );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoverX, setHoverX] = useState<number | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>("summary");
@@ -48,10 +52,6 @@ export function TrajectoryView({
     return () => window.clearInterval(timer);
   }, [live]);
 
-  useEffect(() => {
-    if (selectedId === null && nodes.length > 0) setSelectedId(nodes.at(-1)?.id ?? null);
-  }, [nodes, selectedId]);
-
   const model = useMemo(
     () => buildTrajectory(nodes, actualDuration ? "duration" : "sequence", now),
     [actualDuration, nodes, now],
@@ -59,11 +59,21 @@ export function TrajectoryView({
   const visible = useMemo(
     () =>
       nodes.filter((node) => {
+        if (!isTrajectoryEvent(node)) return false;
         if (callsCollapsed && (node.kind === "tool_call" || node.kind === "approval")) return false;
         return searchable(node).includes(query.trim().toLowerCase());
       }),
     [callsCollapsed, nodes, query],
   );
+  useEffect(() => {
+    if (visible.length === 0) {
+      if (selectedId !== null) setSelectedId(null);
+      return;
+    }
+    if (!visible.some((node) => node.id === selectedId)) {
+      setSelectedId(visible.at(-1)?.id ?? null);
+    }
+  }, [selectedId, visible]);
   const groups = useMemo(() => {
     const map = new Map<number, ConversationNode[]>();
     for (const node of visible) {
@@ -74,7 +84,7 @@ export function TrajectoryView({
     }
     return [...map.entries()].sort((left, right) => left[0] - right[0]);
   }, [visible]);
-  const selected = nodes.find((node) => node.id === selectedId) ?? visible.at(-1) ?? null;
+  const selected = visible.find((node) => node.id === selectedId) ?? visible.at(-1) ?? null;
   const selectedSpan = model.spans.find((span) => span.id === selected?.id);
   const allTurnsCollapsed = groups.length > 0 && groups.every(([turn]) => collapsedTurns.has(turn));
 
@@ -328,7 +338,7 @@ function TurnBlock({
                 ) : (
                   <i />
                 )}
-                {labelFor(node)}
+                {node.kind === "tool_call" ? displayToolName(node.toolName) : labelFor(node)}
               </div>
             </td>
             <td className={styles.contentCell}>
@@ -377,7 +387,9 @@ function TrajectoryInspector({
   return (
     <aside className={styles.inspector}>
       <header>
-        <span data-kind={node.kind}>{labelFor(node)}</span>
+        <span data-kind={node.kind}>
+          {node.kind === "tool_call" ? displayToolName(node.toolName) : labelFor(node)}
+        </span>
         <small>Turn {node.turn || 1}</small>
         <button type="button" onClick={onClose} aria-label="关闭详情">
           <IconClose size={14} />
@@ -415,7 +427,7 @@ function TrajectoryInspector({
             {node.toolName !== undefined && (
               <>
                 <dt>工具</dt>
-                <dd>{node.toolName}</dd>
+                <dd>{displayToolName(node.toolName)}</dd>
               </>
             )}
             {node.usage !== undefined && (

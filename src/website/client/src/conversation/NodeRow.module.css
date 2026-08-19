@@ -503,8 +503,17 @@
   border-radius: 0;
   padding: 0;
 }
-.runResult[data-ok="false"] .runResultBadge {
+.runResult[data-outcome="failed"] .runResultBadge,
+.runResultBadge[data-outcome="failed"] {
   color: var(--cln-alias-state-error);
+}
+.runResult[data-outcome="partial"] .runResultBadge,
+.runResultBadge[data-outcome="partial"] {
+  color: var(--cln-alias-state-warning, #d4a017);
+}
+.runResult[data-outcome="aborted"] .runResultBadge,
+.runResultBadge[data-outcome="aborted"] {
+  color: var(--cln-alias-label-secondary);
 }
 .runResultHead {
   display: flex;
@@ -533,9 +542,20 @@
   font-weight: 600;
   font-size: 12px;
 }
-.runResultBadge[data-ok="true"],
-.runResult[data-ok="true"] .runResultBadge {
+.runResultBadge[data-outcome="success"],
+.runResult[data-outcome="success"] .runResultBadge {
   color: var(--cln-alias-state-success);
+}
+.runResultHint {
+  margin: 0 0 6px;
+  color: var(--cln-alias-label-tertiary);
+  font: var(--cln-font-xxxs-11);
+}
+.runResultError {
+  margin: 0 0 4px;
+  color: var(--cln-alias-label-secondary);
+  font: var(--cln-font-xxxs-11);
+  white-space: pre-wrap;
 }
 .runResultReason {
   font-size: 12px;

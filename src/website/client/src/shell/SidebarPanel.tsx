@@ -24,6 +24,7 @@ export type { SessionSummary, WorkspaceSummary };
 
 interface SidebarPanelProps {
   readonly collapsed: boolean;
+  readonly width: number;
   readonly configured: boolean;
   readonly connectionStatus: ConnectionStatus;
   readonly sessions: readonly SessionSummary[];
@@ -52,6 +53,7 @@ const SETTLE_MS = 150;
 export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
   const {
     collapsed,
+    width,
     configured,
     connectionStatus,
     sessions,
@@ -112,6 +114,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
   }, [searchOpen]);
 
   const wide = !collapsed || !settled;
+  const compact = wide && width < 236;
   const needle = query.trim().toLowerCase();
   const visibleSessions = useMemo(() => {
     const filtered =
@@ -134,6 +137,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
       className={`${styles.root}${wide ? "" : ` ${styles.collapsed ?? ""}`}${collapsed && wide ? ` ${styles.fading ?? ""}` : ""}`}
       aria-label="会话与工作区"
       data-collapsed={wide ? undefined : true}
+      data-compact={compact || undefined}
     >
       <div className={styles.logoRow}>
         {wide && (
@@ -143,7 +147,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
             onClick={() => onNewSession()}
             aria-label="新建会话"
           >
-            <LunarLogo size={22} />
+            <LunarLogo size={26} />
             <span>Cantilune</span>
             <em>HARNESS</em>
           </button>
@@ -155,7 +159,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
           aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
           title={collapsed ? "展开侧边栏" : "收起侧边栏"}
         >
-          {!wide && <LunarLogo size={22} />}
+          {!wide && <LunarLogo size={25} />}
           <IconPanelLeft className={styles.panelIcon} size={wide ? 16 : 18} />
         </button>
       </div>
@@ -166,7 +170,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
         onClick={() => onNewSession()}
         aria-label="新会话"
       >
-        {wide ? <IconPlus size={14} /> : <IconChatPlus size={18} />}
+        <IconChatPlus size={wide ? 14 : 18} />
         {wide && <span>新会话</span>}
       </button>
 
@@ -358,12 +362,18 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
                               className={styles.rowIcon}
                               data-workspace-menu=""
                               aria-label={`${item.name} 菜单`}
-                              onClick={() => setMenuId((current) => (current === item.id ? null : item.id))}
+                              onClick={() =>
+                                setMenuId((current) => (current === item.id ? null : item.id))
+                              }
                             >
                               <IconDots size={14} />
                             </button>
                             {menuId === item.id && (
-                              <div className={styles.contextMenu} data-workspace-menu="" role="menu">
+                              <div
+                                className={styles.contextMenu}
+                                data-workspace-menu=""
+                                role="menu"
+                              >
                                 <button
                                   type="button"
                                   role="menuitem"
@@ -430,7 +440,7 @@ export function SidebarPanel(props: SidebarPanelProps): JSX.Element {
           aria-label="设置"
           aria-haspopup="dialog"
         >
-          <IconSettings size={wide ? 14 : 16} />
+          <IconSettings size={wide ? 14 : 18} />
           {wide && <span>设置</span>}
         </button>
       </div>

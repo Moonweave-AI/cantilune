@@ -1,8 +1,7 @@
 /**
  * ConfigPanel — ADR-0030 §3.3. The setup surface that replaces CLI /provider.
- * Lives in Settings. Sends `configure`; the server boots the OS.
- * The local website harness persists the last successful form (including API
- * key) in origin localStorage so refresh can reconnect.
+ * Lives in Settings. Sends `configure`; the server boots the OS. API keys are
+ * held only in the current browser process and server configuration request.
  */
 
 import { useEffect, useState } from "react";
@@ -18,6 +17,58 @@ export interface ProviderEntryWire {
   readonly defaultBaseUrl: string;
   readonly envKeyName: string;
 }
+
+/** Used while the bridge's ready frame is still arriving or reconnecting. */
+export const BUILTIN_PROVIDER_ENTRIES: readonly ProviderEntryWire[] = [
+  {
+    slug: "openai",
+    tier: "openai-compatible",
+    defaultBaseUrl: "https://api.openai.com/v1",
+    envKeyName: "OPENAI_API_KEY",
+  },
+  {
+    slug: "deepseek",
+    tier: "openai-compatible",
+    defaultBaseUrl: "https://api.deepseek.com/v1",
+    envKeyName: "DEEPSEEK_API_KEY",
+  },
+  {
+    slug: "anthropic",
+    tier: "native",
+    defaultBaseUrl: "https://api.anthropic.com/v1",
+    envKeyName: "ANTHROPIC_API_KEY",
+  },
+  {
+    slug: "google",
+    tier: "native",
+    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    envKeyName: "GOOGLE_API_KEY",
+  },
+  {
+    slug: "azure",
+    tier: "openai-compatible",
+    defaultBaseUrl: "https://{resource}.openai.azure.com/openai/deployments/{deployment}",
+    envKeyName: "AZURE_OPENAI_API_KEY",
+  },
+  {
+    slug: "groq",
+    tier: "openai-compatible",
+    defaultBaseUrl: "https://api.groq.com/openai/v1",
+    envKeyName: "GROQ_API_KEY",
+  },
+  {
+    slug: "openrouter",
+    tier: "openai-compatible",
+    defaultBaseUrl: "https://openrouter.ai/api/v1",
+    envKeyName: "OPENROUTER_API_KEY",
+  },
+  {
+    slug: "ollama",
+    tier: "openai-compatible",
+    defaultBaseUrl: "http://localhost:11434/v1",
+    envKeyName: "",
+  },
+];
 
 export interface ConfigPresetDefaults {
   readonly provider?: string;
@@ -41,7 +92,7 @@ interface ConfigPanelProps {
   readonly runtimeOnly?: boolean;
 }
 
-const SEARCH_PROVIDERS = ["none", "tavily", "serper", "brave"] as const;
+const SEARCH_PROVIDERS = ["cloakbrowser", "tavily", "serper", "brave", "none"] as const;
 
 function numStr(value: number | undefined): string {
   return value !== undefined ? String(value) : "";
@@ -61,6 +112,7 @@ export function ConfigPanel({
   onCatalogChange,
   runtimeOnly = false,
 }: ConfigPanelProps): JSX.Element {
+  const availableProviders = providers.length > 0 ? providers : BUILTIN_PROVIDER_ENTRIES;
   const [provider, setProvider] = useState(defaults?.provider ?? "openai");
   const [model, setModel] = useState(defaults?.model ?? "gpt-4o");
   const [baseUrl, setBaseUrl] = useState(defaults?.baseUrl ?? "");
@@ -79,7 +131,9 @@ export function ConfigPanel({
   const [judgeModel, setJudgeModel] = useState(defaults?.judgeModel ?? "");
 
   // Advanced: tools
-  const [searchProvider, setSearchProvider] = useState<string>(defaults?.searchProvider ?? "none");
+  const [searchProvider, setSearchProvider] = useState<string>(
+    defaults?.searchProvider ?? "cloakbrowser",
+  );
   const [mcpServers, setMcpServers] = useState(defaults?.mcpServers?.join("\n") ?? "");
 
   // Advanced: termination controller thresholds
@@ -94,18 +148,23 @@ export function ConfigPanel({
   const [principalId, setPrincipalId] = useState(defaults?.principalId ?? "");
   const [systemPrompt, setSystemPrompt] = useState(defaults?.systemPrompt ?? "");
   const [maxTimeMs, setMaxTimeMs] = useState(numStr(defaults?.maxTimeMs));
-  const [maxContextMessages, setMaxContextMessages] = useState(numStr(defaults?.maxContextMessages));
+  const [maxContextMessages, setMaxContextMessages] = useState(
+    numStr(defaults?.maxContextMessages),
+  );
 
   useEffect(() => {
-    if (preset?.provider !== undefined && providers.some((item) => item.slug === preset.provider)) {
+    if (
+      preset?.provider !== undefined &&
+      availableProviders.some((item) => item.slug === preset.provider)
+    ) {
       setProvider(preset.provider);
     }
     if (preset?.model !== undefined) setModel(preset.model);
     if (preset?.maxTurns !== undefined) setMaxTurns(String(preset.maxTurns));
     if (preset?.systemPrompt !== undefined) setSystemPrompt(preset.systemPrompt);
-  }, [preset, providers]);
+  }, [preset, availableProviders]);
 
-  const selected = providers.find((p) => p.slug === provider);
+  const selected = availableProviders.find((p) => p.slug === provider);
   const effectiveBaseUrl = baseUrl.length > 0 ? baseUrl : (selected?.defaultBaseUrl ?? "");
 
   const num = (v: string): number | undefined =>
@@ -150,7 +209,7 @@ export function ConfigPanel({
     if (judgeProvider.length > 0) req.judgeProvider = judgeProvider;
     if (judgeModel.length > 0) req.judgeModel = judgeModel;
     if (searchProvider !== "none")
-      req.searchProvider = searchProvider as "tavily" | "serper" | "brave";
+      req.searchProvider = searchProvider as "cloakbrowser" | "tavily" | "serper" | "brave";
     if (mcpList.length > 0) req.mcpServers = mcpList;
     if (tauCNum !== undefined) thresholds.tauC = tauCNum;
     if (tauUNum !== undefined) thresholds.tauU = tauUNum;
@@ -204,151 +263,165 @@ export function ConfigPanel({
         <>
           <div className={styles.regionLabel}>Connection</div>
 
-      <section className={styles.section}>
-        <label className={styles.label}>Provider</label>
-        <select
-          className={styles.select}
-          value={provider}
-          onChange={(e) => setProvider(e.target.value)}
-        >
-          {providers.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.slug}
-              {p.envKeyName.length > 0 ? ` · ${p.envKeyName}` : ""}
-            </option>
-          ))}
-        </select>
-      </section>
+          <section className={styles.section}>
+            <label className={styles.label}>Provider</label>
+            <select
+              className={styles.select}
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+            >
+              {availableProviders.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.slug}
+                  {p.envKeyName.length > 0 ? ` · ${p.envKeyName}` : ""}
+                </option>
+              ))}
+            </select>
+          </section>
 
-      <section className={styles.section}>
-        <label className={styles.label}>当前模型</label>
-        <input className={styles.input} value={model} onChange={(e) => setModel(e.target.value)} />
-      </section>
+          <section className={styles.section}>
+            <label className={styles.label}>当前模型</label>
+            <input
+              className={styles.input}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+          </section>
 
-      <section className={styles.section}>
-        <label className={styles.label}>
-          模型目录 <span className={styles.hint}>(可同时保存多个，供输入框切换)</span>
-        </label>
-        <div className={styles.catalog}>
-          {catalog.map((item) => {
-            const active = item.provider === provider && item.model === model;
-            return (
-              <div key={item.id} className={styles.catalogRow}>
-                <select
-                  className={styles.select}
-                  value={item.provider}
-                  aria-label="供应商"
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    onCatalogChange(
-                      catalog.map((row) => (row.id === item.id ? { ...row, provider: next } : row)),
-                    );
-                    if (active) setProvider(next);
-                  }}
-                >
-                  {[item.provider, ...providers.map((entry) => entry.slug)]
-                    .filter((slug, index, list) => slug.length > 0 && list.indexOf(slug) === index)
-                    .map((slug) => (
-                      <option key={slug} value={slug}>
-                        {slug}
-                      </option>
-                    ))}
-                </select>
-                <input
-                  className={styles.input}
-                  value={item.model}
-                  aria-label="模型 id"
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    onCatalogChange(
-                      catalog.map((row) =>
-                        row.id === item.id
-                          ? { ...row, model: next, label: row.label === row.model ? next : row.label }
-                          : row,
-                      ),
-                    );
-                    if (active) setModel(next);
-                  }}
-                />
-                <input
-                  className={styles.input}
-                  value={item.label}
-                  aria-label="显示名"
-                  placeholder="显示名"
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    onCatalogChange(
-                      catalog.map((row) => (row.id === item.id ? { ...row, label: next } : row)),
-                    );
-                  }}
-                />
-                <button
-                  type="button"
-                  className={active ? styles.catalogUseActive : styles.catalogUse}
-                  onClick={() => {
-                    setProvider(item.provider);
-                    setModel(item.model);
-                  }}
-                >
-                  {active ? "使用中" : "使用"}
-                </button>
-                <button
-                  type="button"
-                  className={styles.catalogRemove}
-                  aria-label={`删除 ${item.label || item.model}`}
-                  onClick={() => onCatalogChange(catalog.filter((row) => row.id !== item.id))}
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
-          <button
-            type="button"
-            className={styles.catalogAdd}
-            onClick={() =>
-              onCatalogChange([
-                ...catalog,
-                {
-                  id: `${provider}:model:${Date.now()}`,
-                  provider,
-                  model: "",
-                  label: "",
-                },
-              ])
-            }
-          >
-            + 添加模型
-          </button>
-        </div>
-      </section>
+          <section className={styles.section}>
+            <label className={styles.label}>
+              模型目录 <span className={styles.hint}>(可同时保存多个，供输入框切换)</span>
+            </label>
+            <div className={styles.catalog}>
+              {catalog.map((item) => {
+                const active = item.provider === provider && item.model === model;
+                return (
+                  <div key={item.id} className={styles.catalogRow}>
+                    <select
+                      className={styles.select}
+                      value={item.provider}
+                      aria-label="供应商"
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        onCatalogChange(
+                          catalog.map((row) =>
+                            row.id === item.id ? { ...row, provider: next } : row,
+                          ),
+                        );
+                        if (active) setProvider(next);
+                      }}
+                    >
+                      {[item.provider, ...availableProviders.map((entry) => entry.slug)]
+                        .filter(
+                          (slug, index, list) => slug.length > 0 && list.indexOf(slug) === index,
+                        )
+                        .map((slug) => (
+                          <option key={slug} value={slug}>
+                            {slug}
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      className={styles.input}
+                      value={item.model}
+                      aria-label="模型 id"
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        onCatalogChange(
+                          catalog.map((row) =>
+                            row.id === item.id
+                              ? {
+                                  ...row,
+                                  model: next,
+                                  label: row.label === row.model ? next : row.label,
+                                }
+                              : row,
+                          ),
+                        );
+                        if (active) setModel(next);
+                      }}
+                    />
+                    <input
+                      className={styles.input}
+                      value={item.label}
+                      aria-label="显示名"
+                      placeholder="显示名"
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        onCatalogChange(
+                          catalog.map((row) =>
+                            row.id === item.id ? { ...row, label: next } : row,
+                          ),
+                        );
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={active ? styles.catalogUseActive : styles.catalogUse}
+                      onClick={() => {
+                        setProvider(item.provider);
+                        setModel(item.model);
+                      }}
+                    >
+                      {active ? "使用中" : "使用"}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.catalogRemove}
+                      aria-label={`删除 ${item.label || item.model}`}
+                      onClick={() => onCatalogChange(catalog.filter((row) => row.id !== item.id))}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                className={styles.catalogAdd}
+                onClick={() =>
+                  onCatalogChange([
+                    ...catalog,
+                    {
+                      id: `${provider}:model:${Date.now()}`,
+                      provider,
+                      model: "",
+                      label: "",
+                    },
+                  ])
+                }
+              >
+                + 添加模型
+              </button>
+            </div>
+          </section>
 
-      <section className={styles.section}>
-        <label className={styles.label}>
-          Base URL <span className={styles.hint}>(default shown)</span>
-        </label>
-        <input
-          className={styles.input}
-          value={baseUrl}
-          placeholder={selected?.defaultBaseUrl ?? ""}
-          onChange={(e) => setBaseUrl(e.target.value)}
-        />
-      </section>
+          <section className={styles.section}>
+            <label className={styles.label}>
+              Base URL <span className={styles.hint}>(default shown)</span>
+            </label>
+            <input
+              className={styles.input}
+              value={baseUrl}
+              placeholder={selected?.defaultBaseUrl ?? ""}
+              onChange={(e) => setBaseUrl(e.target.value)}
+            />
+          </section>
 
-      <section className={styles.section}>
-        <label className={styles.label}>
-          API Key <span className={styles.hint}>(保存在本机浏览器，刷新后自动重连)</span>
-        </label>
-        <input
-          className={styles.input}
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={
-            selected?.envKeyName.length ? `paste ${selected.envKeyName}` : "no key needed"
-          }
-        />
-      </section>
+          <section className={styles.section}>
+            <label className={styles.label}>
+              API Key <span className={styles.hint}>(仅本次会话保留，不写入浏览器存储；刷新后需重输)</span>
+            </label>
+            <input
+              className={styles.input}
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={
+                selected?.envKeyName.length ? `paste ${selected.envKeyName}` : "no key needed"
+              }
+            />
+          </section>
         </>
       )}
 
@@ -472,7 +545,7 @@ export function ConfigPanel({
                 onChange={(e) => setContractProvider(e.target.value)}
               >
                 <option value="">— same as loop —</option>
-                {providers.map((p) => (
+                {availableProviders.map((p) => (
                   <option key={p.slug} value={p.slug}>
                     {p.slug}
                   </option>
@@ -496,7 +569,7 @@ export function ConfigPanel({
                 onChange={(e) => setJudgeProvider(e.target.value)}
               >
                 <option value="">— same as loop —</option>
-                {providers.map((p) => (
+                {availableProviders.map((p) => (
                   <option key={p.slug} value={p.slug}>
                     {p.slug}
                   </option>

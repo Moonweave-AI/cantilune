@@ -24,6 +24,7 @@ export interface BridgeApi {
 export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeApi {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const socketRef = useRef<WebSocket | null>(null);
+  const pendingRef = useRef<ClientMessage[]>([]);
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
@@ -39,6 +40,9 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
 
       socket.addEventListener("open", () => {
         attempt = 0;
+        const pending = pendingRef.current;
+        pendingRef.current = [];
+        for (const message of pending) socket.send(JSON.stringify(message));
         setStatus("open");
       });
 
@@ -76,7 +80,11 @@ export function useBridge(onMessage?: (message: ServerMessage) => void): BridgeA
     const socket = socketRef.current;
     if (socket !== null && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(message));
+      return;
     }
+    // Configuration and workspace actions are user-intentful. Keep them until
+    // the reconnecting socket opens instead of silently dropping the click.
+    pendingRef.current = [...pendingRef.current, message].slice(-32);
   }, []);
 
   return { status, send };

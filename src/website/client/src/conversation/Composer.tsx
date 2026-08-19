@@ -353,7 +353,7 @@ export function Composer(props: ComposerProps): JSX.Element {
                 onClick={onStop}
                 aria-label="停止运行"
               >
-                <IconStop size={16} />
+                <IconStop size={18} />
               </button>
             ) : (
               <button
@@ -362,7 +362,7 @@ export function Composer(props: ComposerProps): JSX.Element {
                 disabled={empty || inert}
                 aria-label="发送消息"
               >
-                <IconSend size={16} />
+                <IconSend size={20} />
               </button>
             )}
           </div>

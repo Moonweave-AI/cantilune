@@ -12,6 +12,7 @@ import type {
 import { useBridge } from "./ws/useBridge";
 import { AppFrame } from "./shell/AppFrame";
 import { DetailsRail } from "./shell/DetailsRail";
+import { NoticeBanner } from "./shell/NoticeBanner";
 import { SidebarPanel } from "./shell/SidebarPanel";
 import type { ConfigPresetDefaults, ProviderEntryWire } from "./config/ConfigPanel";
 import { SettingsOverlay, type SettingsTab } from "./settings/SettingsOverlay";
@@ -56,16 +57,20 @@ import {
 export type { ThemePreference };
 export type { SessionSummary, WorkspaceSummary };
 
-const boot = loadHarness();
-
 function withWorkspace(request: ConfigureRequest, workspace: WorkspaceSummary): ConfigureRequest {
   const next: { -readonly [K in keyof ConfigureRequest]: ConfigureRequest[K] } = { ...request };
-  if (workspace.path.length > 0 && workspace.path !== ".") next.workspace = workspace.path;
+  if (workspace.path.length > 0) next.workspace = workspace.path;
   else delete next.workspace;
   return next;
 }
 
 export function App(): JSX.Element {
+  // Keep the hydrated snapshot scoped to one mounted application instance.
+  // A module-level value can survive Vite's HMR boundary and overwrite a
+  // directory the user selected immediately before the next reload.
+  const bootRef = useRef<HarnessSnapshot | undefined>(undefined);
+  if (bootRef.current === undefined) bootRef.current = loadHarness();
+  const boot = bootRef.current;
   const [conversation, setConversation] = useState<ConversationState>(
     () => boot.conversations[boot.activeSessionId] ?? createConversationState(),
   );
@@ -99,6 +104,8 @@ export function App(): JSX.Element {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [preset, setPreset] = useState<ConfigPresetDefaults | undefined>(undefined);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeMessageRef = useRef<string | null>(null);
 
   const convRef = useRef(conversation);
   convRef.current = conversation;
@@ -116,6 +123,8 @@ export function App(): JSX.Element {
   const sendRef = useRef<(message: ClientMessage) => void>(() => undefined);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const runningRef = useRef(false);
+  runningRef.current = running;
   const hydratedRef = useRef((boot.conversations[boot.activeSessionId]?.nodes.length ?? 0) > 0);
 
   useEffect(() => {
@@ -139,9 +148,43 @@ export function App(): JSX.Element {
   }, []);
 
   const workspace =
-    workspaces.find((item) => item.id === activeWorkspaceId) ??
-    workspaces[0] ??
-    DEFAULT_WORKSPACE;
+    workspaces.find((item) => item.id === activeWorkspaceId) ?? workspaces[0] ?? DEFAULT_WORKSPACE;
+
+  const snapshotRef = useRef<HarnessSnapshot | null>(null);
+  snapshotRef.current = {
+    schema: 1,
+    sessions,
+    activeSessionId,
+    workspaces,
+    activeWorkspaceId,
+    conversations: { ...sessionConversations, [activeSessionId]: conversation },
+    configure,
+    catalog,
+    view,
+    mode,
+    groupBy,
+    orderBy,
+    collapsedWorkspaceIds,
+  };
+
+  const persistNow = useCallback((patch: Partial<HarnessSnapshot> = {}) => {
+    const snapshot = snapshotRef.current;
+    if (snapshot === null) return;
+    const next = { ...snapshot, ...patch };
+    // Pagehide may follow a picker event before React has re-rendered. Keep
+    // the synchronous snapshot current so that final flush cannot restore a
+    // stale workspace list over the just-selected directory.
+    snapshotRef.current = next;
+    saveHarness(next);
+  }, []);
+
+  const showNotice = useCallback((message: string) => {
+    if (noticeMessageRef.current === message) return;
+    noticeMessageRef.current = message;
+    setNotice(message);
+  }, []);
+
+  const dismissNotice = useCallback(() => setNotice(null), []);
 
   useEffect(() => {
     setSessionConversations((previous) => {
@@ -151,26 +194,19 @@ export function App(): JSX.Element {
   }, [activeSessionId, conversation]);
 
   useEffect(() => {
+    const persistOnPageHide = () => persistNow();
+    window.addEventListener("pagehide", persistOnPageHide);
+    return () => window.removeEventListener("pagehide", persistOnPageHide);
+  }, [persistNow]);
+
+  useEffect(() => {
     if (!hydratedRef.current && convRef.current.nodes.length === 0) return;
     window.clearTimeout(persistTimer.current);
     persistTimer.current = window.setTimeout(
       () => {
-        const snapshot: HarnessSnapshot = {
-          schema: 1,
-          sessions,
-          activeSessionId,
-          workspaces,
-          activeWorkspaceId,
+        persistNow({
           conversations: { ...conversationsRef.current, [activeSessionId]: convRef.current },
-          configure,
-          catalog,
-          view,
-          mode,
-          groupBy,
-          orderBy,
-          collapsedWorkspaceIds,
-        };
-        saveHarness(snapshot);
+        });
       },
       running ? 2000 : 400,
     );
@@ -185,6 +221,7 @@ export function App(): JSX.Element {
     groupBy,
     mode,
     orderBy,
+    persistNow,
     running,
     sessions,
     view,
@@ -202,75 +239,114 @@ export function App(): JSX.Element {
     return () => media.removeEventListener("change", apply);
   }, [theme]);
 
-  const handleMessage = useCallback((message: ServerMessage) => {
-    switch (message.type) {
-      case "ready":
-        setProviders(message.providers);
-        break;
-      case "agent_event":
-        if (
-          message.event.kind === "diagnostic" &&
-          message.event.phase === "configuration" &&
-          message.event.message.startsWith("OS booted:")
-        ) {
+  const handleMessage = useCallback(
+    (message: ServerMessage) => {
+      switch (message.type) {
+        case "ready":
+          setProviders(message.providers);
+          break;
+        case "configured":
+          setProvider(message.provider);
+          setModel(message.model);
           setConfigured(true);
-        }
-        if (message.event.kind === "error" && message.event.phase === "configuration") {
-          setConfigured(false);
-        }
-        setConversation((prev) => reduceAgentEvent(prev, message.event));
-        break;
-      case "approval_request":
-        if (modeRef.current === "execute") {
-          sendRef.current({
-            type: "approve",
-            toolCallId: message.toolCallId,
-            decision: "allow",
+          noticeMessageRef.current = null;
+          setNotice(null);
+          break;
+        case "agent_event":
+          if (
+            message.event.kind === "diagnostic" &&
+            message.event.phase === "configuration" &&
+            message.event.message.startsWith("OS booted:")
+          ) {
+            setConfigured(true);
+            noticeMessageRef.current = null;
+            setNotice(null);
+          }
+          if (message.event.kind === "error" && message.event.phase === "configuration") {
+            setConfigured(false);
+          }
+          setConversation((prev) => reduceAgentEvent(prev, message.event));
+          break;
+        case "approval_request":
+          if (modeRef.current === "execute") {
+            sendRef.current({
+              type: "approve",
+              toolCallId: message.toolCallId,
+              decision: "allow",
+            });
+            break;
+          }
+          setConversation((prev) => appendApproval(prev, message));
+          break;
+        case "run_result":
+          setRunning(false);
+          setConversation((prev) => appendRunResult(prev, message));
+          break;
+        case "error":
+          if (message.scope === "run") {
+            setRunning(false);
+            setConversation((prev) => appendError(prev, message.message));
+          } else {
+            if (message.scope === "configuration") setConfigured(false);
+            showNotice(message.message);
+          }
+          break;
+        case "cluster_event":
+          setClusterEvents((prev) => [...prev, message.event].slice(-200));
+          break;
+        case "swarm:status":
+          setSwarmStatus(message.status);
+          break;
+        case "world":
+          setWorld(message.snapshot);
+          break;
+        case "workspacePicked": {
+          const path = message.path;
+          if (path === undefined || path.length === 0) break;
+          const existing = workspacesRef.current.find((item) => item.path === path);
+          if (existing !== undefined) {
+            activeWorkspaceIdRef.current = existing.id;
+            setActiveWorkspaceId(existing.id);
+            persistNow({ activeWorkspaceId: existing.id });
+            const saved = configureRef.current;
+            if (saved !== undefined) sendRef.current(withWorkspace(saved, existing));
+            break;
+          }
+          const leaf =
+            path
+              .replace(/[\\/]+$/, "")
+              .split(/[\\/]/)
+              .pop() ?? path;
+          const next: WorkspaceSummary = { id: `workspace-${Date.now()}`, name: leaf, path };
+          const replacesEmptyBucket =
+            workspacesRef.current.length === 1 && workspacesRef.current[0]?.path.length === 0;
+          const nextWorkspaces = replacesEmptyBucket ? [next] : [...workspacesRef.current, next];
+          const nextSessions = replacesEmptyBucket
+            ? sessionsRef.current.map((item) =>
+                item.workspaceId === DEFAULT_WORKSPACE.id
+                  ? { ...item, workspaceId: next.id }
+                  : item,
+              )
+            : sessionsRef.current;
+          workspacesRef.current = nextWorkspaces;
+          sessionsRef.current = nextSessions;
+          setWorkspaces(nextWorkspaces);
+          setSessions(nextSessions);
+          activeWorkspaceIdRef.current = next.id;
+          setActiveWorkspaceId(next.id);
+          persistNow({
+            workspaces: nextWorkspaces,
+            sessions: nextSessions,
+            activeWorkspaceId: next.id,
           });
-          break;
-        }
-        setConversation((prev) => appendApproval(prev, message));
-        break;
-      case "run_result":
-        setRunning(false);
-        setConversation((prev) => appendRunResult(prev, message));
-        break;
-      case "error":
-        setConfigured(false);
-        setConversation((prev) => appendError(prev, message.message));
-        break;
-      case "cluster_event":
-        setClusterEvents((prev) => [...prev, message.event].slice(-200));
-        break;
-      case "swarm:status":
-        setSwarmStatus(message.status);
-        break;
-      case "world":
-        setWorld(message.snapshot);
-        break;
-      case "workspacePicked": {
-        const path = message.path;
-        if (path === undefined || path.length === 0) break;
-        const existing = workspacesRef.current.find((item) => item.path === path);
-        if (existing !== undefined) {
-          activeWorkspaceIdRef.current = existing.id;
-          setActiveWorkspaceId(existing.id);
           const saved = configureRef.current;
-          if (saved !== undefined) sendRef.current(withWorkspace(saved, existing));
+          if (saved !== undefined) sendRef.current(withWorkspace(saved, next));
           break;
         }
-        const leaf = path.replace(/[\\/]+$/, "").split(/[\\/]/).pop() ?? path;
-        const next: WorkspaceSummary = { id: `workspace-${Date.now()}`, name: leaf, path };
-        workspacesRef.current = [...workspacesRef.current, next];
-        setWorkspaces(workspacesRef.current);
-        activeWorkspaceIdRef.current = next.id;
-        setActiveWorkspaceId(next.id);
-        const saved = configureRef.current;
-        if (saved !== undefined) sendRef.current(withWorkspace(saved, next));
-        break;
       }
-    }
-  }, []);
+    },
+    [persistNow, showNotice],
+  );
 
   const bridge = useBridge(handleMessage);
   const send = bridge.send;
@@ -279,6 +355,11 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (bridge.status !== "open") return;
     const saved = configureRef.current;
+    // The browser intentionally does not persist API keys. Still replay the
+    // non-secret configuration after a page or bridge restart: keyless local
+    // providers and credentials supplied through the server environment are
+    // both valid. The bridge returns a scoped configuration error when a
+    // provider genuinely needs a missing credential.
     if (saved === undefined) return;
     const currentWorkspace =
       workspacesRef.current.find((item) => item.id === activeWorkspaceIdRef.current) ??
@@ -287,6 +368,12 @@ export function App(): JSX.Element {
     send(withWorkspace(saved, currentWorkspace));
     send({ type: "setMode", mode: modeRef.current });
   }, [bridge.status, send]);
+
+  useEffect(() => {
+    if (bridge.status === "open") return;
+    if (runningRef.current) showNotice("连接中断，运行已停止；重连后可重新发送。");
+    setRunning(false);
+  }, [bridge.status, showNotice]);
 
   const onConfigure = useCallback(
     (request: ConfigureRequest) => {
@@ -299,14 +386,18 @@ export function App(): JSX.Element {
           entry.provider === next.provider
             ? {
                 ...entry,
-                ...(next.apiKey !== undefined && next.apiKey.length > 0 ? { apiKey: next.apiKey } : {}),
+                ...(next.apiKey !== undefined && next.apiKey.length > 0
+                  ? { apiKey: next.apiKey }
+                  : {}),
                 ...(next.baseUrl !== undefined && next.baseUrl.length > 0
                   ? { baseUrl: next.baseUrl }
                   : {}),
               }
             : entry,
         );
-        if (shared.some((entry) => entry.provider === next.provider && entry.model === next.model)) {
+        if (
+          shared.some((entry) => entry.provider === next.provider && entry.model === next.model)
+        ) {
           return shared;
         }
         return [
@@ -317,7 +408,9 @@ export function App(): JSX.Element {
             model: next.model,
             label: next.model,
             ...(next.apiKey !== undefined && next.apiKey.length > 0 ? { apiKey: next.apiKey } : {}),
-            ...(next.baseUrl !== undefined && next.baseUrl.length > 0 ? { baseUrl: next.baseUrl } : {}),
+            ...(next.baseUrl !== undefined && next.baseUrl.length > 0
+              ? { baseUrl: next.baseUrl }
+              : {}),
           },
         ];
       });
@@ -347,53 +440,63 @@ export function App(): JSX.Element {
     setRunning(false);
   }, [bridge]);
 
-  const onNewSession = useCallback((workspaceId?: string) => {
-    if (running) bridge.send({ type: "stop" });
-    const id = `session-${Date.now()}`;
-    const owner = workspaceId ?? activeWorkspaceIdRef.current;
-    if (workspaceId !== undefined) {
-      activeWorkspaceIdRef.current = workspaceId;
-      setActiveWorkspaceId(workspaceId);
-    }
-    const next: SessionSummary = {
-      id,
-      title: "新会话",
-      updatedAtMs: Date.now(),
-      workspaceId: owner,
-    };
-    setSessions((previous) => [next, ...previous]);
-    setSessionConversations((previous) => ({ ...previous, [id]: createConversationState() }));
-    setActiveSessionId(id);
-    setRunning(false);
-    setSelectedId(null);
-    setConversation(createConversationState());
-    setView("conversation");
-    setDetailsOpen(false);
-  }, [bridge, running]);
+  const onNewSession = useCallback(
+    (workspaceId?: string) => {
+      if (running) bridge.send({ type: "stop" });
+      const id = `session-${Date.now()}`;
+      const owner = workspaceId ?? activeWorkspaceIdRef.current;
+      if (workspaceId !== undefined) {
+        activeWorkspaceIdRef.current = workspaceId;
+        setActiveWorkspaceId(workspaceId);
+      }
+      const next: SessionSummary = {
+        id,
+        title: "新会话",
+        updatedAtMs: Date.now(),
+        workspaceId: owner,
+      };
+      setSessions((previous) => [next, ...previous]);
+      setSessionConversations((previous) => ({ ...previous, [id]: createConversationState() }));
+      setActiveSessionId(id);
+      setRunning(false);
+      setSelectedId(null);
+      setConversation(createConversationState());
+      setView("conversation");
+      setDetailsOpen(false);
+    },
+    [bridge, running],
+  );
 
-  const onSelectWorkspace = useCallback((id: string) => {
-    activeWorkspaceIdRef.current = id;
-    setActiveWorkspaceId(id);
-  }, []);
+  const onSelectWorkspace = useCallback(
+    (id: string) => {
+      activeWorkspaceIdRef.current = id;
+      setActiveWorkspaceId(id);
+      persistNow({ activeWorkspaceId: id });
+    },
+    [persistNow],
+  );
 
-  const onSelectSession = useCallback((id: string) => {
-    const currentId = sessionsRef.current.find((item) => item.id === id)?.id ?? id;
-    saveSessionTranscript(activeSessionId, convRef.current);
-    conversationsRef.current = {
-      ...conversationsRef.current,
-      [activeSessionId]: convRef.current,
-    };
-    const cached = conversationsRef.current[currentId];
-    const next =
-      cached !== undefined && cached.nodes.length > 0 ? cached : loadSessionTranscript(currentId);
-    conversationsRef.current = { ...conversationsRef.current, [currentId]: next };
-    setSessionConversations(conversationsRef.current);
-    setActiveSessionId(currentId);
-    setConversation(next);
-    setSelectedId(null);
-    setView("conversation");
-    setDetailsOpen(false);
-  }, [activeSessionId]);
+  const onSelectSession = useCallback(
+    (id: string) => {
+      const currentId = sessionsRef.current.find((item) => item.id === id)?.id ?? id;
+      saveSessionTranscript(activeSessionId, convRef.current);
+      conversationsRef.current = {
+        ...conversationsRef.current,
+        [activeSessionId]: convRef.current,
+      };
+      const cached = conversationsRef.current[currentId];
+      const next =
+        cached !== undefined && cached.nodes.length > 0 ? cached : loadSessionTranscript(currentId);
+      conversationsRef.current = { ...conversationsRef.current, [currentId]: next };
+      setSessionConversations(conversationsRef.current);
+      setActiveSessionId(currentId);
+      setConversation(next);
+      setSelectedId(null);
+      setView("conversation");
+      setDetailsOpen(false);
+    },
+    [activeSessionId],
+  );
 
   const onApprove = useCallback(
     (toolCallId: string, decision: "allow" | "deny", scope?: "once" | "always") => {
@@ -459,25 +562,40 @@ export function App(): JSX.Element {
     workspace,
   ]);
 
-  const onRenameWorkspace = useCallback((id: string, name: string) => {
-    setWorkspaces((previous) =>
-      previous.map((item) => (item.id === id ? { ...item, name } : item)),
-    );
-  }, []);
+  const onRenameWorkspace = useCallback(
+    (id: string, name: string) => {
+      const next = workspacesRef.current.map((item) => (item.id === id ? { ...item, name } : item));
+      workspacesRef.current = next;
+      setWorkspaces(next);
+      persistNow({ workspaces: next });
+    },
+    [persistNow],
+  );
 
-  const onDeleteWorkspace = useCallback((id: string) => {
-    const remaining = workspacesRef.current.filter((item) => item.id !== id);
-    const fallback = remaining[0];
-    if (fallback === undefined) return;
-    setWorkspaces(remaining);
-    setSessions((previous) =>
-      previous.map((item) => (item.workspaceId === id ? { ...item, workspaceId: fallback.id } : item)),
-    );
-    if (activeWorkspaceIdRef.current === id) {
-      activeWorkspaceIdRef.current = fallback.id;
-      setActiveWorkspaceId(fallback.id);
-    }
-  }, []);
+  const onDeleteWorkspace = useCallback(
+    (id: string) => {
+      const remaining = workspacesRef.current.filter((item) => item.id !== id);
+      const fallback = remaining[0];
+      if (fallback === undefined) return;
+      const nextSessions = sessionsRef.current.map((item) =>
+        item.workspaceId === id ? { ...item, workspaceId: fallback.id } : item,
+      );
+      workspacesRef.current = remaining;
+      sessionsRef.current = nextSessions;
+      setWorkspaces(remaining);
+      setSessions(nextSessions);
+      if (activeWorkspaceIdRef.current === id) {
+        activeWorkspaceIdRef.current = fallback.id;
+        setActiveWorkspaceId(fallback.id);
+      }
+      persistNow({
+        workspaces: remaining,
+        sessions: nextSessions,
+        activeWorkspaceId: activeWorkspaceIdRef.current,
+      });
+    },
+    [persistNow],
+  );
 
   const onToggleWorkspace = useCallback((id: string) => {
     setCollapsedWorkspaceIds((previous) =>
@@ -560,10 +678,35 @@ export function App(): JSX.Element {
     [send],
   );
 
-  const onApplyPreset = useCallback((nextPreset: ConfigPresetDefaults) => {
-    setPreset(nextPreset);
-    setSettingsTab("models");
-  }, []);
+  const onApplyPreset = useCallback(
+    (nextPreset: ConfigPresetDefaults) => {
+      setPreset(nextPreset);
+      const saved = configureRef.current;
+      if (saved === undefined) {
+        setSettingsTab("models");
+        return;
+      }
+      const currentWorkspace =
+        workspacesRef.current.find((item) => item.id === activeWorkspaceIdRef.current) ??
+        workspacesRef.current[0] ??
+        DEFAULT_WORKSPACE;
+      const next = withWorkspace(
+        {
+          ...saved,
+          provider: nextPreset.provider ?? saved.provider,
+          model: nextPreset.model ?? saved.model,
+          ...(nextPreset.maxTurns !== undefined ? { maxTurns: nextPreset.maxTurns } : {}),
+        },
+        currentWorkspace,
+      );
+      setProvider(next.provider);
+      setModel(next.model);
+      setConfigure(next);
+      setConfigured(false);
+      send(next);
+    },
+    [send],
+  );
 
   const openSettings = useCallback((tab: SettingsTab = "general") => {
     setSettingsTab(tab);
@@ -580,6 +723,7 @@ export function App(): JSX.Element {
   return (
     <AppFrame
       detailsOpen={detailsOpen}
+      banner={notice !== null ? <NoticeBanner message={notice} onDismiss={dismissNotice} /> : null}
       overlay={
         settingsOpen ? (
           <SettingsOverlay
@@ -600,12 +744,15 @@ export function App(): JSX.Element {
             workspacePath={workspace.path}
             onDownloadLog={onDownloadLog}
             onApplyPreset={onApplyPreset}
+            mode={mode}
+            onModeChange={onModeChange}
           />
         ) : null
       }
       sidebar={(layout) => (
         <SidebarPanel
           collapsed={layout.collapsed}
+          width={layout.width}
           configured={configured}
           connectionStatus={bridge.status}
           sessions={sessions}
@@ -634,10 +781,7 @@ export function App(): JSX.Element {
           nodes={conversation.nodes}
           onApprove={onApprove}
           onAskUserReply={onAskUserReply}
-          onSelectNode={(id) => {
-            setSelectedId(id);
-            setDetailsOpen(true);
-          }}
+          onSelectNode={setSelectedId}
           view={view}
           mode={mode}
           sessionTitle={activeSession.title}

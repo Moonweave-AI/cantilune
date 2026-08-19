@@ -52,18 +52,30 @@ export function laneFor(kind: NodeKind): TimelineLane {
   return LANE_OF[kind];
 }
 
+/**
+ * Busy-time estimate for one trajectory step. Wall-clock gaps between runs,
+ * turns, or user idle time must not inflate the packed duration axis.
+ */
 export function estimateDuration(node: ConversationNode, now: number): number {
-  if (node.elapsedMs !== undefined && node.elapsedMs > 0) return node.elapsedMs;
-  if (node.startedAt !== undefined) {
-    const end = node.endedAt ?? (node.pending === true ? now : node.startedAt);
-    const lived = Math.max(0, end - node.startedAt);
-    if (lived > 0) return lived;
+  if (node.pending === true && node.startedAt !== undefined) {
+    return Math.max(60, now - node.startedAt);
   }
   if (node.kind === "tool_call") return Math.max(180, (node.output?.length ?? 24) * 2);
   if (node.kind === "reasoning") return Math.max(140, (node.text?.length ?? 16) * 8);
   if (node.kind === "assistant") return Math.max(120, (node.text?.length ?? 16) * 4);
   if (node.kind === "user") return 80;
+  if (node.kind === "ask_user") return Math.max(100, (node.question?.length ?? 16) * 3);
+  if (node.kind === "control_verdict") return 48;
+  if (node.kind === "run_result") return 40;
+  if (node.kind === "error") return 72;
+  if (node.kind === "approval") return 56;
+  if (node.kind === "diagnostic") return 40;
   return 60;
+}
+
+/** Turn boundaries are kept for run accounting, but are never user-visible spans. */
+export function isTrajectoryEvent(node: ConversationNode): boolean {
+  return node.kind !== "turn";
 }
 
 export function buildTrajectory(
@@ -71,27 +83,22 @@ export function buildTrajectory(
   mode: TimelineMode,
   now = Date.now(),
 ): TrajectoryModel {
-  const timed = nodes.map((node, index) => {
-    const durationMs = estimateDuration(node, now);
-    const startMs = node.startedAt ?? (index === 0 ? 0 : (nodes[0]?.startedAt ?? 0) + index * 40);
-    return { node, startMs, durationMs };
-  });
-  const origin = timed[0]?.startMs ?? 0;
-  const relative = timed.map((item) => ({
-    ...item,
-    startMs: Math.max(0, item.startMs - origin),
+  const events = nodes.filter(isTrajectoryEvent);
+  const timed = events.map((node) => ({
+    node,
+    durationMs: estimateDuration(node, now),
   }));
 
   let cursor = 0;
-  const sequential = relative.map((item) => {
-    const startMs = cursor;
+  const sequential = timed.map((item) => {
+    const seqStart = cursor;
     cursor += item.durationMs;
-    return { ...item, seqStart: startMs };
+    return { ...item, seqStart };
   });
   const packedEnd = Math.max(1, cursor);
 
-  const spans: TimelineSpan[] = nodes.map((node, index) => {
-    const item = relative[index]!;
+  const spans: TimelineSpan[] = events.map((node, index) => {
+    const item = timed[index]!;
     const seq = sequential[index]!;
     const turn = node.turn || 0;
     // Duration mode is busy-time, not wall clock: idle gaps (think 然后 tool
@@ -99,8 +106,8 @@ export function buildTrajectory(
     let start = seq.seqStart / packedEnd;
     let end = (seq.seqStart + seq.durationMs) / packedEnd;
     if (mode === "sequence") {
-      start = index / Math.max(1, nodes.length);
-      end = (index + 1) / Math.max(1, nodes.length);
+      start = index / Math.max(1, events.length);
+      end = (index + 1) / Math.max(1, events.length);
     }
     return {
       id: node.id,
@@ -131,8 +138,7 @@ export function buildTrajectory(
     if (node.usage !== undefined) tokens += node.usage.total;
   }
 
-  const domainMs =
-    mode === "sequence" ? Math.max(1, nodes.length) : packedEnd;
+  const domainMs = mode === "sequence" ? Math.max(1, events.length) : packedEnd;
   const tickCount = domainMs >= 8000 ? 5 : 4;
   const ticks = Array.from({ length: tickCount }, (_, index) =>
     Math.round((domainMs * index) / (tickCount - 1)),
@@ -142,7 +148,7 @@ export function buildTrajectory(
     spans,
     stats: {
       turns: Math.max(0, ...nodes.map((node) => node.turn)),
-      steps: nodes.length,
+      steps: events.length,
       llmMs,
       toolMs,
       tokens,
@@ -184,7 +190,32 @@ export function labelFor(node: ConversationNode): string {
   return node.kind;
 }
 
+/** Internal transport prefixes are useful to the runtime, not to a human. */
+export function displayToolName(toolName: string | undefined): string {
+  const normalized = toolName?.replace(/^(?:tool:)+/u, "").trim();
+  return normalized && normalized.length > 0 ? normalized : "tool";
+}
+
+function inlineValue(value: unknown, maxLength = 132): string {
+  let text: string;
+  if (typeof value === "string") text = value;
+  else {
+    try {
+      text = JSON.stringify(value);
+    } catch {
+      text = "[unserializable]";
+    }
+  }
+  const compact = text.replace(/\s+/gu, " ").trim();
+  return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}…` : compact;
+}
+
 export function summaryFor(node: ConversationNode): string {
+  if (node.kind === "tool_call") {
+    const payload = inlineValue(node.arguments ?? {});
+    const result = node.pending === true ? "running" : inlineValue(node.output ?? "no result");
+    return `${displayToolName(node.toolName)} ${payload} -> ${result}`;
+  }
   const text =
     node.text ??
     node.output ??

@@ -252,8 +252,8 @@
 .primary {
   display: grid;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -262,7 +262,7 @@
   color: var(--cln-alias-send-fg);
   cursor: pointer;
   line-height: 0;
-  box-shadow: 0 0 1.2rem color-mix(in oklch, var(--cln-alias-send-bg) 35%, transparent);
+  box-shadow: 0 6px 16px color-mix(in oklch, var(--cln-alias-send-bg) 20%, transparent);
 }
 
 .primary:hover:not(:disabled) {

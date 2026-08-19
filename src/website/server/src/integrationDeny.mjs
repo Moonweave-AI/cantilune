@@ -133,7 +133,12 @@ async function main() {
     }),
   );
   await new Promise((r) => setTimeout(r, 400));
-  ws.send(JSON.stringify({ type: "run", instruction: "Write a file then finish." }));
+  // `execute` is intentionally the full-access mode. Use the interactive
+  // planning mode here so this integration test exercises the approval gate
+  // rather than silently granting the shell call by design.
+  ws.send(
+    JSON.stringify({ type: "run", instruction: "Write a file then finish.", mode: "plan" }),
+  );
 
   // Wait for the approval_request (up to 10s).
   const approvalDeadline = Date.now() + 10000;

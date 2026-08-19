@@ -8,6 +8,7 @@ import {
 import { ModelsBoard } from "../config/ModelsBoard";
 import { IconBrain, IconChevronDown, IconClose, IconLayers, IconPuzzle, IconSettings } from "../theme/icons";
 import { ThemeToggle } from "../theme/ThemeToggle";
+import type { RunMode } from "../conversation/PermissionSelect";
 import type { ThemePreference } from "../theme/theme";
 import type { CatalogEntry } from "../persist/store";
 import type { ConnectionStatus } from "../ws/useBridge";
@@ -33,6 +34,8 @@ interface SettingsOverlayProps {
   readonly onNewSession: () => void;
   readonly onDownloadLog: () => void;
   readonly onApplyPreset: (preset: ConfigPresetDefaults) => void;
+  readonly mode: RunMode;
+  readonly onModeChange: (mode: RunMode) => void;
 }
 
 const TEXT = {
@@ -108,6 +111,8 @@ export function SettingsOverlay(props: SettingsOverlayProps): JSX.Element {
     onNewSession,
     onDownloadLog,
     onApplyPreset,
+    mode,
+    onModeChange,
   } = props;
   const titleId = useId();
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -172,6 +177,9 @@ export function SettingsOverlay(props: SettingsOverlayProps): JSX.Element {
                 connectionStatus={connectionStatus}
                 onThemeChange={onThemeChange}
                 onNewSession={onNewSession}
+                mode={mode}
+                onModeChange={onModeChange}
+                onOpenPresets={() => onTabChange("presets")}
               />
             )}
             {activeTab === "models" && (
@@ -203,37 +211,67 @@ function General({
   connectionStatus,
   onThemeChange,
   onNewSession,
+  mode,
+  onModeChange,
+  onOpenPresets,
 }: {
   readonly theme: ThemePreference;
   readonly configured: boolean;
   readonly connectionStatus: ConnectionStatus;
   readonly onThemeChange: (theme: ThemePreference) => void;
   readonly onNewSession: () => void;
+  readonly mode: RunMode;
+  readonly onModeChange: (mode: RunMode) => void;
+  readonly onOpenPresets: () => void;
 }): JSX.Element {
-  const rows = [
-    [
-      "Agent \u9884\u8bbe",
-      "\u5bf9\u4e4b\u540e\u65b0\u5efa\u7684\u4f1a\u8bdd\u751f\u6548\u3002",
-      TEXT.standard,
-    ],
-    [
-      "\u6743\u9650",
-      "\u9009\u62e9\u65b0\u4f1a\u8bdd\u9ed8\u8ba4\u7684\u6743\u9650\u6a21\u5f0f\u3002",
-      "Full access",
-    ],
-    ["\u8bed\u8a00", undefined, "\u4e2d\u6587"],
-  ] as const;
+  const [language, setLanguage] = useState<"zh-CN" | "en">(() => {
+    const saved = window.localStorage.getItem("cantilune:language");
+    return saved === "en" ? "en" : "zh-CN";
+  });
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    window.localStorage.setItem("cantilune:language", language);
+  }, [language]);
+
   return (
     <section className={styles.section}>
       <h2>{TEXT.general}</h2>
       <div className={styles.rows}>
-        {rows.map(([label, hint, value]) => (
-          <SettingRow key={label} label={label} hint={hint}>
-            <button type="button" className={styles.selectLike}>
-              {value} <IconChevronDown size={12} />
-            </button>
-          </SettingRow>
-        ))}
+        <SettingRow
+          label={"Agent \u9884\u8bbe"}
+          hint={"\u5bf9\u4e4b\u540e\u65b0\u5efa\u7684\u4f1a\u8bdd\u751f\u6548\u3002"}
+        >
+          <button type="button" className={styles.selectLike} onClick={onOpenPresets}>
+            {TEXT.standard} <IconChevronDown size={12} />
+          </button>
+        </SettingRow>
+        <SettingRow
+          label={"\u6743\u9650"}
+          hint={"\u9009\u62e9\u65b0\u4f1a\u8bdd\u9ed8\u8ba4\u7684\u6743\u9650\u6a21\u5f0f\u3002"}
+        >
+          <select
+            className={styles.selectControl}
+            value={mode}
+            onChange={(event) => onModeChange(event.target.value as RunMode)}
+            aria-label="Default permission mode"
+          >
+            <option value="execute">Full access</option>
+            <option value="plan">Plan only</option>
+            <option value="observe">Observe only</option>
+          </select>
+        </SettingRow>
+        <SettingRow label={"\u8bed\u8a00"}>
+          <select
+            className={styles.selectControl}
+            value={language}
+            onChange={(event) => setLanguage(event.target.value as "zh-CN" | "en")}
+            aria-label="Interface language"
+          >
+            <option value="zh-CN">{"\u4e2d\u6587"}</option>
+            <option value="en">English</option>
+          </select>
+        </SettingRow>
         <div className={styles.appearance}>
           <strong>{"\u5916\u89c2"}</strong>
           <p>浅色、深色与跟随系统会立即生效，并保存在本机。</p>

@@ -1,9 +1,13 @@
 .root {
-  --cln-sidebar-inline: 12px;
+  --cln-sidebar-inline: 14px;
   display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
   flex-direction: column;
   height: 100%;
-  padding: 6px var(--cln-sidebar-inline);
+  min-height: 0;
+  padding: 8px var(--cln-sidebar-inline) 6px;
   overflow: hidden;
   background: var(--cln-alias-sidebar-bg);
   color: var(--cln-alias-sidebar-fg);
@@ -12,6 +16,10 @@
 
 .root.collapsed {
   padding: 18px 10px 6px;
+}
+
+.root[data-compact] {
+  --cln-sidebar-inline: 10px;
 }
 
 .fading > * {
@@ -58,7 +66,15 @@
 }
 
 .brand span {
+  min-width: 0;
+  overflow: hidden;
   line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.root[data-compact] .brand em {
+  display: none;
 }
 
 .brand em {
@@ -128,7 +144,7 @@
   gap: 6px;
   overflow: hidden;
   border: 1px solid var(--cln-alias-border-l2);
-  border-radius: var(--cln-radius-pill);
+  border-radius: 12px;
   background: var(--cln-alias-interactive-bg-hover);
   color: var(--cln-alias-label-primary);
   cursor: pointer;
@@ -142,7 +158,7 @@
 }
 
 .collapsed .newSession {
-  align-self: center;
+  align-self: flex-start;
   width: 36px;
   height: 36px;
   margin: 0 0 12px;
@@ -163,9 +179,10 @@
   flex: 1;
   flex-direction: column;
   margin-right: calc(-1 * var(--cln-sidebar-inline));
-  margin-left: -4px;
-  padding-left: 4px;
-  overflow: hidden;
+  margin-left: 0;
+  padding-right: var(--cln-sidebar-inline);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .collapsed .region {
@@ -199,7 +216,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--cln-alias-label-secondary);
   cursor: pointer;
@@ -218,7 +235,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--cln-alias-interactive-bg-hover);
   color: var(--cln-alias-label-primary);
   cursor: pointer;
@@ -238,7 +255,7 @@
 }
 
 .workspaceActive {
-  background: var(--cln-alias-sidebar-active);
+  background: transparent;
 }
 
 .workspace:hover,
@@ -285,7 +302,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--cln-alias-label-tertiary);
   cursor: pointer;
@@ -311,7 +328,7 @@
   height: 24px;
   padding: 0 6px;
   border: 1px solid var(--cln-alias-border-l2);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--cln-alias-bg-base);
   color: var(--cln-alias-label-primary);
   font-size: 13px;
@@ -507,18 +524,17 @@
 
 .sessionSection {
   min-height: 0;
-  flex: 1;
+  flex: none;
   margin-top: 6px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sessionList {
   display: flex;
-  max-height: 100%;
   flex-direction: column;
   gap: 3px;
-  padding-right: 2px;
-  overflow: auto;
+  padding: 0 0 10px;
+  overflow: visible;
 }
 
 .session,
@@ -636,11 +652,11 @@
 
 .settings {
   display: flex;
-  width: calc(100% + 4px);
+  width: 100%;
   height: 42px;
   align-items: center;
-  margin: 4px -2px;
-  padding: 0 10px 0 8px;
+  margin: 4px 0;
+  padding: 0 8px;
   gap: 8px;
   overflow: hidden;
   border: 0;

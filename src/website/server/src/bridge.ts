@@ -15,7 +15,7 @@
  * The browser holds no execution authority. Keys live only in server memory.
  */
 
-import { createAdapter, createEmbedder, listProviders } from "@cantilune/adapter";
+import { createAdapter, createEmbedder, getProvider, listProviders } from "@cantilune/adapter";
 import { statSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import type { EmbeddingAdapter, LlmAdapter, LlmConfig } from "@cantilune/boot";
@@ -127,7 +127,11 @@ export class BridgeSession {
         this.pushSwarmStatus();
         break;
       case "inspect":
-        this.send({ type: "error", message: "inspect not yet implemented (S5)" });
+        this.send({
+          type: "error",
+          scope: "transport",
+          message: "inspect not yet implemented (S5)",
+        });
         break;
     }
   }
@@ -135,6 +139,7 @@ export class BridgeSession {
   /** Boot the OS from the client's configuration, mirroring the CLI path. */
   private async configure(request: ConfigureRequest): Promise<void> {
     try {
+      this.assertProviderCredential(request, request.provider);
       const loopLlmConfig = this.buildLlmConfig(request, request.provider, request.model);
       const loopLlm = createAdapter(loopLlmConfig);
       this.loopLlm = loopLlm;
@@ -151,12 +156,21 @@ export class BridgeSession {
         requestApproval: (approval: ToolApprovalRequest) => this.requestApproval(approval),
       };
 
-      const workspace = resolvePath(request.workspace ?? process.cwd());
-      if (!statSync(workspace, { throwIfNoEntry: false })?.isDirectory()) {
+      const requestedWorkspace = request.workspace?.trim();
+      const workspace =
+        requestedWorkspace !== undefined && requestedWorkspace.length > 0
+          ? resolvePath(requestedWorkspace)
+          : undefined;
+      if (
+        workspace !== undefined &&
+        !statSync(workspace, { throwIfNoEntry: false })?.isDirectory()
+      ) {
         throw new Error(`workspace is not an accessible directory: ${workspace}`);
       }
       const toolSet = createCliToolSet({
-        workingDirectory: workspace,
+        ...(workspace !== undefined ? { workingDirectory: workspace } : {}),
+        filesystem: workspace !== undefined,
+        shell: workspace !== undefined,
         ...(request.mcpServers !== undefined ? { mcpServers: request.mcpServers } : {}),
         ...(request.searchProvider !== undefined ? { searchProvider: request.searchProvider } : {}),
         // Local-dev: run tools on the host with the approval gate as the safety
@@ -200,6 +214,7 @@ export class BridgeSession {
         () => loopLlm,
       );
 
+      this.send({ type: "configured", provider: request.provider, model: request.model });
       this.send({
         type: "agent_event",
         event: {
@@ -213,6 +228,7 @@ export class BridgeSession {
     } catch (error) {
       const err: ErrorResponse = {
         type: "error",
+        scope: "configuration",
         message: `configure failed: ${error instanceof Error ? error.message : String(error)}`,
       };
       this.send(err);
@@ -222,11 +238,19 @@ export class BridgeSession {
   /** Drive a real run. Streams every AgentEvent; forwards approval + ask_user. */
   private async run(request: RunRequest): Promise<void> {
     if (this.boot === undefined) {
-      this.send({ type: "error", message: "not configured — send configure first" });
+      this.send({
+        type: "error",
+        scope: "configuration",
+        message: "not configured — send configure first",
+      });
       return;
     }
     if (this.runInProgress) {
-      this.send({ type: "error", message: "a run is already in progress (single-flight)" });
+      this.send({
+        type: "error",
+        scope: "run",
+        message: "a run is already in progress (single-flight)",
+      });
       return;
     }
     this.runInProgress = true;
@@ -246,6 +270,7 @@ export class BridgeSession {
     } catch (error) {
       this.send({
         type: "error",
+        scope: "run",
         message: `run failed: ${error instanceof Error ? error.message : String(error)}`,
       });
     } finally {
@@ -266,12 +291,16 @@ export class BridgeSession {
 
   private swarmStart(): void {
     if (this.swarm === undefined) {
-      this.send({ type: "error", message: "swarm unavailable — configure first" });
+      this.send({
+        type: "error",
+        scope: "configuration",
+        message: "swarm unavailable — configure first",
+      });
       return;
     }
     const result = this.swarm.start();
     if (!result.ok) {
-      this.send({ type: "error", message: result.message ?? "swarm start failed" });
+      this.send({ type: "error", scope: "swarm", message: result.message ?? "swarm start failed" });
       return;
     }
     // Poll status on an interval so the client sees live lifecycle events
@@ -307,13 +336,21 @@ export class BridgeSession {
     readonly manifest?: unknown;
   }): Promise<void> {
     if (this.swarm === undefined) {
-      this.send({ type: "error", message: "swarm unavailable — configure first" });
+      this.send({
+        type: "error",
+        scope: "configuration",
+        message: "swarm unavailable — configure first",
+      });
       return;
     }
     const manifest = this.coerceManifest(message.manifest);
     const result = await this.swarm.activate(message.agentId, manifest);
     if (!result.ok) {
-      this.send({ type: "error", message: result.message ?? "swarm activate failed" });
+      this.send({
+        type: "error",
+        scope: "swarm",
+        message: result.message ?? "swarm activate failed",
+      });
     }
     this.pushSwarmStatus();
   }
@@ -472,10 +509,13 @@ export class BridgeSession {
   private async pickWorkspace(): Promise<void> {
     try {
       const path = await pickDirectory();
-      this.send(path === undefined ? { type: "workspacePicked" } : { type: "workspacePicked", path });
+      this.send(
+        path === undefined ? { type: "workspacePicked" } : { type: "workspacePicked", path },
+      );
     } catch (error) {
       this.send({
         type: "error",
+        scope: "workspace",
         message: `pick workspace failed: ${error instanceof Error ? error.message : String(error)}`,
       });
     }
@@ -513,6 +553,22 @@ export class BridgeSession {
         ? { baseUrl: request.baseUrl }
         : {}),
     };
+  }
+
+  /**
+   * OpenAI-compatible adapters defer header construction until the first run.
+   * Check a known provider's credential here instead so a successful
+   * `configured` event always means the composer can actually start a run.
+   */
+  private assertProviderCredential(request: ConfigureRequest, provider: string): void {
+    const entry = getProvider(provider);
+    if (entry === undefined || entry.envKeyName.length === 0) return;
+    const supplied = request.apiKey?.trim();
+    const fromEnvironment = process.env[entry.envKeyName]?.trim();
+    if ((supplied?.length ?? 0) > 0 || (fromEnvironment?.length ?? 0) > 0) return;
+    throw new Error(
+      `${provider} requires an API key. Enter it for this browser session or set ${entry.envKeyName} before starting the website.`,
+    );
   }
 
   private buildAuxAdapter(

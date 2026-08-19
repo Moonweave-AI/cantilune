@@ -1,7 +1,7 @@
 /**
  * Local harness snapshot. The website is a control surface: refresh must not
- * drop configured providers, API keys, workspaces, or conversation nodes.
- * Keys stay on this origin's localStorage (local OS harness, not a shared SaaS).
+ * preserve configured providers, selected workspaces, and conversation nodes.
+ * API keys are never written to browser storage.
  *
  * Conversation transcripts live in side keys so a large session cannot block
  * first paint. The meta key (`cln-harness-v1`) holds configure / catalog only.
@@ -86,8 +86,9 @@ export interface HarnessSnapshot {
 
 export const DEFAULT_WORKSPACE: WorkspaceSummary = {
   id: "workspace-1",
-  name: "Cantilune workspace",
-  path: ".",
+  // This is an empty UI bucket, never an implicit filesystem workspace.
+  name: "\u672a\u5206\u7ec4",
+  path: "",
 };
 
 export const DEFAULT_SESSION: SessionSummary = {
@@ -132,7 +133,20 @@ function parseWorkspace(value: unknown): WorkspaceSummary | undefined {
   const name = asString(value.name, "");
   const path = asString(value.path, "");
   if (id.length === 0 || name.length === 0) return undefined;
-  return { id, name, path: path.length > 0 ? path : "." };
+  return { id, name, path };
+}
+
+/** Remove the pre-existing implicit project-root workspace during hydration. */
+function migrateImplicitWorkspace(workspace: WorkspaceSummary): WorkspaceSummary {
+  if (
+    workspace.id === "workspace-1" &&
+    ((workspace.name === "Cantilune workspace" && workspace.path === ".") ||
+      (workspace.name === "\u672a\u9009\u62e9\u5de5\u4f5c\u76ee\u5f55" &&
+        workspace.path.length === 0))
+  ) {
+    return DEFAULT_WORKSPACE;
+  }
+  return workspace;
 }
 
 function parseSession(value: unknown, fallbackWorkspaceId: string): SessionSummary | undefined {
@@ -273,7 +287,6 @@ function parseCatalog(value: unknown, configure: ConfigureRequest | undefined): 
         provider,
         model,
         label: asString(item.label, model),
-        ...(typeof item.apiKey === "string" && item.apiKey.length > 0 ? { apiKey: item.apiKey } : {}),
         ...(typeof item.baseUrl === "string" && item.baseUrl.length > 0
           ? { baseUrl: item.baseUrl }
           : {}),
@@ -287,9 +300,6 @@ function parseCatalog(value: unknown, configure: ConfigureRequest | undefined): 
       provider: configure.provider,
       model: configure.model,
       label: configure.model,
-      ...(configure.apiKey !== undefined && configure.apiKey.length > 0
-        ? { apiKey: configure.apiKey }
-        : {}),
       ...(configure.baseUrl !== undefined && configure.baseUrl.length > 0
         ? { baseUrl: configure.baseUrl }
         : {}),
@@ -303,7 +313,20 @@ function parseConfigure(value: unknown): ConfigureRequest | undefined {
   const provider = asString(value.provider, "");
   const model = asString(value.model, "");
   if (provider.length === 0 || model.length === 0) return undefined;
-  return value as unknown as ConfigureRequest;
+  const { apiKey: _apiKey, ...safe } = value;
+  return safe as unknown as ConfigureRequest;
+}
+
+function persistentConfigure(
+  configure: ConfigureRequest | undefined,
+): ConfigureRequest | undefined {
+  if (configure === undefined) return undefined;
+  const { apiKey: _apiKey, ...safe } = configure;
+  return safe;
+}
+
+function persistentCatalog(catalog: readonly CatalogEntry[]): readonly CatalogEntry[] {
+  return catalog.map(({ apiKey: _apiKey, ...entry }) => entry);
 }
 
 function capSessions(snapshot: HarnessSnapshot): readonly SessionSummary[] {
@@ -324,6 +347,24 @@ function parseMetaJson(raw: string): unknown {
     if (value !== undefined) pieces.push(`"${key}":${value}`);
   }
   return JSON.parse(`{${pieces.join(",")}}`);
+}
+
+/** Migrate legacy local snapshots that wrote provider credentials to the browser. */
+function redactLegacyCredentials(value: Record<string, unknown>): boolean {
+  let changed = false;
+  if (isRecord(value.configure) && "apiKey" in value.configure) {
+    delete value.configure.apiKey;
+    changed = true;
+  }
+  if (Array.isArray(value.catalog)) {
+    for (const item of value.catalog) {
+      if (isRecord(item) && "apiKey" in item) {
+        delete item.apiKey;
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 function conversationsForBoot(
@@ -359,12 +400,16 @@ export function loadHarness(): HarnessSnapshot {
     if (raw === null) return fallback;
     const parsed: unknown = parseMetaJson(raw);
     if (!isRecord(parsed) || parsed.schema !== HARNESS_SCHEMA) return fallback;
+    if (redactLegacyCredentials(parsed)) {
+      localStorage.setItem(HARNESS_STORAGE_KEY, JSON.stringify(parsed));
+    }
     const workspaces = Array.isArray(parsed.workspaces)
       ? parsed.workspaces
           .map(parseWorkspace)
           .filter((item): item is WorkspaceSummary => item !== undefined)
       : [];
-    const resolvedWorkspaces = workspaces.length > 0 ? workspaces : fallback.workspaces;
+    const resolvedWorkspaces =
+      workspaces.length > 0 ? workspaces.map(migrateImplicitWorkspace) : fallback.workspaces;
     const fallbackWorkspaceId = resolvedWorkspaces[0]?.id ?? DEFAULT_WORKSPACE.id;
     const sessions = Array.isArray(parsed.sessions)
       ? parsed.sessions
@@ -436,7 +481,16 @@ function maybeDropCombinedTranscripts(sessionIds: readonly string[]): void {
 export function saveHarness(snapshot: HarnessSnapshot): void {
   try {
     const sessions = capSessions(snapshot);
-    const meta: HarnessSnapshot = { ...snapshot, sessions, conversations: {}, view: "conversation" };
+    const meta: HarnessSnapshot = {
+      ...snapshot,
+      sessions,
+      conversations: {},
+      view: "conversation",
+      ...(persistentConfigure(snapshot.configure) !== undefined
+        ? { configure: persistentConfigure(snapshot.configure) }
+        : {}),
+      catalog: persistentCatalog(snapshot.catalog),
+    };
     localStorage.setItem(HARNESS_STORAGE_KEY, JSON.stringify(meta));
     const active = snapshot.conversations[snapshot.activeSessionId];
     if (active !== undefined) saveSessionTranscript(snapshot.activeSessionId, active);

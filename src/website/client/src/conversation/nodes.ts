@@ -201,7 +201,6 @@ export function reduceAgentEvent(
             kind: "turn",
             turn: event.turn,
             lastAction: "turn_start",
-            elapsedMs: event.elapsedMs,
           }),
         ],
       };
