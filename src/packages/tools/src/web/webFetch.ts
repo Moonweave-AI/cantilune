@@ -24,7 +24,7 @@ export async function webFetch(args: WebFetchArgs, config: WebConfig): Promise<s
     const response = await fetch(args.url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "CantiluneTools/0.0.1",
+        "User-Agent": "CantiluneTools/0.0.1 (https://github.com/Moonweave-AI/cantilune)",
         Accept: "text/html,application/xhtml+xml,text/plain,*/*",
       },
     });
