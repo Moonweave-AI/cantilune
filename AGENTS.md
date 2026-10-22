@@ -1,64 +1,185 @@
-## Learned User Preferences
+# AGENTS.md
 
-- 偏好简体中文回复（非双语）
-- 偏好逐步协作设计，而非代理单独完成全部读写；评审/修复须闭环，勿悬置文档或 OPEN 项；需 Owner 决策时用 askquestion 中文直接向用户（reviewer）发问
-- 图表与文档侧重 agent orchestration 工程语义，避免数学符号与 Lean 细节；工程落地不嵌入证明，证明留在 formal/ 数学层
-- 每张 PlantUML 图范围要窄；首张图聚焦 CoordinationEvent 与 Actor（发起方）
-- 类图中每个字段须在类体内 inline 注释（含义与作用），并附具体案例赋值；不要用外部 note 延伸成独立板块
-- 要展示字段/类级关系，不只是包块之间的粗粒度关系
-- 修布局时须保留分区框、图例、案例示例；状态/时序图用列式网格、分区配色、语义线型（主脊/Obs 回环/Event 重入），跨列边最小化；时序/状态图须通用化（多轮、多分支、占位符，避免具体案例名与固定 ID）
-- 测试与生产分离：`src/` 零测试；每包 `tests/` 按 L2–L7 分层，不用仓库级 `qa/`
-- 状态图须列齐类图全部字段及案例赋值；层级用 `\t` 缩进，同级块间空描述行（PlantUML 会剥空格）
-- 同系列衍生图放在 `diagrams/01-core/`、`diagrams/02-runtime/`、`diagrams/03-observability/`、`diagrams/04-control-plane/`、`diagrams/05-evaluation/`，短名后缀：`01a-class`… / `05a-class`…
-- 工程设计阶段要脚踏实地的接口/命名/关系规范（一概念一 camelCase.ts，禁止 kebab 拆分与 ids/kind 重叠）；跨包类型须继承/组合 core 已有字段，禁止平行实体类型或另起规范身份层；跨包测试 import 须走 package exports（如 `@cantilune/runtime/memory`），禁止深路径引用他包 `src/`（core `tsconfig.tests` rootDir 约束）
-- 代码目标为 LangChain/LangGraph 级可发布 OS（非应用框架/非纯理论）：用户只输入任务、集群结构与推进全由 LLM 自决，不预设角色/workflow/AgentRunner；TS 为主；模块间隔离；core/runtime 均按职责分子文件夹、柱内一概念一 camelCase.ts（禁止平铺单层）；core 三柱 `nodes`·`coordination`·`structure`；Agent 运行时自行组合结构（非预画死图），静态 wiring 仅 derive 派生
-- 各生产包 L2–L7 代码覆盖率门禁：statements/functions/lines ≥90%、branches ≥88%（vitest v8 threshold 全仓统一）
-- 拒绝 demo 式最小实现：adapter 须覆盖主流 LLM provider（OpenAI/Anthropic/Azure/DeepSeek 等，参考 LangChain/LiteLLM 等权威项目）；CLI 须系统性 Ink TUI（对标 orca），slash 命令驱动，含实时 DAG/Petri/Trace 等视图
-- 生产路径禁止 mock/占位/硬编码绕过：`src/` 须真实可运行逻辑；memory 适配器仅 dev/test；生产默认 `durable=file` + `bootFileOS`/`resolveProductionDurable`；`CANTILUNE_DURABLE_DATABASE_URL` 走 Postgres；`CANTILUNE_RAFT_ENDPOINTS` / `CANTILUNE_RAFT_EMBED=1` 走官方 etcd Raft；`pnpm install` 经 `prepare` 先拉取官方 etcd 二进制与 compose/sandbox 镜像，`host:provision` 只 `up --pull never`
-- 多 Agent 集群须 peer 对等（无父子层级）；拓扑不限并行/串行/树，支持反馈环、条件启动、扇出/汇入；初始 Agent 可继续工作，任一 running Agent 均可 register 新 Agent（谁设计谁负责）
-- swarm 派发经 `SwarmScheduler`（ADR-0019 §S5）：activate 只做**准入入队**，start condition 由每次 drain 对已提交世界**重新求值**（激活时求值一次会永久丢弃扇入/条件启动/反馈环）；含并发上限、生成/轮次/时钟预算、priority + 老化防饿死、停滞收敛；`ClusterResult.reason` 仅 `completed` 可为 ok
-- Boot OS 以声明式 reconcile 启动 Agent loop（ClusterSupervisor 观测 snapshot 后拉起）；Agent 仅在协调世界 register，非显式 spawn syscall
-- 各 Agent 共享 CollaborationSnapshot；ADR-0021 后 LLM transcript **进入** snapshot（同 Namespace 全文；跨 Namespace 摘要，须 subject Actor 批准后全文）
+DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
-## Learned Workspace Facts
+## Pre-stable APIs and released Session data
 
-- Cantilune 是 agent 编排 monorepo；主柱 core + runtime；外置 observability + control-plane；`diagrams/` 与 `00-naming-contract.md` 为工程设计载体
-- 活跃图 04 control-plane 八视图：`diagrams/04-control-plane/` 下 04A–04H（04H 六层治理 G1–G6；04A/04E 已落地模块；04F SignatureAdmission/FourView 映射；04G 邻接 runtime/conformance）
-- 活跃图 01 四视图：`diagrams/01-core/` 下 01A–01D；活跃图 02 runtime 八视图：`diagrams/02-runtime/` 下 02A–02H；活跃图 03 observability 八视图：`diagrams/03-observability/` 下 03A–03H（03H 六层只读抽象 S0+O1–O6；03A/03E EventSpine 中轴 + 四 lens/fold；03F 理论映射；03G 邻接 core/runtime/conformance）；定锚：四角度描绘 core 协调世界，只读观察 runtime commit 轨迹
-- 图 01 核心：CollaborationSnapshot + CoordinationEvent + Actor 双视图（Registration 常驻世界、Ref 事件引用）+ 外部边界（ObservationEntry）；`AgentManifest` + `StartConditionExpression` 供 register_participant 与 ClusterSupervisor 条件启动
-- Trigger ≠ Change；Actor 不直接 commit；外部输入经 ObservationEntry → auditTail，合法改写仅 Runtime admit/commit
-- CoordinationEvent 无 payload；任务正文在 WorkArtifact；Event 需 beforeRef/afterRef 供 replay
-- `00-naming-contract.md` 为 diagrams 命名单一来源；形式化映射附录 A；锚点含技术报告第 3 章、`formal/Cantilune/Core/`、`docs/spec/zh-CN/formal-semantics.zh-CN.md`
-- 本地 PlantUML 预览需 Java；无 JVM 时可用 PlantUML 在线服务器渲染
-- PlantUML @startyaml 本地插件触发 UnsupportedOperationException；01D 改用类图语法专述字段，01A 展示关系全貌
-- `@cantilune/core` 已落地于 `src/packages/core/`（三柱 + `consistency`；ADR-0002 Accepted）
-- `@cantilune/runtime` 已落地于 `src/packages/runtime/`（六层 L1–L6；observe/admit/apply/commit/replay；`register_participant` handler + `cluster/` 条件求值 `ConditionEvaluatorRegistry`；ADR-0003 权限边界；不含四投影→observability、schema epoch 治理准入→control-plane）
-- `@cantilune/observability` 全量落地（见 `diagrams/03-observability/`）
-- `@cantilune/control-plane` 已落地于 `src/packages/control-plane/`（六层治理 G1–G6：schema 目录 · binding CAS · admission 工作流 · prepare/commit epoch 切换 · policy/manifest · fleet rollout；依赖 runtime `RuntimeEpochAdministration` + conformance `FourViewEvidence`）；见 `diagrams/04-control-plane/`
-- `@cantilune/evaluation` 已落地于 `src/packages/evaluation/`（八层评估 E1–E8：声明/协议 · 基准套件 · 候选/基线 · 计划/预算 · 执行引擎 · 评分/评审 · 分析报告 · 证据收集；**E1–E8 工程已落地** — file LeaseCoordinator fencing、conformance 实存 C9（A54 checkpoint）、in-process baseline + C1–C4 corpus、model/human/adversarial scoring、`proof-obligations.json` premiseMissing、signed report + encrypted credential store、`analyzeMetricObservations`（t 区间 / Holm / 效应量；分析层不发出 `supported`）、`collectCertifiedTraceEvidence` 四投影收集；公开主张仅经 `OWNER_COI_PUBLIC_REVIEW_CONFIG`（Owner COI，2026-08-16）；RFC-0004 **FCP open** 非 Accepted；依赖 core + conformance，optional peer runtime + observability）；见 `diagrams/05-evaluation/`
-- `@cantilune/observability`：公开 API 暴露 `ObservationAccessContext`（ADR-0005）；生产 SDK 可读侧须带 principal/scope/visibilityPolicy；ADR-0025 可观测性平台 = 四角 + OTel OTLP + AG-UI；`ProjectionCertificate` 仍属 conformance，本包只持 digest
-- `@cantilune/conformance`：14 生产包 evidence manifests 可由 `verifyPackage` 消费（`packageEvidenceManifests`）；C5 四投影可从 committed-world observability 视图 **recompute** digest；CI verify-package **禁止**自动签署 release certificate
-- 活跃图 05 evaluation 八视图：`diagrams/05-evaluation/` 下 05A–05H（05H 八层评估 E1–E8；05A 核心类型 + 关系；05C 五状态机总览；05F 理论映射 C1–C5 / Lean / 实验；05G 邻接 core/conformance/runtime/observability）
-- `@cantilune/content` 已落地于 `src/packages/content/`（content-addressed 存储；SHA-256 → ContentRef；memory/file 两适配器；接口: put/get/exists/metadata/count；blobToText 便利方法）
-- `@cantilune/syscall` 已落地于 `src/packages/syscall/`（LLM ↔ OS 翻译层；perceive/act/readContent/writeContent/useTool/availableActions；零策略纯管道；依赖 core + runtime + content）
-- `@cantilune/boot` 已落地于 `src/packages/boot/`（bootCantilune/bootMemoryOS/bootFileOS + perceive→LLM→syscall agent loop；`cluster/` 导出 ClusterSupervisor·AgentInstance·SignalHandlerRegistry·SharedResources·**SwarmScheduler**；`swarm/bootSwarm` 多 Agent 入口已接 CLI `/swarm` 与 headless `--swarm`；`register_participant` 与 `activate_participant` 已入 DEFAULT_TEMPLATES（LLM 可自举拉起 peer）；终止控制器 + `judgeVerifier`（ADR-0020 J1–J3 已落地，`STRUCTURED_RUBRIC_VERIFIER` 保留为 absent-judge fail-closed 回退，非占位默认）
-- `@cantilune/conformance` 已落地于 `src/packages/conformance/`（产品证据验证 · 形式化证明绑定 · 四投影证书 · 跨 epoch 一致性 · 发布门禁；供 control-plane/evaluation 消费）
-- `@cantilune/comms` 已落地于 `src/packages/comms/`（typed late-π + ADR-0028 typed mobility · durable delivery · admission-bound reconnect · envelope/codec/security · memory/file/a2a/net；**A2A 1.0.0** 数据模型 + JSON-RPC/REST/SSE + 官方 proto `lf.a2a.v1.A2AService`（`@grpc/grpc-js`），公开互操作宣称已 Owner 授权；`a2a/0.1` harness 仍为回归 profile）
-- 单包测试：`tests/{types,unit,integration,contract,system,support}` 对应 L2–L7 金字塔；L1 在仓库根：`pnpm test:static` = encoding + lint + format:check + typecheck，与 `pnpm test`（Vitest）分立；L7 须覆盖多 Agent 串并行、nest/fork/create_session、大图及 crash-restart/soak/跨进程 file durable；冷启动 replay（T0 + durable log）与 pack smoke 须 CI 化；闭包见各包 `DESIGN-CLOSURE.md` / `CORE-HANDOFF.md` / `RUNTIME-DESIGN-CLOSURE.md`
-- 工作区依赖图**必须无环**：包的 devDependency 不得指向自己的下游包（core 曾 devDep runtime/test-fixtures，破坏 pnpm 拓扑排序导致冷检出 `pnpm build` 失败）；跨包用例放在下游包的套件里
-- 跨进程 L7 用例**禁止**在 `beforeAll`/`globalSetup` 里 `execSync("pnpm build")`（嵌套构建会与工作区构建互相踩踏并删掉 sibling 正在读的 `dist/`）；改为在包 `pretest`/`pretest:coverage` 里构建 + 用例内断言 `dist/` 存在；**禁止**用 `existsSync(dist)`/`skipIf` 静默跳过（证据会悄无声息地不执行），须显式失败
-- `build` 脚本只做 `tsc`，清理走独立 `clean`（根 `pnpm clean` / `pnpm build:fresh`）：`build` 内联 `rmSync('dist')` 会为并发读者制造 dist 缺失窗口
-- `.gitattributes` 用 `* text=auto eol=lf` 固定 LF：否则 Windows 检出为 CRLF 而 Prettier 写 LF，`pnpm format` 会报约 1350 个伪改动且 `format:check` 永远不过
-- `ObservationEntry` 为单条外部观察；`auditTail` 为 Snapshot 上 append-only 有序列表（≠ Change）
-- core 第二柱为组合代数原子（Port/Wire/Footprint/disjoint/trace）；并行隔离靠 effectiveFootprint 不交（不信任 agent 声明 footprint）；并行 file durable commit 各 worker 须 distinct participant footprint（共用 initiator 会锁串行化）；Change 重放配方靠 `matchBindings`
-- monorepo 现 14 个生产包（core·runtime·observability·control-plane·evaluation·comms·conformance·content·syscall·boot·adapter·tools·cli·petri；另有 test-fixtures）
-- `@cantilune/adapter` 已落地于 `src/packages/adapter/`（LLM 适配：anthropic/bedrock/google/openaiCompatible + dashscope/zhipu/baichuan 等 registry 条目 + httpClient；实现 boot `LlmAdapter`）
-- `@cantilune/tools` 已落地于 `src/packages/tools/`（Agent 工具层：filesystem/shell/web/mcp + `createToolSet` 路由；依赖 syscall；`probeSandboxHost` 按 OS 探测 Hyper-V VMMS / gVisor `runsc`，缺则 fail-closed）
-- `@cantilune/cli` 已落地于 `src/packages/cli/`（Ink 全屏 TUI + slash 命令 + world/graph/petri/trace/replay/observe/schema/eval/content/export/help/cluster/swarm 视图 + headless runner；bin `cantilune`；TUI `/provider`/`/model` 与 headless `--provider`/`--model` 配置 LLM；`/cluster *` 集群观测、`/swarm start|stop|activate|wait|status|schedule` 多 Agent 控制；`/status` 含 Postgres HA + etcd Raft + Hyper-V/gVisor 主机探测；Agent 回复经 `render/markdown.ts` + `render/syntaxHighlight.ts` + `tui/Markdown.tsx` 渲染（标题/列表/表格/引用/代码围栏 + 11 语言高亮 + diff），二者均零依赖且色彩走主题语义角色，mono/ansi 主题自动降级）
-- `@cantilune/petri` 已落地于 `src/packages/petri/`（无依赖 Petri 网执行内核：结构类型 + marking + enablement + 自环弧拒绝；令牌游戏 consume/produce 发射；有界 BFS 可达性 + dead-marking 判定；Martinez–Silva S-不变量；结构 `PetriNet` 类型与 `pnmlExporter` 同构，PNML 导出网可直接赋值；CLI `/petri *` 经 `petriControl` 投影 runtime→网后驱动真实引擎；ADR-0017）
-- 活跃图 06 conformance 八视图：`diagrams/06-conformance/` 下 06A–06H
-- `@cantilune/boot` 补充：`bootFileOS(storagePath)` 为生产入口（file content；URL 有则 Postgres；Raft endpoints/embed 则官方 etcd）；`bootMemoryOS` 仅内存 dev stub
-- comms 生产模式 EndpointPolicy 默认 deny-by-default（须显式 allowlist/denylist 配置）
-- runtime `templateAwarePolicyEvaluator` 校验 operationType/发起方/角色绑定（非 always-allow）
-- conformance CLI 支持 `--store-dir` 切换 file evidence/trust/audit 持久化
-- 2026-08-16：RFC-0001/0002/0003/0004 **FCP open**（至 2026-08-30；非 Accepted）。Owner（Joker-of-Gotham）兼任 Formal / Process / QA-L5 / AI-Eval 并披露 COI；独立性项 waived；不设第二评审人。Lean 义务行保持 `proved`（不跑 promotion form）；`ownerAccept` 已记录。`@cantilune/conformance` 为 0.x 生产发布权限（SS-01 lifted；仍不自动签 cert）。SemVer 保持 0.x（`pnpm check:0x`）。本机 Windows Home Hyper-V fail-closed（G17）；隔离走 WSL Ubuntu-24.04 `runsc`；默认镜像 `alpine:3.20` 已在该发行版拉取。Cantilune OTLP 导出已生产；官方 `gen_ai.*` 仍为 Development。HTTP MCP 允许，热挂仍走 epoch admission。完整 8h soak 证据写 `.cantilune/soak/`；PR CI 只跑缩短 soak。多宿主 durable：运维 Postgres HA 或官方 etcd Raft（ADR-0023 / ADR-0029）。`pnpm install` 的 `prepare` 先拉取官方 etcd 二进制与 `postgres:16` / `quay.io/coreos/etcd:v3.5.21` / `alpine:3.20`；`pnpm host:provision` 只 `up --pull never`
+Public APIs are pre-stable; update every consumer. Follow [version/status](docs/session-format-status.md) and [type acknowledgements](docs/cookbook/reviewing-persistence-type-changes.md). [Adjacent migration](.agents/notes/implemented/architecture/2026-08-31-released-session-format-migrations.md) may add a version-named successor but never move, overwrite, or delete committed generations; predecessors imply neither fallback nor downgrade support. SQLite uses monotonic `SCHEMA_VERSION`.
+
+Acknowledge [declared persistence-type changes](docs/cookbook/reviewing-persistence-type-changes.md).
+
+Record each externally perceptible breaking change immediately in an [upgrade guide](.agents/skills/dsh-create-upgrade-guide/SKILL.md).
+
+**Application launch.** Only `dsh` profiles launch supported Node apps; package bins, demos, and public SDK argv escapes are forbidden ([rule](docs/architecture.md#application-launch)).
+
+## Repository layout
+
+```
+vendor/      Vendored Cordis (vendor/README.md)
+packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
+  core/                 agent/session API
+  api/                  remote BFF
+  typert/               type graphs
+  llm/                  model providers
+  shell/                command execution
+  subprocess/           child-process management
+  ssh/                  SSH execution providers
+  terminal/             persistent terminals
+  ptc-runtime/          PTC execution
+  sandbox/              process confinement
+  deliverables/         turn deliverables
+  fs/                   filesystem access
+  lsp/                  language servers
+  skill/                skill loading
+  web/                  search/fetch tools
+  computer-use/         computer interaction
+  browser-use/          browser interaction
+  compaction/           context compaction
+  context/              request context
+  subagent/             delegated agents
+  jobs/                 background jobs
+  bundle/               profile bundles
+  workflow/             workflow execution
+  todo/                 todo_write tool
+  plan/                 logged planning
+  goal/                 session goals
+  schedule/             scheduled follow-ups
+  preset/               agent composition
+  guard/                loop/tool guards
+  extensions/           runtime self-modification
+  session/              durable sessions
+  session-query/        browsing/search/export
+  attachment/           binary attachments
+  spill/                output spill
+  storage/              non-session storage
+  workspace/            workspace entities
+  feedback/             human feedback
+  identity/             anonymous identity
+  settings/             user settings
+  credentials/          credentials/authorization
+  acp/                  automation-only ACP
+  interaction/          human interaction
+  boot/                 application boot
+  sdk/                  JSON-RPC SDK
+  host/                 GUI host
+  client/               GUI client
+  mcp/                  external tools
+  experimental/         evaluated capabilities without a product-support commitment
+  test-support/         test infrastructure
+  util/                 zero-dependency utilities
+python/      Python SDK/runtime (python/README.md)
+native/      @deepseek-ai/node-addon-system source (native/README.md)
+benchmarks/  performance gates
+.agents/     Agent workflows/notes
+docs/        Documentation (docs/AGENTS.md)
+scripts/     gates and generators
+website/     VitePress documentation projection
+```
+
+Package groups: [packages/README.md](packages/README.md). [Experimental status](packages/experimental/README.md#status) is independent of optional delivery; nonexperimental packages need product use or an explicit [classification](scripts/product-package-policy.ts).
+
+## Commands
+
+```sh
+pnpm install            # pnpm workspaces, node ^22.19 || >=24
+pnpm run clean           # remove build outputs and safe residue from deleted packages
+pnpm run test           # unit tests
+pnpm run test:coverage  # CI coverage gate: per-file 100% on packages/*/*/src
+pnpm run test:e2e       # real-API tests; self-skip without DEEPSEEK_API_KEY
+pnpm run test:expected  # owner-local process expectations
+pnpm run test:snapshot  # keyless recorded-session replay through shipped profiles; filter: -t <name>
+pnpm run test:snapshot:record  # re-record expected outputs (needs key)
+pnpm run typecheck
+pnpm run lint
+pnpm run duplication    # cross-file TypeScript clone detection
+pnpm run build          # build:artifacts + build:check, concurrently
+pnpm run build:artifacts # artifacts: tsc emits lib/types, tsdown bundles runtime, Web
+pnpm run build:check    # typecheck aggregate tests/scripts against current build:artifacts output
+pnpm run hygiene        # publint + workspace/package/dependency checks + NodeNext consumer check
+pnpm run check:windows-wine  # ONLY when diagnosing a known Windows failure (needs wine); CI owns this signal
+pnpm run doc-sync       # documentation gates (scripts/run-gates.ts)
+pnpm run test:docs      # quick documentation checks (no build; doc-quick aggregate)
+pnpm run website:build  # VitePress build (doubles as dead-link check)
+pnpm dsh --profile headless "task"  # run one task from source (needs DEEPSEEK_API_KEY)
+pnpm run demo:ptc -- "task"  # headless PTC mode run (needs key)
+pnpm run dev:web | dev:desktop  # build:artifacts, then launch; Web also rebuilds client bundles on edits. start:web | start:desktop skip the build
+make web|dev-web|desktop|dev-desktop|build  # the same commands; ARGS='--no-open' forwards options
+```
+
+### Host sandbox failures
+
+If a required `gh`, `pnpm`, build, test, or generator command fails because the sandbox blocks credentials, network, IPC, watching, or nested `sandbox-exec`, retry unchanged with the narrowest host escalation. Require sandbox evidence; never bypass test failures or the product sandbox.
+
+### Run relevant checks locally
+
+Before pushing, follow [dsh-pre-push-checks](.agents/skills/dsh-pre-push-checks/SKILL.md); report only commands run. After `gh stack sync`, validate immediately; do not merge before checks pass.
+
+- Match evidence to the surface: focused behavior tests, model/user-output snapshots, `doc-sync` for docs, built smokes for published paths, and real-API e2e for providers.
+- Never default to the full suite or repeat a passing check for commit or push. CI owns exhaustive coverage and the platform matrix; rehearse all locally only by explicit request, for CI diagnosis, or for an irreducibly repository-wide change.
+- `test:coverage`, not `test`, is the CI coverage gate ([why](docs/testing.md)).
+- Develop with `build:artifacts`; before claiming completion, run `build:check` after the latest `build:artifacts`, or `build` ([layout](docs/development.md#typescript-project-layout)).
+- **Web browser automation and GIF recording:** launch with `pnpm dsh web --patch apps/web/tests/pin-browse-picker.overlay.yml` to use the [in-page directory picker](apps/web/tests/pin-browse-picker.overlay.yml); omit this override only when testing native picker behavior explicitly.
+
+## Secrets / .env
+
+Windows packaging/signing: [required reading](apps/desktop/windows-signing/README.md).
+
+Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and root `.env`. cordis.yml allows `!!js` (never `!js`) under plugin `config` and entry `disabled`; other metadata stays literal, so conditional composition also uses overlays ([primer](docs/cordis-primer.md#loader-configuration)). Never commit credentials. CI e2e skips without a key; [testing.md](docs/testing.md) owns key policy.
+
+## Conventions
+
+- Packages use `@deepseek-ai/dsh-<name>`; vendor is [rescoped](docs/rescope.md) and `private: true`. Harness packages declare `@deepseek-ai/cordis` in `peerDependencies`/`devDependencies`. Workspace dependency sections use DSH `workspace:*`, vendor/native `workspace:~` ([rules](.agents/notes/implemented/process/2026-08-10-npm-release-sequences.md)).
+- ESM everywhere (`"type": "module"`). Use package names across packages and `.ts` in local relative imports. Config subprocesses run built `lib/` under plain Node; source regressions use their declared launcher ([testing policy](docs/testing.md#test-subprocess-launch-modes)). The `dsh` CLI source launch runs through tsx's ESM-only hook (`node --import tsx/esm`); modules it reaches must stay ESM (no CJS-only exports) — Node's native TypeScript modes are unavailable across the engines range ([source-launch contract](.agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.md)). Raw/Web `cordis.yml` bare plugins must appear in their resolver manifest's `dependencies`; `verify-cordis-config` enforces it.
+- **Registrations are effects**: every contribution goes through `ctx.effect()` / `ctx.on()`; a registry's `register()` returns the disposer.
+- **Typed events use declaration merging** and merge-extensible maps. Event JSDoc needs `@mode` and payload `@param`. Public service methods document parameters and non-void returns. `SessionEventMap` members are required-on-read unless the envelope carries `ignorable: true`. Bump `SESSION_FORMAT_VERSION` only when existing discriminators cannot prevent unsafe interpretation; same-version changes require safe reader behavior ([review](.agents/notes/implemented/process/2026-10-08-session-reader-compatibility-review.md)).
+- **Switch on discriminant tags.** Closed unions end in `assertNever`; merge-extensible unions fall through a documented default.
+- **Waterfall listeners MUST call `next()`** to delegate; returning without it short-circuits the chain ([semantics](docs/cordis-primer.md#cordis-waterfall-semantics)).
+- **Model-visible ⟺ logged**: anything that reaches a model request must be reconstructable from the session log; a new model-visible input requires a session event.
+- **Plugins, not loop changes**: new behavior goes on documented extension points; changing `agent-loop` requires updating docs/architecture.md.
+- **A capability seam comprises Service Definition / Service Provider / Consumer roles.** It is complete, never one role; split only when roles evolve independently ([glossary](docs/glossary.md#capability-seam)).
+- **Prefer maintained dependencies over hand-rolling** when they genuinely delete owned code and tests ([policy](.agents/notes/implemented/process/2026-07-26-dependencies-over-hand-rolling.md)).
+- **Explicit > implicit at package boundaries**: defaulting is an explicit `resolve(request): Spec` step in the owning implementation, never a hidden `?? default` inside `run()` (the `dsh-shell` request/spec split is the template).
+- **No hardcoded tunables in plugins**: deployment-varying choices are validated `Config` fields changeable from cordis.yml; a `DEFAULT_*` constant or test hook is not configurability. Protocol constants, external specs, and security invariants stay fixed.
+- **Misconfiguration fails loud** at load when self-contained, otherwise at the earliest resolvable point; never silently skip a missing referent.
+- **Opaque cross-boundary ids are branded** (`Branded<B>` from `dsh-brand`), never bare `string`.
+- **Trust TypeScript at typed same-process boundaries.** Do not add runtime validation, fallback behavior, or hostile-input tests solely for values the static interface requires; validate at parser/config, queued, model/tool JSON, durable/file, worker, process, and wire boundaries.
+- **No new assertions to `unknown`** (`as unknown` or `<unknown>`). Preserve or reduce the exact legacy baseline; use typed values or validation for replacements ([rule](.agents/notes/implemented/process/2026-09-19-no-unknown-casts.md)).
+- **Source plane vs artifact plane, never mixed.** Static gates and tests resolve workspace imports through tsconfig `paths` to `src` and pass on a clean tree; gates consuming built `lib/` declare that dependency ([layout](docs/development.md#typescript-project-layout)).
+- **Keep compiler faces explicit.** A package with both Host and Client programs exposes face-specific leaf configs and a solution-only root; repo-wide programs seed a face config, never the root solution ([layout](docs/development.md#typescript-project-layout)).
+- **Error handling:** use typed, structured failures and localized, actionable reports. Define handling ownership, containment, and failure guarantees; stop dependent work and visibly report untrusted state or unknown outcomes. Follow [dsh-error-handling](.agents/skills/dsh-error-handling/SKILL.md).
+- **An empty `catch` names the error** and why; keep its `try` to one statement.
+- **Keep comments local.** Do not restate code, expand unrelated comments, or explain distant behavior without local need ([rationale](.agents/skills/dsh-prose-standard/SKILL.md)).
+- **Ban `prove` + `nance`** ([rule](.agents/notes/implemented/process/2026-08-26-ban-ambiguous-origin-label.md)).
+- **Prefer symmetry for parallel values**; unexplained asymmetry usually signals a missed extraction.
+- **Tests describe behavior, not correctness.** Change obsolete behavior with its tests; explain why in the PR.
+- **Create Agent Notes only for durable decision rationale;** mechanical/local edits are exempt, including local UI changes ([scope](.agents/notes/README.md#when-to-write-one)). Archived notes are frozen: never edit or treat them as current authority ([archive policy](.agents/notes/README.md#archiving-and-deletion)).
+- **Official plugin artwork:** use [dsh-official-plugin-artwork](.agents/skills/dsh-official-plugin-artwork/SKILL.md) for official and official experimental plugin icons; obtain designer approval before landing new glyphs.
+- **Client UI copy is locale-owned.** Route product text through typed dictionaries and `t` or localized primitive props; `verify-client-ui-i18n` rejects hardcoded copy ([decision](.agents/notes/implemented/architecture/2026-08-23-locale-owned-client-ui-copy.md)).
+- **Testing policy** — [docs/testing.md](docs/testing.md). Every non-trivial model- or product-user-visible change updates a keyless recorded-session snapshot; [snapshot ownership](snapshots/AGENTS.md) reserves the top-level tree for session-driven cases and keeps other expected output owner-local. Fixtures replay on macOS/Linux; fix fixtures, not normalizers.
+- **Design each tool's UI presentation up front.** Host presenters stay pure; Web cards derive from raw events and persisted result metadata ([cookbook](docs/cookbook/adding-a-tool.md)).
+- **Plan unit, e2e, and snapshot coverage** for capability seams, lifecycle paths, and transcript output; include missing snapshot-harness support in the same change.
+- **Both SDKs project the loop.** Agent-loop, session-lifecycle, and `SessionEventMap` changes update the TypeScript and Python SDK expected outputs in the same PR; `pnpm run test` covers neither ([surfaces](docs/testing.md#when-a-snapshot-test-is-required)).
+- **Choose PR history deliberately.** Split independent changes and fix the introducing PR before propagation. Standalone/stack branches may merge-forward or rebase. Rewrites use `--force-with-lease`, abort on remote movement, never raw `--force`; preserve an in-progress merge-forward checkpoint before taking a newer base ([rationale](.agents/notes/implemented/process/2026-08-02-native-github-stacks-and-optional-rebases.md)).
+- **Labels:** one PR `kind/*`, all material `area/*`, and native Issue Type ([taxonomy](.agents/notes/implemented/process/2026-08-08-unified-github-label-taxonomy.md)).
+- TODO markers: `FIXME`/`TODO`/`XXX` by urgency ([semantics](docs/development.md)).
+- Files end with exactly one trailing newline; `git diff --cached --check` (pre-commit) gates it.
+
+## Defensive patterns
+
+Read [docs/defensive-patterns/README.md](docs/defensive-patterns/README.md) before changing a package surface, remote service, client component or state, conversation or Session behavior, or lifecycle, concurrency, subprocess, and teardown code. Its [review principles](docs/defensive-patterns/README.md#why-these-rules) apply per artifact.
+
+## Type safety and documentation
+
+Everything compiles under `strict: true` with `noImplicitAny`; every remaining `any` explains why narrowing is infeasible. Every module and export has concise JSDoc for its non-obvious contract; function-like exports include `@param`/`@returns`, as enforced by `verify-export-jsdoc`. Heritage-declared members, plugin-protocol slots, and constructors keep their docs at the declaring Service Definition, protocol, or class.
+
+Comments and docs state complete contracts and context, not reasoning transcripts. Use direct, concrete terms. Do not use metaphors. Before writing `contract`, `boundary`, or `shape`, ask whether a more exact term names the subject: write `response fields`, `JSON validation`, or `ESM exports` instead of `response shape`, `validation boundary`, or `module shape`. Keep `contract` for preconditions, postconditions, invariants, compatibility promises, and other obligations that callers, callees, implementers, providers, producers, or consumers rely on. Keep a literal process, wire, security, transaction, or lifecycle boundary. Do not narrate control flow or tests, preserve review history, or restate code. Keep behavior, failure, timing, ownership, and safe-use facts; link the rationale. Use [dsh-prose-standard](.agents/skills/dsh-prose-standard/SKILL.md) for decisions. Wire mechanically checkable invariants into an executed top-level gate and prove each changed acceptance path rejects an invalid case. Use narrow, justified exceptions instead of disabling a rule globally.
+
+Docs accompany every code change: update affected README and JSDoc contracts together. Routine bilingual work follows [docs/AGENTS.md](docs/AGENTS.md); only explicit user invocation may run `dsh-translate-docs`. Current-state prose, one physical line per paragraph, one home per fact, and word budgets live there.
+
+## Editing these instructions
+
+`CLAUDE.md` symlinks `AGENTS.md` at root and `packages/`; edit the real file. Keep each rule self-contained while linking high-level docs. Condense when clarity survives; raise a `verify-doc-budgets` ceiling when the required content genuinely needs more space.
+
+## Vendoring policy
+
+`vendor/` packages are pinned source copies (manifest with upstream SHAs in [vendor/README.md](vendor/README.md)). Update via the sync procedure there; re-apply or retire the logged local modifications; rerun `pnpm run test && pnpm run build`.

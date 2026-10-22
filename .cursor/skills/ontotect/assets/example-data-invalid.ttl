@@ -1,5 +1,0 @@
-@prefix ex: <https://example.org/ontology/> .
-
-# Intentional negative fixture: the required relation is absent.
-ex:broken-entity
-    a ex:DomainEntity .

@@ -1,39 +1,49 @@
-.lake/
-formal/.lake/
-formal/.cache/
-formal/build/
-*.olean
-*.ilean
-*.c
-*.o
-*.obj
-*.exe
-tmp/
-tools/plantuml.jar
+CLAUDE.local.md
+.env
+apps/desktop/.env.windows
+apps/desktop/.env.macos
+apps/desktop/*.p12
 node_modules/
-dist/
+lib/
+*.tsbuildinfo
+pnpm-debug.log
+.pnpm-store/
+.cache/
+examples/*/*.jsonl
+.storages/
+.sessions/
+examples/*/.sessions/
 coverage/
-
-# CLI session/config state written at runtime by `cantilune`.
-.cantilune/
-# L7-20 suite run worlds (isolated per task; never source-controlled).
-eval/cantilune-l7-20/workspaces/
-# CLI test/cluster run artifacts (runtime content/reports — never source-controlled).
-.cantilune-cluster-run/
-.cantilune-test-run/
-
-# Editor-local state (Kilo) must not enter source-control deliveries.
-.kilo/
-
-# Local agent/runtime state must never enter source-control deliveries.
-.agents/
-.claude/
-.opencode/
-.swarm/
-
-# Cursor IDE hook runtime state (mutates every session; not source-controlled).
-.cursor/hooks/state/
-
-# Raw proof-run logs and self-containing repository bundles are local artifacts.
-docs/qa/evidence/runtime-*/
-*.bundle
+.coverage-times.json
+.doc-typecheck-*/
+.node-next-types-*/
+.oxlint-contract-*/
+.oxlintrc.contract-*.json
+oxlint-contract-*.ts
+.humanize/
+tmp/
+.claude/commands/
+.claude/launch.json
+.claude/settings.json
+.vscode/
+.DS_Store
+.idea
+mise.toml
+dist-exe/
+/dist/
+apps/desktop/.desktop-build/
+python/sdk-runtime/src/deepseek_harness_runtime/runtime/
+python/**/__pycache__/
+python/**/.pytest_cache/
+packages/**/__pycache__/
+apps/web/dist/
+.artifacts/
+.dsh-build/
+.dsh-report/
+.playwright-mcp/
+.orig
+.worktrees/
+worktrees/
+.agents/worktrees/
+.typert-*/
+native/system/test/bin/
